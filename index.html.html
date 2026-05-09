@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Scouting Lab — Système SPES v6</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #0B0B0F;
+  --surface: #13131A;
+  --surface2: #1C1C26;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #F0EFF8;
+  --sub: #7B7A8E;
+  --purple: #8B5CF6;
+  --purple-light: #A78BFA;
+  --purple-dim: rgba(139,92,246,0.15);
+  --teal: #14B8A6;
+  --teal-dim: rgba(20,184,166,0.12);
+  --amber: #F59E0B;
+  --amber-dim: rgba(245,158,11,0.12);
+  --coral: #F43F5E;
+  --coral-dim: rgba(244,63,94,0.12);
+  --blue: #3B82F6;
+  --blue-dim: rgba(59,130,246,0.12);
+  --green: #10B981;
+  --green-dim: rgba(16,185,129,0.12);
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ── HEADER ── */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 2rem;
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(11,11,15,0.92);
+  backdrop-filter: blur(12px);
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: -.02em; }
+.logo span { color: var(--purple); }
+.header-sub { font-size: .75rem; color: var(--sub); font-family: 'DM Mono', monospace; }
+.header-right { display: flex; align-items: center; gap: 1rem; }
+.version-badge { font-size: .7rem; font-family: 'DM Mono', monospace; background: var(--purple-dim); color: var(--purple-light); padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(139,92,246,.3); }
+.auto-badge { font-size: .7rem; font-family: 'DM Mono', monospace; background: var(--teal-dim); color: var(--teal); padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(20,184,166,.3); }
+
+/* ── LAYOUT ── */
+.shell { display: flex; min-height: calc(100vh - 57px); }
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 1rem;
+  position: sticky; top: 57px; height: calc(100vh - 57px);
+  overflow-y: auto;
+}
+.main { flex: 1; padding: 2rem; max-width: 960px; }
+
+/* ── NAV ── */
+.nav-section { font-size: .65rem; font-family: 'DM Mono', monospace; color: var(--sub); letter-spacing: .1em; text-transform: uppercase; margin-bottom: .5rem; margin-top: 1.5rem; padding-left: .5rem; }
+.nav-section:first-child { margin-top: 0; }
+.nav-item {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .5rem .75rem; border-radius: var(--radius-sm);
+  font-size: .85rem; cursor: pointer; color: var(--sub);
+  transition: all .15s; border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { color: var(--text); background: var(--surface); }
+.nav-item.active { color: var(--purple-light); background: var(--purple-dim); font-weight: 500; }
+.nav-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── PANELS ── */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* ── PLAYER HEADER ── */
+.player-header-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;
+}
+.field-group { display: flex; flex-direction: column; gap: .375rem; }
+.field-label { font-size: .7rem; font-family: 'DM Mono', monospace; color: var(--sub); text-transform: uppercase; letter-spacing: .08em; }
+.field-input {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .5rem .75rem;
+  font-size: .875rem; color: var(--text); font-family: 'DM Sans', sans-serif;
+  transition: border-color .15s; outline: none; width: 100%;
+}
+.field-input:focus { border-color: var(--purple); }
+select.field-input { cursor: pointer; }
+.role-pills { display: flex; gap: .375rem; flex-wrap: wrap; }
+.role-pill {
+  padding: .375rem .75rem; border-radius: 20px; font-size: .8rem; font-weight: 500;
+  cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--sub);
+  transition: all .15s;
+}
+.role-pill.active { border-color: var(--purple); color: var(--purple-light); background: var(--purple-dim); }
+
+/* ── AUTO SCORE BOX ── */
+.auto-score-box {
+  background: var(--teal-dim); border: 1px solid rgba(20,184,166,.3);
+  border-radius: var(--radius-sm); padding: .75rem 1rem;
+  font-size: .8rem; color: var(--teal); margin-top: .75rem; line-height: 1.6;
+  display: none;
+}
+.auto-score-box.show { display: block; }
+.auto-score-val { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+
+/* ── API IMPORT CARD ── */
+.api-card {
+  background: linear-gradient(135deg, rgba(59,130,246,.04), rgba(139,92,246,.06));
+  border: 1px solid rgba(59,130,246,.22);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.api-card::before {
+  content: '';
+  position: absolute; top: -40px; right: -40px;
+  width: 140px; height: 140px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(59,130,246,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.api-card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1rem; margin-bottom: 1rem;
+}
+.api-card-title {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: .95rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.api-badge-pill {
+  font-size: .6rem; font-family: 'DM Mono', monospace;
+  background: var(--teal-dim); color: var(--teal);
+  padding: 2px 6px; border-radius: 20px; border: 1px solid rgba(20,184,166,.3);
+  font-weight: 500; letter-spacing: .04em;
+}
+.api-card-sub { font-size: .75rem; color: var(--sub); margin-top: .25rem; line-height: 1.5; }
+.api-card-body { display: flex; gap: .75rem; align-items: flex-end; flex-wrap: wrap; }
+
+/* chips listing auto-fetched stats */
+.auto-chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .5rem; }
+.auto-chip {
+  font-size: .65rem; font-family: 'DM Mono', monospace;
+  background: rgba(59,130,246,.08); color: #93C5FD;
+  border: 1px solid rgba(59,130,246,.18); border-radius: 20px;
+  padding: 2px 7px;
+}
+
+/* progress */
+.progress-track { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: .875rem; }
+.progress-fill { height: 3px; background: linear-gradient(90deg, var(--blue), var(--purple)); border-radius: 2px; width: 0%; transition: width .4s ease; }
+.progress-txt { font-size: .68rem; color: var(--sub); margin-top: .3rem; font-family: 'DM Mono', monospace; }
+
+/* flash animation on auto-filled inputs */
+@keyframes fetchFlash {
+  0%   { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(59,130,246,.15); background: rgba(59,130,246,.08); }
+  70%  { border-color: rgba(59,130,246,.4); box-shadow: none; background: rgba(59,130,246,.04); }
+  100% { border-color: var(--border); background: var(--surface2); }
+}
+.field-fetched { animation: fetchFlash 3s ease-out forwards; }
+
+/* ── LINKS ROW ── */
+.links-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.ext-link {
+  display: inline-flex; align-items: center; gap: .375rem;
+  font-size: .75rem; padding: .375rem .75rem;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--sub); text-decoration: none; background: var(--surface);
+  transition: all .15s;
+}
+.ext-link:hover { border-color: var(--purple); color: var(--purple-light); background: var(--purple-dim); }
+.ext-link svg { width: 12px; height: 12px; }
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1rem; padding-bottom: .75rem;
+  border-bottom: 1px solid var(--border);
+}
+.section-title { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; }
+.section-score { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+.dim-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+
+/* ── STAT ROW ── */
+.stat-row {
+  display: grid; grid-template-columns: 1fr 200px 80px 50px;
+  align-items: center; gap: .75rem;
+  padding: .625rem 0; border-bottom: 1px solid var(--border);
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-name-wrap {}
+.stat-name { font-size: .85rem; color: var(--text); }
+.stat-hint { font-size: .7rem; color: var(--sub); margin-top: 1px; }
+.stat-badge { display: inline-block; font-size: .65rem; font-family: 'DM Mono', monospace; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+.sb-auto { background: var(--teal-dim); color: var(--teal); }
+.sb-manual { background: var(--amber-dim); color: var(--amber); }
+.sb-int { background: var(--purple-dim); color: var(--purple-light); }
+.sb-role { background: var(--blue-dim); color: var(--blue); }
+.sb-api { background: rgba(59,130,246,.12); color: #60A5FA; }
+.stat-input-wrap { position: relative; }
+.stat-input-wrap input, .stat-input-wrap select {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: .375rem .625rem;
+  font-size: .85rem; color: var(--text); font-family: 'DM Sans', sans-serif;
+  outline: none; transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.stat-input-wrap input:focus, .stat-input-wrap select:focus { border-color: var(--purple); }
+.slider-wrap { display: flex; align-items: center; gap: .5rem; }
+.slider-wrap input[type=range] {
+  flex: 1; height: 3px; appearance: none; background: var(--surface2);
+  border-radius: 2px; outline: none; cursor: pointer;
+}
+.slider-wrap input[type=range]::-webkit-slider-thumb {
+  appearance: none; width: 14px; height: 14px; border-radius: 50%;
+  background: var(--purple); cursor: pointer;
+  box-shadow: 0 0 0 3px rgba(139,92,246,.2);
+}
+.slider-val { font-size: .75rem; font-family: 'DM Mono', monospace; width: 30px; text-align: right; }
+.stat-score-val { font-family: 'DM Mono', monospace; font-size: .875rem; font-weight: 500; text-align: right; }
+.mini-bar { height: 3px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: 3px; }
+.mini-bar-fill { height: 3px; border-radius: 2px; transition: width .3s; }
+
+/* ── CHAMPION TABLE ── */
+.champ-table-wrap { overflow-x: auto; }
+.champ-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.champ-table th { font-size: .6rem; font-family: 'DM Mono', monospace; color: var(--sub); text-transform: uppercase; letter-spacing: .08em; padding: .4rem .6rem; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.champ-table td { padding: .4rem .6rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.champ-table tr:last-child td { border-bottom: none; }
+.champ-table tr:hover td { background: rgba(255,255,255,.02); }
+.pool-tag { font-size: .58rem; font-family: 'DM Mono', monospace; background: var(--teal-dim); color: var(--teal); border: 1px solid rgba(20,184,166,.25); padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+
+/* ── RESULTS PAGE ── */
+.global-hero {
+  text-align: center; padding: 2.5rem 1rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 1.5rem;
+  position: relative; overflow: hidden;
+}
+.global-hero::before {
+  content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+  width: 300px; height: 200px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139,92,246,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.global-score-num { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 5rem; line-height: 1; }
+.global-verdict { font-size: .9rem; color: var(--sub); margin-top: .5rem; }
+.global-player { font-family: 'DM Mono', monospace; font-size: .75rem; color: var(--sub); margin-bottom: .75rem; }
+.dim-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; margin-bottom: 1.5rem; }
+.dim-mini {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .875rem; text-align: center;
+}
+.dim-mini-label { font-size: .7rem; font-family: 'DM Mono', monospace; color: var(--sub); margin-bottom: .375rem; }
+.dim-mini-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; }
+.dim-mini-weight { font-size: .65rem; color: var(--sub); margin-top: .25rem; }
+
+/* ── RADAR ── */
+.radar-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+
+/* ── RECO ── */
+.reco { border-radius: var(--radius-sm); padding: .875rem 1rem; margin-bottom: .625rem; border-left: 3px solid; }
+.reco-g { background: var(--green-dim); border-color: var(--green); }
+.reco-w { background: var(--amber-dim); border-color: var(--amber); }
+.reco-r { background: var(--coral-dim); border-color: var(--coral); }
+.reco-title { font-size: .875rem; font-weight: 500; margin-bottom: .25rem; }
+.reco-text { font-size: .775rem; color: var(--sub); line-height: 1.5; }
+
+/* ── INFO BOX ── */
+.info-box { background: rgba(59,130,246,.08); border: 1px solid rgba(59,130,246,.2); border-radius: var(--radius-sm); padding: .75rem 1rem; font-size: .8rem; color: #93C5FD; line-height: 1.6; margin-bottom: 1rem; }
+.info-box.info-success { background: var(--teal-dim); border-color: rgba(20,184,166,.3); color: var(--teal); }
+.info-box.info-error { background: var(--coral-dim); border-color: rgba(244,63,94,.3); color: var(--coral); }
+
+/* ── TEAM ── */
+.team-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.team-table th { font-size: .65rem; font-family: 'DM Mono', monospace; color: var(--sub); text-transform: uppercase; letter-spacing: .08em; padding: .5rem .75rem; text-align: left; border-bottom: 1px solid var(--border); }
+.team-table td { padding: .625rem .75rem; border-bottom: 1px solid var(--border); }
+.team-table tr:last-child td { border-bottom: none; }
+.team-add-row td { padding-top: .875rem; }
+.team-add-row input { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: .375rem .5rem; font-size: .8rem; color: var(--text); width: 100%; font-family: 'DM Sans', sans-serif; outline: none; }
+.team-add-row input:focus { border-color: var(--purple); }
+
+/* ── BUTTONS ── */
+.btn {
+  display: inline-flex; align-items: center; gap: .375rem;
+  padding: .5rem 1rem; border-radius: var(--radius-sm); font-size: .85rem; font-weight: 500;
+  cursor: pointer; border: none; transition: all .15s; font-family: 'DM Sans', sans-serif;
+  white-space: nowrap;
+}
+.btn-primary { background: var(--purple); color: #fff; }
+.btn-primary:hover { background: #7C3AED; }
+.btn-primary:disabled { background: #4C2D96; color: rgba(255,255,255,.5); cursor: not-allowed; }
+.btn-ghost { background: var(--surface2); border: 1px solid var(--border); color: var(--sub); }
+.btn-ghost:hover { border-color: var(--border2); color: var(--text); }
+.btn-sm { padding: .3rem .625rem; font-size: .75rem; }
+
+/* ── BAR ROW ── */
+.bar-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .5rem; }
+.bar-label { font-size: .75rem; color: var(--sub); width: 60px; text-align: right; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.bar-track { flex: 1; height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 5px; border-radius: 3px; transition: width .4s; }
+.bar-val { font-size: .75rem; font-weight: 500; width: 34px; font-family: 'DM Mono', monospace; }
+.need-tag { font-size: .65rem; font-weight: 500; padding: 2px 6px; border-radius: 20px; }
+.nt-r { background: var(--coral-dim); color: var(--coral); }
+.nt-w { background: var(--amber-dim); color: var(--amber); }
+.nt-g { background: var(--green-dim); color: var(--green); }
+
+/* ── ANALYSIS CARD ── */
+.analysis-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-top: 1rem; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px) {
+  .sidebar { display: none; }
+  .main { padding: 1rem; }
+  .stat-row { grid-template-columns: 1fr 150px 60px 40px; }
+  .dim-grid { grid-template-columns: repeat(2,1fr); }
+  .player-header-card { grid-template-columns: 1fr; }
+  .api-card-body { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div>
+    <div class="logo">SCOUTING<span>LAB</span></div>
+    <div class="header-sub">Système d'évaluation SPES — League of Legends</div>
+  </div>
+  <div class="header-right">
+    <span class="auto-badge">⚡ API Riot intégrée</span>
+    <span class="version-badge">SPES v6.0</span>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="sidebar">
+    <div class="nav-section">Évaluation</div>
+    <button class="nav-item active" onclick="switchPanel('data')"><span class="nav-dot" style="background:#8B5CF6"></span>Saisie données</button>
+    <button class="nav-item" onclick="switchPanel('scores')"><span class="nav-dot" style="background:#14B8A6"></span>Scores détaillés</button>
+    <button class="nav-item" onclick="switchPanel('results')"><span class="nav-dot" style="background:#F59E0B"></span>Résultats & rapport</button>
+    <div class="nav-section">Équipe</div>
+    <button class="nav-item" onclick="switchPanel('team')"><span class="nav-dot" style="background:#3B82F6"></span>Analyse roster</button>
+    <div class="nav-section">Légende</div>
+    <div style="padding:.5rem;font-size:.7rem;color:var(--sub);line-height:1.9">
+      <div><span style="background:var(--teal-dim);color:var(--teal);padding:1px 5px;border-radius:3px;font-family:monospace">AUTO</span> Calcul automatique</div>
+      <div style="margin-top:.2rem"><span style="background:rgba(59,130,246,.12);color:#60A5FA;padding:1px 5px;border-radius:3px;font-family:monospace">API</span> Riot API importé</div>
+      <div style="margin-top:.2rem"><span style="background:var(--amber-dim);color:var(--amber);padding:1px 5px;border-radius:3px;font-family:monospace">SAISIE</span> Donnée manuelle</div>
+      <div style="margin-top:.2rem"><span style="background:var(--purple-dim);color:var(--purple-light);padding:1px 5px;border-radius:3px;font-family:monospace">ENTRETIEN</span> Observation</div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ═══════════════ SAISIE ═══════════════ -->
+    <div id="panel-data" class="panel active">
+
+      <!-- Identité joueur -->
+      <div class="player-header-card">
+        <div class="field-group" style="grid-column:1/4">
+          <div class="field-label">Pseudo joueur</div>
+          <input class="field-input" id="d-pseudo" placeholder="ex: ShadowFlux" oninput="updateLinks()"/>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Serveur</div>
+          <select class="field-input" id="d-server" onchange="updateLinks()">
+            <option value="euw1">EUW</option>
+            <option value="eun1">EUNE</option>
+            <option value="na1">NA</option>
+            <option value="kr">KR</option>
+            <option value="br1">BR</option>
+            <option value="la1">LAN</option>
+            <option value="la2">LAS</option>
+            <option value="oc1">OCE</option>
+            <option value="jp1">JP</option>
+            <option value="tr1">TR</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Tag (ex: EUW, FR, 123…)</div>
+          <input class="field-input" id="d-tag" placeholder="EUW" oninput="updateLinks()"/>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Âge</div>
+          <input class="field-input" id="d-age" type="number" min="13" max="35" placeholder="19" oninput="onAgeRankChange()"/>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Rang actuel</div>
+          <select class="field-input" id="d-rank" onchange="onAgeRankChange()">
+            <option value="0">Iron</option><option value="1">Bronze</option><option value="2">Silver</option>
+            <option value="3">Gold</option><option value="4">Platinum</option><option value="5">Emerald</option>
+            <option value="6" selected>Diamond</option><option value="7">Master</option>
+            <option value="8">Grandmaster</option><option value="9">Challenger</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">Rang saison précédente</div>
+          <select class="field-input" id="d-rank-prev" onchange="onRankProgChange()">
+            <option value="0">Iron</option><option value="1">Bronze</option><option value="2">Silver</option>
+            <option value="3">Gold</option><option value="4">Platinum</option>
+            <option value="5" selected>Emerald</option><option value="6">Diamond</option>
+            <option value="7">Master</option><option value="8">Grandmaster</option><option value="9">Challenger</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <div class="field-label">LP nets ±3 mois</div>
+          <input class="field-input" id="d-lp-delta" type="number" placeholder="ex: +234 ou -80" oninput="onLPChange()"/>
+        </div>
+        <div class="field-group" style="grid-column:1/4">
+          <div class="field-label">Rôle</div>
+          <div class="role-pills">
+            <button class="role-pill" onclick="setRole('Top',this)">🛡 Top</button>
+            <button class="role-pill" onclick="setRole('Jgl',this)">🌿 Jungle</button>
+            <button class="role-pill active" onclick="setRole('Mid',this)">⚡ Mid</button>
+            <button class="role-pill" onclick="setRole('ADC',this)">🎯 ADC</button>
+            <button class="role-pill" onclick="setRole('Sup',this)">💙 Support</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="auto-box" class="auto-score-box"></div>
+
+      <!-- ═══ API IMPORT CARD ═══ -->
+      <div class="api-card">
+        <div class="api-card-head">
+          <div>
+            <div class="api-card-title">
+              🤖 Import automatique — Riot API
+              <span class="api-badge-pill">SPES v6</span>
+            </div>
+            <div class="api-card-sub">
+              Remplit automatiquement depuis les <strong style="color:var(--text)">50–100 dernières parties</strong> SoloQ :<br>
+              KDA · Win Rate · CS/min · Vision score · Kill Participation · Dmg Share · Pool champions · Régularité
+            </div>
+            <div class="auto-chips" style="margin-top:.5rem">
+              <span class="auto-chip">KDA</span>
+              <span class="auto-chip">Win Rate</span>
+              <span class="auto-chip">CS/min</span>
+              <span class="auto-chip">Vision</span>
+              <span class="auto-chip">Kill Part.</span>
+              <span class="auto-chip">Dmg Share</span>
+              <span class="auto-chip">Pool champs</span>
+              <span class="auto-chip">Régularité</span>
+              <span class="auto-chip">Rang actuel</span>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="api-toggle-btn" onclick="toggleApiCard()">▲ Réduire</button>
+        </div>
+        <div id="api-body">
+          <div id="file-warn" style="display:none;background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.35);border-radius:6px;padding:.75rem 1rem;font-size:.78rem;color:#FB7185;margin-bottom:.875rem;line-height:1.7">
+            🚫 <strong>Fichier ouvert en file:// — l'API ne peut pas fonctionner.</strong><br>
+            Lance <code style="background:rgba(0,0,0,.25);padding:1px 5px;border-radius:3px;font-family:monospace">lancer.bat</code> puis ouvre <strong>http://localhost:8080</strong> dans Chrome.
+          </div>
+          <div class="api-card-body">
+            <div class="field-group" style="flex:1;min-width:220px">
+              <div class="field-label">
+                Clé API Riot
+                <a href="https://developer.riotgames.com" target="_blank" rel="noopener"
+                   style="color:var(--purple-light);font-size:.65rem;margin-left:.3rem;font-weight:400;text-decoration:none">
+                  → Gratuit sur developer.riotgames.com ↗
+                </a>
+              </div>
+              <div style="position:relative">
+                <input class="field-input" id="riot-key" type="password"
+                       placeholder="RGAPI-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX"
+                       style="padding-right:2.5rem"/>
+                <button onclick="toggleKeyVisible()" style="position:absolute;right:.5rem;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--sub);cursor:pointer;font-size:.75rem;padding:.25rem" id="key-eye">👁</button>
+              </div>
+            </div>
+            <div class="field-group" style="min-width:170px">
+              <div class="field-label">Parties à analyser</div>
+              <select class="field-input" id="riot-count">
+                <option value="20">20 parties (~5 sec)</option>
+                <option value="50" selected>50 parties (~15 sec)</option>
+                <option value="100">100 parties (~2 min)</option>
+              </select>
+            </div>
+            <div style="padding-bottom:2px">
+              <button class="btn btn-primary" id="btn-fetch" onclick="fetchRiotData()">⬇ Importer les stats</button>
+            </div>
+          </div>
+          <div id="api-progress" style="display:none">
+            <div class="progress-track"><div class="progress-fill" id="api-prog-fill"></div></div>
+            <div class="progress-txt" id="api-prog-txt"></div>
+          </div>
+        </div>
+        <div id="api-status"></div>
+        <!-- Debug panel -->
+        <div id="debug-panel" style="margin-top:.75rem">
+          <button onclick="toggleDebug()" class="btn btn-ghost btn-sm" style="font-size:.7rem;margin-bottom:.375rem">🔧 Afficher les logs techniques</button>
+          <pre id="debug-log" style="display:none;background:#0a0a0f;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:.75rem;font-size:.7rem;font-family:'DM Mono',monospace;color:#6B7280;line-height:1.7;white-space:pre-wrap;word-break:break-all;max-height:220px;overflow-y:auto"></pre>
+        </div>
+      </div>
+      <!-- ═══ END API IMPORT ═══ -->
+
+      <div style="margin:.75rem 0 .75rem">
+        <div class="field-label" style="margin-bottom:.5rem">Profil stats — ouvrir sur</div>
+        <div class="links-row" id="links-row">
+          <span style="font-size:.8rem;color:var(--sub)">Entrez le pseudo pour voir les liens</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        Avec l'import API, les stats principales sont remplies automatiquement. Il reste à renseigner : <strong>rôle spécial</strong> (VOD review), <strong>mental</strong> (entretien) et <strong>soft skills</strong>.
+      </div>
+
+      <!-- S1 -->
+      <div class="dim-card">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--purple)">S1 — Skills &amp; mécaniques</div>
+          <div class="section-score" id="sh-s1" style="color:var(--purple)">—</div>
+        </div>
+        <div id="s1-rows"></div>
+      </div>
+
+      <!-- Champion pool detail (filled by API) -->
+      <div id="champ-table-section"></div>
+
+      <!-- P -->
+      <div class="dim-card">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--teal)">P — Progression</div>
+          <div class="section-score" id="sh-p" style="color:var(--teal)">—</div>
+        </div>
+        <div id="p-rows"></div>
+      </div>
+
+      <!-- E -->
+      <div class="dim-card">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--amber)">E — Esprit compétitif</div>
+          <div class="section-score" id="sh-e" style="color:var(--amber)">—</div>
+        </div>
+        <div id="e-rows"></div>
+      </div>
+
+      <!-- S2 -->
+      <div class="dim-card">
+        <div class="section-header">
+          <div class="section-title" style="color:var(--coral)">S2 — Soft skills &amp; image</div>
+          <div class="section-score" id="sh-s2" style="color:var(--coral)">—</div>
+        </div>
+        <div id="s2-rows"></div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:.5rem">
+        <button class="btn btn-primary" onclick="switchPanel('results')">Voir les résultats →</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════ SCORES ═══════════════ -->
+    <div id="panel-scores" class="panel">
+      <div id="scores-detail"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:.5rem">
+        <button class="btn btn-primary" onclick="switchPanel('results')">Résultats finaux →</button>
+      </div>
+    </div>
+
+    <!-- ═══════════════ RÉSULTATS ═══════════════ -->
+    <div id="panel-results" class="panel">
+      <div id="results-content"></div>
+    </div>
+
+    <!-- ═══════════════ ÉQUIPE ═══════════════ -->
+    <div id="panel-team" class="panel">
+      <div class="dim-card">
+        <div class="section-header">
+          <div class="section-title">Roster actuel</div>
+          <button class="btn btn-ghost btn-sm" onclick="clearTeam()">Vider</button>
+        </div>
+        <table class="team-table">
+          <thead><tr>
+            <th>Joueur (Rôle)</th>
+            <th style="color:var(--purple)">S1</th>
+            <th style="color:var(--teal)">P</th>
+            <th style="color:var(--amber)">E</th>
+            <th style="color:var(--coral)">S2</th>
+            <th>Global</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="team-tbody"></tbody>
+          <tfoot><tr class="team-add-row">
+            <td><input id="tn-name" placeholder="Pseudo (Rôle)" oninput="updTeamGlobal()"/></td>
+            <td><input id="tn-s1" type="number" min="0" max="10" step="0.01" placeholder="S1" oninput="updTeamGlobal()"/></td>
+            <td><input id="tn-p" type="number" min="0" max="10" step="0.01" placeholder="P" oninput="updTeamGlobal()"/></td>
+            <td><input id="tn-e" type="number" min="0" max="10" step="0.01" placeholder="E" oninput="updTeamGlobal()"/></td>
+            <td><input id="tn-s2" type="number" min="0" max="10" step="0.01" placeholder="S2" oninput="updTeamGlobal()"/></td>
+            <td id="tn-global" style="font-family:monospace;font-size:.8rem;color:var(--sub)">—</td>
+            <td><button class="btn btn-ghost btn-sm" onclick="addTeamPlayer()">+ Ajouter</button></td>
+          </tr></tfoot>
+        </table>
+      </div>
+      <div id="team-analysis"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ════════════════════════════════════════════
+// DATA & CONSTANTS
+// ════════════════════════════════════════════
+const RANKS = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+const C = { s1:'#8B5CF6', p:'#14B8A6', e:'#F59E0B', s2:'#F43F5E' };
+const W = { s1:.30, p:.25, e:.30, s2:.15 };
+
+const ROLE_SCALES = {
+  cs_min:    { Top:[4.5,5.5,6.2,6.8,7.3,7.8,8.5], Jgl:[4,5,5.5,6,6.5,7,7.7],   Mid:[5.5,6.5,7.2,7.8,8.3,8.8,9.5], ADC:[6.5,7.2,7.8,8.3,8.8,9.3,10], Sup:[0,.3,.7,1.1,1.5,2,2.8] },
+  vision:    { Top:[8,12,16,20,24,28,34],           Jgl:[18,24,30,36,41,46,52],   Mid:[16,20,24,28,33,37,42],         ADC:[7,10,14,18,22,26,31],          Sup:[38,48,54,60,65,70,76]  },
+  kill_part: { Top:[28,38,46,54,61,68,74],           Jgl:[52,58,63,68,72,76,81],   Mid:[58,63,66,70,74,78,83],         ADC:[52,57,62,66,70,74,79],         Sup:[58,63,67,71,75,79,84]  },
+  dmg_share: { Top:[13,16,19,22,25,28,32],           Jgl:[12,15,17,20,22,25,28],   Mid:[20,23,26,29,32,34,37],         ADC:[26,29,31,33,36,38,41],         Sup:[4,7,9,11,14,17,21]     },
+  winrate:   { Top:[46,48,50,52,54,57,61],           Jgl:[46,48,50,52,54,57,61],   Mid:[46,48,50,52,55,58,62],         ADC:[46,48,50,52,54,57,61],         Sup:[46,48,50,52,54,57,61]  },
+};
+const SPECIAL = { Top:'Maîtrise splitpush', Jgl:'Qualité des ganks', Mid:'Impact du roaming', ADC:'Positionnement teamfight', Sup:'Qualité engage/peel' };
+const SPECIAL_HINT = { Top:'Pression side lane, timing push, 1v1 — VOD review', Jgl:'Ratio ganks aboutissant kill/flash — replay', Mid:'Kills générés sur autres lanes après roam — replay', ADC:'Survie en teamfight, kite, gestion menaces — replay', Sup:'CC aboutissants, protection carry — replay' };
+
+let currentRole = 'Mid';
+const rawData = {};
+const scores = {};
+let teamRoster = [];
+
+// ════════════════════════════════════════════
+// SCORING FUNCTIONS
+// ════════════════════════════════════════════
+function fromThresholds(val, t) {
+  const s = [2,4,6,7.5,8.5,9,10];
+  if (val === null || val === '' || isNaN(val)) return null;
+  val = parseFloat(val);
+  for (let i = t.length-1; i >= 0; i--) if (val >= t[i]) return s[i];
+  return 1;
+}
+function scoreKDA(v) {
+  if (!v && v !== 0) return null; v = parseFloat(v);
+  const t=[2,3,4,5,6,7], s=[2,4,6,7.5,8.5,9];
+  for (let i=t.length-1;i>=0;i--) if(v>=t[i]) return s[i];
+  return v>=7?10:1;
+}
+function scoreRankAge(ri, age) {
+  if (ri===null||age===null||age<13) return null;
+  age=parseInt(age); ri=parseInt(ri);
+  const T = {
+    13:[3,4,5,6,7,8,8.5,9,9.5,10], 14:[3,4,5,6,6.5,7.5,8.5,9,9.5,10],
+    15:[2.5,3.5,4.5,5.5,6,7,8,8.5,9.5,10], 16:[2,3,4,5,6,7,8,8.5,9,10],
+    17:[2,3,4,5,5.5,6.5,7.5,8,9,10], 18:[1.5,2.5,3.5,4.5,5.5,6.5,7,8,9,10],
+    19:[1.5,2.5,3.5,4.5,5,6,7,8,8.5,10], 20:[1.5,2,3,4,5,6,7,7.5,8.5,10],
+    21:[1.5,2,3,4,4.5,5.5,6.5,7.5,8.5,10], 22:[1,2,3,4,4.5,5,6,7,8,10],
+    23:[1,1.5,2.5,3.5,4,5,6,7,8,10], 24:[1,1.5,2,3,3.5,4.5,5.5,6.5,8,10],
+    25:[1,1.5,2,2.5,3,4,5,6,7.5,10],
+  };
+  const row = T[Math.min(25,Math.max(13,age))];
+  return row ? row[Math.min(9,ri)] : null;
+}
+function scoreRankProg(curr,prev) {
+  if(curr===null||prev===null) return null;
+  const d=parseInt(curr)-parseInt(prev);
+  if(d<=-2)return 1; if(d===-1)return 3; if(d===0)return 4;
+  if(d===1)return 6; if(d===2)return 8; if(d===3)return 9.5; return 10;
+}
+function scoreLPProg(v) {
+  if(v===null||v==='') return null; v=parseFloat(v);
+  if(v<=-200)return 2; if(v<=-100)return 3; if(v<0)return 4;
+  if(v<=100)return 6; if(v<=300)return 8; if(v<=500)return 9; return 10;
+}
+function scoreChampPool(v) {
+  if(!v&&v!==0) return null; v=parseInt(v);
+  if(v<=0)return 1; if(v===1)return 4; if(v===2)return 6;
+  if(v===3)return 7.5; if(v<=5)return 8.5; return 10;
+}
+function scoreHonor(v) { return {0:1,1:2,2:6,3:8,4:9,5:10}[parseInt(v)]??6; }
+function scoreTournoi(v) { return {aucun:4,participation:5,top32:6,top16:7.5,top8:8.5,top4:9.5,victoire:10}[v]??4; }
+function scoreVOD(v) { return {jamais:2,occasionnel:5,apres_defaite:7,hebdo:8.5,quotidien:10}[v]??5; }
+function scoreRegularite(v) { return fromThresholds(parseFloat(v), [30,50,65,75,80,85,92]); }
+function scColor(v) {
+  if(v===null) return 'var(--sub)';
+  if(v>=8) return 'var(--teal)'; if(v>=6.5) return 'var(--purple-light)';
+  if(v>=5) return 'var(--amber)'; return 'var(--coral)';
+}
+
+// ════════════════════════════════════════════
+// FIELD DEFINITIONS
+// ════════════════════════════════════════════
+function getS1Fields() {
+  return [
+    { id:'rank_abs',    label:'Rang absolu',                  badge:'auto',     type:'auto',    hint:'Calculé depuis le rang sélectionné' },
+    { id:'rank_age',    label:'Rang relatif à l\'âge',        badge:'auto',     type:'auto',    hint:'Calculé automatiquement depuis âge + rang' },
+    { id:'kda',         label:'KDA moyen',                    badge:'api',      type:'number',  hint:'Import API · ou OP.GG → Stats → KDA', unit:'ex: 4.2' },
+    { id:'winrate',     label:'Win rate %',                   badge:'api',      type:'number',  hint:'Import API · ou OP.GG → Ranked → Win Rate', unit:'ex: 54', role:true },
+    { id:'cs_min',      label:'CS / minute',                  badge:'api',      type:'number',  hint:'Import API · ou OP.GG → Stats → CS/min', unit:'ex: 7.8', role:true },
+    { id:'vision',      label:'Vision score / partie',        badge:'api',      type:'number',  hint:'Import API · ou U.GG → Stats → Vision score', unit:'ex: 28', role:true },
+    { id:'kill_part',   label:'Participation kills %',        badge:'api',      type:'number',  hint:'Import API · ou LeagueOfGraphs → Kill participation', unit:'ex: 68', role:true },
+    { id:'dmg_share',   label:'Part des dégâts %',            badge:'api',      type:'number',  hint:'Import API · ou U.GG → Damage share', unit:'ex: 27', role:true },
+    { id:'champ_pool',  label:'Champions maîtrisés ≥55% WR', badge:'api',      type:'number',  hint:'Import API (auto) · ou OP.GG → Champions — comptez ≥55% WR', unit:'nombre' },
+    { id:'special',     label: SPECIAL[currentRole],          badge:'entretien',type:'slider',  hint: SPECIAL_HINT[currentRole] },
+  ];
+}
+function getPFields() {
+  return [
+    { id:'rank_prog',  label:'Progression inter-saisons',  badge:'auto',     type:'auto',   hint:'Calculé depuis rang actuel vs précédent' },
+    { id:'lp_prog',    label:'Progression LP (3 mois)',    badge:'auto',     type:'auto',   hint:'Calculé depuis le champ LP ±3 mois' },
+    { id:'meta_adapt', label:'Adaptabilité aux patches',   badge:'saisie',   type:'slider', hint:'Comparaison stats avant/après gros patches via Leaguegraph' },
+    { id:'regularite', label:'Régularité sessions %',      badge:'api',      type:'number', hint:'Import API (auto) · ou % des semaines avec ranked actif — Leaguegraph', unit:'ex: 78' },
+    { id:'tournoi',    label:'Meilleur résultat tournoi',  badge:'entretien',type:'select', hint:'ESL Go4, VCT Opens, tournois FR',
+      options:[['aucun','Aucun tournoi'],['participation','Participation'],['top32','Top 32'],['top16','Top 16'],['top8','Top 8'],['top4','Top 4'],['victoire','Victoire']] },
+    { id:'vod',        label:'Culture VOD review',         badge:'entretien',type:'select', hint:'Entretien Q — pratique régulière des replays',
+      options:[['jamais','Jamais'],['occasionnel','Occasionnel'],['apres_defaite','Après chaque défaite'],['hebdo','Routine hebdo'],['quotidien','Quotidien + notes']] },
+  ];
+}
+function getEFields() {
+  return [
+    { id:'honor',    label:'Honor level',                   badge:'saisie',   type:'select', hint:'Capture écran profil joueur',
+      options:[['0','0 — Restrictions'],['1','1'],['2','2 — Standard'],['3','3'],['4','4'],['5','5 — Exemplaire']] },
+    { id:'tilt',     label:'Résistance au tilt',            badge:'entretien',type:'slider', hint:'1=tilte immédiatement · 5=gère en général · 10=aucun tilt documenté' },
+    { id:'defeat',   label:'Traitement des défaites',       badge:'entretien',type:'slider', hint:'1=blâme systématique · 5=accepte sans analyser · 10=plan d\'amélioration immédiat' },
+    { id:'feedback', label:'Réception du feedback',         badge:'entretien',type:'slider', hint:'1=défensif · 5=écoute passive · 10=intègre et remercie' },
+    { id:'cohesion', label:'Esprit d\'équipe',              badge:'entretien',type:'slider', hint:'1=toxique · 5=contributeur passif · 10=ciment de l\'équipe' },
+    { id:'pressure', label:'Performance sous pression',     badge:'entretien',type:'slider', hint:'1=effondrement en tournoi · 5=légère baisse · 10=clutch documenté' },
+    { id:'ambition', label:'Ambition & commitment',         badge:'entretien',type:'slider', hint:'1=hobby · 5=envie sans plan · 10=sacrifices concrets + routine pro' },
+  ];
+}
+function getS2Fields() {
+  return [
+    { id:'online',   label:'Présence en ligne',         badge:'entretien',type:'slider', hint:'2=aucune · 5=<500 followers · 7=500-2k · 8.5=2k-10k · 10=10k+' },
+    { id:'comm',     label:'Clarté de communication',   badge:'entretien',type:'slider', hint:'2=difficultés · 5=basique · 7=correct · 8.5=articulé · 10=charismatique' },
+    { id:'sponsor',  label:'Attractivité sponsor',      badge:'entretien',type:'slider', hint:'1=image problématique · 5=neutre · 7=positive · 8.5=bankable · 10=ambassadeur' },
+    { id:'maturity', label:'Maturité publique',         badge:'entretien',type:'slider', hint:'1=comportements négatifs · 5=neutre · 7=professionnel · 10=exemplaire' },
+  ];
+}
+
+// ════════════════════════════════════════════
+// COMPUTE SCORES
+// ════════════════════════════════════════════
+function computeScore(id) {
+  const ri = parseInt(document.getElementById('d-rank')?.value ?? 6);
+  const age = document.getElementById('d-age')?.value;
+  const rp = parseInt(document.getElementById('d-rank-prev')?.value ?? 5);
+  const lp = document.getElementById('d-lp-delta')?.value;
+  const v = rawData[id];
+  switch(id) {
+    case 'rank_abs':  return (ri+1);
+    case 'rank_age':  return scoreRankAge(ri, age);
+    case 'rank_prog': return scoreRankProg(ri, rp);
+    case 'lp_prog':   return scoreLPProg(lp);
+    case 'kda':       return scoreKDA(v);
+    case 'cs_min':    return fromThresholds(v, ROLE_SCALES.cs_min[currentRole]);
+    case 'vision':    return fromThresholds(v, ROLE_SCALES.vision[currentRole]);
+    case 'kill_part': return fromThresholds(v, ROLE_SCALES.kill_part[currentRole]);
+    case 'dmg_share': return fromThresholds(v, ROLE_SCALES.dmg_share[currentRole]);
+    case 'winrate':   return fromThresholds(v, ROLE_SCALES.winrate[currentRole]);
+    case 'champ_pool':return scoreChampPool(v);
+    case 'honor':     return scoreHonor(v);
+    case 'tournoi':   return scoreTournoi(v);
+    case 'vod':       return scoreVOD(v);
+    case 'regularite':return scoreRegularite(v);
+    case 'meta_adapt':case 'special':case 'tilt':case 'defeat':case 'feedback':
+    case 'cohesion':case 'pressure':case 'ambition':case 'online':
+    case 'comm':case 'sponsor':case 'maturity':
+      return v !== undefined && v !== '' && !isNaN(v) ? parseFloat(v) : null;
+    default: return null;
+  }
+}
+
+function dimAvg(fields) {
+  const vals = fields.map(f => computeScore(f.id)).filter(v => v !== null && !isNaN(v));
+  if (!vals.length) return null;
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+
+function globalScore() {
+  const s1 = dimAvg(getS1Fields()), p = dimAvg(getPFields()), e = dimAvg(getEFields()), s2 = dimAvg(getS2Fields());
+  const vals = [[s1,W.s1],[p,W.p],[e,W.e],[s2,W.s2]].filter(([v])=>v!==null);
+  if (!vals.length) return null;
+  const tw = vals.reduce((a,[,w])=>a+w,0);
+  return vals.reduce((a,[v,w])=>a+v*w,0) / tw;
+}
+
+// ════════════════════════════════════════════
+// BUILD ROWS
+// ════════════════════════════════════════════
+function buildRows(containerId, fields, dimId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  fields.forEach(f => {
+    const sc = computeScore(f.id);
+    const scStr = sc !== null ? sc.toFixed(2) : '—';
+    const scCol = scColor(sc);
+    const badgeCls = f.badge === 'auto' ? 'sb-auto' : f.badge === 'api' ? 'sb-api' : f.badge === 'entretien' ? 'sb-int' : 'sb-manual';
+    const badgeLabel = f.badge === 'auto' ? 'AUTO' : f.badge === 'api' ? 'API' : f.badge === 'entretien' ? 'ENTRETIEN' : 'SAISIE';
+    const badgeHTML = `<span class="stat-badge ${badgeCls}">${badgeLabel}</span>`;
+    const roleTag = f.role ? `<span class="stat-badge sb-role">${currentRole}</span>` : '';
+
+    let inputHTML = '';
+    if (f.type === 'auto') {
+      inputHTML = `<div style="font-size:.75rem;color:var(--sub);padding:.375rem 0">— calculé automatiquement —</div>`;
+    } else if (f.type === 'number') {
+      const val = rawData[f.id] !== undefined ? rawData[f.id] : '';
+      inputHTML = `<input style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.375rem .625rem;font-size:.85rem;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:100%;transition:border-color .15s,box-shadow .15s,background .15s" type="number" placeholder="${f.unit||''}" step="0.01" value="${val}" id="inp-${f.id}" oninput="onStatInput('${f.id}','${dimId}')"/>`;
+    } else if (f.type === 'slider') {
+      const val = rawData[f.id] !== undefined ? parseFloat(rawData[f.id]) : 5;
+      inputHTML = `<div class="slider-wrap"><input type="range" min="0" max="10" step="0.1" value="${val}" id="inp-${f.id}" oninput="onSliderInput('${f.id}','${dimId}',this.value)"/><span class="slider-val" id="sv-${f.id}">${val.toFixed(1)}</span></div>`;
+    } else if (f.type === 'select') {
+      const val = rawData[f.id] || '';
+      const opts = f.options.map(([v,l])=>`<option value="${v}"${val===v?' selected':''}>${l}</option>`).join('');
+      inputHTML = `<select style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.375rem .625rem;font-size:.85rem;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;width:100%;cursor:pointer" id="inp-${f.id}" onchange="onStatInput('${f.id}','${dimId}')"><option value="">Sélectionner…</option>${opts}</select>`;
+    }
+
+    const barW = sc !== null ? sc * 10 : 0;
+    const row = document.createElement('div');
+    row.className = 'stat-row';
+    row.innerHTML = `
+      <div class="stat-name-wrap">
+        <div class="stat-name">${f.label}${badgeHTML}${roleTag}</div>
+        <div class="stat-hint">${f.hint||''}</div>
+        <div class="mini-bar"><div class="mini-bar-fill" id="bar-${f.id}" style="width:${barW}%;background:${C[dimId]||'var(--purple)'}"></div></div>
+      </div>
+      <div class="stat-input-wrap">${inputHTML}</div>
+      <div class="stat-score-val" id="sc-${f.id}" style="color:${scCol}">${scStr}</div>
+      <div></div>`;
+    el.appendChild(row);
+  });
+  updateDimHeader(dimId);
+}
+
+function updateDimHeader(dimId) {
+  const fields = { s1:getS1Fields, p:getPFields, e:getEFields, s2:getS2Fields }[dimId]?.();
+  if (!fields) return;
+  const avg = dimAvg(fields);
+  const el = document.getElementById(`sh-${dimId}`);
+  if (el) { el.textContent = avg !== null ? avg.toFixed(2) : '—'; el.style.color = scColor(avg); }
+}
+
+function onStatInput(id, dimId) {
+  rawData[id] = document.getElementById(`inp-${id}`)?.value;
+  refreshScore(id, dimId);
+}
+function onSliderInput(id, dimId, val) {
+  rawData[id] = parseFloat(val);
+  const sv = document.getElementById(`sv-${id}`);
+  if (sv) sv.textContent = parseFloat(val).toFixed(1);
+  refreshScore(id, dimId);
+}
+function refreshScore(id, dimId) {
+  const sc = computeScore(id);
+  const scEl = document.getElementById(`sc-${id}`);
+  const barEl = document.getElementById(`bar-${id}`);
+  if (scEl) { scEl.textContent = sc !== null ? sc.toFixed(2) : '—'; scEl.style.color = scColor(sc); }
+  if (barEl) { barEl.style.width = sc !== null ? (sc*10)+'%' : '0%'; }
+  updateDimHeader(dimId);
+  if (document.getElementById('panel-scores').classList.contains('active')) buildScoresPanel();
+  if (document.getElementById('panel-results').classList.contains('active')) buildResults();
+}
+
+function buildAllRows() {
+  buildRows('s1-rows', getS1Fields(), 's1');
+  buildRows('p-rows', getPFields(), 'p');
+  buildRows('e-rows', getEFields(), 'e');
+  buildRows('s2-rows', getS2Fields(), 's2');
+}
+
+// ════════════════════════════════════════════
+// AUTO CALCULATIONS
+// ════════════════════════════════════════════
+function onAgeRankChange() {
+  const ri = parseInt(document.getElementById('d-rank').value);
+  const age = document.getElementById('d-age').value;
+  const sc = scoreRankAge(ri, age);
+  const box = document.getElementById('auto-box');
+  if (sc !== null) {
+    box.classList.add('show');
+    const comment = sc>=9?'Talent exceptionnel pour cet âge':sc>=7.5?'Très bon niveau pour cet âge':sc>=6?'Niveau attendu pour cet âge':sc>=4?'Légèrement en dessous des attentes':'Niveau insuffisant pour cet âge';
+    box.innerHTML = `<span class="auto-score-val" style="color:${scColor(sc)}">${sc.toFixed(1)}/10</span> — Rang relatif à l'âge calculé automatiquement<br><span style="color:var(--sub)">${RANKS[ri]} à ${age} ans — ${comment}</span>`;
+  } else { box.classList.remove('show'); }
+  refreshAllAuto();
+}
+function onRankProgChange() { refreshAllAuto(); }
+function onLPChange() { refreshAllAuto(); }
+function refreshAllAuto() {
+  ['rank_abs','rank_age','rank_prog','lp_prog'].forEach(id => {
+    const sc = computeScore(id);
+    const scEl = document.getElementById(`sc-${id}`);
+    const barEl = document.getElementById(`bar-${id}`);
+    if (scEl) { scEl.textContent = sc !== null ? sc.toFixed(2) : '—'; scEl.style.color = scColor(sc); }
+    if (barEl) { barEl.style.width = sc !== null ? (sc*10)+'%' : '0%'; }
+  });
+  updateDimHeader('s1'); updateDimHeader('p');
+}
+
+// ════════════════════════════════════════════
+// ROLE SWITCH
+// ════════════════════════════════════════════
+function setRole(role, btn) {
+  currentRole = role;
+  document.querySelectorAll('.role-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildAllRows();
+}
+
+// ════════════════════════════════════════════
+// LINKS
+// ════════════════════════════════════════════
+function updateLinks() {
+  const pseudo = document.getElementById('d-pseudo').value.trim();
+  const tag = document.getElementById('d-tag').value.trim() || 'EUW';
+  const server = document.getElementById('d-server').value;
+  const el = document.getElementById('links-row');
+  if (!pseudo) { el.innerHTML = '<span style="font-size:.8rem;color:var(--sub)">Entrez le pseudo pour voir les liens</span>'; return; }
+  const enc = encodeURIComponent(pseudo), encT = encodeURIComponent(tag);
+  el.innerHTML = [
+    ['OP.GG',          `https://www.op.gg/summoners/${server}/${enc}-${encT}`],
+    ['U.GG',           `https://u.gg/lol/profile/${server}/${enc}-${encT}/overview`],
+    ['LeagueOfGraphs', `https://www.leagueofgraphs.com/summoner/${server}/${enc}-${encT}`],
+    ['Lolalytics',     `https://lolalytics.com/summoner/${enc}-${encT}/${server}/`],
+    ['DPM.lol',        `https://dpm.lol/profile/${server}/${enc}-${encT}`],
+  ].map(([name,url]) => `<a class="ext-link" href="${url}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>${name}</a>`).join('');
+}
+
+// ════════════════════════════════════════════
+// SCORES PANEL
+// ════════════════════════════════════════════
+function buildScoresPanel() {
+  const el = document.getElementById('scores-detail');
+  el.innerHTML = '';
+  const allDims = [
+    {id:'s1',label:'S1 — Skills & mécaniques',color:C.s1,weight:W.s1,fields:getS1Fields()},
+    {id:'p', label:'P — Progression',          color:C.p, weight:W.p, fields:getPFields()},
+    {id:'e', label:'E — Esprit compétitif',     color:C.e, weight:W.e, fields:getEFields()},
+    {id:'s2',label:'S2 — Soft skills',          color:C.s2,weight:W.s2,fields:getS2Fields()},
+  ];
+  allDims.forEach(dim => {
+    const avg = dimAvg(dim.fields);
+    const card = document.createElement('div');
+    card.className = 'dim-card';
+    let rows = dim.fields.map(f => {
+      const sc = computeScore(f.id);
+      const barW = sc !== null ? sc*10 : 0;
+      const badgeCls = f.badge === 'auto' ? 'sb-auto' : f.badge === 'api' ? 'sb-api' : f.badge === 'entretien' ? 'sb-int' : 'sb-manual';
+      const badgeLbl = f.badge === 'auto' ? 'AUTO' : f.badge === 'api' ? 'API' : f.badge === 'entretien' ? 'ENTRETIEN' : 'SAISIE';
+      return `<div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;font-size:.85rem">${f.label} <span class="stat-badge ${badgeCls}">${badgeLbl}</span></div>
+        <div style="width:100px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;flex-shrink:0"><div style="width:${barW}%;height:4px;background:${dim.color};border-radius:2px;transition:width .3s"></div></div>
+        <div style="font-family:'DM Mono',monospace;font-size:.85rem;font-weight:500;width:38px;text-align:right;color:${scColor(sc)}">${sc !== null ? sc.toFixed(2) : '—'}</div>
+      </div>`;
+    }).join('');
+    card.innerHTML = `<div class="section-header"><div class="section-title" style="color:${dim.color}">${dim.label} <span style="font-size:.75rem;color:var(--sub);font-weight:400">${Math.round(dim.weight*100)}% du global</span></div><div class="section-score" style="color:${scColor(avg)}">${avg!==null?avg.toFixed(2):'—'}</div></div>${rows}`;
+    el.appendChild(card);
+  });
+}
+
+// ════════════════════════════════════════════
+// RESULTS PANEL
+// ════════════════════════════════════════════
+function getVerdict(s) {
+  if (s>=9) return {t:"Profil d'exception — recruter en priorité absolue", c:'var(--teal)'};
+  if (s>=8) return {t:"Profil très solide — recommandé sans réserve", c:'var(--teal)'};
+  if (s>=7) return {t:"Bon profil — à recruter avec suivi ciblé", c:'var(--purple-light)'};
+  if (s>=6) return {t:"Profil moyen — potentiel si axes travaillés", c:'var(--amber)'};
+  if (s>=5) return {t:"Profil en développement — semi-pro prématuré", c:'var(--amber)'};
+  return {t:"Profil insuffisant pour le semi-pro actuellement", c:'var(--coral)'};
+}
+
+function buildResults() {
+  const allDims = [
+    {id:'s1',label:'S1',color:C.s1,weight:W.s1,fields:getS1Fields()},
+    {id:'p', label:'P', color:C.p, weight:W.p, fields:getPFields()},
+    {id:'e', label:'E', color:C.e, weight:W.e, fields:getEFields()},
+    {id:'s2',label:'S2',color:C.s2,weight:W.s2,fields:getS2Fields()},
+  ];
+  const avgs = allDims.map(d => ({...d, avg: dimAvg(d.fields)}));
+  const global = globalScore();
+  const v = global !== null ? getVerdict(global) : {t:'Données insuffisantes — complétez la saisie',c:'var(--sub)'};
+  const pseudo = document.getElementById('d-pseudo').value || 'Joueur';
+  const rankName = RANKS[parseInt(document.getElementById('d-rank').value)];
+  const age = document.getElementById('d-age').value;
+
+  const allItems = [];
+  avgs.forEach(d => {
+    d.fields.forEach(f => {
+      const sc = computeScore(f.id);
+      if (sc !== null) allItems.push({label:f.label, score:sc, color:d.color});
+    });
+  });
+  allItems.sort((a,b) => b.score - a.score);
+  const top3 = allItems.slice(0,3);
+  const bot3 = [...allItems].reverse().slice(0,3);
+
+  const radarSVG = buildRadar(avgs);
+
+  document.getElementById('results-content').innerHTML = `
+    <div class="global-hero">
+      <div class="global-player">${pseudo} · ${currentRole} · ${rankName}${age?' · '+age+' ans':''}</div>
+      <div class="global-score-num" style="color:${v.c}">${global!==null?global.toFixed(2):'—'}</div>
+      <div class="global-verdict">${v.t}</div>
+    </div>
+    <div class="dim-grid">
+      ${avgs.map(d=>`<div class="dim-mini"><div class="dim-mini-label">${d.label}</div><div class="dim-mini-val" style="color:${d.color}">${d.avg!==null?d.avg.toFixed(2):'—'}</div><div class="dim-mini-weight">${Math.round(d.weight*100)}%</div></div>`).join('')}
+    </div>
+    <div class="radar-card">${radarSVG}</div>
+    <div class="section-header" style="margin-bottom:.75rem"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem">Points forts</div></div>
+    ${top3.map(item=>`<div class="reco reco-g"><div class="reco-title" style="color:var(--green)">${item.label} — ${item.score.toFixed(2)}/10</div><div class="reco-text">Atout différenciateur pour le rôle ${currentRole}. À valoriser en priorité dans le dossier de présentation au coach.</div></div>`).join('')}
+    <div class="section-header" style="margin-bottom:.75rem;margin-top:1.25rem"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem">Axes d'amélioration prioritaires</div></div>
+    ${bot3.map(item=>`<div class="reco ${item.score<5?'reco-r':'reco-w'}"><div class="reco-title" style="color:${item.score<5?'var(--coral)':'var(--amber)'}">${item.label} — ${item.score.toFixed(2)}/10</div><div class="reco-text">Score en dessous du seuil optimal pour ce rôle. Plan de progression à construire avec le coach.</div></div>`).join('')}
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.25rem">
+      <button class="btn btn-primary" onclick="pushToTeam()">Ajouter au roster →</button>
+      <button class="btn btn-ghost" onclick="window.print()">Imprimer le rapport</button>
+    </div>`;
+}
+
+function buildRadar(avgs) {
+  const cx=130,cy=130,r=85,n=avgs.length;
+  const pts = avgs.map((d,i) => {
+    const a=(i/n)*Math.PI*2-Math.PI/2, sc=(d.avg??0)/10;
+    return{x:cx+sc*r*Math.cos(a),y:cy+sc*r*Math.sin(a),lx:cx+(r+24)*Math.cos(a),ly:cy+(r+24)*Math.sin(a),color:d.color,label:d.label};
+  });
+  let grid='';
+  [.25,.5,.75,1].forEach(t=>{
+    const gp=avgs.map((_,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return`${(cx+t*r*Math.cos(a)).toFixed(1)},${(cy+t*r*Math.sin(a)).toFixed(1)}`;});
+    grid+=`<polygon points="${gp.join(' ')}" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="${t===1?1:.5}"/>`;
+  });
+  const axes=avgs.map((_,i)=>{const a=(i/n)*Math.PI*2-Math.PI/2;return`<line x1="${cx}" y1="${cy}" x2="${(cx+r*Math.cos(a)).toFixed(1)}" y2="${(cy+r*Math.sin(a)).toFixed(1)}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;}).join('');
+  const poly=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const dots=pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="${p.color}"/>`).join('');
+  const labels=pts.map(p=>`<text x="${p.lx.toFixed(1)}" y="${(p.ly+4).toFixed(1)}" text-anchor="middle" font-size="11" font-family="DM Mono" font-weight="500" fill="${p.color}">${p.label}</text>`).join('');
+  return `<svg viewBox="0 0 260 260" width="260" height="260" style="display:block;margin:0 auto">${grid}${axes}<polygon points="${poly}" fill="rgba(139,92,246,.12)" stroke="#8B5CF6" stroke-width="1.5"/>${dots}${labels}</svg>`;
+}
+
+// ════════════════════════════════════════════
+// TEAM
+// ════════════════════════════════════════════
+function pushToTeam() {
+  const pseudo = document.getElementById('d-pseudo').value || 'Joueur';
+  const s1=dimAvg(getS1Fields())??0, p=dimAvg(getPFields())??0, e=dimAvg(getEFields())??0, s2=dimAvg(getS2Fields())??0;
+  teamRoster.push({name:`${pseudo} (${currentRole})`, s1, p, e, s2, global:s1*W.s1+p*W.p+e*W.e+s2*W.s2});
+  renderTeam(); switchPanel('team');
+}
+function updTeamGlobal() {
+  const s1=parseFloat(document.getElementById('tn-s1').value)||0;
+  const p=parseFloat(document.getElementById('tn-p').value)||0;
+  const e=parseFloat(document.getElementById('tn-e').value)||0;
+  const s2=parseFloat(document.getElementById('tn-s2').value)||0;
+  document.getElementById('tn-global').textContent=(s1*W.s1+p*W.p+e*W.e+s2*W.s2).toFixed(2);
+}
+function addTeamPlayer() {
+  const name=document.getElementById('tn-name').value.trim();
+  if(!name) return;
+  const s1=parseFloat(document.getElementById('tn-s1').value)||0;
+  const p=parseFloat(document.getElementById('tn-p').value)||0;
+  const e=parseFloat(document.getElementById('tn-e').value)||0;
+  const s2=parseFloat(document.getElementById('tn-s2').value)||0;
+  teamRoster.push({name,s1,p,e,s2,global:s1*W.s1+p*W.p+e*W.e+s2*W.s2});
+  ['tn-name','tn-s1','tn-p','tn-e','tn-s2'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tn-global').textContent='—';
+  renderTeam();
+}
+function removeTeamPlayer(i) { teamRoster.splice(i,1); renderTeam(); }
+function clearTeam() { teamRoster=[]; renderTeam(); }
+function renderTeam() {
+  document.getElementById('team-tbody').innerHTML = teamRoster.map((p,i)=>`
+    <tr>
+      <td style="font-weight:500">${p.name}</td>
+      <td style="color:${C.s1};font-family:monospace">${p.s1.toFixed(2)}</td>
+      <td style="color:${C.p};font-family:monospace">${p.p.toFixed(2)}</td>
+      <td style="color:${C.e};font-family:monospace">${p.e.toFixed(2)}</td>
+      <td style="color:${C.s2};font-family:monospace">${p.s2.toFixed(2)}</td>
+      <td style="font-family:monospace;font-weight:500">${p.global.toFixed(2)}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="removeTeamPlayer(${i})">✕</button></td>
+    </tr>`).join('');
+  buildTeamAnalysis();
+}
+function buildTeamAnalysis() {
+  const el = document.getElementById('team-analysis');
+  if (teamRoster.length < 2) { el.innerHTML='<p style="font-size:.85rem;color:var(--sub);margin-top:.75rem">Ajoutez au moins 2 joueurs pour l\'analyse d\'équipe.</p>'; return; }
+  const avg = k => teamRoster.reduce((a,p)=>a+p[k],0)/teamRoster.length;
+  const dims = [
+    {id:'S1',label:'Skills',    val:avg('s1'),color:C.s1},
+    {id:'P', label:'Progression',val:avg('p'), color:C.p},
+    {id:'E', label:'Mental',    val:avg('e'), color:C.e},
+    {id:'S2',label:'Soft skills',val:avg('s2'),color:C.s2},
+  ].sort((a,b)=>a.val-b.val);
+  const aG = avg('global');
+  el.innerHTML = `
+    <div class="dim-card" style="margin-top:1rem">
+      <div class="section-header"><div class="section-title">Analyse collective</div><div class="section-score" style="color:${scColor(aG)}">${aG.toFixed(2)}</div></div>
+      ${dims.map(d=>`<div class="bar-row"><div class="bar-label" style="color:${d.color}">${d.id}</div><div class="bar-track"><div class="bar-fill" style="width:${d.val*10}%;background:${d.color}"></div></div><div class="bar-val" style="color:${d.color}">${d.val.toFixed(2)}</div>${d.val<6?'<span class="need-tag nt-r">⚠ Faible</span>':d.val<7.5?'<span class="need-tag nt-w">~ Moyen</span>':'<span class="need-tag nt-g">✓ Fort</span>'}</div>`).join('')}
+    </div>
+    <div class="analysis-card">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:.75rem">Profil idéal pour le poste manquant</div>
+      <p style="font-size:.8rem;color:var(--sub);margin-bottom:.875rem">Scores minimums recommandés pour équilibrer le roster :</p>
+      ${dims.map(d=>{const min=Math.min(10,d.val+1.5);return`<div class="bar-row"><div class="bar-label" style="color:${d.color}">Min ${d.id}</div><div class="bar-track"><div class="bar-fill" style="width:${min*10}%;background:${d.color}"></div></div><div class="bar-val" style="color:${d.color}">${min.toFixed(1)}+</div></div>`;}).join('')}
+      <div style="margin-top:.875rem;padding:.875rem;background:var(--surface);border-radius:var(--radius-sm);font-size:.8rem;color:var(--sub);line-height:1.6;border:1px solid var(--border)">
+        Priorité recrutement : <strong style="color:${dims[0].color}">${dims[0].id} — ${dims[0].label}</strong> (min. ${Math.min(10,dims[0].val+1.5).toFixed(1)}/10) puis <strong style="color:${dims[1].color}">${dims[1].id} — ${dims[1].label}</strong> (min. ${Math.min(10,dims[1].val+1.5).toFixed(1)}/10). Score global minimum pour élever le roster : <strong style="color:var(--text)">${Math.min(10,aG+0.5).toFixed(2)}/10</strong>.
+      </div>
+    </div>`;
+}
+
+// ════════════════════════════════════════════
+// NAV
+// ════════════════════════════════════════════
+function switchPanel(id) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`panel-${id}`).classList.add('active');
+  const idx = ['data','scores','results','team'].indexOf(id);
+  document.querySelectorAll('.nav-item')[idx]?.classList.add('active');
+  if (id==='scores') buildScoresPanel();
+  if (id==='results') buildResults();
+}
+
+// ════════════════════════════════════════════
+// ════════════════════════════════════════════
+// RIOT API INTEGRATION — v2
+// ════════════════════════════════════════════
+// ════════════════════════════════════════════
+
+const PLATFORM_TO_REGIONAL = {
+  'euw1':'europe','eun1':'europe','tr1':'europe','ru':'europe',
+  'na1':'americas','br1':'americas','la1':'americas','la2':'americas',
+  'kr':'asia','jp1':'asia',
+  'oc1':'sea','sg2':'sea','ph2':'sea','tw2':'sea','vn2':'sea','th2':'sea'
+};
+
+const TIER_TO_IDX = {
+  'IRON':0,'BRONZE':1,'SILVER':2,'GOLD':3,'PLATINUM':4,
+  'EMERALD':5,'DIAMOND':6,'MASTER':7,'GRANDMASTER':8,'CHALLENGER':9
+};
+
+// UI helpers
+function toggleDebug() {
+  const log = document.getElementById('debug-log');
+  const btn = event.target;
+  if (log.style.display === 'none') {
+    log.style.display = 'block';
+    btn.textContent = '🔧 Masquer les logs';
+  } else {
+    log.style.display = 'none';
+    btn.textContent = '🔧 Afficher les logs techniques';
+  }
+}
+function toggleApiCard() {
+  const body = document.getElementById('api-body');
+  const btn = document.getElementById('api-toggle-btn');
+  const isVisible = body.style.display !== 'none';
+  body.style.display = isVisible ? 'none' : 'block';
+  btn.textContent = isVisible ? '▼ Développer' : '▲ Réduire';
+}
+
+function toggleKeyVisible() {
+  const inp = document.getElementById('riot-key');
+  const eye = document.getElementById('key-eye');
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  eye.textContent = isPass ? '🙈' : '👁';
+}
+
+function setProgress(pct, label) {
+  const prog = document.getElementById('api-progress');
+  prog.style.display = 'block';
+  document.getElementById('api-prog-fill').style.width = pct + '%';
+  document.getElementById('api-prog-txt').textContent = label;
+}
+
+function setStatus(type, html) {
+  const cfg = {
+    success: { bg:'var(--teal-dim)', border:'rgba(20,184,166,.3)', color:'var(--teal)' },
+    error:   { bg:'var(--coral-dim)', border:'rgba(244,63,94,.3)', color:'var(--coral)' },
+    info:    { bg:'rgba(59,130,246,.08)', border:'rgba(59,130,246,.2)', color:'#93C5FD' },
+  }[type] || {};
+  document.getElementById('api-status').innerHTML = `
+    <div style="background:${cfg.bg};border:1px solid ${cfg.border};border-radius:var(--radius-sm);
+                padding:.75rem 1rem;font-size:.8rem;color:${cfg.color};margin-top:.875rem;line-height:1.75">
+      ${html}
+    </div>`;
+}
+
+// fetch with Riot API key header + proper error messages
+async function riotFetch(url, apiKey) {
+  const sep = url.includes('?') ? '&' : '?';
+  const fullUrl = url + sep + 'api_key=' + encodeURIComponent(apiKey);
+
+  // LOG dans le panneau debug
+  dbgLog('📤 Requête : ' + fullUrl.replace(apiKey, apiKey.slice(0,12) + '…'));
+
+  let res;
+  try {
+    res = await fetch(fullUrl);
+  } catch(e) {
+    dbgLog('❌ Erreur réseau : ' + e.message);
+    throw new Error('Erreur réseau : ' + e.message + ' — Vérifiez que vous êtes sur http://localhost et non file://');
+  }
+
+  // Log réponse brute
+  const bodyText = await res.text();
+  dbgLog('📥 HTTP ' + res.status + ' — ' + bodyText.slice(0, 200));
+
+  if (!res.ok) {
+    let msg = res.statusText;
+    try { const d = JSON.parse(bodyText); msg = d?.status?.message || msg; } catch(_) {}
+    if (res.status === 401) throw new Error('401 — Clé expirée ou invalide. Réponse Riot : ' + bodyText.slice(0,150));
+    if (res.status === 403) throw new Error('403 — Accès refusé. Réponse Riot : ' + bodyText.slice(0,150));
+    if (res.status === 404) throw new Error('404 — Joueur introuvable. Vérifiez Pseudo et Tag.');
+    if (res.status === 429) throw new Error('429 — Trop de requêtes. Attendez 2 min.');
+    throw new Error('HTTP ' + res.status + ' : ' + msg);
+  }
+
+  try { return JSON.parse(bodyText); }
+  catch(_) { throw new Error('JSON invalide dans la réponse Riot : ' + bodyText.slice(0,100)); }
+}
+
+// ── DEBUG LOG ─────────────────────────────────
+const _dbgLines = [];
+function dbgLog(msg) {
+  const t = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  _dbgLines.push('[' + t + '] ' + msg);
+  const el = document.getElementById('debug-log');
+  if (el) el.textContent = _dbgLines.slice(-30).join('\n');
+  console.log('[SPES]', msg);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// fetch matches in batches to respect rate limits
+async function fetchMatchesInBatches(regional, matchIds, apiKey, onProgress) {
+  const results = [];
+  const BATCH = 5;
+  const DELAY = 1400; // ms between batches — safe for dev key (100 req / 2min)
+  for (let i = 0; i < matchIds.length; i += BATCH) {
+    const batch = matchIds.slice(i, i + BATCH);
+    const settled = await Promise.allSettled(
+      batch.map(id => riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}`, apiKey))
+    );
+    settled.forEach(r => { if (r.status === 'fulfilled') results.push(r.value); });
+    const done = Math.min(i + BATCH, matchIds.length);
+    onProgress(35 + Math.round(done / matchIds.length * 52), `Parties analysées : ${done} / ${matchIds.length}`);
+    if (i + BATCH < matchIds.length) await sleep(DELAY);
+  }
+  return results;
+}
+
+// core stats calculation from match list
+function calculateStats(matches, puuid) {
+  let wins = 0, kills = 0, deaths = 0, assists = 0;
+  const csArr = [], visArr = [], kpArr = [], dmgArr = [];
+  const champMap = {}; // { name: { games, wins } }
+  const weekSet = new Set();
+  const cutoff90d = Date.now() - 90 * 24 * 60 * 60 * 1000;
+
+  matches.forEach(match => {
+    // skip remakes (< 5 min)
+    if ((match.info?.gameDuration || 0) < 300) return;
+
+    const me = match.info?.participants?.find(p => p.puuid === puuid);
+    if (!me) return;
+
+    if (me.win) wins++;
+    kills   += (me.kills   || 0);
+    deaths  += (me.deaths  || 0);
+    assists += (me.assists || 0);
+
+    const durMin = match.info.gameDuration / 60;
+    if (durMin > 5) {
+      csArr.push(((me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0)) / durMin);
+    }
+
+    visArr.push(me.visionScore || 0);
+
+    // Kill participation : (kills+assists) / team total kills
+    const allies = match.info.participants.filter(p => p.teamId === me.teamId);
+    const teamKills = allies.reduce((s, p) => s + (p.kills || 0), 0);
+    if (teamKills > 0) kpArr.push((me.kills + me.assists) / teamKills * 100);
+
+    // Damage share : me / team total
+    const teamDmg = allies.reduce((s, p) => s + (p.totalDamageDealtToChampions || 0), 0);
+    if (teamDmg > 0) dmgArr.push((me.totalDamageDealtToChampions || 0) / teamDmg * 100);
+
+    // Champion pool
+    const champ = me.championName || String(me.championId);
+    if (!champMap[champ]) champMap[champ] = { games: 0, wins: 0 };
+    champMap[champ].games++;
+    if (me.win) champMap[champ].wins++;
+
+    // Weekly regularity (last 3 months)
+    const ts = match.info.gameStartTimestamp || match.info.gameCreation || 0;
+    if (ts > cutoff90d) weekSet.add(Math.floor(ts / (7 * 24 * 60 * 60 * 1000)));
+  });
+
+  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+  const n = matches.length;
+
+  const kda = (kills + assists) / Math.max(deaths, 0.5);
+  const winrate = n > 0 ? wins / n * 100 : null;
+
+  // Champion pool: ≥55% WR on enough games (min 15% of sample or at least 8)
+  const minGames = Math.max(8, Math.floor(n * 0.15));
+  const qualifiedPool = Object.entries(champMap)
+    .filter(([, d]) => d.games >= minGames && d.wins / d.games >= 0.55).length;
+
+  // Regularity: active weeks / 13 weeks
+  const regularite = Math.min(100, Math.round(weekSet.size / 13 * 100));
+
+  const champDetails = Object.entries(champMap)
+    .map(([name, d]) => ({
+      name,
+      games: d.games,
+      wins: d.wins,
+      wr: (d.wins / d.games * 100).toFixed(1),
+      qualified: d.games >= minGames && d.wins / d.games >= 0.55,
+    }))
+    .sort((a, b) => b.games - a.games);
+
+  return {
+    kda:       kda.toFixed(2),
+    winrate:   winrate !== null ? winrate.toFixed(1) : null,
+    cs_min:    avg(csArr)  !== null ? avg(csArr).toFixed(2)  : null,
+    vision:    avg(visArr) !== null ? avg(visArr).toFixed(1) : null,
+    kill_part: avg(kpArr)  !== null ? avg(kpArr).toFixed(1)  : null,
+    dmg_share: avg(dmgArr) !== null ? avg(dmgArr).toFixed(1) : null,
+    champ_pool: qualifiedPool,
+    regularite,
+    champDetails,
+    totalGames: n,
+    wins,
+  };
+}
+
+// apply a value to a field + flash animation
+function applyApiField(id, value, dimId) {
+  if (value === null || value === undefined) return;
+  rawData[id] = String(value);
+  const inp = document.getElementById(`inp-${id}`);
+  if (inp) {
+    inp.value = value;
+    // remove then re-add class to re-trigger animation
+    inp.classList.remove('field-fetched');
+    void inp.offsetWidth; // reflow
+    inp.classList.add('field-fetched');
+  }
+  refreshScore(id, dimId);
+}
+
+// champion pool table
+function buildChampTable(champDetails, sampleSize) {
+  const section = document.getElementById('champ-table-section');
+  if (!section) return;
+  const shown = champDetails.filter(c => c.games >= 3).slice(0, 20);
+  if (!shown.length) { section.innerHTML = ''; return; }
+
+  section.innerHTML = `
+    <div class="dim-card" style="margin-bottom:1rem">
+      <div class="section-header" style="margin-bottom:.875rem">
+        <div class="section-title" style="color:#60A5FA;font-size:.9rem">
+          📊 Analyse champion pool
+          <span style="font-size:.7rem;color:var(--sub);font-weight:400;margin-left:.5rem">${sampleSize} dernières parties ranked</span>
+        </div>
+      </div>
+      <div class="champ-table-wrap">
+        <table class="champ-table">
+          <thead>
+            <tr>
+              <th>Champion</th>
+              <th style="text-align:right">Parties</th>
+              <th style="text-align:right">V</th>
+              <th style="text-align:right">D</th>
+              <th style="text-align:right">WR%</th>
+              <th style="min-width:80px">Trend</th>
+              <th>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${shown.map(c => {
+              const wr = parseFloat(c.wr);
+              const col = wr >= 60 ? 'var(--teal)' : wr >= 55 ? 'var(--green)' : wr >= 50 ? 'var(--amber)' : wr >= 45 ? 'var(--sub)' : 'var(--coral)';
+              const poolBadge = c.qualified
+                ? `<span class="pool-tag">✓ Pool</span>`
+                : `<span style="font-size:.65rem;color:var(--sub);font-family:'DM Mono'">—</span>`;
+              const losses = c.games - c.wins;
+              return `
+                <tr>
+                  <td style="font-weight:500">${c.name}</td>
+                  <td style="text-align:right;font-family:monospace;color:var(--sub)">${c.games}</td>
+                  <td style="text-align:right;font-family:monospace;color:var(--green)">${c.wins}</td>
+                  <td style="text-align:right;font-family:monospace;color:var(--coral)">${losses}</td>
+                  <td style="text-align:right;font-family:monospace;color:${col};font-weight:600">${c.wr}%</td>
+                  <td>
+                    <div style="display:flex;align-items:center;gap:3px">
+                      <div style="flex:1;background:var(--surface2);border-radius:2px;height:5px;overflow:hidden">
+                        <div style="width:${Math.min(100,wr)}%;background:${col};height:5px;border-radius:2px"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>${poolBadge}</td>
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:.625rem;font-size:.7rem;color:var(--sub)">
+        ✓ Pool = ≥55% WR sur ≥${Math.max(8, Math.floor(shown.reduce((s,c)=>s+c.games,0)/shown.length*0.15))} parties — seuil adapté à la taille de l'échantillon
+      </div>
+    </div>`;
+}
+
+// ── MAIN FETCH ORCHESTRATOR ──────────────────
+async function fetchRiotData() {
+  const pseudo = document.getElementById('d-pseudo').value.trim();
+  const tag    = (document.getElementById('d-tag').value.trim()) || 'EUW';
+  const server = document.getElementById('d-server').value;
+  const apiKey = document.getElementById('riot-key').value.trim();
+  const count  = parseInt(document.getElementById('riot-count').value);
+
+  document.getElementById('api-status').innerHTML = '';
+
+  // Validation
+  if (!pseudo) {
+    setStatus('error', '⚠ Renseignez le pseudo du joueur dans le formulaire ci-dessus.');
+    return;
+  }
+  if (!apiKey.startsWith('RGAPI-')) {
+    setStatus('error', `
+      ⚠ Clé API invalide.<br>
+      Format attendu : <code style="font-family:monospace;font-size:.75rem">RGAPI-XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX</code><br>
+      → <a href="https://developer.riotgames.com" target="_blank" rel="noopener"
+           style="color:inherit;text-decoration:underline">
+          Obtenez votre clé gratuite sur developer.riotgames.com
+         </a>
+      (connexion compte Riot requise · clé développeur valide 24h)
+    `);
+    return;
+  }
+
+  const btn = document.getElementById('btn-fetch');
+  btn.disabled = true;
+  btn.textContent = '⏳ Import en cours…';
+
+  const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
+
+  try {
+    // 1. Resolve Riot Account (gameName + tagLine)
+    setProgress(5, 'Résolution du Riot ID…');
+    const acc = await riotFetch(
+      `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(pseudo)}/${encodeURIComponent(tag)}`,
+      apiKey
+    );
+
+    // 2. Summoner profile (encrypted ID)
+    setProgress(14, 'Profil invocateur…');
+    const sum = await riotFetch(
+      `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${acc.puuid}`,
+      apiKey
+    );
+
+    // 3. Ranked entries — on utilise le puuid directement (sum.id absent depuis patch API)
+    setProgress(22, 'Données ranked SoloQ…');
+    const league = await riotFetch(
+      `https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`,
+      apiKey
+    );
+    const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
+
+    // 4. Match IDs (SoloQ only, queue=420)
+    setProgress(30, `Récupération des ${count} dernières parties ranked…`);
+    const ids = await riotFetch(
+      `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${acc.puuid}/ids?queue=420&count=${count}&type=ranked`,
+      apiKey
+    );
+
+    if (!ids.length) {
+      throw new Error('Aucune partie ranked trouvée. Ce joueur n\'a peut-être pas joué de SoloQ cette saison.');
+    }
+
+    // 5. Fetch individual match data
+    setProgress(35, `Analyse des ${ids.length} parties — patientez…`);
+    const matches = await fetchMatchesInBatches(regional, ids, apiKey, (pct, lbl) => {
+      setProgress(pct, lbl);
+    });
+
+    // 6. Compute stats
+    setProgress(90, 'Calcul des scores SPES…');
+    const stats = calculateStats(matches, acc.puuid);
+
+    // 7. Apply rank from API if found
+    if (soloQ) {
+      const idx = TIER_TO_IDX[soloQ.tier] ?? 6;
+      document.getElementById('d-rank').value = idx;
+      onAgeRankChange();
+    }
+
+    // 8. Populate all API-fetched fields (with flash animation)
+    const fields = ['kda','winrate','cs_min','vision','kill_part','dmg_share'];
+    fields.forEach(id => applyApiField(id, stats[id], 's1'));
+    applyApiField('champ_pool', stats.champ_pool, 's1');
+    applyApiField('regularite', stats.regularite, 'p');
+
+    // 9. Champion table
+    buildChampTable(stats.champDetails, count);
+
+    // 10. Success message
+    setProgress(100, '✓ Import terminé avec succès');
+
+    const soloTxt = soloQ
+      ? `${soloQ.tier} ${soloQ.rank} — ${soloQ.leaguePoints} LP (${((soloQ.wins / (soloQ.wins + soloQ.losses)) * 100).toFixed(1)}% WR saison en cours)`
+      : 'Non classé SoloQ';
+
+    const top3 = stats.champDetails.slice(0, 3)
+      .map(c => `<strong>${c.name}</strong> (${c.games}G · ${c.wr}% WR)`).join(' &nbsp;·&nbsp; ');
+
+    const autoCount = fields.filter(id => stats[id] !== null).length + 2; // +champ_pool +regularite
+
+    setStatus('success', `
+      ✅ <strong>${stats.totalGames} parties analysées</strong> —
+         ${stats.wins}V / ${stats.totalGames - stats.wins}D
+         (${((stats.wins / stats.totalGames) * 100).toFixed(1)}% WR récent)<br>
+      🏆 <strong>Rang SoloQ :</strong> ${soloTxt}<br>
+      🎮 <strong>Champions fréquents :</strong> ${top3 || '—'}<br>
+      🎯 <strong>Pool qualifié (≥55% WR) :</strong> ${stats.champ_pool} champion${stats.champ_pool > 1 ? 's' : ''}<br>
+      📅 <strong>Régularité estimée :</strong> ${stats.regularite}% des semaines actives (90 jours)<br>
+      <span style="font-size:.7rem;opacity:.7;display:block;margin-top:.4rem">
+        ${autoCount}/10 champs S1+P remplis automatiquement (surligné bleu). 
+        Complétez : rôle spécial, méta-adaptation, tournois, VOD review, mental &amp; soft skills.
+      </span>
+    `);
+
+    setTimeout(() => {
+      document.getElementById('api-progress').style.display = 'none';
+    }, 4000);
+
+  } catch (err) {
+    document.getElementById('api-progress').style.display = 'none';
+    setStatus('error', `❌ <strong>Erreur d'import</strong> : ${err.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⬇ Importer les stats';
+  }
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+// Détection ouverture en file:// (Chrome bloque les fetch depuis file://)
+if (window.location.protocol === 'file:') {
+  document.getElementById('file-warn').style.display = 'block';
+  var btn = document.getElementById('btn-fetch');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.4'; btn.title = 'Ouvrir via http://localhost pour utiliser l\'API'; }
+}
+buildAllRows();
+onAgeRankChange();
+</script>
+</body>
+</html>
