@@ -1094,15 +1094,6 @@ body {
           <div id="map-analysis" style="font-size:12px;color:var(--sub2);line-height:1.75"></div>
         </div>
 
-        <!-- Ward & Vision stats -->
-        <div class="card" style="margin-bottom:12px" id="ward-stats-card">
-          <div class="card-title" style="display:flex;align-items:center;gap:8px">
-            <span>👁 Vision & Wards</span>
-            <span style="font-family:'DM Mono',monospace;font-size:9px;background:var(--teal-dim);color:var(--teal);padding:2px 7px;border-radius:4px;border:1px solid rgba(45,212,191,.25)">DATA</span>
-          </div>
-          <div id="ward-stats-detail"><p style="color:var(--sub);font-size:.8rem">Chargez la carte pour voir les stats de vision.</p></div>
-        </div>
-
         <!-- Zone breakdown -->
         <div class="card">
           <div class="card-title">Répartition par zone de la carte</div>
@@ -2015,60 +2006,29 @@ async function riotFetch(url, apiKey) {
   const full = url + sep + 'api_key=' + encodeURIComponent(apiKey);
   dbgLog('📤 ' + full.replace(apiKey, apiKey.slice(0,12)+'…'));
   let res;
-  // Retry automatique sur 429 — jusqu'à 5 tentatives
-  const MAX_RETRIES = 5;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try { res = await fetch(full); }
-    catch(e) { throw new Error('Erreur réseau : ' + e.message); }
-
-    const body = await res.text();
-    if (attempt === 0) dbgLog('📥 HTTP ' + res.status + ' — ' + body.slice(0,120));
-
-    if (res.status === 429) {
-      if (attempt >= MAX_RETRIES) throw new Error('Limite Riot dépassée. Attendez 2 min et relancez.');
-      const retryAfter = parseInt(res.headers.get('Retry-After') || '0');
-      const waitMs = retryAfter > 0 ? retryAfter * 1000 : 12000; // 12s par défaut
-      dbgLog(`⏳ 429 — attente ${Math.round(waitMs/1000)}s (tentative ${attempt+1}/${MAX_RETRIES})…`);
-      // Affiche le message de patience dans la progress bar
-      const progLabel = document.getElementById('prog-label');
-      if (progLabel) progLabel.textContent = `⏳ Limite Riot — reprise dans ${Math.round(waitMs/1000)}s… (${attempt+1}/${MAX_RETRIES})`;
-      await sleep(waitMs);
-      continue; // réessaie la même URL
-    }
-
-    if (!res.ok) {
-      if (res.status===401||res.status===403) throw new Error('Clé API invalide ou expirée ('+res.status+'). Régénérez-la sur developer.riotgames.com — expire toutes les 24h.');
-      if (res.status===404) throw new Error('Joueur introuvable (404). Vérifiez pseudo et tag — sensibles à la casse.');
-      throw new Error('Riot API '+res.status+' : '+body.slice(0,100));
-    }
-    try { return JSON.parse(body); } catch(_) { throw new Error('JSON invalide reçu de Riot'); }
+  try { res = await fetch(full); }
+  catch(e) { throw new Error('Erreur réseau : ' + e.message + ' — Utilisez http://localhost, pas file://'); }
+  const body = await res.text();
+  dbgLog('📥 HTTP ' + res.status + ' — ' + body.slice(0,120));
+  if (!res.ok) {
+    if (res.status===401||res.status===403) throw new Error('Clé API invalide ou expirée ('+res.status+'). Renouvelez sur developer.riotgames.com (expire toutes les 24h).');
+    if (res.status===404) throw new Error('Joueur introuvable (404). Vérifiez pseudo et tag — sensibles à la casse.');
+    if (res.status===429) throw new Error('Trop de requêtes (429). Attendez 2 min puis relancez.');
+    throw new Error('Riot API '+res.status+' : '+body.slice(0,100));
   }
+  try { return JSON.parse(body); } catch(_) { throw new Error('JSON invalide de Riot'); }
 }
 
 async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
   const matches = [];
-  const BATCH = 5;     // même que l'original
-  const DELAY = 1400;  // même que l'original
-
+  const BATCH = 5;
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
-    const results = await Promise.allSettled(
-      batch.map(id => riotFetch(
-        `https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}`,
-        apiKey
-      ))
-    );
-    results.forEach(r => {
-      if (r.status === 'fulfilled' && r.value && typeof r.value === 'object') {
-        matches.push(r.value);
-        if (r.value?.info?.participants) window._lastMatch = r.value;
-      } else if (r.status === 'rejected') {
-        dbgLog('⚠ Match ignoré : ' + (r.reason?.message || r.reason));
-      }
-    });
-    const pct = 35 + Math.round((i + BATCH) / ids.length * 50);
-    onProgress(Math.min(85, pct), `Analyse des parties ${Math.min(i+BATCH, ids.length)}/${ids.length}…`);
-    if (i + BATCH < ids.length) await sleep(DELAY);
+    const results = await Promise.allSettled(batch.map(id => riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}`, apiKey)));
+    results.forEach(r => { if (r.status === 'fulfilled' && r.value && typeof r.value === 'object') matches.push(r.value); });
+    const pct = 35 + Math.round((i+BATCH)/ids.length*50);
+    onProgress(Math.min(85, pct), `Analyse des parties ${Math.min(i+BATCH,ids.length)}/${ids.length}…`);
+    if (i + BATCH < ids.length) await sleep(1400);
   }
   return matches;
 }
@@ -2081,21 +2041,20 @@ function calculateStats(matches, puuid) {
   const sessionDays = new Set();
 
   matches.forEach(m => {
-    // Guard: skip malformed match objects (custom games, partial API responses)
     if (!m?.info?.participants?.length) return;
     const p = m.info.participants.find(x => x.puuid === puuid);
     if (!p) return;
     gameCount++;
     const dur = (m.info.gameDuration || 0) / 60;
     if (dur < 4) return; // skip remakes
-    const teamKills = (m.info.participants||[]).filter(x => x.teamId === p.teamId).reduce((a,x) => a+(x.kills||0), 0);
+    const teamKills = m.info.participants.filter(x => x.teamId === p.teamId).reduce((a,x) => a+(x.kills||0), 0);
     if (p.win) wins++;
     kills += p.kills; deaths += p.deaths; assists += p.assists;
     cs += (p.totalMinionsKilled + p.neutralMinionsKilled);
     gameDur += dur;
     vision += p.visionScore;
     killPart += teamKills > 0 ? (p.kills + p.assists) / teamKills : 0;
-    const teamDmg = (m.info.participants||[]).filter(x => x.teamId === p.teamId).reduce((a,x) => a+(x.totalDamageDealtToChampions||0), 0);
+    const teamDmg = m.info.participants.filter(x => x.teamId === p.teamId).reduce((a,x) => a+x.totalDamageDealtToChampions, 0);
     dmgShare += teamDmg > 0 ? p.totalDamageDealtToChampions / teamDmg : 0;
     dmgTower += p.damageDealtToTurrets || 0;
     objScore += (p.dragonKills||0)*2 + (p.baronKills||0)*3 + (p.objectivesStolen||0)*4;
@@ -2308,12 +2267,9 @@ function buildGraphsSummary() {
     return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
   }
 
-  const puuid = rawData._puuid || matchHistory[0]?.info?.participants?.[0]?.puuid;
+  const puuid = matchHistory[0]?.info?.participants?.find(p => p.summonerLevel !== undefined)?.puuid;
   // We stored puuid during import — use rawData approach
-  const getP = m => {
-    if (!m?.info?.participants?.length) return null;
-    return m.info.participants.find(p => rawData._puuid && p.puuid === rawData._puuid) || m.info.participants[0];
-  };
+  const getP = m => m.info.participants.find(p => rawData._puuid && p.puuid === rawData._puuid) || m.info.participants[0];
 
   const stats = [
     { label:'Win Rate', val: (rawData.winrate||0).toFixed(1)+'%', delta: null, color: rawData.winrate >= 55 ? 'var(--lime)' : rawData.winrate >= 50 ? 'var(--amber)' : 'var(--red)' },
@@ -2335,7 +2291,6 @@ function buildChartKDA() {
   if (!canvas) return;
 
   const data = matchHistory.slice().reverse().map((m, i) => {
-    if (!m?.info?.participants?.length) return null;
     const p = getParticipant(m);
     if (!p) return null;
     const kda = p.deaths === 0 ? (p.kills + p.assists) : (p.kills + p.assists) / p.deaths;
@@ -2392,7 +2347,7 @@ function buildChartWR() {
   const wrData = reversed.map((_, i) => {
     if (i < 9) return null;
     const window = reversed.slice(i-9, i+1);
-    const wins = window.filter(m => m?.info?.participants?.length && getParticipant(m)?.win).length;
+    const wins = window.filter(m => getParticipant(m)?.win).length;
     return parseFloat((wins/10*100).toFixed(1));
   }).filter(v => v !== null);
 
@@ -2444,14 +2399,13 @@ function buildChartMulti() {
     return arr.map((_, i) => {
       const slice = arr.slice(Math.max(0,i-Math.floor(window/2)), i+Math.ceil(window/2));
       const vals = slice.map(m => {
-        if (!m?.info?.participants?.length) return null;
         const p = getParticipant(m);
         if (!p) return null;
-        const dur = (m.info.gameDuration || 1) / 60;
+        const dur = m.info.gameDuration / 60;
         if (key === 'cs_min') return (p.totalMinionsKilled + p.neutralMinionsKilled) / dur;
         if (key === 'vision') return p.visionScore;
         if (key === 'kp') {
-          const teamK = (m.info.participants||[]).filter(x => x.teamId===p.teamId).reduce((a,x)=>a+(x.kills||0),0);
+          const teamK = m.info.participants.filter(x => x.teamId===p.teamId).reduce((a,x)=>a+x.kills,0);
           return teamK > 0 ? (p.kills+p.assists)/teamK*100 : 0;
         }
         return null;
@@ -2575,7 +2529,6 @@ function buildHeatmap() {
   const grid = Array.from({length:7}, () => new Array(24).fill(0));
 
   matchHistory.forEach(m => {
-    if (!m?.info) return;
     const d = new Date(m.info.gameCreation);
     const day = (d.getDay() + 6) % 7; // 0=Mon
     const hour = d.getHours();
@@ -2632,7 +2585,6 @@ function buildChartWeekday() {
   const counts = new Array(7).fill(0);
   const wins   = new Array(7).fill(0);
   matchHistory.forEach(m => {
-    if (!m?.info) return;
     const d = new Date(m.info.gameCreation);
     const day = (d.getDay() + 6) % 7;
     counts[day]++;
@@ -2667,7 +2619,7 @@ function buildChartDuration() {
   if (!canvas) return;
 
   const reversed = matchHistory.slice().reverse();
-  const durations = reversed.filter(m => m?.info).map(m => parseFloat((m.info.gameDuration/60).toFixed(1)));
+  const durations = reversed.map(m => parseFloat((m.info.gameDuration/60).toFixed(1)));
   const avgDur = (durations.reduce((a,b)=>a+b,0)/durations.length).toFixed(1);
 
   chartInstances['duration'] = new Chart(canvas, {
@@ -2694,14 +2646,12 @@ function buildChartDuration() {
 function getParticipant(m) {
   if (!rawData._puuid) {
     // fallback: find by stored data
-    if (!m?.info?.participants?.length) return null;
     return m.info.participants.find(p => {
-      const dur = (m.info.gameDuration||1)/60;
+      const dur = m.info.gameDuration/60;
       const cs = (p.totalMinionsKilled+p.neutralMinionsKilled)/dur;
       return Math.abs(cs - (rawData.cs_min||0)) < 3;
-    }) || (m.info.participants||[])[0] || null;
+    }) || m.info.participants[0];
   }
-  if (!m?.info?.participants?.length) return null;
   return m.info.participants.find(p => p.puuid === rawData._puuid) || m.info.participants[0];
 }
 
@@ -2776,9 +2726,6 @@ async function loadMapData() {
         `https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}/timeline`,
         apiKey
       );
-      // Set the corresponding match as context for participantId resolution
-      const correspondingMatch = matchHistory.find(m => m.metadata?.matchId === id);
-      if (correspondingMatch) window._lastMatch = correspondingMatch;
       processTimeline(timeline, rawData._puuid);
       loaded++;
       const pct = 10 + Math.round(loaded / recentIds.length * 80);
@@ -2803,7 +2750,6 @@ async function loadMapData() {
   document.getElementById('map-display').style.display = 'block';
 
   buildMapStats();
-  buildWardStats();
   buildMapAnalysis();
   await drawMapBase();
   renderMap();
@@ -2816,27 +2762,9 @@ async function loadMapData() {
 function processTimeline(timeline, puuid) {
   if (!timeline?.info?.frames) return;
 
-  // Find participant ID — try info.participants first, then scan participantFrames
-  let participantId = timeline.info.participants?.find(p => p.puuid === puuid)?.participantId;
-
-  // Fallback: if participants array is missing (some API responses),
-  // scan frame participantFrames keys and match via PUUID from match data
-  if (!participantId && timeline.info.frames?.length) {
-    // Try to find participantId by cross-referencing with matchHistory
-    const match = window._lastMatch;
-    if (match?.info?.participants) {
-      const mp = match.info.participants.find(p => p.puuid === puuid);
-      if (mp) participantId = mp.participantId;
-    }
-  }
-
-  // Last resort: try to find participantId by scanning all frames
-  if (!participantId) {
-    // Use participant index 1-10 — scan frame events for WARD_PLACED
-    // We can't reliably identify without PUUID match, so skip
-    dbgLog('⚠ participantId introuvable pour ' + puuid.slice(0,12) + ' — wards non collectés pour cette partie');
-    return;
-  }
+  // Find participant ID for our player
+  const participantId = timeline.info.participants?.find(p => p.puuid === puuid)?.participantId;
+  if (!participantId) return;
 
   timeline.info.frames.forEach(frame => {
     const ts = frame.timestamp / 1000 / 60; // minutes
@@ -2860,16 +2788,11 @@ function processTimeline(timeline, puuid) {
         }
       }
 
-      if (evt.type === 'WARD_PLACED' && evt.creatorId === participantId) {
-        // position may be nested or flat depending on API version
-        const pos = evt.position || { x: evt.positionX, y: evt.positionY };
-        if (pos?.x !== undefined && pos?.y !== undefined) {
-          mapData.wards.push({
-            x: pos.x, y: pos.y, t: evtMin,
-            wardType: evt.wardType || evt.type2 || 'YELLOW_TRINKET'
-          });
-          dbgLog(`🔵 Ward collecté: ${evt.wardType||'YELLOW_TRINKET'} @(${Math.round(pos.x)},${Math.round(pos.y)}) t=${evtMin.toFixed(1)}min`);
-        }
+      if (evt.type === 'WARD_PLACED' && evt.creatorId === participantId && evt.position) {
+        mapData.wards.push({
+          x: evt.position.x, y: evt.position.y, t: evtMin,
+          wardType: evt.wardType || 'YELLOW_TRINKET'
+        });
       }
 
       if (evt.type === 'ELITE_MONSTER_KILL' && evt.position) {
@@ -2899,19 +2822,10 @@ async function drawMapBase() {
 
   // Try to load official Riot minimap from Data Dragon CDN
   // Version 16.8.1 is current — minimap_sr is the Summoner's Rift map
-  // Fetch latest DDragon version dynamically, then fallback to pinned versions
-  let latestVer = '14.24.1';
-  try {
-    const verRes = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-    if (verRes.ok) { const vers = await verRes.json(); latestVer = vers[0] || latestVer; }
-  } catch(_) {}
-
   const MAP_URLS = [
-    `https://ddragon.leagueoflegends.com/cdn/${latestVer}/img/map/map11.png`,
-    'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/map/map11.png',
-    'https://ddragon.leagueoflegends.com/cdn/14.10.1/img/map/map11.png',
-    'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/maps/shipping/map1/map1.png',
-    'https://raw.communitydragon.org/pbe/plugins/rcp-be-lol-game-data/global/default/assets/maps/shipping/map1/map1.png',
+    'https://ddragon.leagueoflegends.com/cdn/16.8.1/img/map/map11.png',
+    'https://ddragon.leagueoflegends.com/cdn/15.9.1/img/map/map11.png',
+    'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/loadouts/summoner-icons/maps/map11.png',
   ];
 
   let loaded = false;
@@ -2951,165 +2865,29 @@ async function drawMapBase() {
 }
 
 function drawMapFallback(ctx, size) {
-  const s = size;
+  // Clean dark fallback map when CDN is unavailable
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  grad.addColorStop(0, '#0d1a0d');
+  grad.addColorStop(0.5, '#0a1a10');
+  grad.addColorStop(1, '#0d1a0d');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, size, size);
 
-  // ── TERRAIN BASE ─────────────────────────────
-  // Main map background — dark forest green
-  ctx.fillStyle = '#0A1A08';
-  ctx.fillRect(0, 0, s, s);
-
-  // Jungle quadrants (darker green zones)
-  ctx.fillStyle = '#081507';
-  // Top jungle
+  // River
+  ctx.strokeStyle = 'rgba(20,60,110,.7)';
+  ctx.lineWidth = size * 0.06;
   ctx.beginPath();
-  ctx.moveTo(s*.08,s*.08); ctx.lineTo(s*.5,s*.08); ctx.lineTo(s*.38,s*.38); ctx.lineTo(s*.08,s*.5); ctx.closePath();
-  ctx.fill();
-  // Bot jungle
+  ctx.moveTo(0, size*0.5); ctx.bezierCurveTo(size*0.3,size*0.45,size*0.45,size*0.3,size*0.5,0); ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(s*.92,s*.92); ctx.lineTo(s*.5,s*.92); ctx.lineTo(s*.62,s*.62); ctx.lineTo(s*.92,s*.5); ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(size*0.5,size); ctx.bezierCurveTo(size*0.55,size*0.7,size*0.7,size*0.55,size,size*0.5); ctx.stroke();
 
-  // ── RIVER ────────────────────────────────────
-  ctx.save();
-  ctx.strokeStyle = '#1A3C6A';
-  ctx.lineWidth = s * 0.075;
-  ctx.lineCap = 'round';
-  // Top river (bottom-left to top-right diagonal)
-  ctx.beginPath();
-  ctx.moveTo(0, s*0.47);
-  ctx.bezierCurveTo(s*0.15,s*0.44, s*0.28,s*0.38, s*0.36,s*0.3);
-  ctx.bezierCurveTo(s*0.42,s*0.24, s*0.47,s*0.15, s*0.47,0);
-  ctx.stroke();
-  // Bot river
-  ctx.beginPath();
-  ctx.moveTo(s, s*0.53);
-  ctx.bezierCurveTo(s*0.85,s*0.56, s*0.72,s*0.62, s*0.64,s*0.7);
-  ctx.bezierCurveTo(s*0.58,s*0.76, s*0.53,s*0.85, s*0.53,s);
-  ctx.stroke();
-  // River highlight (lighter center)
-  ctx.strokeStyle = '#1F4880';
-  ctx.lineWidth = s * 0.035;
-  ctx.beginPath();
-  ctx.moveTo(0, s*0.47);
-  ctx.bezierCurveTo(s*0.15,s*0.44, s*0.28,s*0.38, s*0.36,s*0.3);
-  ctx.bezierCurveTo(s*0.42,s*0.24, s*0.47,s*0.15, s*0.47,0);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(s, s*0.53);
-  ctx.bezierCurveTo(s*0.85,s*0.56, s*0.72,s*0.62, s*0.64,s*0.7);
-  ctx.bezierCurveTo(s*0.58,s*0.76, s*0.53,s*0.85, s*0.53,s);
-  ctx.stroke();
-  ctx.restore();
-
-  // ── LANES ────────────────────────────────────
-  ctx.save();
-  const laneColor = '#3A3020';
-  const laneW = s * 0.048;
-  ctx.strokeStyle = laneColor;
-  ctx.lineWidth = laneW;
-  ctx.lineCap = 'square';
-  // Top lane (left side, vertical)
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.1,s*.1); ctx.stroke();
-  // Top lane (top, horizontal)
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.1); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  // Bot lane (bottom, horizontal)
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.9,s*.9); ctx.stroke();
-  // Bot lane (right side, vertical)
-  ctx.beginPath(); ctx.moveTo(s*.9,s*.9); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  // Mid lane
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  // Lane highlight
-  ctx.strokeStyle = '#4A4030';
-  ctx.lineWidth = laneW * 0.4;
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.1,s*.1); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.9,s*.9); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(s*.1,s*.9); ctx.lineTo(s*.9,s*.1); ctx.stroke();
-  ctx.restore();
-
-  // ── BASES ────────────────────────────────────
-  // Blue base (bottom-left)
-  ctx.save();
-  ctx.fillStyle = '#0A1520';
-  ctx.strokeStyle = '#1E4070';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(s*.09, s*.91, s*.065, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#1A3D6A';
-  ctx.beginPath(); ctx.arc(s*.09, s*.91, s*.04, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#4A9EFF';
-  ctx.font = `bold ${s*.025}px Syne,sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('B', s*.09, s*.91);
-  ctx.restore();
-
-  // Red base (top-right)
-  ctx.save();
-  ctx.fillStyle = '#201008';
-  ctx.strokeStyle = '#702010';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(s*.91, s*.09, s*.065, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = '#6A1A0A';
-  ctx.beginPath(); ctx.arc(s*.91, s*.09, s*.04, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#FF5A4A';
-  ctx.font = `bold ${s*.025}px Syne,sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('R', s*.91, s*.09);
-  ctx.restore();
-
-  // ── OBJECTIVES ────────────────────────────────
-  // Dragon pit (bot side, river)
-  ctx.save();
-  ctx.fillStyle = 'rgba(180,80,20,.25)';
-  ctx.strokeStyle = 'rgba(220,120,40,.4)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(s*.58, s*.82, s*.038, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(220,120,40,.8)';
-  ctx.font = `${s*.018}px Syne,sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('🐉', s*.58, s*.82);
-  ctx.restore();
-
-  // Baron pit (top side, river)
-  ctx.save();
-  ctx.fillStyle = 'rgba(100,40,180,.25)';
-  ctx.strokeStyle = 'rgba(150,80,220,.4)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.arc(s*.41, s*.18, s*.038, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = 'rgba(160,100,220,.9)';
-  ctx.font = `${s*.018}px Syne,sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('B', s*.41, s*.18);
-  ctx.restore();
-
-  // ── TURRETS ────────────────────────────────────
-  const turrets = [
-    // Blue turrets
-    {x:.1,y:.7,c:'#4A9EFF'},{x:.1,y:.4,c:'#4A9EFF'},{x:.3,y:.9,c:'#4A9EFF'},{x:.6,y:.9,c:'#4A9EFF'},
-    {x:.3,y:.7,c:'#4A9EFF'},{x:.7,y:.3,c:'#4A9EFF'},
-    // Red turrets
-    {x:.9,y:.3,c:'#FF5A4A'},{x:.9,y:.6,c:'#FF5A4A'},{x:.7,y:.1,c:'#FF5A4A'},{x:.4,y:.1,c:'#FF5A4A'},
-    {x:.7,y:.3,c:'#FF5A4A'},{x:.3,y:.7,c:'#4A9EFF'},
-  ];
-  const trSize = s * 0.018;
-  turrets.forEach(t => {
-    ctx.save();
-    ctx.fillStyle = t.c + '99';
-    ctx.strokeStyle = t.c;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.rect(t.x*s - trSize/2, t.y*s - trSize/2, trSize, trSize);
-    ctx.fill(); ctx.stroke();
-    ctx.restore();
-  });
-
-  // ── GRID SUBTLE ───────────────────────────────
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,.02)';
-  ctx.lineWidth = .5;
-  for (let i = 0; i <= 10; i++) {
-    ctx.beginPath(); ctx.moveTo(i/10*s,0); ctx.lineTo(i/10*s,s); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0,i/10*s); ctx.lineTo(s,i/10*s); ctx.stroke();
-  }
-  ctx.restore();
+  // Lanes
+  ctx.strokeStyle = 'rgba(160,140,80,.2)';
+  ctx.lineWidth = size*0.04;
+  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.08,size*.08); ctx.lineTo(size*.92,size*.08); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.92,size*.92); ctx.lineTo(size*.92,size*.08); ctx.stroke();
+  ctx.lineWidth = size*0.035;
+  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.92,size*.08); ctx.stroke();
 }
 
 function mapCoordToCanvas(x, y, size) {
@@ -3422,72 +3200,6 @@ function updateMapLegend() {
   el.innerHTML = items.map(l =>
     `<div class="map-legend-item"><div class="map-legend-dot" style="background:${l.color}"></div>${l.label}</div>`
   ).join('');
-}
-
-function buildWardStats() {
-  const el = document.getElementById('ward-stats-detail');
-  if (!el) return;
-  const wards = mapData.wards;
-  if (!wards.length) { el.innerHTML = '<p style="color:var(--sub);font-size:.8rem">Aucune donnée ward — rechargez la carte.</p>'; return; }
-
-  const byType = {};
-  wards.forEach(w => {
-    const t = w.wardType || 'UNKNOWN';
-    byType[t] = (byType[t]||0)+1;
-  });
-
-  const byPhase = { early:0, mid:0, late:0 };
-  wards.forEach(w => {
-    if (w.t <= 15) byPhase.early++;
-    else if (w.t <= 25) byPhase.mid++;
-    else byPhase.late++;
-  });
-
-  const perGame = mapData.gamesAnalyzed > 0 ? (wards.length / mapData.gamesAnalyzed).toFixed(1) : '—';
-  const wardLabels = {
-    YELLOW_TRINKET:'Vision ward', CONTROL_WARD:'Control ward',
-    BLUE_TRINKET:'Œil bleu', SIGHT_WARD:'Vision ward', UNDEFINED:'Autre',UNKNOWN:'Autre'
-  };
-  const wardColors = {
-    YELLOW_TRINKET:'#F5A623', CONTROL_WARD:'#4A9EFF',
-    BLUE_TRINKET:'#2DD4BF', SIGHT_WARD:'#F5A623', UNDEFINED:'#8A9090',UNKNOWN:'#8A9090'
-  };
-
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.625rem;margin-bottom:1rem">
-      <div style="background:var(--surf3);border:1px solid var(--border);border-radius:8px;padding:.75rem;text-align:center">
-        <div style="font-size:1.5rem;font-weight:800;color:var(--lime)">${wards.length}</div>
-        <div style="font-size:.7rem;color:var(--sub)">Wards total</div>
-      </div>
-      <div style="background:var(--surf3);border:1px solid var(--border);border-radius:8px;padding:.75rem;text-align:center">
-        <div style="font-size:1.5rem;font-weight:800;color:var(--teal)">${perGame}</div>
-        <div style="font-size:.7rem;color:var(--sub)">Par partie</div>
-      </div>
-      <div style="background:var(--surf3);border:1px solid var(--border);border-radius:8px;padding:.75rem;text-align:center">
-        <div style="font-size:1.5rem;font-weight:800;color:var(--amber)">${byType['CONTROL_WARD']||0}</div>
-        <div style="font-size:.7rem;color:var(--sub)">Control wards</div>
-      </div>
-    </div>
-    <div style="margin-bottom:.875rem">
-      <div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem">Par type</div>
-      ${Object.entries(byType).map(([type,count])=>`
-        <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.375rem">
-          <div style="width:10px;height:10px;border-radius:2px;background:${wardColors[type]||'#8A9090'};flex-shrink:0"></div>
-          <div style="font-size:.8rem;flex:1">${wardLabels[type]||type}</div>
-          <div style="font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500">${count}</div>
-          <div style="width:80px;height:4px;background:var(--surf2);border-radius:2px;overflow:hidden">
-            <div style="width:${Math.round(count/wards.length*100)}%;height:4px;background:${wardColors[type]||'#8A9090'};border-radius:2px"></div>
-          </div>
-        </div>`).join('')}
-    </div>
-    <div>
-      <div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem">Par phase</div>
-      ${[['early','Phases','≤15min',byPhase.early,'#C8F53C'],['mid','Milieu de partie','15-25min',byPhase.mid,'#F5A623'],['late','Fin de partie','>25min',byPhase.late,'#FF5A4A']].map(([k,label,range,count,color])=>`
-        <div style="display:flex;align-items:center;gap:.625rem;margin-bottom:.375rem">
-          <div style="font-size:.8rem;flex:1">${label} <span style="color:var(--sub);font-size:.7rem">${range}</span></div>
-          <div style="font-family:'DM Mono',monospace;font-size:.8rem;font-weight:500;color:${color}">${count}</div>
-        </div>`).join('')}
-    </div>`;
 }
 
 function buildMapStats() {
