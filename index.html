@@ -1474,7 +1474,7 @@ function dimAvg(fields) {
 }
 
 function globalScore() {
-  const f = getManualFields();
+  const f = getRoleFields();
   const W = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
   const dims = ['d1','d2','d3','d4','d5'].map(id => [dimAvg(f[id]), W[id]]);
   const parts = dims.filter(([v]) => v !== null);
@@ -1551,7 +1551,7 @@ function onNum(id, val, dimId) {
   refreshField(id, dimId);
 }
 function refreshField(id, dimId) {
-  const allFields = getManualFields();
+  const allFields = getRoleFields();
   const f = (allFields[dimId] || []).find(x => x.id === id)
          || Object.values(allFields).flat().find(x => x.id === id);
   if (!f) return;
@@ -1561,7 +1561,7 @@ function refreshField(id, dimId) {
   const dsc  = document.getElementById(`dsc-${id}`);
   if (dbar) dbar.style.width = sc !== null ? sc*10+'%' : '0%';
   if (dsc)  { dsc.textContent = sc !== null ? sc.toFixed(1) : '—'; dsc.style.color = scColor(sc); }
-  const _allF = getManualFields(); updateDimScore(dimId, _allF[dimId] || []);
+  const _allF = getRoleFields(); updateDimScore(dimId, _allF[dimId] || []);
   updateGlobal();
   updateVerdict();
   updateRadar();
@@ -1580,13 +1580,21 @@ function updateDimScore(dimId, fields) {
   if (wEl && W[dimId]) wEl.textContent = '(' + Math.round(W[dimId]*100) + '%)';
 }
 function buildAllDims() {
-  const f = getManualFields();
-  buildDimBody('d1', f.d1);
-  buildDimBody('d2', f.d2);
-  buildDimBody('d3', f.d3);
-  buildDimBody('d4', f.d4);
-  buildDimBody('d5', f.d5);
+  const f = getRoleFields();
+  buildDimBody('d1', f.d1 || []);
+  buildDimBody('d2', f.d2 || []);
+  buildDimBody('d3', f.d3 || []);
+  buildDimBody('d4', f.d4 || []);
+  buildDimBody('d5', f.d5 || []);
 }
+
+
+
+
+
+
+
+
 
 // ════════════════════════════════════════════
 // GLOBAL SCORE UPDATE
@@ -1613,7 +1621,7 @@ function updateGlobal() {
 function buildRadar(svgId, w, h) {
   const el = document.getElementById(svgId);
   if (!el) return;
-  const f = getManualFields();
+  const f = getRoleFields();
   // PENTAGON — 5 axes
   const dims = [
     { label:'Stats',      val:dimAvg(f.d1), color:DIM_COLORS.d1 },
@@ -1714,7 +1722,7 @@ function buildStatsGrid() {
 // VERDICT COACH (auto-generated)
 // ════════════════════════════════════════════
 function updateVerdict() {
-  const f = getManualFields();
+  const f = getRoleFields();
   const g = globalScore();
   const d1 = dimAvg(f.d1), d2 = dimAvg(f.d2), d3 = dimAvg(f.d3), d4 = dimAvg(f.d4), d5 = dimAvg(f.d5);
 
@@ -1778,7 +1786,7 @@ function updateVerdict() {
 // RESULTS PANEL
 // ════════════════════════════════════════════
 function buildResults() {
-  const f = getManualFields();
+  const f = getRoleFields();
   const RW = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
   const dims = [
     { id:'d1', label:'D1 — Stats pures',     val:dimAvg(f.d1), color:DIM_COLORS.d1, w:RW.d1 },
@@ -2025,7 +2033,7 @@ async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
     const results = await Promise.allSettled(batch.map(id => riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}`, apiKey)));
-    results.forEach(r => { if (r.status === 'fulfilled' && r.value && typeof r.value === 'object') matches.push(r.value); });
+    results.forEach(r => { if (r.status === 'fulfilled') matches.push(r.value); });
     const pct = 35 + Math.round((i+BATCH)/ids.length*50);
     onProgress(Math.min(85, pct), `Analyse des parties ${Math.min(i+BATCH,ids.length)}/${ids.length}…`);
     if (i + BATCH < ids.length) await sleep(1400);
@@ -2034,20 +2042,17 @@ async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
 }
 
 function calculateStats(matches, puuid) {
-  if (!Array.isArray(matches)) return {};
   let wins=0, kills=0, deaths=0, assists=0, cs=0, gameDur=0, vision=0, killPart=0, dmgShare=0, dmgTower=0, objScore=0;
   let gameCount = 0;
   const champMap = {};
   const sessionDays = new Set();
 
   matches.forEach(m => {
-    if (!m?.info?.participants?.length) return;
     const p = m.info.participants.find(x => x.puuid === puuid);
     if (!p) return;
     gameCount++;
-    const dur = (m.info.gameDuration || 0) / 60;
-    if (dur < 4) return; // skip remakes
-    const teamKills = m.info.participants.filter(x => x.teamId === p.teamId).reduce((a,x) => a+(x.kills||0), 0);
+    const dur = m.info.gameDuration / 60;
+    const teamKills = m.info.participants.filter(x => x.teamId === p.teamId).reduce((a,x) => a+x.kills, 0);
     if (p.win) wins++;
     kills += p.kills; deaths += p.deaths; assists += p.assists;
     cs += (p.totalMinionsKilled + p.neutralMinionsKilled);
@@ -2141,15 +2146,13 @@ async function fetchRiotData() {
     const sum = await riotFetch(`https://${server}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${acc.puuid}`, apiKey);
 
     setProgress(22, 'Rang SoloQ…');
-    const leagueRaw = await riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`, apiKey);
-    const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw?.entries || leagueRaw?.leagueEntries || []);
+    const league = await riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`, apiKey);
     const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
 
     setProgress(30, `${count} dernières parties ranked…`);
-    const idsRaw = await riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${acc.puuid}/ids?queue=420&count=${count}&type=ranked`, apiKey);
-    const ids = Array.isArray(idsRaw) ? idsRaw : [];
+    const ids = await riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${acc.puuid}/ids?queue=420&count=${count}&type=ranked`, apiKey);
 
-    if (!ids.length) throw new Error('Aucune partie ranked SoloQ trouvée cette saison.');
+    if (!ids || !ids.length) throw new Error('Aucune partie ranked SoloQ trouvée cette saison.');
 
     setProgress(35, `Analyse de ${ids.length} parties…`);
     const matches = await fetchMatchesInBatches(regional, ids, apiKey, (p,l) => setProgress(p,l));
