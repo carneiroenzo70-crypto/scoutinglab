@@ -1847,7 +1847,7 @@ function buildResults() {
       ...(f.d1||[]), ...(f.d2||[]), ...(f.d3||[]), ...(f.d4||[]), ...(f.d5||[])
     ].map(field => {
       const sc = computeFieldScore(field);
-      return sc !== null ? { label:field.label, sc } : null;
+      return sc !== null ? { label:field.lbl || field.label, sc } : null;
     }).filter(Boolean).sort((a,b) => b.sc-a.sc);
     const top = all.slice(0,2), bot = all.slice(-2);
     reco.innerHTML = `
