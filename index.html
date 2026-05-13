@@ -1529,7 +1529,7 @@ function buildDimBody(dimId, fields) {
     const barW = sc !== null ? sc*10 : 0;
     const color = DIM_COLORS[dimId] || 'var(--lime)';
     row.innerHTML = `
-      <div class="dim-row-label">${f.label} <span class="dim-badge ${bc}">${bl}</span></div>
+      <div class="dim-row-label">${f.lbl || f.label} <span class="dim-badge ${bc}">${bl}</span></div>
       ${inputHtml}
       <div class="dim-bar-track"><div class="dim-bar-fill" id="dbar-${f.id}" style="width:${barW}%;background:${color}"></div></div>
       <div class="dim-score" id="dsc-${f.id}" style="color:${scColor(sc)}">${sc !== null ? sc.toFixed(1) : '—'}</div>
@@ -2823,74 +2823,336 @@ async function drawMapBase() {
   const base = document.getElementById('map-base-canvas');
   const ctx = base.getContext('2d');
 
-  // Try to load official Riot minimap from Data Dragon CDN
-  // Version 16.8.1 is current — minimap_sr is the Summoner's Rift map
-  const MAP_URLS = [
-    'https://ddragon.leagueoflegends.com/cdn/16.8.1/img/map/map11.png',
-    'https://ddragon.leagueoflegends.com/cdn/15.9.1/img/map/map11.png',
-    'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/assets/loadouts/summoner-icons/maps/map11.png',
+  // Try local map.png first (uploaded to GitHub repo), then fallback
+  let loaded = false;
+  const urls = [
+    './map.png',
+    'map.png',
+    'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/map/map11.png',
+    'https://ddragon.leagueoflegends.com/cdn/15.1.1/img/map/map11.png',
   ];
 
-  let loaded = false;
-  for (const url of MAP_URLS) {
+  for (const url of urls) {
     try {
       await new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
-          // Draw the real map image as background
           ctx.drawImage(img, 0, 0, size, size);
-          // Store reference for potential redraws
           window._mapImg = img;
           loaded = true;
           resolve();
         };
         img.onerror = reject;
         img.src = url;
-        setTimeout(reject, 5000);
+        setTimeout(reject, 8000);
       });
-      if (loaded) break;
+      if (loaded) { dbgLog('Map chargée: ' + url); break; }
     } catch(e) {
       dbgLog('Map URL failed: ' + url);
     }
   }
 
   if (!loaded) {
-    // Fallback: draw a clean dark map if CDN unavailable
-    drawMapFallback(ctx, size);
+    drawSummonersRift(ctx, size);
   }
 
-  // Add subtle dark overlay to make data points more visible
-  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  // Dark overlay to enhance data point visibility
+  ctx.fillStyle = 'rgba(0,0,0,0.20)';
   ctx.fillRect(0, 0, size, size);
 
   mapBaseDrawn = true;
 }
 
-function drawMapFallback(ctx, size) {
-  // Clean dark fallback map when CDN is unavailable
-  const grad = ctx.createLinearGradient(0, 0, size, size);
-  grad.addColorStop(0, '#0d1a0d');
-  grad.addColorStop(0.5, '#0a1a10');
-  grad.addColorStop(1, '#0d1a0d');
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, size, size);
+function drawSummonersRift(ctx, S) {
+  const s = S; // alias
 
-  // River
-  ctx.strokeStyle = 'rgba(20,60,110,.7)';
-  ctx.lineWidth = size * 0.06;
-  ctx.beginPath();
-  ctx.moveTo(0, size*0.5); ctx.bezierCurveTo(size*0.3,size*0.45,size*0.45,size*0.3,size*0.5,0); ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(size*0.5,size); ctx.bezierCurveTo(size*0.55,size*0.7,size*0.7,size*0.55,size,size*0.5); ctx.stroke();
+  // ── 1. BACKGROUND — deep forest ──────────────────────────
+  const bgGrad = ctx.createRadialGradient(s*.5,s*.5,0, s*.5,s*.5,s*.72);
+  bgGrad.addColorStop(0,   '#0E2010');
+  bgGrad.addColorStop(0.5, '#091608');
+  bgGrad.addColorStop(1,   '#060E06');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, s, s);
 
-  // Lanes
-  ctx.strokeStyle = 'rgba(160,140,80,.2)';
-  ctx.lineWidth = size*0.04;
-  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.08,size*.08); ctx.lineTo(size*.92,size*.08); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.92,size*.92); ctx.lineTo(size*.92,size*.08); ctx.stroke();
-  ctx.lineWidth = size*0.035;
-  ctx.beginPath(); ctx.moveTo(size*.08,size*.92); ctx.lineTo(size*.92,size*.08); ctx.stroke();
+  // ── 2. TERRAIN ZONES ─────────────────────────────────────
+  // Blue base corner (bottom-left)
+  const blueBase = ctx.createRadialGradient(s*.04,s*.96,0, s*.04,s*.96,s*.22);
+  blueBase.addColorStop(0, 'rgba(30,60,120,.55)');
+  blueBase.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = blueBase;
+  ctx.fillRect(0, 0, s, s);
+
+  // Red base corner (top-right)
+  const redBase = ctx.createRadialGradient(s*.96,s*.04,0, s*.96,s*.04,s*.22);
+  redBase.addColorStop(0, 'rgba(120,30,30,.55)');
+  redBase.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = redBase;
+  ctx.fillRect(0, 0, s, s);
+
+  // ── 3. RIVER ─────────────────────────────────────────────
+  ctx.save();
+  // River body — thick bezier path clipped
+  ctx.strokeStyle = '#1A3A6E';
+  ctx.lineWidth = s * 0.085;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  // Top-right river segment
+  ctx.beginPath();
+  ctx.moveTo(s*.45, 0);
+  ctx.bezierCurveTo(s*.44, s*.12, s*.38, s*.28, s*.32, s*.36);
+  ctx.bezierCurveTo(s*.26, s*.44, s*.12, s*.46, 0, s*.47);
+  ctx.stroke();
+  // Bottom-left river segment
+  ctx.beginPath();
+  ctx.moveTo(s, s*.53);
+  ctx.bezierCurveTo(s*.88, s*.54, s*.74, s*.56, s*.68, s*.64);
+  ctx.bezierCurveTo(s*.62, s*.72, s*.56, s*.88, s*.55, s);
+  ctx.stroke();
+
+  // River shimmer — lighter inner line
+  ctx.strokeStyle = '#2255A8';
+  ctx.lineWidth = s * 0.04;
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(s*.45, 0);
+  ctx.bezierCurveTo(s*.44, s*.12, s*.38, s*.28, s*.32, s*.36);
+  ctx.bezierCurveTo(s*.26, s*.44, s*.12, s*.46, 0, s*.47);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(s, s*.53);
+  ctx.bezierCurveTo(s*.88, s*.54, s*.74, s*.56, s*.68, s*.64);
+  ctx.bezierCurveTo(s*.62, s*.72, s*.56, s*.88, s*.55, s);
+  ctx.stroke();
+
+  // River sparkle
+  ctx.strokeStyle = 'rgba(80,140,255,.18)';
+  ctx.lineWidth = s * 0.012;
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.moveTo(s*.44, 0);
+  ctx.bezierCurveTo(s*.43, s*.1, s*.37, s*.27, s*.31, s*.35);
+  ctx.bezierCurveTo(s*.25, s*.43, s*.1, s*.45, 0, s*.46);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(s, s*.54);
+  ctx.bezierCurveTo(s*.87, s*.55, s*.73, s*.57, s*.67, s*.65);
+  ctx.bezierCurveTo(s*.61, s*.73, s*.56, s*.89, s*.56, s);
+  ctx.stroke();
+  ctx.restore();
+
+  // ── 4. LANES ─────────────────────────────────────────────
+  function drawLane(points, w, col, alpha) {
+    ctx.save();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = w;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    points.forEach(([x,y],i) => i===0 ? ctx.moveTo(x*s,y*s) : ctx.lineTo(x*s,y*s));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Top lane (left edge → top edge)
+  drawLane([[.07,.93],[.07,.5],[.07,.07],[.5,.07],[.93,.07]], s*.042, '#6B5A2A', .7);
+  drawLane([[.07,.93],[.07,.5],[.07,.07],[.5,.07],[.93,.07]], s*.022, '#C8AA6E', .35);
+
+  // Bot lane (bottom edge → right edge)
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.07]], s*.042, '#6B5A2A', .7);
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.07]], s*.022, '#C8AA6E', .35);
+
+  // Mid lane (diagonal)
+  drawLane([[.07,.93],[.3,.7],[.5,.5],[.7,.3],[.93,.07]], s*.042, '#6B5A2A', .7);
+  drawLane([[.07,.93],[.3,.7],[.5,.5],[.7,.3],[.93,.07]], s*.022, '#C8AA6E', .35);
+
+  // Lane glow (gold shimmer on top)
+  drawLane([[.07,.93],[.07,.07],[.93,.07]], s*.008, '#F0D080', .12);
+  drawLane([[.07,.93],[.93,.93],[.93,.07]], s*.008, '#F0D080', .12);
+  drawLane([[.07,.93],[.93,.07]], s*.008, '#F0D080', .12);
+
+  // ── 5. JUNGLE ZONES ──────────────────────────────────────
+  // Blue-side jungle (top-left)
+  ctx.save();
+  ctx.fillStyle = 'rgba(8,22,8,.5)';
+  ctx.beginPath();
+  ctx.moveTo(s*.08,s*.08); ctx.lineTo(s*.44,s*.08); ctx.lineTo(s*.28,s*.28);
+  ctx.lineTo(s*.08,s*.44); ctx.closePath(); ctx.fill();
+  // Red-side jungle (bottom-right)
+  ctx.beginPath();
+  ctx.moveTo(s*.92,s*.92); ctx.lineTo(s*.56,s*.92); ctx.lineTo(s*.72,s*.72);
+  ctx.lineTo(s*.92,s*.56); ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // ── 6. JUNGLE CAMPS ──────────────────────────────────────
+  function drawCamp(x, y, r, col, label) {
+    const cx = x*s, cy = y*s;
+    // Glow
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.5);
+    g.addColorStop(0, col+'44'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx,cy,r*2.5,0,Math.PI*2); ctx.fill();
+    // Circle
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle = col+'33';
+    ctx.fill();
+    ctx.strokeStyle = col+'99'; ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // Label
+    if(label) {
+      ctx.fillStyle = col+'CC';
+      ctx.font = `bold ${r*1.1}px DM Mono,monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(label, cx, cy);
+    }
+  }
+
+  // Blue buff (blue-side)
+  drawCamp(.19,.56, s*.018, '#4A9EFF', 'B');
+  // Red buff (blue-side)
+  drawCamp(.34,.7, s*.018, '#FF5A4A', 'R');
+  // Blue buff (red-side)
+  drawCamp(.81,.44, s*.018, '#4A9EFF', 'B');
+  // Red buff (red-side)
+  drawCamp(.66,.3, s*.018, '#FF5A4A', 'R');
+  // Dragon pit
+  drawCamp(.74,.75, s*.02, '#F5A623', '⚔');
+  // Baron pit
+  drawCamp(.26,.25, s*.02, '#C084FC', '⚔');
+  // Rift Herald (same spot as baron pre-20)
+  drawCamp(.26,.25, s*.013, '#2DD4BF', '');
+  // Krugs blue
+  drawCamp(.29,.78, s*.013, '#8A9090', '');
+  drawCamp(.71,.22, s*.013, '#8A9090', '');
+  // Wolves
+  drawCamp(.19,.42, s*.013, '#8A9090', '');
+  drawCamp(.81,.58, s*.013, '#8A9090', '');
+  // Raptors
+  drawCamp(.38,.78, s*.013, '#8A9090', '');
+  drawCamp(.62,.22, s*.013, '#8A9090', '');
+  // Gromp
+  drawCamp(.1,.32, s*.013, '#8A9090', '');
+  drawCamp(.9,.68, s*.013, '#8A9090', '');
+
+  // ── 7. TOWERS ────────────────────────────────────────────
+  function drawTower(x, y, col) {
+    const cx = x*s, cy = y*s, r = s*.016;
+    // Outer ring glow
+    ctx.beginPath(); ctx.arc(cx,cy,r*2,0,Math.PI*2);
+    ctx.fillStyle = col+'22'; ctx.fill();
+    // Tower body (square rotated 45°)
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
+    ctx.fillStyle = col+'BB';
+    ctx.fillRect(-r,-r,r*2,r*2);
+    ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+    ctx.strokeRect(-r,-r,r*2,r*2);
+    ctx.restore();
+    // Center dot
+    ctx.beginPath(); ctx.arc(cx,cy,r*.4,0,Math.PI*2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+  }
+
+  // Blue towers (gold color)
+  const GOLD = '#C8AA6E';
+  // Top lane blue towers
+  drawTower(.08,.75, GOLD); drawTower(.08,.54, GOLD); drawTower(.08,.27, GOLD);
+  // Mid lane blue towers
+  drawTower(.26,.74, GOLD); drawTower(.4,.6, GOLD);
+  // Bot lane blue towers
+  drawTower(.27,.92, GOLD); drawTower(.54,.92, GOLD); drawTower(.77,.92, GOLD);
+  // Inhibitor towers blue
+  drawTower(.08,.2, GOLD); drawTower(.2,.92, GOLD); drawTower(.2,.82, GOLD);
+
+  // Red towers (enemy)
+  const RED_T = '#C84B4B';
+  // Top lane red towers
+  drawTower(.92,.25, RED_T); drawTower(.92,.46, RED_T); drawTower(.92,.73, RED_T);
+  // Mid lane red towers
+  drawTower(.74,.26, RED_T); drawTower(.6,.4, RED_T);
+  // Bot lane red towers
+  drawTower(.73,.08, RED_T); drawTower(.46,.08, RED_T); drawTower(.23,.08, RED_T);
+  // Inhibitor towers red
+  drawTower(.92,.8, RED_T); drawTower(.8,.08, RED_T); drawTower(.8,.18, RED_T);
+
+  // ── 8. BASES ─────────────────────────────────────────────
+  function drawBase(x, y, col, label) {
+    const cx = x*s, cy = y*s, r = s*.07;
+    // Outer glow
+    const g = ctx.createRadialGradient(cx,cy,r*.3,cx,cy,r*1.8);
+    g.addColorStop(0, col+'55'); g.addColorStop(0.5, col+'22'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2); ctx.fill();
+    // Base platform
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle = col+'33'; ctx.fill();
+    ctx.strokeStyle = col+'BB'; ctx.lineWidth = 2;
+    ctx.stroke();
+    // Nexus crystal
+    const nr = s*.022;
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
+    ctx.fillStyle = col+'EE';
+    ctx.fillRect(-nr,-nr,nr*2,nr*2);
+    ctx.restore();
+    // Nexus glow
+    const ng = ctx.createRadialGradient(cx,cy,0,cx,cy,nr*2.5);
+    ng.addColorStop(0, col+'88'); ng.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle = ng; ctx.beginPath(); ctx.arc(cx,cy,nr*2.5,0,Math.PI*2); ctx.fill();
+    // Label
+    ctx.fillStyle = col+'EE';
+    ctx.font = `bold ${s*.016}px Syne,sans-serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(label, cx, cy+r*.6);
+  }
+
+  drawBase(.06,.94, '#4A9EFF', 'BLUE');
+  drawBase(.94,.06, '#FF5A4A', 'RED');
+
+  // ── 9. INHIBITORS ────────────────────────────────────────
+  function drawInhibitor(x, y, col) {
+    const cx=x*s,cy=y*s,r=s*.014;
+    ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2);
+    ctx.fillStyle=col+'22'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle=col+'77'; ctx.fill();
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+  }
+
+  drawInhibitor(.09,.83, '#4A9EFF');
+  drawInhibitor(.17,.93, '#4A9EFF');
+  drawInhibitor(.14,.88, '#4A9EFF');
+  drawInhibitor(.91,.17, '#FF5A4A');
+  drawInhibitor(.83,.07, '#FF5A4A');
+  drawInhibitor(.86,.12, '#FF5A4A');
+
+  // ── 10. DRAGON / BARON PITS ──────────────────────────────
+  // Dragon pit outline
+  ctx.save();
+  ctx.strokeStyle = 'rgba(245,166,35,.4)';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([3,4]);
+  ctx.beginPath(); ctx.arc(s*.74,s*.76,s*.04,0,Math.PI*2); ctx.stroke();
+  // Baron pit outline
+  ctx.strokeStyle = 'rgba(192,132,252,.4)';
+  ctx.beginPath(); ctx.arc(s*.26,s*.24,s*.04,0,Math.PI*2); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // ── 11. GRID / FOG EFFECT ─────────────────────────────────
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,.025)';
+  ctx.lineWidth = .5;
+  for(let i=1; i<10; i++) {
+    ctx.beginPath(); ctx.moveTo(0,s*i/10); ctx.lineTo(s,s*i/10); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s*i/10,0); ctx.lineTo(s*i/10,s); ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── 12. VIGNETTE ──────────────────────────────────────────
+  const vig = ctx.createRadialGradient(s*.5,s*.5,s*.3,s*.5,s*.5,s*.72);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(0,0,0,.55)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0,0,s,s);
 }
 
 function mapCoordToCanvas(x, y, size) {
