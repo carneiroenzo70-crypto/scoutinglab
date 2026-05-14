@@ -555,6 +555,7 @@ body {
     <button class="hd-nav-item" onclick="switchPanel('graphs')">Graphiques</button>
     <button class="hd-nav-item" onclick="switchPanel('map')">Carte</button>
     <button class="hd-nav-item" onclick="switchPanel('results')">Résultats</button>
+    <button class="hd-nav-item" onclick="switchPanel('top50')">🏆 Top 50</button>
   </nav>
   <div class="hd-badge">EUW · SOLOQ</div>
 </header>
@@ -1102,6 +1103,100 @@ body {
 
       </div><!-- /map-display -->
     </div><!-- /panel-map -->
+
+    <!-- ════════════════ PANEL TOP 50 ════════════════ -->
+    <div id="panel-top50" class="panel">
+      <div style="max-width:1100px;margin:0 auto;padding:1.5rem 1rem">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem">🏆 Top 50 Prospects EUW</div>
+            <div style="font-size:.8rem;color:var(--sub);margin-top:.25rem">Diamond+ · Score SPES automatique · Bonus âge · Workflow recrutement</div>
+          </div>
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
+            <select id="t50-server" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.8rem;color:var(--text)">
+              <option value="euw1">EUW</option>
+              <option value="eun1">EUNE</option>
+              <option value="na1">NA</option>
+              <option value="kr">KR</option>
+            </select>
+            <select id="t50-tier" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.8rem;color:var(--text)">
+              <option value="DIAMOND">Diamond (I+II)</option>
+              <option value="MASTER">Master</option>
+              <option value="GRANDMASTER">Grandmaster</option>
+            </select>
+            <button id="t50-scan-btn" onclick="top50Scan()" style="background:var(--lime);color:#000;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.85rem;font-weight:600;cursor:pointer">⚡ Scanner</button>
+            <button onclick="top50Export()" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer">📥 CSV</button>
+            <button onclick="top50ToggleView()" id="t50-view-btn" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer">👁 Vue publique</button>
+          </div>
+        </div>
+
+        <!-- API key reminder -->
+        <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.75rem 1rem;font-size:.78rem;color:#F59E0B;margin-bottom:1rem">
+          ⚠ Utilisez la même clé API que l'onglet <strong>Fiche joueur</strong> — saisissez-la dans le champ ci-dessous. Elle expire toutes les 24h.
+          <div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">
+            <input id="t50-apikey" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.78rem;color:var(--text);font-family:monospace" oninput="try{localStorage.setItem('t50_key',this.value)}catch(e){}"/>
+          </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="t50-progress" style="display:none;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:1rem;margin-bottom:1rem">
+          <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--sub);margin-bottom:.5rem">
+            <span id="t50-prog-txt">Initialisation…</span>
+            <span id="t50-prog-pct">0%</span>
+          </div>
+          <div style="height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">
+            <div id="t50-prog-fill" style="height:4px;background:var(--lime);border-radius:2px;transition:width .3s;width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Stats bar -->
+        <div id="t50-stats-bar" style="display:none;display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1rem">
+          <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--sub)">Prospects scannés : </span><strong id="t50-count">0</strong>
+          </div>
+          <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--sub)">Dernière MAJ : </span><strong id="t50-date">—</strong>
+          </div>
+          <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--lime)">✅ Contactés : </span><strong id="t50-contacted">0</strong>
+          </div>
+        </div>
+
+        <!-- Table private view -->
+        <div id="t50-private-view">
+          <div style="overflow-x:auto;background:var(--surf2);border:1px solid var(--border);border-radius:10px">
+            <table style="width:100%;border-collapse:collapse;font-size:.82rem" id="t50-table">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border)">
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">#</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Joueur</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Rang</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Rôle</th>
+                  <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Score SPES</th>
+                  <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">WR%</th>
+                  <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">KDA</th>
+                  <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Âge</th>
+                  <th style="padding:.625rem .75rpm;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Statut</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Notes</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="t50-tbody">
+                <tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Lancez un scan pour générer le Top 50 prospects EUW.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Public view -->
+        <div id="t50-public-view" style="display:none">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.75rem" id="t50-cards"></div>
+        </div>
+
+      </div>
+    </div><!-- /panel-top50 -->
 
   </main>
 </div><!-- /shell -->
@@ -1919,10 +2014,11 @@ function switchPanel(id) {
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
   const panel = document.getElementById(`panel-${id}`);
   if (panel) panel.classList.add('active');
-  const idx = ['scout','graphs','map','results'].indexOf(id);
+  const idx = ['scout','graphs','map','results','top50'].indexOf(id);
   if (id === 'graphs') buildGraphs();
   if (id === 'map') initMapPanel();
-  const navIdx = idx < 0 ? -1 : idx === 0 ? 0 : idx === 1 ? 1 : idx === 2 ? 2 : 3;
+  const navIdx = idx < 0 ? -1 : idx;
+  if (id === 'top50') { try { const k=localStorage.getItem('t50_key'); if(k) document.getElementById('t50-apikey').value=k; } catch(e){} top50RenderTable(); }
   if (navIdx >= 0) document.querySelectorAll('.hd-nav-item')[navIdx]?.classList.add('active');
   if (id === 'results') buildResults();
 }
@@ -2021,7 +2117,13 @@ async function riotFetch(url, apiKey) {
   if (!res.ok) {
     if (res.status===401||res.status===403) throw new Error('Clé API invalide ou expirée ('+res.status+'). Renouvelez sur developer.riotgames.com (expire toutes les 24h).');
     if (res.status===404) throw new Error('Joueur introuvable (404). Vérifiez pseudo et tag — sensibles à la casse.');
-    if (res.status===429) throw new Error('Trop de requêtes (429). Attendez 2 min puis relancez.');
+    if (res.status===429) {
+      dbgLog('⏳ 429 — attente 15s et retry automatique…');
+      const progEl = document.getElementById('api-prog-txt');
+      if (progEl) progEl.textContent = '⏳ Limite Riot atteinte — reprise dans 15s…';
+      await sleep(15000);
+      return riotFetch(url.split('?')[0], apiKey); // retry
+    }
     throw new Error('Riot API '+res.status+' : '+body.slice(0,100));
   }
   try { return JSON.parse(body); } catch(_) { throw new Error('JSON invalide de Riot'); }
@@ -2048,6 +2150,7 @@ function calculateStats(matches, puuid) {
   const sessionDays = new Set();
 
   matches.forEach(m => {
+    if (!m?.info?.participants) return; // skip remakes / corrupted matches
     const p = m.info.participants.find(x => x.puuid === puuid);
     if (!p) return;
     gameCount++;
@@ -3594,6 +3697,369 @@ updateGlobal();
 updateVerdict();
 updateRadar();
 loadKey();
+
+// ════════════════════════════════════════════
+// TOP 50 PROSPECTS
+// ════════════════════════════════════════════
+let top50Data = [];
+let top50ViewMode = 'private'; // 'private' | 'public'
+const STATUT_FLOW = ['🆕 Nouveau','👁 Observation','📬 Contacté','🎤 Entretien','✅ Signé','❌ Écarté'];
+const TIER_IDX = {IRON:0,BRONZE:1,SILVER:2,GOLD:3,PLATINUM:4,EMERALD:5,DIAMOND:6,MASTER:7,GRANDMASTER:8,CHALLENGER:9};
+
+function t50SetProg(pct, txt) {
+  const el = document.getElementById('t50-progress'); if (el) el.style.display = 'block';
+  const fill = document.getElementById('t50-prog-fill'); if (fill) fill.style.width = pct + '%';
+  const t = document.getElementById('t50-prog-txt'); if (t) t.textContent = txt;
+  const p = document.getElementById('t50-prog-pct'); if (p) p.textContent = pct + '%';
+}
+
+function top50SaveLocal() {
+  try { localStorage.setItem('top50_data', JSON.stringify(top50Data)); } catch(e) {}
+}
+
+function top50LoadLocal() {
+  try {
+    const d = localStorage.getItem('top50_data');
+    if (d) { top50Data = JSON.parse(d); top50RenderTable(); }
+  } catch(e) {}
+}
+
+// Calcul score SPES prospect (sans âge — ajouté manuellement)
+function calcProspectScore(tierIdx, lp, wr, kda, csMin, visionAvg) {
+  // Rang (0-10)
+  const rankScore = Math.min(10, tierIdx * 1.2 + (lp / 100) * 0.3);
+  // WR (0-10)
+  const wrScore = wr >= 60 ? 10 : wr >= 55 ? 8.5 : wr >= 52 ? 7 : wr >= 50 ? 5.5 : wr >= 48 ? 4 : 2;
+  // KDA (0-10)
+  const kdaScore = kda >= 7 ? 10 : kda >= 5 ? 9 : kda >= 4 ? 7.5 : kda >= 3 ? 6 : kda >= 2 ? 4 : 2;
+  // CS/min (0-10)
+  const csScore = csMin >= 9 ? 10 : csMin >= 8 ? 8.5 : csMin >= 7 ? 7 : csMin >= 6 ? 5.5 : 3;
+  // Vision (0-10)
+  const visScore = visionAvg >= 45 ? 10 : visionAvg >= 35 ? 8.5 : visionAvg >= 25 ? 7 : visionAvg >= 18 ? 5.5 : 3;
+
+  const raw = rankScore * 0.35 + wrScore * 0.25 + kdaScore * 0.20 + csScore * 0.10 + visScore * 0.10;
+  return Math.min(10, raw).toFixed(2);
+}
+
+// Bonus multiplicateur âge (appliqué côté affichage quand l'âge est connu)
+function ageBonus(age) {
+  if (!age || age <= 0) return 1;
+  if (age <= 15) return 1.35;
+  if (age <= 17) return 1.20;
+  if (age <= 19) return 1.10;
+  if (age <= 21) return 1.05;
+  if (age <= 23) return 1.00;
+  return 0.92;
+}
+
+function guessRole(champs) {
+  if (!champs || !champs.length) return '?';
+  const top = champs[0]?.name?.toLowerCase() || '';
+  const supChamps = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','vel'];
+  const jglChamps = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick'];
+  const adcChamps = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kai','lucian'];
+  const topChamps = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce'];
+  if (supChamps.some(s => top.includes(s))) return 'Sup';
+  if (jglChamps.some(s => top.includes(s))) return 'Jgl';
+  if (adcChamps.some(s => top.includes(s))) return 'ADC';
+  if (topChamps.some(s => top.includes(s))) return 'Top';
+  return 'Mid';
+}
+
+async function top50Scan() {
+  const apiKey = document.getElementById('t50-apikey').value.trim();
+  const server = document.getElementById('t50-server').value;
+  const tier   = document.getElementById('t50-tier').value;
+  if (!apiKey) { alert('Entrez votre clé API Riot.'); return; }
+
+  const btn = document.getElementById('t50-scan-btn');
+  btn.disabled = true; btn.textContent = '⏳ Scan…';
+  document.getElementById('t50-progress').style.display = 'block';
+
+  const regional = { euw1:'europe', eun1:'europe', na1:'americas', kr:'asia' }[server] || 'europe';
+
+  try {
+    // 1. Récupère le leaderboard
+    t50SetProg(5, `Récupération du leaderboard ${tier} ${server.toUpperCase()}…`);
+    let entries = [];
+
+    if (tier === 'MASTER' || tier === 'GRANDMASTER' || tier === 'CHALLENGER') {
+      const data = await riotFetch(
+        `https://${server}.api.riotgames.com/lol/league/v4/${tier.toLowerCase()}leagues/by-queue/RANKED_SOLO_5x5`,
+        apiKey
+      );
+      entries = (data.entries || []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, 120);
+    } else {
+      // Diamond — pages I et II
+      const [p1, p2] = await Promise.all([
+        riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1`, apiKey),
+        riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=2`, apiKey),
+      ]);
+      entries = [...(p1||[]), ...(p2||[])].slice(0, 120);
+    }
+
+    t50SetProg(15, `${entries.length} joueurs récupérés — analyse en cours…`);
+
+    const prospects = [];
+    const MAX = Math.min(entries.length, 80); // analyse 80 max → garde top 50
+
+    for (let i = 0; i < MAX; i++) {
+      const entry = entries[i];
+      t50SetProg(15 + Math.round(i / MAX * 75), `Analyse ${i+1}/${MAX} — ${entry.summonerName || entry.puuid?.slice(0,10) || '…'}…`);
+
+      try {
+        // Récupère PUUID via summonerId
+        const sum = await riotFetch(
+          `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/${entry.summonerId}`,
+          apiKey
+        );
+        await sleep(300);
+
+        // Récupère les 5 dernières parties ranked
+        const matchIds = await riotFetch(
+          `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${sum.puuid}/ids?queue=420&count=5`,
+          apiKey
+        );
+        await sleep(300);
+
+        if (!matchIds || !matchIds.length) continue;
+
+        // Récupère les matchs
+        const matchData = [];
+        for (const mid of matchIds) {
+          try {
+            const m = await riotFetch(
+              `https://${regional}.api.riotgames.com/lol/match/v5/matches/${mid}`,
+              apiKey
+            );
+            if (m?.info?.participants) matchData.push(m);
+            await sleep(200);
+          } catch(e) { /* skip */ }
+        }
+
+        if (!matchData.length) continue;
+
+        // Calcule stats
+        let wins=0,kills=0,deaths=0,assists=0,cs=0,dur=0,vis=0;
+        let gc = 0;
+        const champMap2 = {};
+        matchData.forEach(m => {
+          if (!m?.info?.participants) return;
+          const p = m.info.participants.find(x => x.puuid === sum.puuid);
+          if (!p) return;
+          gc++;
+          if (p.win) wins++;
+          kills+=p.kills; deaths+=p.deaths; assists+=p.assists;
+          cs += (p.totalMinionsKilled||0)+(p.neutralMinionsKilled||0);
+          dur += (m.info.gameDuration||0)/60;
+          vis += (p.visionScore||0);
+          const cn = p.championName||'Unknown';
+          if (!champMap2[cn]) champMap2[cn]={games:0};
+          champMap2[cn].games++;
+        });
+        if (!gc) continue;
+
+        const wr = Math.round(wins/gc*100);
+        const kda = deaths===0 ? (kills+assists) : (kills+assists)/deaths;
+        const csMin = dur > 0 ? cs/dur : 0;
+        const visAvg = vis/gc;
+        const tierIdx = TIER_IDX[entry.tier||tier] ?? 6;
+        const lp = entry.leaguePoints || 0;
+        const champs = Object.entries(champMap2).sort((a,b)=>b[1].games-a[1].games).map(([name,d])=>({name,...d}));
+        const role = guessRole(champs);
+        const score = calcProspectScore(tierIdx, lp, wr, kda, csMin, visAvg);
+
+        // Préserve les données scouting existantes si le joueur était déjà dans la liste
+        const existing = top50Data.find(x => x.summonerId === entry.summonerId);
+
+        prospects.push({
+          summonerId: entry.summonerId,
+          puuid: sum.puuid,
+          name: sum.name || entry.summonerName || '—',
+          tier: entry.tier || tier,
+          rank: entry.rank || 'I',
+          lp,
+          wr, kda: parseFloat(kda.toFixed(2)), csMin: parseFloat(csMin.toFixed(2)), visAvg: Math.round(visAvg),
+          role, champs,
+          score: parseFloat(score),
+          scoreFinal: parseFloat(score), // recalculé si âge connu
+          age: existing?.age ?? null,
+          ageStatus: existing?.ageStatus ?? '🔍',
+          statut: existing?.statut ?? '🆕 Nouveau',
+          notes: existing?.notes ?? '',
+          addedAt: existing?.addedAt ?? new Date().toISOString(),
+        });
+
+      } catch(e) {
+        dbgLog('⚠ Prospect ignoré (' + (entry.summonerName||'?') + ') : ' + e.message);
+      }
+    }
+
+    // Trier par score SPES décroissant → garde top 50
+    prospects.sort((a,b) => b.score - a.score);
+    top50Data = prospects.slice(0, 50);
+    top50SaveLocal();
+
+    t50SetProg(100, `✅ Top ${top50Data.length} généré avec succès !`);
+    document.getElementById('t50-stats-bar').style.display = 'flex';
+    document.getElementById('t50-count').textContent = top50Data.length;
+    document.getElementById('t50-date').textContent = new Date().toLocaleDateString('fr-FR');
+    top50RenderTable();
+
+    setTimeout(() => { document.getElementById('t50-progress').style.display = 'none'; }, 3000);
+
+  } catch(e) {
+    t50SetProg(0, '❌ ' + e.message);
+    dbgLog('❌ Top50 scan error : ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ Scanner';
+  }
+}
+
+function top50RenderTable() {
+  const tbody = document.getElementById('t50-tbody');
+  if (!tbody) return;
+  if (!top50Data.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub)">Aucun prospect — lancez un scan.</td></tr>';
+    return;
+  }
+
+  const contacted = top50Data.filter(p => !p.statut.includes('Nouveau') && !p.statut.includes('Observation')).length;
+  const countEl = document.getElementById('t50-contacted'); if (countEl) countEl.textContent = contacted;
+  const countEl2 = document.getElementById('t50-count'); if (countEl2) countEl2.textContent = top50Data.length;
+  const dateEl = document.getElementById('t50-date');
+  if (dateEl && top50Data[0]?.addedAt) dateEl.textContent = new Date(top50Data[0].addedAt).toLocaleDateString('fr-FR');
+  document.getElementById('t50-stats-bar').style.display = 'flex';
+
+  const tierColor = {IRON:'#7A7A7A',BRONZE:'#CD7F32',SILVER:'#C0C0C0',GOLD:'#FFD700',PLATINUM:'#00B4B4',EMERALD:'#50C878',DIAMOND:'#A78BFA',MASTER:'#9D4EDD',GRANDMASTER:'#E15554',CHALLENGER:'#F59E0B'};
+
+  tbody.innerHTML = top50Data.map((p, i) => {
+    const ageBonusVal = p.age ? ageBonus(p.age) : 1;
+    const scoreFinal = p.age ? Math.min(10, p.score * ageBonusVal).toFixed(2) : p.score.toFixed(2);
+    const ageDisplay = p.age ? `<span style="color:var(--lime);font-weight:600">${p.age}ans</span>` :
+      `<span style="font-size:.7rem;color:var(--sub)">${p.ageStatus}</span>`;
+    const rankStr = `${p.tier} ${p.rank} — ${p.lp}LP`;
+    const tc = tierColor[p.tier] || '#aaa';
+    const statutColor = p.statut.includes('Signé') ? 'var(--lime)' : p.statut.includes('Écarté') ? 'var(--coral)' : p.statut.includes('Entretien') ? '#F59E0B' : 'var(--sub)';
+    const wrColor = p.wr >= 55 ? 'var(--lime)' : p.wr >= 50 ? 'var(--text)' : 'var(--coral)';
+    const kdaColor = p.kda >= 4 ? 'var(--lime)' : p.kda >= 3 ? 'var(--text)' : 'var(--coral)';
+
+    return `<tr style="border-bottom:.5px solid var(--border);transition:background .1s" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
+      <td style="padding:.5rem .75rem;color:var(--sub);font-family:monospace;font-size:.8rem">${i+1}</td>
+      <td style="padding:.5rem .75rem">
+        <div style="font-weight:600;font-size:.88rem">${p.name}</div>
+        <div style="font-size:.7rem;color:var(--sub)">${p.champs?.slice(0,2).map(c=>c.name).join(' · ')||'—'}</div>
+      </td>
+      <td style="padding:.5rem .75rem;white-space:nowrap">
+        <span style="color:${tc};font-weight:600;font-size:.82rem">${rankStr}</span>
+      </td>
+      <td style="padding:.5rem .75rem;font-size:.82rem">${p.role}</td>
+      <td style="padding:.5rem .75rem;text-align:center">
+        <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${parseFloat(scoreFinal)>=8?'var(--lime)':parseFloat(scoreFinal)>=6.5?'#A78BFA':parseFloat(scoreFinal)>=5?'#F59E0B':'var(--coral)'}">${scoreFinal}</span>
+        ${p.age ? '<div style="font-size:.65rem;color:var(--lime)">+bonus âge</div>' : ''}
+      </td>
+      <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${wrColor}">${p.wr}%</td>
+      <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${kdaColor}">${p.kda}</td>
+      <td style="padding:.5rem .75rem;text-align:center">
+        <div style="display:flex;align-items:center;gap:4px">
+          ${ageDisplay}
+          <button onclick="top50SetAge(${i})" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--sub)" title="Modifier l'âge">✏️</button>
+        </div>
+      </td>
+      <td style="padding:.5rem .75rem">
+        <button onclick="top50NextStatut(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-size:.73rem;cursor:pointer;color:${statutColor};white-space:nowrap">${p.statut}</button>
+      </td>
+      <td style="padding:.5rem .75rem;max-width:160px">
+        <input value="${(p.notes||'').replace(/"/g,'&quot;')}" placeholder="Notes scout…" onchange="top50SetNote(${i},this.value)"
+          style="width:100%;background:transparent;border:none;border-bottom:.5px solid var(--border);font-size:.75rem;color:var(--text);padding:2px 0;outline:none"/>
+      </td>
+      <td style="padding:.5rem .75rem">
+        <div style="display:flex;gap:4px">
+          <button onclick="top50OpenSPES('${p.name}')" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime);border-radius:4px;padding:2px 7px;font-size:.72rem;color:var(--lime);cursor:pointer">📋 SPES</button>
+          <button onclick="top50Remove(${i})" title="Supprimer" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sub);cursor:pointer">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Public cards
+  const cardsEl = document.getElementById('t50-cards');
+  if (cardsEl) {
+    const tc2 = tierColor;
+    cardsEl.innerHTML = top50Data.map((p,i) => `
+      <div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+          <span style="font-size:.7rem;color:var(--sub);font-family:monospace">#${i+1}</span>
+          <span style="font-family:monospace;font-weight:700;color:${parseFloat(p.score)>=8?'var(--lime)':'#A78BFA'}">${p.score}</span>
+        </div>
+        <div style="font-weight:700;font-size:.92rem;margin-bottom:.25rem">${p.name}</div>
+        <div style="font-size:.75rem;color:${tc2[p.tier]||'#aaa'};font-weight:600">${p.tier} ${p.rank} — ${p.lp}LP</div>
+        <div style="font-size:.72rem;color:var(--sub);margin-top:.375rem">${p.role} · ${p.wr}%WR · ${p.kda}KDA</div>
+      </div>`).join('');
+  }
+}
+
+function top50NextStatut(idx) {
+  if (!top50Data[idx]) return;
+  const cur = top50Data[idx].statut;
+  const ci = STATUT_FLOW.indexOf(cur);
+  top50Data[idx].statut = STATUT_FLOW[(ci + 1) % STATUT_FLOW.length];
+  top50SaveLocal(); top50RenderTable();
+}
+
+function top50SetAge(idx) {
+  const p = top50Data[idx]; if (!p) return;
+  const val = prompt(`Âge de ${p.name} (laissez vide pour mettre "En attente") :`);
+  if (val === null) return;
+  if (val === '') { p.age = null; p.ageStatus = '⏳'; }
+  else { const n = parseInt(val); if (n > 10 && n < 40) { p.age = n; p.ageStatus = '✅'; } }
+  top50SaveLocal(); top50RenderTable();
+}
+
+function top50SetNote(idx, val) {
+  if (top50Data[idx]) { top50Data[idx].notes = val; top50SaveLocal(); }
+}
+
+function top50Remove(idx) {
+  if (confirm('Supprimer ce prospect du Top 50 ?')) {
+    top50Data.splice(idx, 1); top50SaveLocal(); top50RenderTable();
+  }
+}
+
+function top50OpenSPES(name) {
+  // Pré-remplit le champ pseudo dans l'onglet Fiche joueur et bascule
+  const inp = document.getElementById('riot-name'); if (inp) inp.value = name;
+  const tag = document.getElementById('riot-tag'); if (tag) tag.value = 'EUW';
+  switchPanel('scout');
+  // Scroll vers la section API
+  setTimeout(() => { const el = document.getElementById('api-section'); if (el) el.scrollIntoView({behavior:'smooth'}); }, 300);
+}
+
+function top50ToggleView() {
+  top50ViewMode = top50ViewMode === 'private' ? 'public' : 'private';
+  document.getElementById('t50-private-view').style.display = top50ViewMode === 'private' ? 'block' : 'none';
+  document.getElementById('t50-public-view').style.display = top50ViewMode === 'public' ? 'block' : 'none';
+  document.getElementById('t50-view-btn').textContent = top50ViewMode === 'private' ? '👁 Vue publique' : '🔒 Vue privée';
+}
+
+function top50Export() {
+  if (!top50Data.length) { alert('Aucune donnée à exporter.'); return; }
+  const headers = ['Rang','Joueur','Tier','LP','Rôle','Score SPES','WR%','KDA','CS/min','Vision','Âge','Statut','Notes'];
+  const rows = top50Data.map((p,i) => [
+    i+1, p.name, `${p.tier} ${p.rank}`, p.lp, p.role, p.score, p.wr, p.kda, p.csMin, p.visAvg,
+    p.age||p.ageStatus, p.statut, (p.notes||'').replace(/,/g,';')
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(',')).join(String.fromCharCode(10));
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url;
+  a.download = `top50_prospects_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Chargement initial
+top50LoadLocal();
+
 </script>
 </body>
 </html>
