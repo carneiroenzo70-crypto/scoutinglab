@@ -3714,7 +3714,9 @@ function t50SetProg(pct, txt) {
 }
 
 function top50SaveLocal() {
-  try { localStorage.setItem('top50_data', JSON.stringify(top50Data)); } catch(e) {}
+  try { localStorage.setItem('top50_data', JSON.stringify(top50Data)); } catch(e) {
+    dbgLog('⚠ localStorage indisponible — données non sauvegardées localement');
+  }
 }
 
 function top50LoadLocal() {
@@ -3788,14 +3790,17 @@ async function top50Scan() {
         `https://${server}.api.riotgames.com/lol/league/v4/${tier.toLowerCase()}leagues/by-queue/RANKED_SOLO_5x5`,
         apiKey
       );
-      entries = (data.entries || []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, 120);
+      entries = (Array.isArray(data?.entries) ? data.entries : []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, 120);
     } else {
       // Diamond — pages I et II
       const [p1, p2] = await Promise.all([
         riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1`, apiKey),
         riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=2`, apiKey),
       ]);
-      entries = [...(p1||[]), ...(p2||[])].slice(0, 120);
+      entries = [
+        ...(Array.isArray(p1) ? p1 : []),
+        ...(Array.isArray(p2) ? p2 : [])
+      ].slice(0, 120);
     }
 
     t50SetProg(15, `${entries.length} joueurs récupérés — analyse en cours…`);
@@ -3813,7 +3818,19 @@ async function top50Scan() {
           `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/${entry.summonerId}`,
           apiKey
         );
+        if (!sum?.puuid) continue;
         await sleep(300);
+
+        // Récupère gameName via account endpoint (sum.name supprimé dans la nouvelle API)
+        let displayName = entry.summonerName || '—';
+        try {
+          const acct = await riotFetch(
+            `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-puuid/${sum.puuid}`,
+            apiKey
+          );
+          if (acct?.gameName) displayName = acct.gameName + (acct.tagLine ? '#' + acct.tagLine : '');
+          await sleep(300);
+        } catch(e) { /* garde l'ancien nom */ }
 
         // Récupère les 5 dernières parties ranked
         const matchIds = await riotFetch(
@@ -3822,7 +3839,7 @@ async function top50Scan() {
         );
         await sleep(300);
 
-        if (!matchIds || !matchIds.length) continue;
+        if (!Array.isArray(matchIds) || !matchIds.length) continue;
 
         // Récupère les matchs
         const matchData = [];
@@ -3875,7 +3892,7 @@ async function top50Scan() {
         prospects.push({
           summonerId: entry.summonerId,
           puuid: sum.puuid,
-          name: sum.name || entry.summonerName || '—',
+          name: displayName,
           tier: entry.tier || tier,
           rank: entry.rank || 'I',
           lp,
