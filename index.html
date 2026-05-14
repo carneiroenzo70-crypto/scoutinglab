@@ -3813,28 +3813,40 @@ async function top50Scan() {
       t50SetProg(15 + Math.round(i / MAX * 75), `Analyse ${i+1}/${MAX} — ${entry.summonerName || entry.puuid?.slice(0,10) || '…'}…`);
 
       try {
-        // Récupère PUUID via summonerId
-        const sum = await riotFetch(
-          `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/${entry.summonerId}`,
-          apiKey
-        );
-        if (!sum?.puuid) continue;
-        await sleep(300);
+        // Nouvelle API Riot : entry.puuid est disponible directement (Master/GM/Challenger)
+        // Sinon fallback sur summonerId pour Diamond
+        let puuid = entry.puuid || null;
+        let displayName = entry.summonerName || entry.riotIdGameName || '—';
 
-        // Récupère gameName via account endpoint (sum.name supprimé dans la nouvelle API)
-        let displayName = entry.summonerName || '—';
+        if (!puuid && entry.summonerId) {
+          // Diamond : on passe par summonerId pour avoir le puuid
+          const sum = await riotFetch(
+            `https://${server}.api.riotgames.com/lol/summoner/v4/summoners/${entry.summonerId}`,
+            apiKey
+          );
+          if (!sum?.puuid) continue;
+          puuid = sum.puuid;
+          await sleep(300);
+        }
+
+        if (!puuid) continue;
+
+        // Récupère gameName via account endpoint
         try {
           const acct = await riotFetch(
-            `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-puuid/${sum.puuid}`,
+            `https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-puuid/${puuid}`,
             apiKey
           );
           if (acct?.gameName) displayName = acct.gameName + (acct.tagLine ? '#' + acct.tagLine : '');
           await sleep(300);
-        } catch(e) { /* garde l'ancien nom */ }
+        } catch(e) { /* garde le nom existant */ }
+        
+        // Objet sum compatible avec le reste du code
+        const sum = { puuid };
 
         // Récupère les 5 dernières parties ranked
         const matchIds = await riotFetch(
-          `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${sum.puuid}/ids?queue=420&count=5`,
+          `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&count=5`,
           apiKey
         );
         await sleep(300);
@@ -3862,7 +3874,7 @@ async function top50Scan() {
         const champMap2 = {};
         matchData.forEach(m => {
           if (!m?.info?.participants) return;
-          const p = m.info.participants.find(x => x.puuid === sum.puuid);
+          const p = m.info.participants.find(x => x.puuid === puuid);
           if (!p) return;
           gc++;
           if (p.win) wins++;
@@ -3887,11 +3899,11 @@ async function top50Scan() {
         const score = calcProspectScore(tierIdx, lp, wr, kda, csMin, visAvg);
 
         // Préserve les données scouting existantes si le joueur était déjà dans la liste
-        const existing = top50Data.find(x => x.summonerId === entry.summonerId);
+        const existing = top50Data.find(x => x.puuid === puuid);
 
         prospects.push({
           summonerId: entry.summonerId,
-          puuid: sum.puuid,
+          puuid: puuid,
           name: displayName,
           tier: entry.tier || tier,
           rank: entry.rank || 'I',
