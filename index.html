@@ -1135,6 +1135,7 @@ body {
         <!-- API key reminder -->
         <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.75rem 1rem;font-size:.78rem;color:#F59E0B;margin-bottom:1rem">
           ⚠ Utilisez la même clé API que l'onglet <strong>Fiche joueur</strong> — saisissez-la dans le champ ci-dessous. Elle expire toutes les 24h.
+          Pour un scan plus rapide sans limite de débit, obtenez une <strong>clé de production Riot</strong> sur <a href="https://developer.riotgames.com" target="_blank" style="color:#F59E0B">developer.riotgames.com</a> (section "Apply for Production API Key").
           <div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">
             <input id="t50-apikey" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.78rem;color:var(--text);font-family:monospace" oninput="try{localStorage.setItem('t50_key',this.value)}catch(e){}"/>
           </div>
@@ -3726,21 +3727,58 @@ function top50LoadLocal() {
   } catch(e) {}
 }
 
-// Calcul score SPES prospect (sans âge — ajouté manuellement)
-function calcProspectScore(tierIdx, lp, wr, kda, csMin, visionAvg) {
-  // Rang (0-10)
-  const rankScore = Math.min(10, tierIdx * 1.2 + (lp / 100) * 0.3);
-  // WR (0-10)
-  const wrScore = wr >= 60 ? 10 : wr >= 55 ? 8.5 : wr >= 52 ? 7 : wr >= 50 ? 5.5 : wr >= 48 ? 4 : 2;
-  // KDA (0-10)
-  const kdaScore = kda >= 7 ? 10 : kda >= 5 ? 9 : kda >= 4 ? 7.5 : kda >= 3 ? 6 : kda >= 2 ? 4 : 2;
-  // CS/min (0-10)
-  const csScore = csMin >= 9 ? 10 : csMin >= 8 ? 8.5 : csMin >= 7 ? 7 : csMin >= 6 ? 5.5 : 3;
-  // Vision (0-10)
-  const visScore = visionAvg >= 45 ? 10 : visionAvg >= 35 ? 8.5 : visionAvg >= 25 ? 7 : visionAvg >= 18 ? 5.5 : 3;
+// ── Score SPES prospect — aligné sur les formules D1-D5 de la fiche joueur ─────
+// Utilise les mêmes seuils bad/avg/good/elite que les D1_FIELDS par rôle
+function scoreField(val, bad, avg, good, elite) {
+  if (val === null || val === undefined || isNaN(val)) return null;
+  if (val >= elite) return 10;
+  if (val >= good)  return 7 + 3 * (val - good) / (elite - good);
+  if (val >= avg)   return 5 + 2 * (val - avg)  / (good - avg);
+  if (val >= bad)   return 3 + 2 * (val - bad)  / (avg - bad);
+  return Math.max(0, 3 * (val / bad));
+}
 
-  const raw = rankScore * 0.35 + wrScore * 0.25 + kdaScore * 0.20 + csScore * 0.10 + visScore * 0.10;
-  return Math.min(10, raw).toFixed(2);
+function calcProspectScore(tierIdx, lp, wr, kda, csMin, visionAvg, role, killPart, dmgShare, objScore) {
+  role = role || 'Mid';
+
+  // D1 — Stats pures (seuils par rôle identiques à D1_FIELDS)
+  const d1Thresholds = {
+    Top: { cs:[5.5,7.0,8.2,9.0], kda:[1.5,2.4,3.5,4.5], dmg:[18,24,30,36], wr:[46,51,55,60] },
+    Jgl: { cs:[4.5,5.8,6.8,7.8], kda:[2.0,3.0,4.0,5.5], wr:[46,51,55,60] },
+    Mid: { cs:[6.5,8.0,9.0,9.8], kda:[2.0,3.0,4.2,5.5], dmg:[22,28,33,38], wr:[46,51,55,60] },
+    ADC: { cs:[7.0,8.5,9.5,10.5],kda:[2.5,3.5,4.5,6.0], dmg:[25,32,37,43], wr:[46,51,55,60] },
+    Sup: { kda:[2.5,3.5,4.8,6.5], dmg:[5,10,14,18], wr:[46,51,55,60] },
+  };
+  const thr = d1Thresholds[role] || d1Thresholds.Mid;
+  const csScore  = thr.cs  ? scoreField(csMin,   ...thr.cs)  : null;
+  const kdaScore = thr.kda ? scoreField(kda,     ...thr.kda) : null;
+  const dmgScore = thr.dmg ? scoreField(dmgShare,...thr.dmg) : null;
+  const wrScore  = thr.wr  ? scoreField(wr,      ...thr.wr)  : null;
+
+  const d1vals = [csScore, kdaScore, dmgScore, wrScore].filter(v => v !== null);
+  const d1 = d1vals.length ? d1vals.reduce((a,b)=>a+b,0)/d1vals.length : 5;
+
+  // D2 — Objectifs & macro (obj_score API)
+  const d2 = objScore !== null && objScore !== undefined
+    ? scoreField(objScore, 1.0, 2.5, 4.0, 6.0)
+    : 5;
+
+  // D3 — Impact carte (kill participation + vision)
+  const kpThr = { Top:[45,58,68,78], Jgl:[50,63,72,82], Mid:[50,63,72,82], ADC:[45,58,68,78], Sup:[55,68,76,85] };
+  const visThr = { Top:[15,22,30,40], Jgl:[25,35,45,58], Mid:[15,22,30,40], ADC:[15,22,30,40], Sup:[40,55,68,85] };
+  const kpScore  = killPart  ? scoreField(killPart,  ...(kpThr[role]  || kpThr.Mid))  : null;
+  const visScore = visionAvg ? scoreField(visionAvg, ...(visThr[role] || visThr.Mid)) : null;
+  const d3vals = [kpScore, visScore].filter(v => v !== null);
+  const d3 = d3vals.length ? d3vals.reduce((a,b)=>a+b,0)/d3vals.length : 5;
+
+  // D4 — Progression : rang + LP (même logique que D4_FIELDS_BASE)
+  const rankScore = Math.min(10, tierIdx * 1.1 + (lp / 100) * 0.5);
+  const d4 = rankScore;
+
+  // Score global = moyenne D1-D4 pondérée (D5 entretien non dispo en auto)
+  // Poids identiques à ROLE_WEIGHTS sans D5
+  const score = (d1 * 0.35 + d2 * 0.15 + d3 * 0.15 + d4 * 0.20) / 0.85;
+  return Math.min(10, Math.max(0, score)).toFixed(2);
 }
 
 // Bonus multiplicateur âge (appliqué côté affichage quand l'âge est connu)
@@ -3804,13 +3842,36 @@ async function lookupLiquipediaAge(gameName) {
   }
 }
 
+// Détecte le rôle à partir des données brutes de match (individualPosition + teamPosition)
+// + fallback par champion si positions indisponibles
+function guessRoleFromMatches(matchData, puuid) {
+  const posCount = { TOP:0, JUNGLE:0, MIDDLE:0, BOTTOM:0, UTILITY:0 };
+  matchData.forEach(m => {
+    const p = m?.info?.participants?.find(x => x.puuid === puuid);
+    if (!p) return;
+    // individualPosition est la vraie position détectée par Riot (plus fiable que teamPosition)
+    const pos = (p.individualPosition || p.teamPosition || '').toUpperCase();
+    if (posCount[pos] !== undefined) posCount[pos]++;
+  });
+  const total = Object.values(posCount).reduce((a,b)=>a+b,0);
+  if (total > 0) {
+    const best = Object.entries(posCount).sort((a,b)=>b[1]-a[1])[0][0];
+    const map = { TOP:'Top', JUNGLE:'Jgl', MIDDLE:'Mid', BOTTOM:'ADC', UTILITY:'Sup' };
+    if (posCount[best] > 0) return map[best] || 'Mid';
+  }
+  return null; // fallback au guessRole par champion
+}
+
 function guessRole(champs) {
   if (!champs || !champs.length) return '?';
   const top = champs[0]?.name?.toLowerCase() || '';
-  const supChamps = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','vel'];
-  const jglChamps = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick'];
-  const adcChamps = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kai','lucian'];
-  const topChamps = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce'];
+
+  // Listes complètes par rôle (champions fréquents Diamond+ EUW)
+  const supChamps = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','velkoz','bard','zilean','lux','heimerdinger','milio','renata','sona','alistar','taric','braum'];
+  const jglChamps = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','j4','kha','kindred','nunu','olaf','pantheon','rammus','rek sai','sejuani','taliyah','udyr','viego','volibear','wukong','zac','zed','xin','poppy','belveth','briar','naafiri'];
+  const adcChamps = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kaisa','lucian','ashe','sivir','tristana','vayne','kogmaw','twitch','varus','miss fortune','nilah','zeri','smolder'];
+  const topChamps = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce','aatrox','chogath','gangplank','gnar','illaoi','irelia','jax','mordekaiser','nasus','quinn','renekton','riven','teemo','tryndamere','urgot','vladimir','volibear','yasuo','yone','yorick','singed','tahm kench','dr. mundo','ksante','sett','zac'];
+
   if (supChamps.some(s => top.includes(s))) return 'Sup';
   if (jglChamps.some(s => top.includes(s))) return 'Jgl';
   if (adcChamps.some(s => top.includes(s))) return 'ADC';
@@ -3926,20 +3987,46 @@ async function top50Scan() {
 
         if (!matchData.length) continue;
 
-        // Calcule stats
+        // Calcule stats enrichies (D1+D2+D3)
         let wins=0,kills=0,deaths=0,assists=0,cs=0,dur=0,vis=0;
+        let killPart=0, dmgShare=0, objScore=0, dragonKills=0, baronKills=0;
         let gc = 0;
         const champMap2 = {};
+
         matchData.forEach(m => {
           if (!m?.info?.participants) return;
           const p = m.info.participants.find(x => x.puuid === puuid);
           if (!p) return;
+          if ((m.info.gameDuration||0) < 240) return; // skip remakes
           gc++;
           if (p.win) wins++;
           kills+=p.kills; deaths+=p.deaths; assists+=p.assists;
           cs += (p.totalMinionsKilled||0)+(p.neutralMinionsKilled||0);
-          dur += (m.info.gameDuration||0)/60;
+          const gameDur = (m.info.gameDuration||0)/60;
+          dur += gameDur;
           vis += (p.visionScore||0);
+
+          // Kill participation
+          const teamKills = m.info.participants
+            .filter(x => x.teamId === p.teamId)
+            .reduce((a,x) => a+(x.kills||0), 0);
+          if (teamKills > 0) killPart += ((p.kills + p.assists) / teamKills) * 100;
+
+          // Dmg share
+          const teamDmg = m.info.participants
+            .filter(x => x.teamId === p.teamId)
+            .reduce((a,x) => a+(x.totalDamageDealtToChampions||0), 0);
+          if (teamDmg > 0) dmgShare += ((p.totalDamageDealtToChampions||0) / teamDmg) * 100;
+
+          // Objectifs — depuis m.info.teams
+          const myTeam = m.info.teams?.find(t => t.teamId === p.teamId);
+          if (myTeam?.objectives) {
+            dragonKills += myTeam.objectives.dragon?.kills || 0;
+            baronKills  += myTeam.objectives.baron?.kills  || 0;
+            objScore    += (myTeam.objectives.dragon?.kills||0) + (myTeam.objectives.baron?.kills||0)
+                          + (myTeam.objectives.tower?.kills||0) * 0.5;
+          }
+
           const cn = p.championName||'Unknown';
           if (!champMap2[cn]) champMap2[cn]={games:0};
           champMap2[cn].games++;
@@ -3950,11 +4037,17 @@ async function top50Scan() {
         const kda = deaths===0 ? (kills+assists) : (kills+assists)/deaths;
         const csMin = dur > 0 ? cs/dur : 0;
         const visAvg = vis/gc;
+        const kpAvg = killPart/gc;
+        const dmgAvg = dmgShare/gc;
+        const objAvg = objScore/gc;
+        const dragonAvg = parseFloat((dragonKills/gc).toFixed(2));
+        const baronAvg  = parseFloat((baronKills/gc).toFixed(2));
+
         const tierIdx = TIER_IDX[entry.tier||tier] ?? 6;
         const lp = entry.leaguePoints || 0;
         const champs = Object.entries(champMap2).sort((a,b)=>b[1].games-a[1].games).map(([name,d])=>({name,...d}));
-        const role = guessRole(champs);
-        const score = calcProspectScore(tierIdx, lp, wr, kda, csMin, visAvg);
+        const role = guessRoleFromMatches(matchData, puuid) || guessRole(champs);
+        const score = calcProspectScore(tierIdx, lp, wr, kda, csMin, visAvg, role, kpAvg, dmgAvg, objAvg);
 
         // Préserve les données scouting existantes si le joueur était déjà dans la liste
         const existing = top50Data.find(x => x.puuid === puuid);
@@ -3967,6 +4060,8 @@ async function top50Scan() {
           rank: entry.rank || 'I',
           lp,
           wr, kda: parseFloat(kda.toFixed(2)), csMin: parseFloat(csMin.toFixed(2)), visAvg: Math.round(visAvg),
+          kpAvg: parseFloat(kpAvg.toFixed(1)), dmgAvg: parseFloat(dmgAvg.toFixed(1)),
+          objAvg: parseFloat(objAvg.toFixed(2)), dragonAvg, baronAvg,
           role, champs,
           score: parseFloat(score),
           scoreFinal: parseFloat(score), // recalculé si âge connu
@@ -4041,9 +4136,10 @@ function top50RenderTable() {
         <span style="color:${tc};font-weight:600;font-size:.82rem">${rankStr}</span>
       </td>
       <td style="padding:.5rem .75rem;font-size:.82rem">${p.role}</td>
-      <td style="padding:.5rem .75rem;text-align:center">
+      <td style="padding:.5rem .75rem;text-align:center" title="KP: ${p.kpAvg?.toFixed(0)||'—'}% | Dmg: ${p.dmgAvg?.toFixed(0)||'—'}% | Obj: ${p.objAvg?.toFixed(1)||'—'}">
         <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${parseFloat(scoreFinal)>=8?'var(--lime)':parseFloat(scoreFinal)>=6.5?'#A78BFA':parseFloat(scoreFinal)>=5?'#F59E0B':'var(--coral)'}">${scoreFinal}</span>
         ${p.age ? '<div style="font-size:.65rem;color:var(--lime)">+bonus âge</div>' : ''}
+        <div style="font-size:.65rem;color:var(--sub);margin-top:2px">🐉${p.dragonAvg??'?'} 🔮${p.baronAvg??'?'}</div>
       </td>
       <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${wrColor}">${p.wr}%</td>
       <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${kdaColor}">${p.kda}</td>
