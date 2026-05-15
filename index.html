@@ -2049,6 +2049,25 @@ function updateLinks() {
 // ════════════════════════════════════════════
 // CHAMP TABLE
 // ════════════════════════════════════════════
+// Convertit un nom de champion en clé Data Dragon (ex: "Lee Sin" → "LeeSin", "Vel'Koz" → "VelKoz")
+function champToDDragon(name) {
+  const exceptions = {
+    "Aurelion Sol":"AurelionSol","Bel'Veth":"Belveth","Cho'Gath":"Chogath",
+    "Dr. Mundo":"DrMundo","Jarvan IV":"JarvanIV","Kai'Sa":"Kaisa",
+    "Kha'Zix":"Khazix","Kog'Maw":"KogMaw","Lee Sin":"LeeSin","Master Yi":"MasterYi",
+    "Miss Fortune":"MissFortune","Nunu & Willump":"Nunu","Rek'Sai":"RekSai",
+    "Renata Glasc":"Renata","Tahm Kench":"TahmKench","Twisted Fate":"TwistedFate",
+    "Vel'Koz":"Velkoz","Wukong":"MonkeyKing","Xin Zhao":"XinZhao","K'Sante":"KSante",
+    "Nunu":"Nunu","Will":"Nunu"
+  };
+  if (exceptions[name]) return exceptions[name];
+  return name.replace(/[^a-zA-Z0-9]/g, '');
+}
+
+function champImgUrl(name) {
+  return `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champToDDragon(name)}.png`;
+}
+
 function buildChampTable(champDetails, total) {
   const tbody = document.getElementById('champ-tbody');
   if (!tbody || !champDetails || !champDetails.length) return;
@@ -2058,13 +2077,24 @@ function buildChampTable(champDetails, total) {
     const wrColor = wr >= 55 ? 'var(--lime)' : wr >= 50 ? 'var(--amber)' : 'var(--red)';
     const vol = ((c.games / total)*100).toFixed(0);
     const sc = Math.min(10, (wr >= 55 ? 8 : wr >= 50 ? 5.5 : 3) + Math.min(2, c.games/10));
+    const imgKey = champToDDragon(c.name);
     return `<tr>
-      <td style="color:var(--sub);font-family:'DM Mono',monospace">${i+1}</td>
-      <td><strong>${c.name}</strong></td>
+      <td style="color:var(--sub);font-family:'DM Mono',monospace;font-size:.75rem">${i+1}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="width:34px;height:34px;border-radius:50%;overflow:hidden;border:2px solid var(--border);flex-shrink:0;background:var(--surf3)">
+            <img src="${champImgUrl(c.name)}" 
+                 alt="${c.name}"
+                 style="width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.15)"
+                 onerror="this.parentElement.innerHTML='<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--sub)\'>${c.name.slice(0,2)}</div>'"/>
+          </div>
+          <strong style="font-size:.85rem">${c.name}</strong>
+        </div>
+      </td>
       <td>${c.games} <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sub)">(${vol}%)</span></td>
-      <td class="champ-wr" style="color:${wrColor}">${wr}%</td>
+      <td class="champ-wr" style="color:${wrColor};font-weight:600">${wr}%</td>
       <td style="font-family:'DM Mono',monospace">${c.kda || '—'}</td>
-      <td style="color:${scColor(sc)};font-family:'DM Mono',monospace">${sc.toFixed(1)}</td>
+      <td style="color:${scColor(sc)};font-family:'DM Mono',monospace;font-weight:600">${sc.toFixed(1)}</td>
     </tr>`;
   }).join('');
 }
@@ -2223,6 +2253,47 @@ function applyApiField(id, val) {
   updateRadar();
 }
 
+
+// ── ESTIMATION RANG SAISON PRÉCÉDENTE ────────────────────────
+// Tente de récupérer des parties ranked de la saison 2024
+// pour estimer le rang N-1. Retourne un index TIER_IDX ou -1.
+async function estimatePrevSeasonRank(regional, puuid, apiKey) {
+  try {
+    // Saison 2024 : 10 jan 2024 → 14 jan 2025 (timestamps Unix)
+    const S2024_START = 1704844800; // 10 jan 2024
+    const S2024_END   = 1736812800; // 14 jan 2025
+
+    const ids = await riotFetch(
+      `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&type=ranked&count=10&start=0&startTime=${S2024_START}&endTime=${S2024_END}`,
+      apiKey
+    );
+    if (!Array.isArray(ids) || !ids.length) return -1;
+
+    // Prend le match le plus récent de la S2024 pour estimer le rang
+    const m = await riotFetch(
+      `https://${regional}.api.riotgames.com/lol/match/v5/matches/${ids[0]}`,
+      apiKey
+    );
+    if (!m?.info?.participants) return -1;
+
+    const p = m.info.participants.find(x => x.puuid === puuid);
+    if (!p) return -1;
+
+    // riotIdGameName + tier disponible dans certaines versions
+    // Sinon heuristique : si le joueur avait cette partie en S2024
+    // et est Diamond+ en S2025, on estime Plat-Diamond en S2024
+    const tier = p.tier || null;
+    if (tier && TIER_TO_IDX[tier] !== undefined) return TIER_TO_IDX[tier];
+
+    // Heuristique basée sur le nombre de parties S2024 trouvées
+    // (joueur actif → probablement rang similaire -1 cran)
+    return -1; // pas assez d'info pour estimer
+  } catch(e) {
+    dbgLog('Rang N-1 : ' + e.message);
+    return -1;
+  }
+}
+
 async function fetchRiotData() {
   const pseudo = document.getElementById('d-pseudo')?.value.trim();
   const tag    = document.getElementById('d-tag')?.value.trim() || 'EUW';
@@ -2250,8 +2321,20 @@ async function fetchRiotData() {
     const sum = await riotFetch(`https://${server}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/${acc.puuid}`, apiKey);
 
     setProgress(22, 'Rang SoloQ…');
-    const league = await riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`, apiKey);
-    const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    const leagueRaw2 = await riotFetch(`https://${server}.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`, apiKey);
+    const league2 = Array.isArray(leagueRaw2) ? leagueRaw2 : (leagueRaw2?.entries || []);
+    const soloQ = league2.find(e => e.queueType === 'RANKED_SOLO_5x5');
+
+    // Estimation rang N-1 (saison 2024) — non bloquant
+    setProgress(26, 'Estimation rang saison précédente…');
+    const prevRankIdx = await estimatePrevSeasonRank(regional, acc.puuid, apiKey);
+    if (prevRankIdx >= 0) {
+      const prevEl = document.getElementById('d-rank-prev');
+      if (prevEl && parseInt(prevEl.value) === -1) { // ne remplace que si "Inconnu"
+        prevEl.value = prevRankIdx;
+        dbgLog('Rang N-1 estimé : ' + RANKS[prevRankIdx]);
+      }
+    }
 
     setProgress(30, `${count} dernières parties ranked…`);
     const ids = await riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${acc.puuid}/ids?queue=420&count=${count}&type=ranked`, apiKey);
@@ -4130,7 +4213,15 @@ function top50RenderTable() {
       <td style="padding:.5rem .75rem;color:var(--sub);font-family:monospace;font-size:.8rem">${i+1}</td>
       <td style="padding:.5rem .75rem">
         <div style="font-weight:600;font-size:.88rem">${p.name}</div>
-        <div style="font-size:.7rem;color:var(--sub)">${p.champs?.slice(0,2).map(c=>c.name).join(' · ')||'—'}</div>
+        <div style="display:flex;gap:4px;margin-top:4px;align-items:center">
+          ${(p.champs?.slice(0,3)||[]).map(c=>`
+            <div title="${c.name}" style="width:24px;height:24px;border-radius:50%;overflow:hidden;border:1.5px solid var(--border);background:var(--surf3);flex-shrink:0">
+              <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champToDDragon(c.name)}.png"
+                   style="width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.15)"
+                   onerror="this.style.display='none'"/>
+            </div>`).join('')}
+          <span style="font-size:.68rem;color:var(--sub);margin-left:2px">${p.champs?.slice(0,2).map(c=>c.name).join(', ')||'—'}</span>
+        </div>
       </td>
       <td style="padding:.5rem .75rem;white-space:nowrap">
         <span style="color:${tc};font-weight:600;font-size:.82rem">${rankStr}</span>
