@@ -3754,6 +3754,56 @@ function ageBonus(age) {
   return 0.92;
 }
 
+
+// ── LIQUIPEDIA AGE LOOKUP ────────────────────────────────────
+// Cherche la date de naissance d'un joueur sur Liquipedia LoL
+// Retourne l'âge en années ou null si non trouvé
+async function lookupLiquipediaAge(gameName) {
+  try {
+    // Nettoie le pseudo (enlève le tag #EUW1 etc.)
+    const pseudo = gameName.split('#')[0].trim();
+    if (!pseudo || pseudo === '—') return null;
+
+    // API Liquipedia parse — cherche la page joueur LoL
+    const url = `https://liquipedia.net/leagueoflegends/api.php?action=parse&page=${encodeURIComponent(pseudo)}&prop=wikitext&format=json&origin=*`;
+
+    const resp = await fetch(url, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'SPES-ScoutingLab/1.0 (contact: scouting tool)'
+      }
+    });
+
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const wikitext = data?.parse?.wikitext?.['*'] || '';
+    if (!wikitext) return null;
+
+    // Cherche le champ birth_date dans l'infobox
+    const birthMatch = wikitext.match(/\|\s*birth_?date\s*=\s*(\d{4}-\d{2}-\d{2}|\d{4}\/\d{2}\/\d{2}|\w+ \d{1,2}, \d{4})/i)
+                    || wikitext.match(/\{\{Birth date[^}]*\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i)
+                    || wikitext.match(/born.*?(\d{4}-\d{2}-\d{2})/i);
+
+    if (!birthMatch) return null;
+
+    let birthYear;
+    if (birthMatch[2] && birthMatch[3]) {
+      // Format {{Birth date|YYYY|MM|DD}}
+      birthYear = parseInt(birthMatch[1]);
+    } else {
+      const dateStr = birthMatch[1];
+      birthYear = new Date(dateStr).getFullYear();
+    }
+
+    if (!birthYear || birthYear < 1990 || birthYear > 2015) return null;
+
+    const age = new Date().getFullYear() - birthYear;
+    return age;
+  } catch(e) {
+    return null;
+  }
+}
+
 function guessRole(champs) {
   if (!champs || !champs.length) return '?';
   const top = champs[0]?.name?.toLowerCase() || '';
@@ -3840,7 +3890,15 @@ async function top50Scan() {
           if (acct?.gameName) displayName = acct.gameName + (acct.tagLine ? '#' + acct.tagLine : '');
           await sleep(300);
         } catch(e) { /* garde le nom existant */ }
-        
+
+        // Lookup âge sur Liquipedia (non bloquant — null si pas trouvé)
+        let liquipediaAge = null;
+        try {
+          liquipediaAge = await lookupLiquipediaAge(displayName);
+          if (liquipediaAge) dbgLog(`🎂 ${displayName} → ${liquipediaAge} ans (Liquipedia)`);
+          await sleep(200);
+        } catch(e) { /* silencieux */ }
+
         // Objet sum compatible avec le reste du code
         const sum = { puuid };
 
@@ -3912,8 +3970,8 @@ async function top50Scan() {
           role, champs,
           score: parseFloat(score),
           scoreFinal: parseFloat(score), // recalculé si âge connu
-          age: existing?.age ?? null,
-          ageStatus: existing?.ageStatus ?? '🔍',
+          age: existing?.age ?? liquipediaAge ?? null,
+          ageStatus: existing?.ageStatus ?? (liquipediaAge ? '✅ Liquipedia' : '🔍'),
           statut: existing?.statut ?? '🆕 Nouveau',
           notes: existing?.notes ?? '',
           addedAt: existing?.addedAt ?? new Date().toISOString(),
