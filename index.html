@@ -520,6 +520,39 @@ body {
 .c-d4 { color:var(--d4); } .bg-d4 { background:var(--d4); }
 .c-d5 { color:var(--d5); } .bg-d5 { background:var(--d5); }
 
+
+/* ══ PRINT / PDF ════════════════════════════════════ */
+@media print {
+  body { background:#fff !important; color:#000 !important; font-family:'Syne',sans-serif; }
+  .hd, .sb, .hd-nav, .role-pills, .api-card, .file-warn,
+  .dim-input-wrap, .dim-slider, .dim-num-input,
+  .btn, button:not(.pdf-keep), .debug-log,
+  #panel-scout .card:last-child,
+  #panel-graphs, #panel-map, #panel-top50, #panel-results .res-actions,
+  .view-tabs, .chart-wrap canvas { display:none !important; }
+  .shell { display:block !important; }
+  .main { padding:0 !important; max-width:100% !important; }
+  .panel { display:block !important; }
+  #panel-scout { display:none !important; }
+  #panel-results { display:block !important; }
+  .card { border:1px solid #ddd !important; background:#fff !important; margin-bottom:12px !important; break-inside:avoid; }
+  .global-hero { padding:16px 0 !important; }
+  .hero-score { font-size:48px !important; color:#000 !important; }
+  .dim-pill { border:1px solid #ddd !important; background:#f5f5f5 !important; }
+  .dim-pill-val { color:#000 !important; }
+  .pct-fill { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .verdict-card { border:1px solid #aaa !important; background:#f8f8f8 !important; }
+  .verdict-text { color:#222 !important; }
+  .verdict-text strong { color:#000 !important; }
+  .vtag { border:1px solid #aaa !important; }
+  svg polygon, svg circle, svg line, svg text { print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  .pdf-header { display:flex !important; align-items:center; justify-content:space-between; padding:12px 0 16px; border-bottom:2px solid #000; margin-bottom:16px; }
+  .pdf-header-logo { font-size:18px; font-weight:800; letter-spacing:.05em; }
+  .pdf-header-date { font-size:11px; color:#666; font-family:monospace; }
+  @page { margin:1.5cm; size:A4; }
+}
+.pdf-header { display:none; }
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar { width:4px; height:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
@@ -556,6 +589,7 @@ body {
     <button class="hd-nav-item" onclick="switchPanel('map')">Carte</button>
     <button class="hd-nav-item" onclick="switchPanel('results')">Résultats</button>
     <button class="hd-nav-item" onclick="switchPanel('top50')">🏆 Top 50</button>
+    <button class="hd-nav-item" onclick="switchPanel('compare')">⚡ Comparaison</button>
   </nav>
   <div class="hd-badge">EUW · SOLOQ</div>
 </header>
@@ -596,7 +630,14 @@ body {
       <span class="sb-dot"></span>Support
     </button>
 
+    <button class="sb-item" onclick="switchPanel('compare');setSbActive(this)">
+      <span class="sb-dot"></span>⚡ Comparer joueurs
+    </button>
+
     <div class="sb-sect">Liens</div>
+    <button class="sb-item" onclick="switchPanel('history');setSbActive(this)">
+      <span class="sb-dot"></span>📁 Historique
+    </button>
     <div id="sb-links" style="display:flex;flex-direction:column;gap:4px;padding:0 6px">
       <span style="font-size:11px;color:var(--sub)">Entrez un pseudo</span>
     </div>
@@ -790,6 +831,12 @@ body {
         <div class="verdict-tags" id="verdict-tags"></div>
       </div>
 
+      <!-- Style de jeu automatique -->
+      <div id="playstyle-card" class="card" style="margin-bottom:16px;display:none">
+        <div class="card-title">🎮 Style de jeu détecté</div>
+        <div id="playstyle-content" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:4px 0"></div>
+      </div>
+
       <!-- Stats grid (role-specific) -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-title" id="stats-role-title">Stats · <span id="stats-role-name">Mid Lane</span></div>
@@ -804,6 +851,15 @@ body {
           <thead><tr><th>#</th><th>Champion</th><th>Parties</th><th>WR</th><th>KDA</th><th>Score SPES</th></tr></thead>
           <tbody id="champ-tbody"><tr><td colspan="6" style="color:var(--sub);font-size:12px;padding:12px">Importez via l'API pour voir le pool de champions</td></tr></tbody>
         </table>
+      </div>
+
+      <!-- ── ANALYSE AVANCÉE SPES (challenges Riot) ── -->
+      <div class="card" id="advanced-card" style="display:none;margin-bottom:16px">
+        <div class="card-title" style="display:flex;align-items:center;gap:8px">
+          <span>🔬 Analyse Avancée SPES</span>
+          <span style="font-size:10px;background:linear-gradient(90deg,#7C3AED,#2DD4BF);color:#fff;padding:2px 7px;border-radius:99px;font-weight:700">EXCLUSIF</span>
+        </div>
+        <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
       </div>
 
       <!-- Manual SPES dimensions -->
@@ -900,6 +956,16 @@ body {
     <!-- ══ PANEL : RESULTS ══ -->
     <div id="panel-results" class="panel">
       <div class="card" style="margin-bottom:16px">
+        <!-- PDF header — visible only on print -->
+        <div class="pdf-header">
+          <div class="pdf-header-logo">⬡ SPES LAB — Rapport de scouting</div>
+          <div class="pdf-header-date" id="pdf-date"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 0;margin-bottom:-8px" class="res-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportPDF()">📄 Exporter PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="saveToHistory()">💾 Sauvegarder fiche</button>
+          <button class="btn btn-ghost btn-sm" onclick="enterPresentationMode()">🖥 Mode Coach</button>
+        </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
           <div class="hero-score" id="res-score" style="color:var(--sub)">—</div>
@@ -947,6 +1013,7 @@ body {
           <button class="view-tab active" onclick="setGraphTab('performance',this)">📈 Performance</button>
           <button class="view-tab" onclick="setGraphTab('progression',this)">🏆 Progression rang</button>
           <button class="view-tab" onclick="setGraphTab('activite',this)">📅 Activité</button>
+          <button class="view-tab" onclick="setGraphTab('progression_temp',this)">📈 Progression</button>
         </div>
 
         <!-- TAB: Performance -->
@@ -976,6 +1043,16 @@ body {
           <div class="card">
             <div class="card-title">Champions — Win Rate & Volume</div>
             <div class="chart-wrap"><canvas id="chart-champs" class="chart-canvas" height="200"></canvas></div>
+          </div>
+        </div>
+
+        <!-- TAB: Progression temporelle -->
+        <div id="gtab-progression_temp" style="display:none">
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-title">Évolution des performances — 10 dernières vs 10 précédentes</div>
+            <div id="prog-temp-content" style="padding:8px 0">
+              <div style="color:var(--sub);font-size:12px;text-align:center;padding:24px">Importez les stats via l'API pour voir la progression temporelle</div>
+            </div>
           </div>
         </div>
 
@@ -1198,6 +1275,53 @@ body {
 
       </div>
     </div><!-- /panel-top50 -->
+
+    <!-- ══ PANEL : COMPARE ══ -->
+    <div id="panel-compare" class="panel">
+      <div style="max-width:1200px;margin:0 auto;padding:0 8px">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+          <div>
+            <h2 style="font-size:1.4rem;font-weight:800;margin:0">⚡ Comparaison Prospects</h2>
+            <p style="color:var(--sub);font-size:.82rem;margin:4px 0 0">Sauvegardez jusqu'à 3 fiches joueurs et comparez-les côte à côte</p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="compareAddCurrent()" class="btn btn-lime" style="font-size:.82rem">➕ Ajouter fiche actuelle</button>
+            <button onclick="compareClear()" class="btn" style="font-size:.82rem;background:var(--surf2);color:var(--red);border:1px solid var(--red)">🗑 Vider</button>
+          </div>
+        </div>
+
+        <!-- Slots vides / instruction -->
+        <div id="compare-empty" style="text-align:center;padding:60px 20px;color:var(--sub)">
+          <div style="font-size:3rem;margin-bottom:12px">📊</div>
+          <div style="font-size:1rem;font-weight:600;color:var(--fg);margin-bottom:6px">Aucune fiche sauvegardée</div>
+          <div style="font-size:.82rem">Importez une fiche joueur dans l'onglet <strong>Fiche joueur</strong>, puis cliquez <strong>Ajouter fiche actuelle</strong></div>
+          <div style="font-size:.75rem;margin-top:8px;color:var(--sub)">Jusqu'à 3 joueurs comparables simultanément</div>
+        </div>
+
+        <!-- Tableau comparatif -->
+        <div id="compare-table" style="display:none"></div>
+
+      </div>
+    </div><!-- /panel-compare -->
+
+
+    <!-- ══ PANEL : HISTORIQUE ══ -->
+    <div id="panel-history" class="panel">
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <div style="font-size:15px;font-weight:800">📁 Fiches sauvegardées</div>
+            <div style="font-size:11px;color:var(--sub);margin-top:2px">Stockées localement · Rechargez une fiche pour continuer l'analyse</div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="clearHistory()" style="color:var(--red);border-color:rgba(255,90,74,.3)">🗑 Tout effacer</button>
+        </div>
+        <div id="history-list" style="display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;padding:32px;color:var(--sub);font-size:13px">Aucune fiche sauvegardée</div>
+        </div>
+      </div>
+    </div>
 
   </main>
 </div><!-- /shell -->
@@ -2015,13 +2139,15 @@ function switchPanel(id) {
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
   const panel = document.getElementById(`panel-${id}`);
   if (panel) panel.classList.add('active');
-  const idx = ['scout','graphs','map','results','top50'].indexOf(id);
+  const idx = ['scout','graphs','map','results','top50','compare','history'].indexOf(id);
+  if (id === 'history') renderHistory();
   if (id === 'graphs') buildGraphs();
   if (id === 'map') initMapPanel();
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { try { const k=localStorage.getItem('t50_key'); if(k) document.getElementById('t50-apikey').value=k; } catch(e){} top50RenderTable(); }
   if (navIdx >= 0) document.querySelectorAll('.hd-nav-item')[navIdx]?.classList.add('active');
   if (id === 'results') buildResults();
+  if (id === 'compare') buildComparePanel();
 }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
@@ -2049,6 +2175,401 @@ function updateLinks() {
 // ════════════════════════════════════════════
 // CHAMP TABLE
 // ════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════
+// ⚡ MODULE COMPARAISON PROSPECTS — SPES Lab
+// Sauvegarde jusqu'à 3 snapshots et affiche un tableau comparatif
+// ════════════════════════════════════════════════════════════
+let compareSlots = []; // max 3 snapshots
+
+function compareSnapshotCurrent() {
+  // Capture tout l'état actuel du joueur
+  const pseudo  = document.getElementById('d-pseudo')?.value?.trim() || '—';
+  const tag      = document.getElementById('d-tag')?.value?.trim()    || 'EUW1';
+  const role     = currentRole;
+  const rankEl   = document.getElementById('d-rank');
+  const rankIdx  = rankEl ? parseInt(rankEl.value) : -1;
+  const rankLbl  = rankIdx >= 0 ? RANKS[rankIdx] : '—';
+  const age      = document.getElementById('d-age')?.value?.trim() || '—';
+  const nat      = document.getElementById('d-nat')?.value?.trim() || '—';
+
+  // Scores D1-D5
+  const f = getRoleFields();
+  const W = ROLE_WEIGHTS[role] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
+  const dimScores = {};
+  DIM_IDS.forEach(id => {
+    const fields = f[id] || [];
+    const vals = fields.map(field => {
+      const v = rawData[field.id] !== undefined ? parseFloat(rawData[field.id]) : null;
+      if (v === null) return null;
+      return computeFieldScore(field);
+    }).filter(v => v !== null);
+    dimScores[id] = vals.length ? parseFloat((vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2)) : null;
+  });
+
+  // Score global
+  const global = globalScore();
+
+  // Stats clés API
+  const stats = {
+    kda:        rawData.kda       ?? null,
+    winrate:    rawData.winrate   ?? null,
+    cs_min:     rawData.cs_min    ?? null,
+    vision:     rawData.vision    ?? null,
+    kill_part:  rawData.kill_part ?? null,
+    dmg_share:  rawData.dmg_share ?? null,
+    obj_score:  rawData.obj_score ?? null,
+  };
+
+  // Challenges (métriques avancées)
+  const adv = window._lastChallenges || null;
+
+  // Champions
+  const champs = (champHistory || []).slice(0,3).map(c => c.name);
+
+  return {
+    pseudo, tag, role, rankLbl, age, nat,
+    dimScores, global,
+    stats, adv, champs,
+    ts: Date.now()
+  };
+}
+
+function compareAddCurrent() {
+  if (compareSlots.length >= 3) {
+    alert('Maximum 3 joueurs. Supprimez-en un pour en ajouter un autre.');
+    return;
+  }
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (!pseudo) {
+    alert('Importez d\'abord une fiche joueur dans l\'onglet Fiche joueur.');
+    return;
+  }
+  // Evite doublons
+  if (compareSlots.find(s => s.pseudo === pseudo && s.tag === (document.getElementById('d-tag')?.value?.trim()||'EUW1'))) {
+    alert(pseudo + ' est déjà dans la comparaison.');
+    return;
+  }
+  const snap = compareSnapshotCurrent();
+  compareSlots.push(snap);
+  switchPanel('compare');
+  setSbActive(document.querySelectorAll('.sb-item')[4]); // compare button
+}
+
+function compareRemove(idx) {
+  compareSlots.splice(idx, 1);
+  buildComparePanel();
+}
+
+function compareClear() {
+  compareSlots = [];
+  buildComparePanel();
+}
+
+function buildComparePanel() {
+  const empty = document.getElementById('compare-empty');
+  const table = document.getElementById('compare-table');
+  if (!empty || !table) return;
+
+  if (!compareSlots.length) {
+    empty.style.display = 'block';
+    table.style.display = 'none';
+    table.innerHTML = '';
+    return;
+  }
+  empty.style.display = 'none';
+  table.style.display = 'block';
+
+  const n = compareSlots.length;
+  const cols = compareSlots;
+
+  // Fonction de couleur par score
+  function sc(val) {
+    if (val === null || val === undefined || isNaN(val)) return 'var(--sub)';
+    if (val >= 8)   return '#4ADE80';
+    if (val >= 6.5) return '#A78BFA';
+    if (val >= 5)   return '#FBBF24';
+    return '#F87171';
+  }
+
+  // Trouve le meilleur slot pour une valeur (pour surligner)
+  function best(arr, higher=true) {
+    const valid = arr.map((v,i) => ({v: parseFloat(v), i})).filter(x => !isNaN(x.v));
+    if (!valid.length) return -1;
+    return (higher
+      ? valid.reduce((a,b) => b.v > a.v ? b : a)
+      : valid.reduce((a,b) => b.v < a.v ? b : a)
+    ).i;
+  }
+
+  function cellStyle(val, bestIdx, colIdx, higher=true) {
+    const isBest = bestIdx === colIdx;
+    return `style="padding:10px 14px;text-align:center;font-family:'DM Mono',monospace;font-weight:${isBest?700:400};
+      color:${isBest ? '#fff' : (val===null?'var(--sub)':'var(--fg)')};
+      background:${isBest ? 'rgba(74,222,128,.12)' : 'transparent'};
+      border-left:1px solid var(--border);font-size:.88rem;"`;
+  }
+
+  function fmt(val, unit='', dec=1) {
+    if (val === null || val === undefined || isNaN(val)) return '—';
+    return parseFloat(val).toFixed(dec) + unit;
+  }
+
+  // ── En-tête joueurs ─────────────────────────────────────
+  const headerCells = cols.map((s,i) => `
+    <th style="padding:16px 14px;text-align:center;border-left:1px solid var(--border);min-width:160px;position:relative">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">
+          ${s.champs.map(c => `<div title="${c}" style="width:28px;height:28px;border-radius:50%;overflow:hidden;border:2px solid var(--border);background:var(--surf3)">
+            <img src="https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champToDDragon(c)}.png"
+              style="width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.15)"
+              onerror="this.style.display='none'"/>
+          </div>`).join('')}
+        </div>
+        <div style="font-weight:800;font-size:.95rem;color:var(--fg)">${s.pseudo}</div>
+        <div style="font-size:.72rem;color:var(--sub)">#${s.tag}</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:center">
+          <span style="background:var(--surf3);border-radius:99px;padding:2px 8px;font-size:.7rem;color:var(--fg)">${s.role}</span>
+          <span style="background:var(--surf3);border-radius:99px;padding:2px 8px;font-size:.7rem;color:var(--amber)">${s.rankLbl}</span>
+          ${s.age !== '—' ? `<span style="background:var(--surf3);border-radius:99px;padding:2px 8px;font-size:.7rem;color:var(--teal)">${s.age} ans</span>` : ''}
+        </div>
+        <button onclick="compareRemove(${i})" style="background:none;border:1px solid var(--border);color:var(--sub);border-radius:6px;padding:2px 8px;font-size:.7rem;cursor:pointer">✕ Retirer</button>
+      </div>
+    </th>`).join('');
+
+  // ── Score global ────────────────────────────────────────
+  const globalVals = cols.map(s => s.global);
+  const globalBest = best(globalVals);
+  const globalRow = `
+    <tr style="background:var(--surf2)">
+      <td style="padding:12px 14px;font-weight:800;font-size:1rem;color:var(--fg);white-space:nowrap">🏆 Score SPES Global</td>
+      ${cols.map((s,i) => {
+        const v = s.global;
+        const isBest = globalBest === i;
+        return `<td style="padding:12px 14px;text-align:center;border-left:1px solid var(--border);
+          background:${isBest ? 'rgba(74,222,128,.15)' : 'transparent'}">
+          <span style="font-size:1.4rem;font-weight:900;font-family:'DM Mono',monospace;color:${sc(v)}">${v !== null ? v.toFixed(2) : '—'}</span>
+          ${isBest ? '<div style="font-size:.65rem;color:#4ADE80;margin-top:2px">★ MEILLEUR PROFIL</div>' : ''}
+        </td>`;
+      }).join('')}
+    </tr>`;
+
+  // ── Scores D1-D5 ────────────────────────────────────────
+  const dimRows = DIM_IDS.map(id => {
+    const vals = cols.map(s => s.dimScores[id]);
+    const b = best(vals);
+    const color = DIM_COLORS[id] || '#fff';
+    return `<tr>
+      <td style="padding:9px 14px;font-size:.82rem;color:${color};font-weight:600;white-space:nowrap">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${color};margin-right:6px"></span>
+        ${DIM_NAMES[DIM_IDS.indexOf(id)]}
+      </td>
+      ${cols.map((s,i) => {
+        const v = s.dimScores[id];
+        const isBest = b === i;
+        const vDisp = v !== null ? v.toFixed(1) : '—';
+        return `<td ${cellStyle(v, b, i)}>
+          <span style="color:${sc(v)}">${vDisp}</span>
+          ${isBest ? ' <span style="font-size:.65rem;color:#4ADE80">▲</span>' : ''}
+        </td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+
+  // ── Stats API clés ───────────────────────────────────────
+  const apiStats = [
+    { key:'kda',       lbl:'KDA',              unit:'',    dec:2, higher:true },
+    { key:'winrate',   lbl:'Win Rate',          unit:'%',   dec:1, higher:true },
+    { key:'cs_min',    lbl:'CS/min',            unit:'',    dec:2, higher:true },
+    { key:'kill_part', lbl:'Kill Participation',unit:'%',   dec:1, higher:true },
+    { key:'dmg_share', lbl:'Dmg Share',         unit:'%',   dec:1, higher:true },
+    { key:'vision',    lbl:'Vision Score',      unit:'',    dec:1, higher:true },
+    { key:'obj_score', lbl:'Obj. Score',        unit:'',    dec:2, higher:true },
+  ];
+
+  const apiRows = apiStats.map(stat => {
+    const vals = cols.map(s => s.stats[stat.key]);
+    const b = best(vals, stat.higher);
+    return `<tr>
+      <td style="padding:8px 14px;font-size:.8rem;color:var(--sub);white-space:nowrap">${stat.lbl}</td>
+      ${cols.map((s,i) => {
+        const v = s.stats[stat.key];
+        return `<td ${cellStyle(v, b, i, stat.higher)}>${fmt(v, stat.unit, stat.dec)}</td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+
+  // ── Challenges avancés ───────────────────────────────────
+  const advStats = [
+    { key:'soloKills',      lbl:'Solo Kills/game',   dec:2 },
+    { key:'skillshotsDodged',lbl:'Skillshots évités', dec:1 },
+    { key:'firstBloodRate', lbl:'First Blood %',     dec:1 },
+    { key:'turretPlates',   lbl:'Plates/game',       dec:2 },
+    { key:'visionAdv',      lbl:'Vision Avantage',   dec:2 },
+    { key:'jungleInvasion', lbl:'Invasion jungle',   dec:2 },
+    { key:'laneMinions10',  lbl:'CS 10min',          dec:1 },
+    { key:'epicSteals',     lbl:'Steals objectifs',  dec:2 },
+  ];
+
+  const hasAdv = cols.some(s => s.adv !== null);
+  const advRows = hasAdv ? advStats.map(stat => {
+    const vals = cols.map(s => s.adv ? s.adv[stat.key] : null);
+    const b = best(vals);
+    return `<tr>
+      <td style="padding:8px 14px;font-size:.8rem;color:var(--sub);white-space:nowrap">🔬 ${stat.lbl}</td>
+      ${cols.map((s,i) => {
+        const v = s.adv ? s.adv[stat.key] : null;
+        return `<td ${cellStyle(v, b, i)}>${fmt(v,'',stat.dec)}</td>`;
+      }).join('')}
+    </tr>`;
+  }).join('') : '';
+
+  // ── Verdict final ────────────────────────────────────────
+  const verdictRow = `
+    <tr style="background:var(--surf2)">
+      <td style="padding:12px 14px;font-weight:700;font-size:.85rem;color:var(--fg)">📋 Recommandation</td>
+      ${cols.map((s,i) => {
+        const g = s.global;
+        const reco = g >= 8 ? '✅ Recruter' : g >= 6.5 ? '👀 À suivre' : g >= 5 ? '📝 Tryout' : '❌ Pas prêt';
+        const recoCol = g >= 8 ? '#4ADE80' : g >= 6.5 ? '#A78BFA' : g >= 5 ? '#FBBF24' : '#F87171';
+        return `<td style="padding:12px 14px;text-align:center;border-left:1px solid var(--border);background:${globalBest===i?'rgba(74,222,128,.08)':'transparent'}">
+          <span style="font-weight:700;font-size:.9rem;color:${recoCol}">${reco}</span>
+        </td>`;
+      }).join('')}
+    </tr>`;
+
+  // ── Assemblage final ─────────────────────────────────────
+  const sectionHeader = (title, icon) => `
+    <tr>
+      <td colspan="${n+1}" style="padding:10px 14px 4px;font-size:.72rem;font-weight:700;color:var(--sub);letter-spacing:.08em;background:var(--surf3);border-top:2px solid var(--border)">${icon} ${title}</td>
+    </tr>`;
+
+  table.innerHTML = `
+    <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border)">
+      <table style="width:100%;border-collapse:collapse;background:var(--surf1)">
+        <thead>
+          <tr>
+            <th style="padding:14px;text-align:left;min-width:180px;font-size:.72rem;color:var(--sub);font-weight:700;letter-spacing:.06em">CRITÈRE</th>
+            ${headerCells}
+          </tr>
+        </thead>
+        <tbody>
+          ${globalRow}
+          ${sectionHeader('SCORES PAR DIMENSION', '📊')}
+          ${dimRows}
+          ${sectionHeader('STATISTIQUES CLÉS (API)', '📈')}
+          ${apiRows}
+          ${hasAdv ? sectionHeader('ANALYSE AVANCÉE SPES (EXCLUSIF)', '🔬') : ''}
+          ${advRows}
+          ${sectionHeader('VERDICT SCOUT', '🎯')}
+          ${verdictRow}
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:16px;padding:14px;background:var(--surf2);border-radius:10px;border:1px solid var(--border);font-size:.78rem;color:var(--sub)">
+      💡 <strong style="color:var(--fg)">Comment lire ce tableau :</strong>
+      Le fond vert indique le meilleur score sur chaque critère. ▲ = leader sur cette dimension.
+      Le Score SPES Global intègre D1→D5 avec pondération par rôle. Les métriques 🔬 sont exclusives à SPES Lab (données Riot Challenges non exploitées par OP.GG/DPM).
+    </div>`;
+}
+
+// ── ANALYSE AVANCÉE SPES — Challenges Riot ──────────────────────────────────
+// Métriques exclusives non exploitées par DPM/OP.GG — avantage concurrentiel
+function buildAdvancedSection(ch, role) {
+  const card = document.getElementById('advanced-card');
+  const body = document.getElementById('advanced-body');
+  if (!card || !body) return;
+  card.style.display = 'block';
+
+  // Définition des blocs par catégorie avec seuils d'évaluation
+  const blocks = [
+    {
+      title: '⚔️ Mécaniques offensives',
+      color: '#F87171',
+      metrics: [
+        { lbl:'Solo Kills/game',    val:ch.soloKills,       bad:0.1, avg:0.4, good:0.8, elite:1.5, tip:'Kills 1v1 sans aide — indicateur clé de confiance mécanique' },
+        { lbl:'Skillshots évités',  val:ch.skillshotsDodged,bad:2,   avg:5,   good:9,   elite:14,  tip:'Capacité à esquiver les compétences ennemies (kiting, positionnement)' },
+        { lbl:'Takedowns <14min',   val:ch.takedownsFirst14,bad:0.2, avg:0.8, good:1.5, elite:2.5, tip:'Impact early game — présence dans les duels et skirmishes précoces' },
+        { lbl:'First Blood %',      val:ch.firstBloodRate,  bad:5,   avg:10,  good:18,  elite:28,  tip:`Taux d'implication dans le 1er sang` },
+      ]
+    },
+    {
+      title: '🏰 Pression de carte',
+      color: '#FBBF24',
+      metrics: [
+        { lbl:'Plates/game',        val:ch.turretPlates,    bad:0.1, avg:0.4, good:0.9, elite:1.5, tip:'Plaques de tourelle prises — pression de lane et split push' },
+        { lbl:'Tours/game',         val:ch.turretTakedowns, bad:0.2, avg:0.6, good:1.1, elite:1.8, tip:'Tours détruites par partie — conversion avantage → objectifs' },
+        { lbl:'Tours solo (late)',  val:ch.soloTurretsLate, bad:0,   avg:0.1, good:0.3, elite:0.6, tip:'Tours détruites seul en phase tardive — menace split push' },
+        { lbl:'Invasion jungle',    val:ch.jungleInvasion,  bad:0,   avg:0.3, good:0.8, elite:1.5, tip:'Monstres volés dans la jungle ennemie — agressivité et prise de risque' },
+      ]
+    },
+    {
+      title: '👁️ Vision & contrôle',
+      color: '#34D399',
+      metrics: [
+        { lbl:'Wards furtifs/game', val:ch.stealthWards,    bad:1,   avg:3,   good:5,   elite:8,   tip:'Wards invisibles placés — habitude vision proactive' },
+        { lbl:'Control wards/game', val:ch.controlWards,    bad:0.3, avg:0.8, good:1.5, elite:2.5, tip:'Wards de contrôle achetés — investissement en vision' },
+        { lbl:'Avantage vision',    val:ch.visionAdv,       bad:-2,  avg:0,   good:3,   elite:7,   tip:'Avantage vision score vs adversaire direct de lane' },
+        { lbl:'Steals objectifs',   val:ch.epicSteals,      bad:0,   avg:0.02,good:0.06,elite:0.12,tip:'Dragon/Baron/Herald volés — lucidité et audace sur objectifs' },
+      ]
+    },
+    {
+      title: '🧠 QI de jeu & régularité',
+      color: '#818CF8',
+      metrics: [
+        { lbl:'CS 10min',           val:ch.laneMinions10,   bad:12,  avg:20,  good:26,  elite:32,  tip:'CS dans les 10 premières minutes — niveau de farm early game' },
+        { lbl:'Niveau lead max',    val:ch.maxLevelLead,    bad:0,   avg:0.3, good:0.8, elite:1.5, tip:`Avantage de niveau max sur l'adversaire direct — domination de lane` },
+        { lbl:'Survie HP critique', val:ch.survivedLowHp,   bad:0,   avg:0.1, good:0.3, elite:0.6, tip:'Survies avec moins de 10% HP — réflexes et gestion de la vie' },
+        { lbl:'Part degats equipe', val:ch.teamDmgPct,      bad:15,  avg:22,  good:28,  elite:35,  tip:`% des degats produits pour l'equipe` },
+      ]
+    },
+  ];
+
+  function scoreAdv(val, bad, avg, good, elite) {
+    if (val === null || isNaN(val)) return null;
+    if (val >= elite) return 10;
+    if (val >= good)  return 7 + 3*(val-good)/(elite-good);
+    if (val >= avg)   return 5 + 2*(val-avg)/(good-avg);
+    if (val >= bad)   return 3 + 2*(val-bad)/(avg-bad);
+    return Math.max(0, 3*(val/Math.max(bad,0.001)));
+  }
+
+  body.innerHTML = blocks.map(block => {
+    const rows = block.metrics.map(m => {
+      const sc = scoreAdv(m.val, m.bad, m.avg, m.good, m.elite);
+      const col = sc === null ? 'var(--sub)' : sc >= 8 ? '#4ADE80' : sc >= 6 ? '#FBBF24' : sc >= 4 ? '#F87171' : '#EF4444';
+      const bar = sc !== null ? Math.round(sc*10) : 0;
+      const display = m.val !== null && !isNaN(m.val) ? 
+        (m.val >= 10 ? m.val.toFixed(0) : m.val >= 1 ? m.val.toFixed(1) : m.val.toFixed(2)) : '—';
+      return `
+        <div style="margin-bottom:8px" title="${m.tip}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <span style="font-size:11px;color:var(--fg)">${m.lbl}</span>
+            <span style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:${col}">${display}</span>
+          </div>
+          <div style="height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${bar}%;background:${col};border-radius:2px;transition:width .4s ease"></div>
+          </div>
+        </div>`;
+    }).join('');
+
+    const avgScore = block.metrics.map(m => scoreAdv(m.val, m.bad, m.avg, m.good, m.elite)).filter(s=>s!==null);
+    const blockScore = avgScore.length ? (avgScore.reduce((a,b)=>a+b,0)/avgScore.length).toFixed(1) : '—';
+    const blockCol = parseFloat(blockScore) >= 8 ? '#4ADE80' : parseFloat(blockScore) >= 6 ? '#FBBF24' : '#F87171';
+
+    return `
+      <div style="background:var(--surf2);border-radius:10px;padding:14px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:12px;font-weight:700;color:${block.color}">${block.title}</span>
+          <span style="font-size:14px;font-weight:800;color:${blockCol};font-family:'DM Mono',monospace">${blockScore}</span>
+        </div>
+        ${rows}
+      </div>`;
+  }).join('');
+}
+
 // Convertit un nom de champion en clé Data Dragon (ex: "Lee Sin" → "LeeSin", "Vel'Koz" → "VelKoz")
 function champToDDragon(name) {
   const exceptions = {
@@ -2179,6 +2700,15 @@ function calculateStats(matches, puuid) {
   let gameCount = 0;
   const champMap = {};
   const sessionDays = new Set();
+  // Accumulateurs challenges
+  const chal = {
+    soloKills:0, skillshotsDodged:0, skillshotsHit:0, killsUnderOwnTurret:0,
+    turretPlatesTaken:0, turretTakedowns:0, visionScoreAdv:0, stealthWardsPlaced:0,
+    controlWardsPlaced:0, enemyJungleKills:0, firstBlood:0, survivedSingleDigitHp:0,
+    soloTurretsLate:0, perfectGame:0, takedownsFirst14min:0, epicMonsterSteals:0,
+    saveAllyFromDeath:0, immobilizeAndKill:0, teamDmgPct:0, damageTakenOnTeamPct:0,
+    kda:0, laneMinionsFirst10:0, maxLevelLead:0
+  };
 
   matches.forEach(m => {
     if (!m?.info?.participants) return; // skip remakes / corrupted matches
@@ -2205,6 +2735,32 @@ function calculateStats(matches, puuid) {
     if (!champMap[cn]) champMap[cn] = { games:0, wins:0, kills:0, deaths:0, assists:0 };
     champMap[cn].games++; if (p.win) champMap[cn].wins++;
     champMap[cn].kills += p.kills; champMap[cn].deaths += p.deaths; champMap[cn].assists += p.assists;
+
+    // ── Challenges (métriques avancées Riot) ──────────────────
+    const ch = p.challenges || {};
+    chal.soloKills            += ch.soloKills             || 0;
+    chal.skillshotsDodged     += ch.skillshotsDodged      || 0;
+    chal.skillshotsHit        += ch.skillshotsHit         || 0;
+    chal.killsUnderOwnTurret  += ch.killsUnderOwnTurret   || 0;
+    chal.turretPlatesTaken    += ch.turretPlatesTaken      || 0;
+    chal.turretTakedowns      += ch.turretTakedowns        || 0;
+    chal.visionScoreAdv       += ch.visionScoreAdvantageLaneOpponent || 0;
+    chal.stealthWardsPlaced   += ch.stealthWardsPlaced     || 0;
+    chal.controlWardsPlaced   += p.challenges?.controlWardsPlaced || p.visionWardsBoughtInGame || 0;
+    chal.enemyJungleKills     += ch.enemyJungleMonsterKills || 0;
+    chal.firstBlood           += (p.firstBloodKill || p.firstBloodAssist) ? 1 : 0;
+    chal.survivedSingleDigitHp += ch.survivedSingleDigitHpCount || 0;
+    chal.soloTurretsLate      += ch.soloTurretsLategame    || 0;
+    chal.perfectGame          += ch.perfectGame            || 0;
+    chal.takedownsFirst14min  += ch.takedownsFirstXMinutes || 0;
+    chal.epicMonsterSteals    += ch.epicMonsterSteals      || 0;
+    chal.saveAllyFromDeath    += ch.saveAllyFromDeath      || 0;
+    chal.immobilizeAndKill    += ch.immobilizeAndKillWithAlly || 0;
+    chal.teamDmgPct           += ch.teamDamagePercentage   || 0;
+    chal.damageTakenOnTeamPct += ch.damageTakenOnTeamPercentage || 0;
+    chal.kda                  += ch.kda                   || 0;
+    chal.laneMinionsFirst10   += ch.laneMinionsFirst10Minutes || 0;
+    chal.maxLevelLead         += ch.maxLevelLeadLaneOpponent || 0;
   });
 
   if (!gameCount) return {};
@@ -2226,6 +2782,30 @@ function calculateStats(matches, puuid) {
   }).map(d => { const dt = new Date(d); return `${dt.getFullYear()}-W${Math.ceil(dt.getDate()/7)}`; })).size;
   const regularite = Math.round(uniqueWeeks / weeksActive * 100);
 
+  // Normaliser challenges par partie
+  const gc = gameCount;
+  const chalAvg = {
+    soloKills:          parseFloat((chal.soloKills/gc).toFixed(2)),
+    skillshotsDodged:   parseFloat((chal.skillshotsDodged/gc).toFixed(1)),
+    skillshotsHit:      parseFloat((chal.skillshotsHit/gc).toFixed(1)),
+    killsUnderTurret:   parseFloat((chal.killsUnderOwnTurret/gc).toFixed(2)),
+    turretPlates:       parseFloat((chal.turretPlatesTaken/gc).toFixed(2)),
+    turretTakedowns:    parseFloat((chal.turretTakedowns/gc).toFixed(2)),
+    visionAdv:          parseFloat((chal.visionScoreAdv/gc).toFixed(2)),
+    stealthWards:       parseFloat((chal.stealthWardsPlaced/gc).toFixed(1)),
+    controlWards:       parseFloat((chal.controlWardsPlaced/gc).toFixed(1)),
+    jungleInvasion:     parseFloat((chal.enemyJungleKills/gc).toFixed(2)),
+    firstBloodRate:     parseFloat((chal.firstBlood/gc*100).toFixed(1)),
+    survivedLowHp:      parseFloat((chal.survivedSingleDigitHp/gc).toFixed(2)),
+    soloTurretsLate:    parseFloat((chal.soloTurretsLate/gc).toFixed(2)),
+    takedownsFirst14:   parseFloat((chal.takedownsFirst14min/gc).toFixed(2)),
+    epicSteals:         parseFloat((chal.epicMonsterSteals/gc).toFixed(2)),
+    saveAlly:           parseFloat((chal.saveAllyFromDeath/gc).toFixed(2)),
+    teamDmgPct:         parseFloat((chal.teamDmgPct/gc*100).toFixed(1)),
+    laneMinions10:      parseFloat((chal.laneMinionsFirst10/gc).toFixed(1)),
+    maxLevelLead:       parseFloat((chal.maxLevelLead/gc).toFixed(2)),
+  };
+
   return {
     totalGames: gameCount, wins,
     kda: parseFloat(kdaVal.toFixed(2)),
@@ -2239,6 +2819,7 @@ function calculateStats(matches, puuid) {
     champ_pool: qualifiedChamps,
     regularite,
     champDetails,
+    challenges: chalAvg,
   };
 }
 
@@ -2360,6 +2941,10 @@ async function fetchRiotData() {
     statKeys.forEach(id => { if (stats[id] !== undefined) rawData[id] = stats[id]; });
     buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); buildStatsGrid();
     buildChampTable(stats.champDetails, count);
+    if (stats.challenges) {
+      window._lastChallenges = stats.challenges;
+      buildAdvancedSection(stats.challenges, currentRole);
+    }
     matchHistory = matches;
     champHistory = stats.champDetails || [];
 
@@ -4334,6 +4919,459 @@ function top50Export() {
 // Chargement initial
 top50LoadLocal();
 
+// ════════════════════════════════════════════════════════════
+// ① EXPORT PDF
+// ════════════════════════════════════════════════════════════
+function exportPDF() {
+  // Switch to results panel first
+  const wasPanel = document.querySelector('.panel.active')?.id || 'panel-scout';
+  switchPanel('results');
+  buildResults();
+
+  // Set date in PDF header
+  const dateStr = new Date().toLocaleDateString('fr-FR', { year:'numeric', month:'long', day:'numeric' });
+  const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || 'Joueur';
+  const rank     = document.getElementById('d-rank')?.options[document.getElementById('d-rank')?.selectedIndex]?.text || '';
+  const pdEl = document.getElementById('pdf-date');
+  if (pdEl) pdEl.textContent = `Rapport SPES · ${pseudo} · ${rank} · ${dateStr}`;
+
+  // Trigger print dialog
+  setTimeout(() => {
+    window.print();
+  }, 300);
+}
+
+// ════════════════════════════════════════════════════════════
+// ② HISTORIQUE — Sauvegarde & Restauration
+// ════════════════════════════════════════════════════════════
+function saveToHistory() {
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (!pseudo) { alert('Entrez un pseudo avant de sauvegarder.'); return; }
+
+  const f = getRoleFields ? getRoleFields() : {};
+  const snapshot = {
+    id:        Date.now(),
+    date:      new Date().toISOString(),
+    pseudo,
+    tag:       document.getElementById('d-tag')?.value?.trim() || 'EUW',
+    server:    document.getElementById('d-server')?.value || 'euw1',
+    role:      currentRole,
+    age:       document.getElementById('d-age')?.value || '',
+    rank:      document.getElementById('d-rank')?.value || '6',
+    rankPrev:  document.getElementById('d-rank-prev')?.value || '-1',
+    rawData:   { ...rawData },
+    score:     (typeof globalScore === 'function') ? globalScore() : null,
+  };
+
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch(_) {}
+  // Remove duplicate (same pseudo+role)
+  history = history.filter(h => !(h.pseudo === pseudo && h.role === currentRole));
+  history.unshift(snapshot);
+  if (history.length > 30) history = history.slice(0, 30);
+  localStorage.setItem('spes_history', JSON.stringify(history));
+
+  alert(`✅ Fiche "${pseudo} · ${currentRole}" sauvegardée !`);
+  renderHistory();
+}
+
+function renderHistory() {
+  const container = document.getElementById('history-list');
+  if (!container) return;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch(_) {}
+
+  if (!history.length) {
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:var(--sub);font-size:13px">Aucune fiche sauvegardée<br><span style="font-size:11px;opacity:.6">Importez un joueur et cliquez "Sauvegarder fiche"</span></div>';
+    return;
+  }
+
+  container.innerHTML = history.map((h, i) => {
+    const date = new Date(h.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+    const scoreColor = h.score >= 8 ? 'var(--lime)' : h.score >= 6 ? 'var(--teal)' : h.score >= 4.5 ? 'var(--amber)' : 'var(--red)';
+    const ranks = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+    const rankName = ranks[parseInt(h.rank)] || 'Diamond';
+    return `<div style="background:var(--surf2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px;display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700">${h.pseudo} <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sub)">#${h.tag}</span></div>
+        <div style="font-size:11px;color:var(--sub2);margin-top:2px">${h.role} · ${rankName} · ${date}</div>
+      </div>
+      <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:700;color:${scoreColor}">${h.score !== null ? h.score.toFixed(1) : '—'}</div>
+      <div style="display:flex;gap:6px">
+        <button onclick="loadHistorySnapshot(${i})" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--lime);cursor:pointer;font-weight:600">↺ Charger</button>
+        <button onclick="deleteHistorySnapshot(${i})" style="background:none;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--sub);cursor:pointer">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadHistorySnapshot(idx) {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch(_) {}
+  const h = history[idx]; if (!h) return;
+
+  // Restore identity fields
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set('d-pseudo', h.pseudo);
+  set('d-tag', h.tag);
+  set('d-server', h.server);
+  set('d-age', h.age);
+  set('d-rank', h.rank);
+  set('d-rank-prev', h.rankPrev);
+
+  // Restore rawData
+  Object.assign(rawData, h.rawData || {});
+  currentRole = h.role;
+
+  // Update UI
+  document.querySelectorAll('.role-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.role-pill').forEach(b => {
+    if (b.textContent.includes(h.role) || b.onclick?.toString().includes("'" + h.role + "'")) b.classList.add('active');
+  });
+
+  buildAllDims();
+  updateGlobal();
+  updateVerdict();
+  updateRadar();
+  onIdentityChange();
+  detectPlaystyle();
+  switchPanel('scout');
+  setSbActive(document.querySelector('.sb-item'));
+}
+
+function deleteHistorySnapshot(idx) {
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch(_) {}
+  history.splice(idx, 1);
+  localStorage.setItem('spes_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function clearHistory() {
+  if (!confirm('Effacer tout l\'historique ? Cette action est irréversible.')) return;
+  localStorage.removeItem('spes_history');
+  renderHistory();
+}
+
+// ════════════════════════════════════════════════════════════
+// ③ PROGRESSION TEMPORELLE
+// Compare les 10 dernières parties vs les 10 précédentes
+// ════════════════════════════════════════════════════════════
+function buildProgressionTemp() {
+  const container = document.getElementById('prog-temp-content');
+  if (!container) return;
+  if (!matchHistory || matchHistory.length < 10) {
+    container.innerHTML = '<div style="color:var(--sub);font-size:12px;text-align:center;padding:24px">Importez au moins 20 parties via l\'API pour voir la progression.</div>';
+    return;
+  }
+
+  const puuid = rawData._puuid;
+  const getP = m => m.info.participants.find(p => p.puuid === puuid) || m.info.participants[0];
+
+  // Split: recent (last 10) vs previous (next 10)
+  const recent   = matchHistory.slice(0, 10);
+  const previous = matchHistory.slice(10, 20);
+
+  function avgStats(matches) {
+    let k=0,d=0,a=0,cs=0,dur=0,vis=0,kp=0,dmg=0,n=0;
+    matches.forEach(m => {
+      const p = getP(m);
+      if (!p) return;
+      const mins = m.info.gameDuration / 60;
+      const teamK = m.info.participants.filter(x => x.teamId === p.teamId).reduce((s,x)=>s+x.kills,0);
+      const teamDmg = m.info.participants.filter(x => x.teamId === p.teamId).reduce((s,x)=>s+x.totalDamageDealtToChampions,0);
+      k+=p.kills; d+=p.deaths; a+=p.assists; n++;
+      cs += (p.totalMinionsKilled + p.neutralMinionsKilled) / mins;
+      dur += mins;
+      vis += p.visionScore;
+      kp  += teamK > 0 ? (p.kills+p.assists)/teamK*100 : 0;
+      dmg += teamDmg > 0 ? p.totalDamageDealtToChampions/teamDmg*100 : 0;
+    });
+    if (!n) return null;
+    const wr = matches.filter(m => getP(m)?.win).length / n * 100;
+    return {
+      kda:  d>0 ? (k+a)/d : k+a, wr,
+      cs:   cs/n, vis: vis/n, kp: kp/n, dmg: dmg/n, games: n
+    };
+  }
+
+  const rec  = avgStats(recent);
+  const prev = avgStats(previous);
+  if (!rec || !prev) { container.innerHTML = '<div style="color:var(--sub);font-size:12px;padding:16px">Données insuffisantes.</div>'; return; }
+
+  const metrics = [
+    { lbl:'KDA',          rec:rec.kda,  prev:prev.kda,  fmt:v=>v.toFixed(2), higher:true },
+    { lbl:'Win Rate',     rec:rec.wr,   prev:prev.wr,   fmt:v=>v.toFixed(1)+'%', higher:true },
+    { lbl:'CS/min',       rec:rec.cs,   prev:prev.cs,   fmt:v=>v.toFixed(1), higher:true },
+    { lbl:'Vision/game',  rec:rec.vis,  prev:prev.vis,  fmt:v=>v.toFixed(1), higher:true },
+    { lbl:'Kill Part.',   rec:rec.kp,   prev:prev.kp,   fmt:v=>v.toFixed(0)+'%', higher:true },
+    { lbl:'Dmg Share',    rec:rec.dmg,  prev:prev.dmg,  fmt:v=>v.toFixed(0)+'%', higher:true },
+  ];
+
+  container.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:8px;padding:10px 14px;text-align:center">
+        <div style="font-size:11px;color:var(--lime);font-family:'DM Mono',monospace;margin-bottom:4px">10 DERNIÈRES PARTIES</div>
+        <div style="font-size:11px;color:var(--sub2)">${rec.wr.toFixed(0)}% WR · ${rec.kda.toFixed(2)} KDA</div>
+      </div>
+      <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;text-align:center">
+        <div style="font-size:11px;color:var(--sub);font-family:'DM Mono',monospace;margin-bottom:4px">10 PRÉCÉDENTES</div>
+        <div style="font-size:11px;color:var(--sub2)">${prev.wr.toFixed(0)}% WR · ${prev.kda.toFixed(2)} KDA</div>
+      </div>
+    </div>
+    ${metrics.map(m => {
+      const delta = m.rec - m.prev;
+      const pct   = m.prev !== 0 ? delta / Math.abs(m.prev) * 100 : 0;
+      const up    = m.higher ? delta > 0 : delta < 0;
+      const neutral = Math.abs(pct) < 2;
+      const color = neutral ? 'var(--sub)' : up ? 'var(--lime)' : 'var(--red)';
+      const arrow = neutral ? '→' : up ? '▲' : '▼';
+      const barMax = Math.max(m.rec, m.prev);
+      return `<div style="display:grid;grid-template-columns:100px 1fr 80px 80px 60px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--sub2)">${m.lbl}</div>
+        <div style="position:relative;height:6px;background:var(--surf3);border-radius:3px">
+          <div style="position:absolute;left:0;top:0;height:6px;border-radius:3px;background:var(--sub);opacity:.4;width:${barMax>0?m.prev/barMax*100:0}%"></div>
+          <div style="position:absolute;left:0;top:0;height:6px;border-radius:3px;background:${color};width:${barMax>0?m.rec/barMax*100:0}%;opacity:.85"></div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:var(--sub)">${m.fmt(m.prev)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;text-align:right;color:${color};font-weight:600">${m.fmt(m.rec)}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;text-align:right;color:${color}">${arrow} ${Math.abs(pct).toFixed(0)}%</div>
+      </div>`;
+    }).join('')}`;
+}
+
+// Hook into setGraphTab to build progression when tab is opened
+const _origSetGraphTab = setGraphTab;
+function setGraphTab(tab, btn) {
+  _origSetGraphTab(tab, btn);
+  if (tab === 'progression_temp') buildProgressionTemp();
+}
+
+// ════════════════════════════════════════════════════════════
+// ④ DÉTECTION AUTOMATIQUE DU STYLE DE JEU
+// ════════════════════════════════════════════════════════════
+function detectPlaystyle() {
+  const card = document.getElementById('playstyle-card');
+  const content = document.getElementById('playstyle-content');
+  if (!content) return;
+
+  const kda     = parseFloat(rawData.kda)       || 0;
+  const kp      = parseFloat(rawData.kill_part)  || 0;
+  const dmg     = parseFloat(rawData.dmg_share)  || 0;
+  const vision  = parseFloat(rawData.vision)     || 0;
+  const cs      = parseFloat(rawData.cs_min)     || 0;
+  const wr      = parseFloat(rawData.winrate)    || 0;
+
+  if (!kda && !kp && !dmg) {
+    if (card) card.style.display = 'none';
+    return;
+  }
+  if (card) card.style.display = 'block';
+
+  const styles = [];
+
+  // Carry: high dmg share + high KDA
+  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'🗡 Carry', color:'#FF5A4A', desc:'Fort impact offensif' });
+
+  // Teamplay: high KP + lower dmg
+  if (kp >= 68 && dmg < 28) styles.push({ lbl:'🤝 Teamplay', color:'#4A9EFF', desc:'Très impliqué en équipe' });
+
+  // Consistant: high WR + decent KDA
+  if (wr >= 54 && kda >= 3.0) styles.push({ lbl:'📊 Consistant', color:'#C8F53C', desc:'Résultats stables' });
+
+  // Agressif: very high KP + decent KDA
+  if (kp >= 72 && kda >= 3.0) styles.push({ lbl:'⚡ Agressif', color:'#F5A623', desc:'Cherche le fight' });
+
+  // Passif / Farm: very high CS + low KP
+  if (cs >= 8.5 && kp < 55) styles.push({ lbl:'🌾 Farmer', color:'#2DD4BF', desc:'Priorité CS & scaling' });
+
+  // Vision focused (support)
+  if (vision >= 55) styles.push({ lbl:'👁 Vision', color:'#C084FC', desc:'Contrôle de la vision' });
+
+  // Fallback
+  if (!styles.length) styles.push({ lbl:'⚖️ Équilibré', color:'var(--sub2)', desc:'Profil polyvalent' });
+
+  content.innerHTML = styles.map(s => `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:100px">
+      <span style="font-size:14px;font-weight:700;color:${s.color}">${s.lbl}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sub)">${s.desc}</span>
+    </div>`).join('');
+
+  // Also update presentation mode style
+  const presStyle = document.getElementById('pres-style-content');
+  if (presStyle) presStyle.innerHTML = styles.map(s =>
+    `<div style="font-size:13px;font-weight:700;color:${s.color};margin-bottom:4px">${s.lbl} <span style="font-size:11px;color:var(--sub);font-weight:400">— ${s.desc}</span></div>`
+  ).join('');
+}
+
+// ════════════════════════════════════════════════════════════
+// ⑤ MODE PRÉSENTATION COACH
+// ════════════════════════════════════════════════════════════
+function enterPresentationMode() {
+  const g      = (typeof globalScore === 'function') ? globalScore() : null;
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim() || '—';
+  const tag    = document.getElementById('d-tag')?.value?.trim() || 'EUW';
+  const server = document.getElementById('d-server')?.value || 'euw1';
+  const age    = document.getElementById('d-age')?.value || '';
+  const rankIdx = parseInt(document.getElementById('d-rank')?.value || 6);
+  const ranks  = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+  const rank   = ranks[rankIdx] || 'Diamond';
+
+  // Fill presentation fields
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.innerHTML = val; };
+  set('pres-name', `${pseudo} <span style="font-family:'DM Mono',monospace;font-size:18px;color:var(--sub)">#${tag}</span>`);
+  set('pres-meta', `${currentRole} · ${server.toUpperCase()}${age ? ' · ' + age + ' ans' : ''}`);
+  set('pres-rank', rank);
+  set('pres-date', new Date().toLocaleDateString('fr-FR'));
+
+  const scoreColor = g >= 8 ? 'var(--lime)' : g >= 6 ? 'var(--teal)' : g >= 4.5 ? 'var(--amber)' : 'var(--red)';
+  const presGlobal = document.getElementById('pres-global');
+  if (presGlobal) { presGlobal.textContent = g !== null ? g.toFixed(1) : '—'; presGlobal.style.color = scoreColor; }
+
+  // Copy verdict
+  const vt = document.getElementById('verdict-text');
+  const presVerdict = document.getElementById('pres-verdict');
+  if (vt && presVerdict) presVerdict.innerHTML = vt.innerHTML;
+
+  const vtags = document.getElementById('verdict-tags');
+  const presTags = document.getElementById('pres-tags');
+  if (vtags && presTags) presTags.innerHTML = vtags.innerHTML;
+
+  // Build dimension bars in presentation
+  const f   = getRoleFields ? getRoleFields() : {};
+  const RW  = (typeof ROLE_WEIGHTS !== 'undefined' ? ROLE_WEIGHTS[currentRole] : null) || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
+  const DC  = (typeof DIM_COLORS !== 'undefined') ? DIM_COLORS : { d1:'#4A9EFF',d2:'#F5A623',d3:'#2DD4BF',d4:'#C084FC',d5:'#FF7A5A' };
+  const dims = [
+    { lbl:'D1 — Stats pures',    val:(typeof dimAvg==='function'?dimAvg(f.d1):null), color:DC.d1, w:RW.d1 },
+    { lbl:'D2 — Objectifs',      val:(typeof dimAvg==='function'?dimAvg(f.d2):null), color:DC.d2, w:RW.d2 },
+    { lbl:'D3 — Impact carte',   val:(typeof dimAvg==='function'?dimAvg(f.d3):null), color:DC.d3, w:RW.d3 },
+    { lbl:'D4 — Progression',    val:(typeof dimAvg==='function'?dimAvg(f.d4):null), color:DC.d4, w:RW.d4 },
+    { lbl:'D5 — Entretien',      val:(typeof dimAvg==='function'?dimAvg(f.d5):null), color:DC.d5, w:RW.d5 },
+  ];
+  const presDims = document.getElementById('pres-dims');
+  if (presDims) {
+    presDims.innerHTML = dims.map(d => {
+      const sc = d.val;
+      const scColor = sc >= 8 ? 'var(--lime)' : sc >= 6 ? 'var(--teal)' : sc >= 4.5 ? 'var(--amber)' : sc !== null ? 'var(--red)' : 'var(--sub)';
+      return `<div style="display:grid;grid-template-columns:180px 1fr 50px 40px;gap:12px;align-items:center">
+        <div style="font-size:13px;font-weight:600;color:${d.color}">${d.lbl}</div>
+        <div style="height:8px;background:var(--surf2);border-radius:4px;overflow:hidden">
+          <div style="height:8px;background:${d.color};width:${sc!==null?sc*10:0}%;border-radius:4px;transition:width .4s"></div>
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:${scColor};text-align:right">${sc!==null?sc.toFixed(1):'—'}</div>
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--sub)">${Math.round(d.w*100)}%</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Copy radar SVG to presentation
+  const srcRadar = document.getElementById('radar-svg');
+  const presRadar = document.getElementById('pres-radar');
+  if (srcRadar && presRadar) presRadar.innerHTML = srcRadar.innerHTML;
+
+  // Links
+  const enc = encodeURIComponent(pseudo), encT = encodeURIComponent(tag);
+  const presLinks = document.getElementById('pres-links');
+  if (presLinks) {
+    presLinks.innerHTML = [
+      ['OP.GG', `https://www.op.gg/summoners/${server}/${enc}-${encT}`],
+      ['DPM',   `https://dpm.lol/profile/${server}/${enc}-${encT}`],
+      ['U.GG',  `https://u.gg/lol/profile/${server}/${enc}-${encT}/overview`],
+    ].map(([n,u]) => `<a href="${u}" target="_blank" rel="noopener" style="display:block;font-size:13px;font-weight:600;color:var(--lime);text-decoration:none;padding:4px 0">${n} ↗</a>`).join('');
+  }
+
+  // Show overlay
+  document.getElementById('presentation-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function exitPresentationMode() {
+  document.getElementById('presentation-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Keyboard shortcut: Escape closes presentation mode
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') exitPresentationMode();
+  if (e.key === 'p' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); exportPDF(); }
+});
+
+// ── Hook detectPlaystyle into applyApiField ────────────────
+const _origUpdateVerdict = typeof updateVerdict === 'function' ? updateVerdict : null;
+if (_origUpdateVerdict) {
+  window._hookedVerdict = true;
+  const __origUpdateVerdict = updateVerdict;
+  updateVerdict = function() {
+    __origUpdateVerdict();
+    detectPlaystyle();
+  };
+}
+
 </script>
+
+<!-- ══ MODE PRÉSENTATION COACH ══ -->
+<div id="presentation-overlay" style="display:none;position:fixed;inset:0;background:#080B10;z-index:9999;overflow-y:auto;padding:40px 60px" onclick="exitPresentationMode()">
+  <div onclick="event.stopPropagation()" style="max-width:900px;margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:36px;height:36px;background:var(--lime);border-radius:8px;display:flex;align-items:center;justify-content:center">
+          <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#080B10"/></svg>
+        </div>
+        <div>
+          <div style="font-size:14px;font-weight:800;letter-spacing:.05em">SPES LAB</div>
+          <div style="font-size:10px;color:var(--sub);font-family:'DM Mono',monospace">RAPPORT SCOUTING</div>
+        </div>
+      </div>
+      <button onclick="exitPresentationMode()" style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:8px 16px;color:var(--sub2);cursor:pointer;font-size:13px">✕ Fermer</button>
+    </div>
+
+    <!-- Player hero -->
+    <div style="text-align:center;margin-bottom:40px">
+      <div id="pres-name" style="font-size:36px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px">—</div>
+      <div id="pres-meta" style="font-size:16px;color:var(--sub2);margin-bottom:16px">—</div>
+      <div id="pres-rank" style="display:inline-block;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:8px;padding:8px 24px;font-size:20px;font-weight:700;color:var(--lime)">—</div>
+    </div>
+
+    <!-- Global score -->
+    <div style="display:flex;gap:16px;margin-bottom:32px;justify-content:center">
+      <div style="background:var(--surf1);border:1px solid var(--border);border-radius:16px;padding:28px 40px;text-align:center;flex:1;max-width:200px">
+        <div id="pres-global" style="font-size:64px;font-weight:800;line-height:1;color:var(--lime)">—</div>
+        <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--sub);margin-top:6px;text-transform:uppercase;letter-spacing:.1em">Score SPES</div>
+      </div>
+      <div style="flex:1;background:var(--surf1);border:1px solid var(--border);border-radius:16px;padding:24px 32px">
+        <svg id="pres-radar" width="100%" height="220" viewBox="0 0 300 240"></svg>
+      </div>
+    </div>
+
+    <!-- 5 dim bars -->
+    <div style="background:var(--surf1);border:1px solid var(--border);border-radius:16px;padding:24px 32px;margin-bottom:24px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:16px;letter-spacing:.05em;text-transform:uppercase;color:var(--sub)">Scores par dimension</div>
+      <div id="pres-dims" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+
+    <!-- Verdict -->
+    <div style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:16px;padding:24px 32px;margin-bottom:24px">
+      <div style="font-size:12px;font-weight:700;color:var(--lime);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">⭐ Verdict coach</div>
+      <div id="pres-verdict" style="font-size:15px;color:var(--sub2);line-height:1.75"></div>
+      <div id="pres-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"></div>
+    </div>
+
+    <!-- Playstyle + links -->
+    <div style="display:flex;gap:12px">
+      <div id="pres-style" style="flex:1;background:var(--surf1);border:1px solid var(--border);border-radius:12px;padding:18px 24px">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">🎮 Style de jeu</div>
+        <div id="pres-style-content"></div>
+      </div>
+      <div style="background:var(--surf1);border:1px solid var(--border);border-radius:12px;padding:18px 24px;display:flex;flex-direction:column;gap:8px;min-width:160px">
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">🔗 Profils</div>
+        <div id="pres-links" style="display:flex;flex-direction:column;gap:6px"></div>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;font-size:10px;color:var(--sub);font-family:'DM Mono',monospace">
+      Généré par SPES Lab · <span id="pres-date"></span> · Cliquez n'importe où pour fermer
+    </div>
+  </div>
+</div>
 </body>
 </html>
