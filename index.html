@@ -3692,6 +3692,24 @@ function applyApiField(id, val) {
   updateRadar();
 }
 
+async function estimatePrevSeasonRank(regional, puuid, apiKey) {
+  // Tente d'estimer le rang de la saison précédente via l'historique des matchs
+  // En pratique on retourne -1 (inconnu) car l'API Riot ne donne pas le rang N-1 directement
+  try {
+    // On regarde les matchs de ranked de l'année passée
+    const oneYearAgo = Math.floor((Date.now() - 365 * 24 * 3600 * 1000) / 1000);
+    const ids = await riotFetch(
+      `https://${regional}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?queue=420&count=1&type=ranked&start=0`,
+      apiKey
+    );
+    // Si le joueur a des matchs ranked, on retourne null (inconnu) pour l'instant
+    // Une vraie implémentation nécessiterait l'API ranked history (non disponible publiquement)
+    return -1;
+  } catch(e) {
+    return -1; // Inconnu — pas bloquant
+  }
+}
+
 async function fetchRiotData() {
   const pseudo = document.getElementById('d-pseudo')?.value.trim();
   const tag    = document.getElementById('d-tag')?.value.trim() || 'EUW';
