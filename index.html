@@ -3481,7 +3481,14 @@ const PLATFORM_TO_REGIONAL = {
 const TIER_TO_IDX = { 'IRON':0,'BRONZE':1,'SILVER':2,'GOLD':3,'PLATINUM':4,'EMERALD':5,'DIAMOND':6,'MASTER':7,'GRANDMASTER':8,'CHALLENGER':9 };
 
 function saveKey() { try { localStorage.setItem('sl_key', document.getElementById('riot-key').value); } catch(_) {} }
-function loadKey() { try { const k = localStorage.getItem('sl_key'); if (k) document.getElementById('riot-key').value = k; } catch(_) {} }
+function loadKey() {
+  try {
+    // Avec le backend Railway, on n'a plus besoin de la clé locale
+    // On vide l'ancien localStorage pour ne pas interférer
+    localStorage.removeItem('sl_key');
+    document.getElementById('riot-key').value = '';
+  } catch(_) {}
+}
 function toggleKeyVisible() { const i = document.getElementById('riot-key'); const e = document.getElementById('key-eye'); i.type = i.type==='password'?'text':'password'; e.textContent = i.type==='password'?'👁':'🙈'; }
 function toggleApiCard() { const b = document.getElementById('api-body'); const btn = document.getElementById('api-toggle-btn'); const v = b.style.display!=='none'; b.style.display=v?'none':'block'; btn.textContent=v?'▼ Développer':'▲ Réduire'; }
 function toggleDebug() { const l = document.getElementById('debug-log'); l.style.display=l.style.display==='none'?'block':'none'; }
@@ -3518,7 +3525,7 @@ async function riotFetch(url, apiKey) {
   const body = await res.text();
   dbgLog('📥 HTTP ' + res.status + ' — ' + body.slice(0,120));
   if (!res.ok) {
-    if (res.status===401||res.status===403) throw new Error('Clé API invalide ou expirée ('+res.status+'). Renouvelez sur developer.riotgames.com (expire toutes les 24h).');
+    if (res.status===401||res.status===403) throw new Error('Erreur API Riot ('+res.status+'). Si 401 : renouvelez la clé dans Railway Variables.');
     if (res.status===404) throw new Error('Joueur introuvable (404). Vérifiez pseudo et tag — sensibles à la casse.');
     if (res.status===429) {
       dbgLog('⏳ 429 — attente 15s et retry automatique…');
@@ -4280,7 +4287,7 @@ async function loadMapData() {
   }
 
   const apiKey = document.getElementById('riot-key')?.value.trim();
-  if (!apiKey) { setMapStatus('error', '⚠ Clé API manquante. Retournez à la Fiche joueur.'); return; }
+  // Clé optionnelle avec backend Railway
 
   const count = parseInt(document.getElementById('map-count').value);
   const server = document.getElementById('d-server')?.value || 'euw1';
