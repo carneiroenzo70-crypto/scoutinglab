@@ -2220,6 +2220,64 @@ let analyseMode = 'scout'; // 'scout' ou 'roster'
 
 const PLAYER_COLORS = ['#4A9EFF','#4ADE80','#F5A623','#C084FC','#F87171'];
 
+function compareSnapshotCurrent() {
+  const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || '—';
+  const tag      = document.getElementById('d-tag')?.value?.trim()    || 'EUW';
+  const server   = document.getElementById('d-server')?.value         || 'euw1';
+  const age      = document.getElementById('d-age')?.value            || '—';
+  const rankIdx  = parseInt(document.getElementById('d-rank')?.value  || 6);
+  const ranks    = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+  const rankLbl  = ranks[rankIdx] || 'Diamond';
+
+  // Scores par dimension
+  const f = typeof getRoleFields === 'function' ? getRoleFields() : {};
+  const norm = f2 => Object.values(f2||{}).map(f3=>Array.isArray(f3)?f3:[f3]).flat();
+  const dimAvgSafe = fields => {
+    if (!Array.isArray(fields) || !fields.length) return null;
+    if (typeof dimAvg === 'function') return dimAvg(fields);
+    const scores = fields.map(field => {
+      if (typeof computeFieldScore === 'function') return computeFieldScore(field);
+      return null;
+    }).filter(s => s !== null);
+    return scores.length ? scores.reduce((a,b)=>a+b,0)/scores.length : null;
+  };
+
+  const dimScores = {
+    d1: dimAvgSafe(f.d1),
+    d2: dimAvgSafe(f.d2),
+    d3: dimAvgSafe(f.d3),
+    d4: dimAvgSafe(f.d4),
+    d5: dimAvgSafe(f.d5),
+  };
+
+  const global = typeof globalScore === 'function' ? globalScore() : null;
+
+  // Champs de champions depuis le tableau
+  const champRows = document.querySelectorAll('#champ-tbody tr');
+  const champs = [];
+  champRows.forEach(row => {
+    const cells = row.querySelectorAll('td');
+    if (cells.length >= 2) champs.push(cells[1]?.textContent?.trim());
+  });
+
+  // Stats API brutes
+  const stats = { ...rawData };
+
+  // Données avancées (challenges si disponibles)
+  const adv = {
+    soloKills:       rawData.soloKills       || null,
+    skillshotsDodged:rawData.skillshotsDodged|| null,
+    visionAdv:       rawData.vision          || null,
+  };
+
+  return {
+    pseudo, tag, server, age, rankLbl, rankIdx,
+    role: currentRole,
+    global, dimScores, stats, adv, champs,
+    date: new Date().toISOString(),
+  };
+}
+
 function analyseAddCurrent() {
   const pseudo = document.getElementById('d-pseudo')?.value?.trim();
   if (!pseudo) { alert('Importez d\'abord une fiche joueur dans l\'onglet Fiche joueur.'); return; }
@@ -3137,9 +3195,18 @@ function buildProgressionTemp() {
 }
 
 // Hook into setGraphTab to build progression when tab is opened
-const _origSetGraphTab = setGraphTab;
 function setGraphTab(tab, btn) {
-  _origSetGraphTab(tab, btn);
+  // Hide all tabs
+  ['performance','progression','activite','progression_temp'].forEach(t => {
+    const el = document.getElementById('gtab-' + t);
+    if (el) el.style.display = t === tab ? 'block' : 'none';
+  });
+  // Update active button
+  document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Build content for specific tabs
+  if (tab === 'progression') { buildChartLP(); buildChartChamps(); }
+  if (tab === 'activite')    { buildHeatmap(); buildChartWeekday(); buildChartDuration(); }
   if (tab === 'progression_temp') buildProgressionTemp();
 }
 
@@ -5207,6 +5274,194 @@ function t50SetProg(pct, txt) {
   const fill = document.getElementById('t50-prog-fill'); if (fill) fill.style.width = pct + '%';
   const t = document.getElementById('t50-prog-txt'); if (t) t.textContent = txt;
   const p = document.getElementById('t50-prog-pct'); if (p) p.textContent = pct + '%';
+}
+
+
+async function top50Scan() {
+  const apiKey = document.getElementById('t50-apikey')?.value?.trim();
+  const server = document.getElementById('t50-server')?.value || 'euw1';
+  const tier   = document.getElementById('t50-tier')?.value   || 'DIAMOND';
+
+  if (!apiKey || !apiKey.startsWith('RGAPI-')) {
+    alert('Entrez votre clé API Riot dans le champ jaune avant de scanner.');
+    return;
+  }
+
+  const btn = document.getElementById('t50-scan-btn');
+  btn.disabled = true; btn.textContent = '⏳ Scan…';
+  t50SetProg(2, 'Initialisation du scan…');
+
+  const regional = { euw1:'europe', eun1:'europe', na1:'americas', kr:'asia' }[server] || 'europe';
+  const MAX = 30;
+  const DELAY = 1300;
+
+  try {
+    // 1. Récupérer le leaderboard
+    t50SetProg(5, 'Récupération du leaderboard ' + tier + ' ' + server.toUpperCase() + '…');
+    let entries = [];
+
+    if (['MASTER','GRANDMASTER','CHALLENGER'].includes(tier)) {
+      const data = await riotFetch(
+        'https://' + server + '.api.riotgames.com/lol/league/v4/' + tier.toLowerCase() + 'leagues/by-queue/RANKED_SOLO_5x5',
+        apiKey
+      );
+      entries = (data?.entries || []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, MAX + 10);
+    } else {
+      // Diamond I
+      const d1 = await riotFetch(
+        'https://' + server + '.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1',
+        apiKey
+      );
+      entries = (Array.isArray(d1) ? d1 : []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, MAX + 10);
+    }
+
+    if (!entries.length) throw new Error('Aucun joueur trouvé. Vérifiez votre clé API.');
+    t50SetProg(12, entries.length + ' joueurs trouvés — analyse en cours…');
+    await sleep(DELAY);
+
+    // 2. Analyser chaque joueur
+    const prospects = [];
+
+    for (let i = 0; i < entries.length && prospects.length < MAX; i++) {
+      const entry = entries[i];
+      const pct = 12 + Math.round((i / entries.length) * 78);
+      t50SetProg(pct, 'Joueur ' + (i+1) + '/' + entries.length + ' en cours…');
+
+      try {
+        // PUUID via summoner si nécessaire
+        let puuid = entry.puuid || null;
+        if (!puuid && entry.summonerId) {
+          const sum = await riotFetch(
+            'https://' + server + '.api.riotgames.com/lol/summoner/v4/summoners/' + entry.summonerId,
+            apiKey
+          );
+          await sleep(DELAY);
+          if (!sum?.puuid) continue;
+          puuid = sum.puuid;
+        }
+        if (!puuid) continue;
+
+        // gameName + tagLine
+        let displayName = '—', tagLine = server.toUpperCase();
+        try {
+          const acct = await riotFetch(
+            'https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-puuid/' + puuid,
+            apiKey
+          );
+          await sleep(DELAY);
+          if (acct?.gameName) { displayName = acct.gameName; tagLine = acct.tagLine || tagLine; }
+        } catch(e) {}
+
+        // Dernières parties
+        const ids = await riotFetch(
+          'https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + puuid + '/ids?queue=420&count=3',
+          apiKey
+        );
+        await sleep(DELAY);
+        if (!Array.isArray(ids) || !ids.length) continue;
+
+        // Fetch 3 matchs
+        const matchData = [];
+        for (const mid of ids.slice(0, 3)) {
+          try {
+            const m = await riotFetch(
+              'https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + mid,
+              apiKey
+            );
+            await sleep(DELAY);
+            if (m?.info?.participants) matchData.push(m);
+          } catch(e) {}
+        }
+        if (!matchData.length) continue;
+
+        // Stats
+        let wins=0, k=0, d=0, a=0, cs=0, dur=0, vis=0, kp=0, dmg=0, gc=0;
+        const champMap = {};
+        const roleCounts = {};
+
+        matchData.forEach(m => {
+          const p = m.info.participants.find(x => x.puuid === puuid);
+          if (!p || m.info.gameDuration < 240) return;
+          gc++;
+          if (p.win) wins++;
+          k+=p.kills; d+=p.deaths; a+=p.assists;
+          cs += (p.totalMinionsKilled + p.neutralMinionsKilled);
+          const mins = m.info.gameDuration / 60; dur += mins;
+          vis += p.visionScore;
+          const tk = m.info.participants.filter(x=>x.teamId===p.teamId).reduce((s,x)=>s+x.kills,0);
+          if (tk>0) kp += (p.kills+p.assists)/tk*100;
+          const td = m.info.participants.filter(x=>x.teamId===p.teamId).reduce((s,x)=>s+x.totalDamageDealtToChampions,0);
+          if (td>0) dmg += p.totalDamageDealtToChampions/td*100;
+          const pos = p.teamPosition||p.individualPosition||'';
+          const role = pos==='TOP'?'Top':pos==='JUNGLE'?'Jgl':pos==='MIDDLE'?'Mid':pos==='BOTTOM'?'ADC':pos==='UTILITY'?'Sup':'unknown';
+          roleCounts[role] = (roleCounts[role]||0) + 1;
+          const cn = p.championName||'?';
+          if (!champMap[cn]) champMap[cn]={games:0};
+          champMap[cn].games++;
+        });
+
+        if (!gc) continue;
+        const wr    = Math.round(wins/gc*100);
+        const kda   = d===0 ? k+a : (k+a)/d;
+        const csMin = dur>0 ? cs/dur : 0;
+        const visAvg = vis/gc;
+        const kpAvg  = kp/gc;
+        const dmgAvg = dmg/gc;
+        const role   = Object.entries(roleCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'unknown';
+        const tierIdx = TIER_IDX[entry.tier||tier] ?? 6;
+        const lp = entry.leaguePoints || 0;
+        const champs = Object.entries(champMap).sort((a,b)=>b[1].games-a[1].games).map(([name,d])=>({name,...d}));
+        const score = typeof calcProspectScore === 'function'
+          ? calcProspectScore(tierIdx, lp, wr, kda, csMin, visAvg, role, kpAvg, dmgAvg, 0)
+          : (tierIdx * 0.8 + lp/100 * 0.5 + wr/100 * 2).toFixed(2);
+
+        const existing = top50Data.find(x => x.puuid === puuid);
+        prospects.push({
+          summonerId: entry.summonerId || '',
+          puuid, name: displayName, tag: tagLine, server,
+          tier: entry.tier || tier, rank: entry.rank || 'I', lp,
+          wr, kda: parseFloat(kda.toFixed(2)), csMin: parseFloat(csMin.toFixed(2)),
+          visAvg: Math.round(visAvg), kpAvg: parseFloat(kpAvg.toFixed(1)),
+          dmgAvg: parseFloat(dmgAvg.toFixed(1)), role, champs,
+          score: parseFloat(parseFloat(score).toFixed(2)),
+          age:       existing?.age       ?? null,
+          ageStatus: existing?.ageStatus ?? '🔍',
+          statut:    existing?.statut    ?? '🆕 Nouveau',
+          notes:     existing?.notes     ?? '',
+          addedAt:   existing?.addedAt   ?? new Date().toISOString(),
+        });
+
+        dbgLog && dbgLog('✅ ' + displayName + ' — ' + (entry.tier||tier) + ' ' + lp + 'LP — score: ' + score);
+
+      } catch(e) {
+        if (e.message && e.message.includes('429')) {
+          t50SetProg(pct, '⏳ Rate limit — attente 2min…');
+          await sleep(120000);
+        }
+        dbgLog && dbgLog('⚠ Joueur ' + (i+1) + ' ignoré : ' + (e.message||e));
+      }
+    }
+
+    // 3. Trier et sauvegarder
+    prospects.sort((a,b) => b.score - a.score);
+    top50Data = prospects.slice(0, 50);
+    top50SaveLocal();
+    top50RenderTable();
+
+    t50SetProg(100, '✅ ' + top50Data.length + ' prospects générés !');
+    document.getElementById('t50-stats-bar').style.display = 'flex';
+    document.getElementById('t50-count').textContent = top50Data.length;
+    const dateEl = document.getElementById('t50-date');
+    if (dateEl) dateEl.textContent = new Date().toLocaleDateString('fr-FR');
+
+    setTimeout(() => { document.getElementById('t50-progress').style.display = 'none'; }, 4000);
+
+  } catch(e) {
+    t50SetProg(0, '❌ ' + e.message);
+    dbgLog && dbgLog('❌ Scan error: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '⚡ Scanner';
+  }
 }
 
 function top50SaveLocal() {
