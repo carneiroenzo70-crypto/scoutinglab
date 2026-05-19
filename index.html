@@ -2158,11 +2158,17 @@ function buildResults() {
     }).filter(Boolean).sort((a,b) => b.sc-a.sc);
     const top = all.slice(0,2), bot = all.slice(-2);
     reco.innerHTML = `
-      <div style="margin-bottom:10px"><strong style="color:var(--lime)">Points forts :</strong>
-        ${top.map(x => `<span class="vtag vtag-g" style="margin-left:4px">${x.label} (${x.sc.toFixed(1)})</span>`).join('')}
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--sub);margin-bottom:6px">✅ POINTS FORTS</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${top.map(x => `<span class="vtag vtag-g">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
+        </div>
       </div>
-      <div style="margin-bottom:10px"><strong style="color:var(--red)">Axes à travailler :</strong>
-        ${bot.map(x => `<span class="vtag vtag-r" style="margin-left:4px">${x.label} (${x.sc.toFixed(1)})</span>`).join('')}
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--sub);margin-bottom:6px">⚠️ AXES À TRAVAILLER</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${bot.map(x => `<span class="vtag vtag-r">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
+        </div>
       </div>`;
   }
 
@@ -3622,11 +3628,36 @@ function toggleKeyVisible() { const i = document.getElementById('riot-key'); con
 function toggleApiCard() { const b = document.getElementById('api-body'); const btn = document.getElementById('api-toggle-btn'); const v = b.style.display!=='none'; b.style.display=v?'none':'block'; btn.textContent=v?'▼ Développer':'▲ Réduire'; }
 function toggleDebug() { const l = document.getElementById('debug-log'); l.style.display=l.style.display==='none'?'block':'none'; }
 
+// Suivi du temps pour l'estimation
+let _progressStartTime = null;
+let _progressLastPct = 0;
+
 function setProgress(pct, txt) {
-  const p = document.getElementById('api-progress'); p.style.display='block';
-  document.getElementById('api-prog-fill').style.width = pct+'%';
-  document.getElementById('api-prog-txt').textContent = txt;
-  const pe = document.getElementById('api-prog-pct'); if (pe) pe.textContent = pct+'%';
+  const p = document.getElementById('api-progress');
+  p.style.display = 'block';
+  document.getElementById('api-prog-fill').style.width = pct + '%';
+
+  // Estimation du temps restant
+  if (!_progressStartTime || pct < _progressLastPct) {
+    _progressStartTime = Date.now();
+    _progressLastPct = pct;
+  }
+
+  let timeLabel = '';
+  if (pct > 5 && pct < 95) {
+    const elapsed = (Date.now() - _progressStartTime) / 1000;
+    const rate = pct / elapsed; // % par seconde
+    if (rate > 0) {
+      const remaining = Math.round((100 - pct) / rate);
+      if (remaining > 60) timeLabel = ` · ~${Math.ceil(remaining/60)} min`;
+      else if (remaining > 5) timeLabel = ` · ~${remaining}s`;
+    }
+  }
+  _progressLastPct = pct;
+
+  document.getElementById('api-prog-txt').textContent = txt + timeLabel;
+  const pe = document.getElementById('api-prog-pct');
+  if (pe) pe.textContent = Math.round(pct) + '%';
 }
 function setStatus(type, html) {
   const cls = {success:'status-ok',error:'status-err',info:'status-info'}[type]||'status-info';
@@ -3661,24 +3692,25 @@ async function riotFetch(url, apiKey) {
 
     // 429 : rate limit → retry après 15s
     if (res.status === 429) {
-      dbgLog('⏳ 429 — attente 15s…');
+      dbgLog('⏳ Limite Riot atteinte — pause 15s et reprise automatique…');
+      setProgress(_progressLastPct, '⏳ Trop de requêtes — reprise automatique dans 15s…');
       await sleep(15000);
       return riotFetch(url, apiKey);
     }
 
     // 404 : joueur introuvable
-    if (res.status === 404) throw new Error('Joueur introuvable (404). Vérifiez pseudo et tag.');
+    if (res.status === 404) throw new Error('Joueur introuvable — vérifiez que le pseudo et le tag sont corrects (ex: Faker#T1). La casse compte.');
 
     // Backend 401/403 : tenter fallback avec clé locale si disponible
     if ((res.status === 401 || res.status === 403) && apiKey && apiKey.startsWith('RGAPI-')) {
-      dbgLog('⚠ Backend 401 — fallback clé locale…');
+      dbgLog('⚠ Clé expirée — tentative avec clé locale…');
       const sep = url.includes('?') ? '&' : '?';
       const fullDirect = url + sep + 'api_key=' + encodeURIComponent(apiKey);
       const res2 = await fetch(fullDirect);
       const body2 = await res2.text();
       dbgLog('📥 Direct HTTP ' + res2.status);
       if (res2.ok) return JSON.parse(body2);
-      throw new Error('Clé API invalide ('+res2.status+'). Renouvelez sur developer.riotgames.com.');
+      throw new Error('Clé API expirée — rendez-vous sur developer.riotgames.com pour en générer une nouvelle gratuitement (2 minutes).');
     }
 
     throw new Error('Riot API ' + res.status + ' : ' + body.slice(0, 100));
@@ -3891,6 +3923,8 @@ async function fetchRiotData() {
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
 
   try {
+    _progressStartTime = Date.now();
+    _progressLastPct = 0;
     setProgress(5, 'Résolution Riot ID…');
     const acc = await riotFetch(`https://${regional}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(pseudo)}/${encodeURIComponent(tag)}`, apiKey);
 
