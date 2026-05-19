@@ -83,14 +83,15 @@ body {
 
 /* ── SIDEBAR ── */
 .sb {
-  width:210px; flex-shrink:0;
+  display:none !important;
+  width:0; flex-shrink:0;
   background:var(--surf1);
   border-right:1px solid var(--border);
   padding:16px 10px;
   position:sticky; top:52px;
   height:calc(100vh - 52px);
   overflow-y:auto;
-  display:flex; flex-direction:column; gap:4px;
+  flex-direction:column; gap:4px;
 }
 .sb-sect {
   font-family:'DM Mono',monospace; font-size:9px;
@@ -586,12 +587,18 @@ body {
     </div>
   </div>
   <nav class="hd-nav">
-    <button class="hd-nav-item active" onclick="switchPanel('scout')">Fiche joueur</button>
-    <button class="hd-nav-item" onclick="switchPanel('graphs')">Graphiques</button>
-    <button class="hd-nav-item" onclick="switchPanel('map')">Carte</button>
-    <button class="hd-nav-item" onclick="switchPanel('results')">Résultats</button>
-    <button class="hd-nav-item" onclick="switchPanel('top50')">🏆 Top 50</button>
-    <button class="hd-nav-item" onclick="switchPanel('analyse')">📊 Analyse</button>
+    <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')">🔍 Scouter</button>
+    <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')">📋 Résultats</button>
+    <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')">⚡ Comparer</button>
+    <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')">🏆 Top 50</button>
+    <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu()" style="position:relative">
+      ··· Plus
+      <div id="more-menu" style="display:none;position:absolute;top:100%;right:0;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:6px;z-index:100;min-width:140px;margin-top:4px">
+        <button onclick="switchPanel('graphs');toggleMoreMenu()" style="display:block;width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">📈 Graphiques</button>
+        <button onclick="switchPanel('map');toggleMoreMenu()" style="display:block;width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">🗺 Carte</button>
+        <button onclick="switchPanel('history');toggleMoreMenu()" style="display:block;width:100%;text-align:left;padding:7px 10px;background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">📁 Historique</button>
+      </div>
+    </button>
   </nav>
   <div class="hd-badge">EUW · SOLOQ</div>
 </header>
@@ -650,6 +657,32 @@ body {
 
     <!-- ══ PANEL : SCOUT ══ -->
     <div id="panel-scout" class="panel active">
+
+      <!-- Onboarding — visible uniquement si aucun pseudo entré -->
+      <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(74,158,255,.08),rgba(74,222,128,.08));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:20px 24px;margin-bottom:16px;display:block">
+        <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
+          <div style="font-size:2rem">🚀</div>
+          <div style="flex:1;min-width:200px">
+            <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">Bienvenue sur SPES Lab</div>
+            <div style="font-size:.82rem;color:var(--sub);line-height:1.7;margin-bottom:12px">Votre outil de scouting LoL semi-pro. Pour analyser un joueur :</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <div style="background:var(--surf2);border-radius:8px;padding:8px 12px;font-size:.78rem;border:1px solid var(--border)">
+                <span style="color:var(--lime);font-weight:700">① </span>Entrez le pseudo <span style="color:var(--sub)">(ex: Faker#T1)</span>
+              </div>
+              <div style="background:var(--surf2);border-radius:8px;padding:8px 12px;font-size:.78rem;border:1px solid var(--border)">
+                <span style="color:var(--lime);font-weight:700">② </span>Sélectionnez le rôle
+              </div>
+              <div style="background:var(--surf2);border-radius:8px;padding:8px 12px;font-size:.78rem;border:1px solid var(--border)">
+                <span style="color:var(--lime);font-weight:700">③ </span>Cliquez <strong>Importer</strong>
+              </div>
+              <div style="background:var(--surf2);border-radius:8px;padding:8px 12px;font-size:.78rem;border:1px solid var(--border)">
+                <span style="color:var(--lime);font-weight:700">④ </span>Consultez <strong>Résultats</strong>
+              </div>
+            </div>
+          </div>
+          <button onclick="document.getElementById('onboarding-banner').style.display='none';localStorage.setItem('ob_dismissed','1')" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem;padding:4px">✕</button>
+        </div>
+      </div>
 
       <!-- File:// warning -->
       <div id="file-warn" class="file-warn">
@@ -972,8 +1005,13 @@ body {
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
-          <div class="hero-score" id="res-score" style="color:var(--sub)">—</div>
-          <div class="hero-verdict" id="res-verdict">Complétez la fiche pour voir le résultat</div>
+          <!-- Verdict phrase en gros — score en support -->
+          <div id="res-verdict-phrase" style="font-size:1.3rem;font-weight:900;color:var(--text);margin-bottom:6px;line-height:1.3">Importez un joueur pour commencer</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px">
+            <div class="hero-score" id="res-score" style="color:var(--sub);font-size:2.2rem">—</div>
+            <div id="res-score-label" style="font-size:.75rem;color:var(--sub);text-align:left;line-height:1.4">Score<br>SPES</div>
+          </div>
+          <div class="hero-verdict" id="res-verdict" style="font-size:.82rem">Complétez la fiche pour voir le résultat</div>
         </div>
         <div class="dim-pills" id="res-pills"></div>
       </div>
@@ -2054,6 +2092,26 @@ function buildResults() {
   const rv = document.getElementById('res-verdict');
   if (rn) rn.textContent = `${pseudo} · ${currentRole} · ${rank}`;
   if (rs) { rs.textContent = g !== null ? g.toFixed(2) : '—'; rs.style.color = scColor(g); }
+
+  // Phrase coach en gros (verdict principal)
+  const phraseEl = document.getElementById('res-verdict-phrase');
+  if (phraseEl) {
+    if (g !== null) {
+      let phrase, col;
+      if (g >= 9)      { phrase = `${pseudo} — Talent exceptionnel, recrutement prioritaire`; col = '#4ADE80'; }
+      else if (g >= 8) { phrase = `${pseudo} — Profil recommandé sans réserve`; col = '#4ADE80'; }
+      else if (g >= 7) { phrase = `${pseudo} — Tryout fortement recommandé`; col = '#A78BFA'; }
+      else if (g >= 6) { phrase = `${pseudo} — Potentiel identifié, à suivre`; col = '#FBBF24'; }
+      else if (g >= 5) { phrase = `${pseudo} — Profil en développement`; col = '#F59E0B'; }
+      else             { phrase = `${pseudo} — Niveau insuffisant pour le semi-pro`; col = '#F87171'; }
+      phraseEl.textContent = phrase;
+      phraseEl.style.color = col;
+    } else {
+      phraseEl.textContent = 'Importez un joueur pour commencer';
+      phraseEl.style.color = 'var(--sub)';
+    }
+  }
+
   if (rv) {
     const verdicts = [
       [9,'Profil d\'exception — recruter en priorité absolue'],
@@ -2174,7 +2232,11 @@ function switchPanel(id) {
   if (id === 'map') initMapPanel();
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { try { const k=localStorage.getItem('t50_key'); if(k) document.getElementById('t50-apikey').value=k; } catch(e){} top50RenderTable(); }
-  if (navIdx >= 0) document.querySelectorAll('.hd-nav-item')[navIdx]?.classList.add('active');
+  // N'activer que les 5 boutons principaux (pas ceux dans le dropdown)
+  const mainNavBtns = ['nav-scout','nav-results','nav-analyse','nav-top50','nav-more'];
+  const navMap = { scout:0, results:1, analyse:2, top50:3, graphs:4, map:4, history:4 };
+  const activeNav = mainNavBtns[navMap[id] ?? -1];
+  if (activeNav) document.getElementById(activeNav)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') buildAnalysePanel();
 }
@@ -5284,6 +5346,28 @@ if (window.location.protocol === 'file:') {
   const btn = document.getElementById('btn-fetch');
   if (btn) { btn.disabled=true; btn.style.opacity='.4'; btn.title='Ouvrez via http://localhost'; }
 }
+
+
+// ── More menu nav ────────────────────────────────────────────
+function toggleMoreMenu() {
+  const m = document.getElementById('more-menu');
+  if (m) m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+  const btn = document.getElementById('nav-more');
+  const menu = document.getElementById('more-menu');
+  if (menu && btn && !btn.contains(e.target)) menu.style.display = 'none';
+});
+
+// ── Onboarding : masquer si déjà vu ──────────────────────────
+(function() {
+  try {
+    if (localStorage.getItem('ob_dismissed') === '1') {
+      const b = document.getElementById('onboarding-banner');
+      if (b) b.style.display = 'none';
+    }
+  } catch(_) {}
+})();
 
 buildAllDims();
 buildStatsGrid();
