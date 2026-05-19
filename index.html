@@ -1218,7 +1218,7 @@ body {
           ⚠ Utilisez la même clé API que l'onglet <strong>Fiche joueur</strong> — saisissez-la dans le champ ci-dessous. Elle expire toutes les 24h.
           Pour un scan plus rapide sans limite de débit, obtenez une <strong>clé de production Riot</strong> sur <a href="https://developer.riotgames.com" target="_blank" style="color:#F59E0B">developer.riotgames.com</a> (section "Apply for Production API Key").
           <div style="margin-top:.5rem;display:flex;gap:.5rem;align-items:center">
-            <input id="t50-apikey" placeholder="RGAPI-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.78rem;color:var(--text);font-family:monospace" oninput="try{localStorage.setItem('t50_key',this.value)}catch(e){}"/>
+            <input id="t50-apikey" placeholder="Optionnel — laissez vide pour le backend Railway, ou entrez une clé RGAPI-" style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.375rem .75rem;font-size:.78rem;color:var(--text);font-family:monospace" oninput="try{localStorage.setItem('t50_key',this.value)}catch(e){}"/>
           </div>
         </div>
 
@@ -5309,14 +5309,21 @@ function t50SetProg(pct, txt) {
 
 
 async function top50Scan() {
-  const apiKey = document.getElementById('t50-apikey')?.value?.trim();
+  // Utilise la clé du champ t50 OU la clé du champ principal OU vide (→ backend Railway)
+  const apiKey = (
+    document.getElementById('t50-apikey')?.value?.trim() ||
+    document.getElementById('riot-key')?.value?.trim() ||
+    ''
+  );
   const server = document.getElementById('t50-server')?.value || 'euw1';
   const tier   = document.getElementById('t50-tier')?.value   || 'DIAMOND';
 
-  if (!apiKey || !apiKey.startsWith('RGAPI-')) {
-    alert('Entrez votre clé API Riot dans le champ jaune avant de scanner.');
+  // Clé directe OU backend Railway — les deux sont acceptés
+  if (apiKey && !apiKey.startsWith('RGAPI-')) {
+    alert('La clé saisie ne semble pas valide (doit commencer par RGAPI-).');
     return;
   }
+  // Sans clé = mode backend Railway automatique (comme le reste du site)
 
   const btn = document.getElementById('t50-scan-btn');
   btn.disabled = true; btn.textContent = '⏳ Scan…';
@@ -5411,8 +5418,9 @@ async function top50Scan() {
         const roleCounts = {};
 
         matchData.forEach(m => {
+          if (!m?.info?.participants?.length) return;
           const p = m.info.participants.find(x => x.puuid === puuid);
-          if (!p || m.info.gameDuration < 240) return;
+          if (!p || (m.info.gameDuration || 0) < 240) return;
           gc++;
           if (p.win) wins++;
           k+=p.kills; d+=p.deaths; a+=p.assists;
@@ -5479,6 +5487,11 @@ async function top50Scan() {
     top50SaveLocal();
     top50RenderTable();
 
+    if (!top50Data.length) {
+      t50SetProg(0, '⚠ Aucun prospect récupéré. Consultez les logs techniques pour le détail.');
+      btn.disabled = false; btn.textContent = '⚡ Scanner';
+      return;
+    }
     t50SetProg(100, '✅ ' + top50Data.length + ' prospects générés !');
     document.getElementById('t50-stats-bar').style.display = 'flex';
     document.getElementById('t50-count').textContent = top50Data.length;
@@ -5659,6 +5672,180 @@ function guessRole(champs) {
   if (topChamps.some(s => top.includes(s))) return 'Top';
   return 'Mid';
 }
+
+// ════════════════════════════════════════════
+// TOP 50 — RENDER TABLE + ACTIONS
+// ════════════════════════════════════════════
+const STATUT_FLOW_T50 = ['🆕 Nouveau','👁 Observation','📬 Contacté','🎤 Entretien','✅ Signé','❌ Écarté'];
+const TIER_COLOR = {
+  IRON:'#7A7A7A', BRONZE:'#CD7F32', SILVER:'#C0C0C0', GOLD:'#FFD700',
+  PLATINUM:'#00B4D8', EMERALD:'#50C878', DIAMOND:'#A78BFA',
+  MASTER:'#9D4EDD', GRANDMASTER:'#E15554', CHALLENGER:'#F59E0B'
+};
+
+function top50RenderTable() {
+  const tbody = document.getElementById('t50-tbody');
+  if (!tbody) return;
+
+  if (!top50Data.length) {
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Aucun prospect — lancez un scan.</td></tr>';
+    return;
+  }
+
+  // Mettre à jour stats bar
+  const statsBar = document.getElementById('t50-stats-bar');
+  if (statsBar) statsBar.style.display = 'flex';
+  const countEl = document.getElementById('t50-count');
+  if (countEl) countEl.textContent = top50Data.length;
+  const contactedEl = document.getElementById('t50-contacted');
+  if (contactedEl) contactedEl.textContent = top50Data.filter(p =>
+    !['🆕 Nouveau','👁 Observation'].includes(p.statut)).length;
+  const dateEl = document.getElementById('t50-date');
+  if (dateEl && top50Data[0]?.addedAt)
+    dateEl.textContent = new Date(top50Data[0].addedAt).toLocaleDateString('fr-FR');
+
+  tbody.innerHTML = top50Data.map((p, i) => {
+    const ageBonus = p.age ? (p.age<=15?1.35:p.age<=17?1.20:p.age<=19?1.10:p.age<=21?1.05:p.age<=23?1.00:0.92) : 1;
+    const scoreFinal = p.age ? Math.min(10, p.score * ageBonus).toFixed(2) : p.score.toFixed(2);
+    const tc = TIER_COLOR[p.tier] || '#aaa';
+    const wrCol = p.wr >= 55 ? 'var(--lime)' : p.wr >= 50 ? 'var(--fg)' : 'var(--red,#F87171)';
+    const kdaCol = p.kda >= 4 ? 'var(--lime)' : p.kda >= 3 ? 'var(--fg)' : 'var(--sub2)';
+    const scCol = parseFloat(scoreFinal) >= 8 ? 'var(--lime)' : parseFloat(scoreFinal) >= 6.5 ? '#A78BFA' : parseFloat(scoreFinal) >= 5 ? '#F59E0B' : 'var(--red,#F87171)';
+    const statCol = p.statut.includes('Signé') ? 'var(--lime)' : p.statut.includes('Écarté') ? 'var(--red,#F87171)' : p.statut.includes('Entretien') ? '#F59E0B' : 'var(--sub2)';
+    const ageHTML = p.age
+      ? `<span style="color:var(--lime);font-weight:600">${p.age} ans</span>`
+      : `<span style="font-size:.7rem;color:var(--sub)">${p.ageStatus||'🔍'}</span>`;
+
+    return `<tr style="border-bottom:.5px solid var(--border)" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
+      <td style="padding:.5rem .75rem;color:var(--sub);font-family:monospace;font-size:.8rem">${i+1}</td>
+      <td style="padding:.5rem .75rem">
+        <div style="font-weight:600;font-size:.88rem">${p.name}${p.tag?' <span style="color:var(--sub);font-weight:400;font-size:.75rem">#'+p.tag+'</span>':''}</div>
+        <div style="font-size:.7rem;color:var(--sub)">${(p.champs||[]).slice(0,2).map(c=>c.name).join(' · ')||'—'}</div>
+      </td>
+      <td style="padding:.5rem .75rem;white-space:nowrap">
+        <span style="color:${tc};font-weight:600;font-size:.82rem">${p.tier} ${p.rank} — ${p.lp}LP</span>
+      </td>
+      <td style="padding:.5rem .75rem;font-size:.82rem">${p.role||'?'}</td>
+      <td style="padding:.5rem .75rem;text-align:center">
+        <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${scCol}">${scoreFinal}</span>
+        ${p.age ? '<div style="font-size:.65rem;color:var(--lime)">+bonus âge</div>' : ''}
+      </td>
+      <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${wrCol}">${p.wr}%</td>
+      <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${kdaCol}">${p.kda}</td>
+      <td style="padding:.5rem .75rem;text-align:center">
+        <div style="display:flex;align-items:center;gap:4px;justify-content:center">
+          ${ageHTML}
+          <button onclick="top50SetAge(${i})" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--sub)" title="Modifier l'âge">✏️</button>
+        </div>
+      </td>
+      <td style="padding:.5rem .75rem">
+        <button onclick="top50NextStatut(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;cursor:pointer;color:${statCol};white-space:nowrap">${p.statut}</button>
+      </td>
+      <td style="padding:.5rem .75rem;max-width:160px">
+        <input value="${(p.notes||'').replace(/"/g,'&quot;')}" placeholder="Notes scout…"
+          onchange="top50SetNote(${i},this.value)"
+          style="width:100%;background:transparent;border:none;border-bottom:.5px solid var(--border);font-size:.75rem;color:var(--fg,var(--text));padding:2px 0;outline:none;font-family:inherit"/>
+      </td>
+      <td style="padding:.5rem .75rem">
+        <div style="display:flex;gap:4px">
+          <button onclick="top50OpenSPES('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${(p.tier||'DIAMOND').replace(/'/g,"\'")}','${(p.rank||'I')}',${p.lp})" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--lime);cursor:pointer">📋 SPES</button>
+          <button onclick="top50Remove(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sub);cursor:pointer">✕</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Vue publique (cards)
+  const cardsEl = document.getElementById('t50-cards');
+  if (cardsEl) {
+    cardsEl.innerHTML = top50Data.map((p,i) => `
+      <div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:1rem">
+        <div style="display:flex;justify-content:space-between;margin-bottom:.5rem">
+          <span style="font-size:.7rem;color:var(--sub);font-family:monospace">#${i+1}</span>
+          <span style="font-family:monospace;font-weight:700;color:${parseFloat(p.score)>=8?'var(--lime)':'#A78BFA'}">${p.score}</span>
+        </div>
+        <div style="font-weight:700;font-size:.92rem;margin-bottom:.25rem">${p.name}</div>
+        <div style="font-size:.75rem;color:${TIER_COLOR[p.tier]||'#aaa'};font-weight:600">${p.tier} ${p.rank} — ${p.lp}LP</div>
+        <div style="font-size:.72rem;color:var(--sub);margin-top:.375rem">${p.role||'?'} · ${p.wr}%WR · ${p.kda}KDA</div>
+      </div>`).join('');
+  }
+}
+
+function top50NextStatut(idx) {
+  if (!top50Data[idx]) return;
+  const ci = STATUT_FLOW_T50.indexOf(top50Data[idx].statut);
+  top50Data[idx].statut = STATUT_FLOW_T50[(ci + 1) % STATUT_FLOW_T50.length];
+  top50SaveLocal(); top50RenderTable();
+}
+
+function top50SetAge(idx) {
+  const p = top50Data[idx]; if (!p) return;
+  const val = prompt('Âge de ' + p.name + ' (laissez vide pour "En attente") :');
+  if (val === null) return;
+  if (val === '') { p.age = null; p.ageStatus = '⏳'; }
+  else { const n = parseInt(val); if (n > 10 && n < 40) { p.age = n; p.ageStatus = '✅'; } }
+  top50SaveLocal(); top50RenderTable();
+}
+
+function top50SetNote(idx, val) {
+  if (top50Data[idx]) { top50Data[idx].notes = val; top50SaveLocal(); }
+}
+
+function top50Remove(idx) {
+  if (confirm('Supprimer ce prospect ?')) {
+    top50Data.splice(idx, 1); top50SaveLocal(); top50RenderTable();
+  }
+}
+
+function top50OpenSPES(name, tag, server, role, tier, rank, lp) {
+  const nameEl = document.getElementById('riot-name');
+  const tagEl  = document.getElementById('riot-tag');
+  const srvEl  = document.getElementById('riot-server');
+  if (nameEl) nameEl.value = name;
+  if (tagEl)  tagEl.value  = tag || 'EUW';
+  if (srvEl)  srvEl.value  = server || 'euw1';
+  if (typeof setRole === 'function') setRole(role || 'Mid');
+  const rankEl = document.getElementById('d-rank');
+  const TIER_IDX2 = {IRON:0,BRONZE:1,SILVER:2,GOLD:3,PLATINUM:4,EMERALD:5,DIAMOND:6,MASTER:7,GRANDMASTER:8,CHALLENGER:9};
+  if (rankEl) rankEl.value = TIER_IDX2[tier] ?? 6;
+  switchPanel('scout');
+  setTimeout(() => {
+    const apiSec = document.getElementById('api-section') || document.getElementById('api-body');
+    if (apiSec) apiSec.scrollIntoView({ behavior: 'smooth' });
+  }, 300);
+}
+
+function top50ToggleView() {
+  const priv = document.getElementById('t50-private-view');
+  const pub  = document.getElementById('t50-public-view');
+  const btn  = document.getElementById('t50-view-btn');
+  if (!priv || !pub) return;
+  const isPriv = priv.style.display !== 'none';
+  priv.style.display = isPriv ? 'none' : 'block';
+  pub.style.display  = isPriv ? 'block' : 'none';
+  if (btn) btn.textContent = isPriv ? '🔒 Vue privée' : '👁 Vue publique';
+}
+
+function top50Export() {
+  if (!top50Data.length) { alert('Aucune donnée à exporter.'); return; }
+  const headers = ['Rang','Joueur','Tag','Tier','LP','Rôle','Score SPES','WR%','KDA','CS/min','Vision','KP%','Âge','Statut','Notes'];
+  const rows = top50Data.map((p,i) => [
+    i+1, p.name, p.tag||'', p.tier+' '+p.rank, p.lp, p.role||'',
+    p.score, p.wr, p.kda, p.csMin||'', p.visAvg||'', p.kpAvg||'',
+    p.age||p.ageStatus||'', p.statut, (p.notes||'').replace(/,/g,';')
+  ]);
+  const csv = [headers,...rows].map(r=>r.join(',')).join(String.fromCharCode(10));
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'top50_prospects_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// Init
+top50LoadLocal();
+
 
 </script>
 
