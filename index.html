@@ -596,7 +596,7 @@ body {
   <div class="hd-badge">EUW · SOLOQ</div>
 </header>
 <!-- Dropdown Plus — flottant, hors du flux normal -->
-<div id="more-menu" style="display:none;position:fixed;top:52px;left:-9999px;background:var(--surf2);
+<div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
   <button onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"
@@ -1458,6 +1458,204 @@ const C = { s1:'#4A9EFF', p:'#2DD4BF', e:'#F5A623', s2:'#C084FC' };
 // ════════════════════════════════════════════
 
 // D1 — Stats pures (API automatique, seuils Diamond EUW)
+
+// ════════════════════════════════════════════════════════════
+// SPES SCORING ENGINE v3 — Seuils absolus par rôle + Bonus âge
+//
+// Philosophie (inspirée DPM) :
+// - Les stats sont scorées sur des seuils ABSOLUS par rôle
+//   indépendamment du rang du joueur
+// - Le rang contribue directement à D4 (Progression) uniquement
+// - L'âge crée un BONUS MULTIPLICATEUR sur le score global
+//   → Diamond à 16 ans = talent exceptionnel → score boosté
+// - Un Bronze reste un Bronze quel que soit son âge
+//   → l'âge ne compense pas un niveau insuffisant
+// ════════════════════════════════════════════════════════════
+
+// ── SEUILS ABSOLUS PAR RÔLE (source : DPM, OP.GG pro stats) ─
+// Format : [mauvais, moyen, bon, elite]
+// Calibrés sur : Iron(mauvais) → Diamond(bon) → Pro(elite)
+
+const SEUILS_ABSOLUS = {
+  cs_min: {
+    Top: [4.5, 6.5, 7.8, 9.0],
+    Jgl: [3.5, 5.0, 6.2, 7.5],
+    Mid: [5.5, 7.5, 8.8, 10.0],
+    ADC: [6.0, 8.0, 9.5, 11.0],
+    Sup: null, // Pas de CS pour Support
+  },
+  kda: {
+    Top: [1.2, 2.0, 3.0, 4.5],
+    Jgl: [1.5, 2.5, 3.5, 5.5],
+    Mid: [1.5, 2.5, 3.5, 5.5],
+    ADC: [2.0, 3.0, 4.2, 6.5],
+    Sup: [2.0, 3.2, 4.5, 7.0],
+  },
+  winrate: {
+    // Même seuils tous rôles — WR est universelle
+    all: [46, 50, 54, 58],
+  },
+  vision: {
+    Top: [12, 20, 30, 42],
+    Jgl: [20, 32, 45, 60],
+    Mid: [14, 22, 32, 44],
+    ADC: [10, 16, 24, 33],
+    Sup: [35, 55, 72, 92],
+  },
+  kill_part: {
+    Top: [38, 52, 65, 78],
+    Jgl: [48, 62, 74, 86],
+    Mid: [44, 58, 70, 82],
+    ADC: [38, 52, 65, 78],
+    Sup: [55, 68, 80, 92],
+  },
+  dmg_share: {
+    Top: [14, 20, 27, 34],
+    Jgl: [14, 19, 26, 32],
+    Mid: [18, 25, 32, 40],
+    ADC: [20, 28, 36, 44],
+    Sup: [4,  8,  12, 17],
+  },
+  dmg_tower: {
+    Top: [1200, 2500, 4000, 6000],
+    Jgl: [800,  1500, 2500, 4000],
+    Mid: [1000, 2000, 3500, 5500],
+    ADC: [1500, 2800, 4200, 6500],
+    Sup: [500,  1000, 2000, 3500],
+  },
+  obj_score: {
+    Top: [0.5, 1.5, 3.0, 5.0],
+    Jgl: [1.5, 3.0, 5.0, 7.5],
+    Mid: [0.8, 2.0, 3.5, 5.5],
+    ADC: [0.8, 2.0, 3.5, 5.5],
+    Sup: [1.0, 2.5, 4.0, 6.0],
+  },
+};
+
+// ── Score par seuils absolus ──────────────────────────────────
+function scoreAbsolu(val, bad, avg, good, elite) {
+  if (val === null || val === undefined || isNaN(val)) return null;
+  const v = parseFloat(val);
+  if (v >= elite) return 10;
+  if (v >= good)  return 7.5 + 2.5 * (v - good)  / (elite - good);
+  if (v >= avg)   return 5.0 + 2.5 * (v - avg)   / (good  - avg);
+  if (v >= bad)   return 3.0 + 2.0 * (v - bad)   / (avg   - bad);
+  return Math.max(0, 3.0 * (v / Math.max(bad, 0.1)));
+}
+
+// ── Score rang absolu (D4 uniquement) ────────────────────────
+// Iron=1 → Challenger=10, non relatif
+const RANG_SCORES = {
+  0: 1.0,  // Iron
+  1: 2.2,  // Bronze
+  2: 3.5,  // Silver
+  3: 4.8,  // Gold
+  4: 6.0,  // Platinum
+  5: 7.0,  // Emerald
+  6: 7.8,  // Diamond
+  7: 8.8,  // Master
+  8: 9.4,  // Grandmaster
+  9: 10.0, // Challenger
+};
+
+// ── Bonus âge multiplicateur ──────────────────────────────────
+// Appliqué sur le score global final
+// Un Diamond (7.8) à 16 ans → 7.8 × 1.22 = 9.5
+// Un Bronze (2.2) à 14 ans → 2.2 × 1.30 = 2.9 (reste faible)
+function getBonusAge(age) {
+  if (!age || isNaN(age)) return 1.0;
+  const a = parseInt(age);
+  if (a <= 14) return 1.30;
+  if (a <= 15) return 1.25;
+  if (a <= 16) return 1.20;
+  if (a <= 17) return 1.15;
+  if (a <= 18) return 1.10;
+  if (a <= 19) return 1.06;
+  if (a <= 20) return 1.03;
+  if (a <= 22) return 1.00;
+  if (a <= 25) return 0.97;
+  if (a <= 28) return 0.93;
+  return 0.88;
+}
+
+// ── Fonction principale de scoring des stats ─────────────────
+function scoreStatCalibrated(id, val) {
+  if (val === null || val === undefined) return null;
+  const v = parseFloat(val);
+  if (isNaN(v)) return null;
+  const role = currentRole || 'Mid';
+
+  switch(id) {
+    case 'cs_min': {
+      const s = SEUILS_ABSOLUS.cs_min[role];
+      if (!s) return null; // Support
+      return scoreAbsolu(v, ...s);
+    }
+    case 'kda':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.kda[role] || SEUILS_ABSOLUS.kda.Mid));
+    case 'winrate':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.winrate.all);
+    case 'vision':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.vision[role] || SEUILS_ABSOLUS.vision.Mid));
+    case 'kill_part':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.kill_part[role] || SEUILS_ABSOLUS.kill_part.Mid));
+    case 'dmg_share':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.dmg_share[role] || SEUILS_ABSOLUS.dmg_share.Mid));
+    case 'dmg_tower':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.dmg_tower[role] || SEUILS_ABSOLUS.dmg_tower.Mid));
+    case 'obj_score':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.obj_score[role] || SEUILS_ABSOLUS.obj_score.Mid));
+
+    case 'rank_abs': {
+      const rankEl = document.getElementById('d-rank');
+      const r = rankEl ? parseInt(rankEl.value) : 6;
+      return RANG_SCORES[r] ?? 5.0;
+    }
+
+    case 'rank_age': {
+      const rankEl = document.getElementById('d-rank');
+      const ageEl  = document.getElementById('d-age');
+      const r = rankEl ? parseInt(rankEl.value) : 6;
+      const age = ageEl ? parseInt(ageEl.value) : 0;
+      if (!age || isNaN(age)) return RANG_SCORES[r] ?? 5.0;
+      const base = RANG_SCORES[r] ?? 5.0;
+      const bonus = getBonusAge(age);
+      return Math.min(10, base * bonus);
+    }
+
+    case 'rank_prog': {
+      const rankEl = document.getElementById('d-rank');
+      const prevEl = document.getElementById('d-rank-prev');
+      const r = rankEl ? parseInt(rankEl.value) : 6;
+      const prev = prevEl ? parseInt(prevEl.value) : -1;
+      if (prev < 0) return null;
+      const diff = r - prev;
+      if (diff >= 3)  return 10;
+      if (diff >= 2)  return 8.5;
+      if (diff >= 1)  return 7.0;
+      if (diff === 0) return 5.5;
+      if (diff === -1)return 3.0;
+      return 1.0;
+    }
+
+    case 'regularite':
+      return scoreAbsolu(v, 25, 45, 62, 80);
+
+    case 'champ_pool':
+      return scoreAbsolu(v, 0.5, 1.5, 3.0, 5.0);
+
+    default:
+      return null;
+  }
+}
+
+// ── getCurrentRankIdx (utilitaire) ───────────────────────────
+function getCurrentRankIdx() {
+  const el = document.getElementById('d-rank');
+  return el ? Math.max(0, Math.min(9, parseInt(el.value) || 6)) : 6;
+}
+
+
 const D1_FIELDS = {
   Top: [
     { id:'cs_min',    lbl:'CS/min',        badge:'api', type:'auto', bad:5.5, avg:7.0, good:8.2, elite:9.0,  unit:'/min' },
@@ -1747,6 +1945,10 @@ function scoreRankAbs(idx) {
 
 // Score a stat value against role thresholds using percentile logic
 function scoreStatValue(id, val) {
+  // Priorité au nouveau système calibré par rang et rôle
+  const calibrated = scoreStatCalibrated(id, val);
+  if (calibrated !== null) return calibrated;
+  // Fallback ancien système
   const thr = ROLE_THRESHOLDS[currentRole]?.[id];
   if (!thr || val === null || val === undefined) return null;
   const { bad, avg, good, elite } = thr;
@@ -1770,7 +1972,10 @@ function computeFieldScore(field) {
     if (field.id === 'rank_prog') return scoreRankProg(parseInt(document.getElementById('d-rank')?.value || 6), parseInt(document.getElementById('d-rank-prev')?.value || -1));
     const v = parseFloat(rawData[field.id]);
     if (isNaN(v) || v === 0) return null;
-    // If field has inline thresholds (new 5-section format)
+    // Nouveau système : scoring calibré par rang et rôle
+    const calibrated = scoreStatCalibrated(field.id, v);
+    if (calibrated !== null) return Math.min(10, Math.max(0, calibrated));
+    // Fallback sur seuils inline si définis dans le field
     if (field.bad !== undefined) {
       const { bad, avg, good, elite } = field;
       if (v >= elite) return 10;
@@ -1778,18 +1983,6 @@ function computeFieldScore(field) {
       if (v >= avg)   return 4.5 + (v - avg) / (good - avg) * 2.5;
       if (v >= bad)   return 2 + (v - bad) / (avg - bad) * 2.5;
       return Math.max(1, v / bad * 2);
-    }
-    // Fallback to role thresholds
-    const sc = scoreStatValue(field.id, v);
-    if (sc !== null) return sc;
-    if (field.id === 'winrate') {
-      if (v >= 58) return 10; if (v >= 55) return 8.5; if (v >= 53) return 7;
-      if (v >= 51) return 5.5; if (v >= 49) return 4; return 2.5;
-    }
-    if (field.id === 'champ_pool') { return Math.min(10, Math.max(1, v * 2.5)); }
-    if (field.id === 'regularite') {
-      if (v >= 85) return 10; if (v >= 70) return 8; if (v >= 55) return 6;
-      if (v >= 40) return 4.5; return 3;
     }
     return null;
   }
@@ -1812,7 +2005,13 @@ function globalScore() {
   const parts = dims.filter(([v]) => v !== null);
   if (!parts.length) return null;
   const totalW = parts.reduce((a,[,w]) => a+w, 0);
-  return parts.reduce((a,[v,w]) => a + v*(w/totalW), 0);
+  const rawScore = parts.reduce((a,[v,w]) => a + v*(w/totalW), 0);
+
+  // Appliquer le bonus âge multiplicateur sur le score global
+  const ageEl = document.getElementById('d-age');
+  const age = ageEl ? parseInt(ageEl.value) : 0;
+  const ageMult = getBonusAge(age);
+  return Math.min(10, rawScore * ageMult);
 }
 
 function scColor(s) {
@@ -5786,58 +5985,87 @@ function scoreField(val, bad, avg, good, elite) {
   return Math.max(0, 3 * (val / bad));
 }
 
+// ════════════════════════════════════════════════════════════
+// SCORING SPES — Seuils absolus, rang invisible
+//
+// Règles :
+// 1. 7 CS/min = même note pour tout le monde (Bronze ou Challenger)
+// 2. Les seuils varient UNIQUEMENT par rôle (un Sup ne farme pas)
+// 3. Le rang n'entre PAS dans le calcul — jamais
+// 4. L'âge est un multiplicateur appliqué APRÈS le score brut
+//
+// Exemple :
+//   Bronze 17 ans, 7 CS/min Mid → brut 6.8 × 1.20 âge = 8.16 ✅
+//   Diamond 25 ans, 7 CS/min Mid → brut 6.8 × 1.00 âge = 6.80
+//   Bronze 25 ans, 7 CS/min Mid → brut 6.8 × 1.00 âge = 6.80 (identique Diamond)
+// ════════════════════════════════════════════════════════════
+
+// Seuils absolus [bad, avg, good, elite] — calibrés sur le niveau Diamond EUW
+// Identiques pour tous les rangs, varient uniquement par rôle
+const ABS_THR = {
+  cs_min:    { Top:[4.5,6.0,7.5,8.8], Jgl:[3.5,5.0,6.5,7.8], Mid:[5.5,7.0,8.5,9.5], ADC:[6.0,7.5,9.0,10.2], Sup:[0.2,0.8,1.5,2.5] },
+  kda:       { Top:[1.5,2.5,3.8,5.0], Jgl:[1.8,2.8,4.0,5.5], Mid:[1.8,3.0,4.2,6.0], ADC:[2.0,3.2,4.5,6.2],  Sup:[2.5,3.5,5.0,7.0] },
+  wr:        { all:[46,51,55,62] },  // universel — même seuil tous rôles
+  dmg_share: { Top:[15,22,28,35], Jgl:[12,18,24,30], Mid:[20,27,33,40], ADC:[22,30,36,43], Sup:[5,10,15,20] },
+  kill_part: { Top:[35,52,65,78], Jgl:[45,60,72,84], Mid:[45,60,72,84], ADC:[40,55,68,80], Sup:[50,65,76,88] },
+  vision:    { Top:[10,18,26,36], Jgl:[20,30,42,55], Mid:[12,20,28,38], ADC:[10,18,26,35], Sup:[35,50,65,82] },
+};
+
+function getThr(stat, role) {
+  const t = ABS_THR[stat];
+  if (!t) return null;
+  return t[role] || t.all || t.Mid || null;
+}
+
 function calcProspectScore(tierIdx, lp, wr, kda, csMin, visionAvg, role, killPart, dmgShare, objScore) {
   role = role || 'Mid';
 
-  // D1 — Stats pures (seuils par rôle identiques à D1_FIELDS)
-  const d1Thresholds = {
-    Top: { cs:[5.5,7.0,8.2,9.0], kda:[1.5,2.4,3.5,4.5], dmg:[18,24,30,36], wr:[46,51,55,60] },
-    Jgl: { cs:[4.5,5.8,6.8,7.8], kda:[2.0,3.0,4.0,5.5], wr:[46,51,55,60] },
-    Mid: { cs:[6.5,8.0,9.0,9.8], kda:[2.0,3.0,4.2,5.5], dmg:[22,28,33,38], wr:[46,51,55,60] },
-    ADC: { cs:[7.0,8.5,9.5,10.5],kda:[2.5,3.5,4.5,6.0], dmg:[25,32,37,43], wr:[46,51,55,60] },
-    Sup: { kda:[2.5,3.5,4.8,6.5], dmg:[5,10,14,18], wr:[46,51,55,60] },
-  };
-  const thr = d1Thresholds[role] || d1Thresholds.Mid;
-  const csScore  = thr.cs  ? scoreField(csMin,   ...thr.cs)  : null;
-  const kdaScore = thr.kda ? scoreField(kda,     ...thr.kda) : null;
-  const dmgScore = thr.dmg ? scoreField(dmgShare,...thr.dmg) : null;
-  const wrScore  = thr.wr  ? scoreField(wr,      ...thr.wr)  : null;
+  // Stats mécaniques (50% du score)
+  const csScore  = csMin    != null ? scoreField(csMin,    ...getThr('cs_min',    role)) : null;
+  const kdaScore = kda      != null ? scoreField(kda,      ...getThr('kda',       role)) : null;
+  const wrScore  = wr       != null ? scoreField(wr,       ...getThr('wr',        role)) : null;
+  const dmgScore = dmgShare != null ? scoreField(dmgShare, ...getThr('dmg_share', role)) : null;
+  const mechVals = [csScore, kdaScore, wrScore, dmgScore].filter(v => v !== null);
+  const mechScore = mechVals.length ? mechVals.reduce((a,b)=>a+b,0)/mechVals.length : null;
 
-  const d1vals = [csScore, kdaScore, dmgScore, wrScore].filter(v => v !== null);
-  const d1 = d1vals.length ? d1vals.reduce((a,b)=>a+b,0)/d1vals.length : 5;
+  // Impact carte (35% du score)
+  const kpScore  = killPart  != null ? scoreField(killPart,  ...getThr('kill_part', role)) : null;
+  const visScore = visionAvg != null ? scoreField(visionAvg, ...getThr('vision',    role)) : null;
+  const mapVals = [kpScore, visScore].filter(v => v !== null);
+  const mapScore = mapVals.length ? mapVals.reduce((a,b)=>a+b,0)/mapVals.length : null;
 
-  // D2 — Objectifs & macro (obj_score API)
-  const d2 = objScore !== null && objScore !== undefined
-    ? scoreField(objScore, 1.0, 2.5, 4.0, 6.0)
-    : 5;
+  // Objectifs (15% du score, souvent null en scan auto)
+  const objFinal = objScore ? scoreField(objScore, 1.0, 2.5, 4.0, 6.0) : null;
 
-  // D3 — Impact carte (kill participation + vision)
-  const kpThr = { Top:[45,58,68,78], Jgl:[50,63,72,82], Mid:[50,63,72,82], ADC:[45,58,68,78], Sup:[55,68,76,85] };
-  const visThr = { Top:[15,22,30,40], Jgl:[25,35,45,58], Mid:[15,22,30,40], ADC:[15,22,30,40], Sup:[40,55,68,85] };
-  const kpScore  = killPart  ? scoreField(killPart,  ...(kpThr[role]  || kpThr.Mid))  : null;
-  const visScore = visionAvg ? scoreField(visionAvg, ...(visThr[role] || visThr.Mid)) : null;
-  const d3vals = [kpScore, visScore].filter(v => v !== null);
-  const d3 = d3vals.length ? d3vals.reduce((a,b)=>a+b,0)/d3vals.length : 5;
+  // Score brut — rang absent
+  const parts = [], weights = [];
+  if (mechScore !== null) { parts.push(mechScore * 0.50); weights.push(0.50); }
+  if (mapScore  !== null) { parts.push(mapScore  * 0.35); weights.push(0.35); }
+  if (objFinal  !== null) { parts.push(objFinal  * 0.15); weights.push(0.15); }
+  if (!parts.length) return '5.00';
 
-  // D4 — Progression : rang + LP (même logique que D4_FIELDS_BASE)
-  const rankScore = Math.min(10, tierIdx * 1.1 + (lp / 100) * 0.5);
-  const d4 = rankScore;
-
-  // Score global = moyenne D1-D4 pondérée (D5 entretien non dispo en auto)
-  // Poids identiques à ROLE_WEIGHTS sans D5
-  const score = (d1 * 0.35 + d2 * 0.15 + d3 * 0.15 + d4 * 0.20) / 0.85;
-  return Math.min(10, Math.max(0, score)).toFixed(2);
+  const totalW = weights.reduce((a,b)=>a+b,0);
+  const raw = parts.reduce((a,b)=>a+b,0) / totalW;
+  return Math.min(10, Math.max(0, raw)).toFixed(2);
 }
 
-// Bonus multiplicateur âge (appliqué côté affichage quand l'âge est connu)
+// Multiplicateur âge — appliqué APRÈS le score brut
+// 7 CS/min Mid → brut 6.8 → ×1.20 (17 ans) = 8.16 "pépite"
+// 7 CS/min Mid → brut 6.8 → ×1.00 (22 ans) = 6.80 "bon joueur"
 function ageBonus(age) {
-  if (!age || age <= 0) return 1;
-  if (age <= 15) return 1.35;
+  if (!age || age <= 0) return 1.0;
+  if (age <= 14) return 1.50;
+  if (age <= 15) return 1.38;
+  if (age <= 16) return 1.28;
   if (age <= 17) return 1.20;
-  if (age <= 19) return 1.10;
-  if (age <= 21) return 1.05;
-  if (age <= 23) return 1.00;
-  return 0.92;
+  if (age <= 18) return 1.14;
+  if (age <= 19) return 1.08;
+  if (age <= 20) return 1.04;
+  if (age <= 21) return 1.02;
+  if (age <= 22) return 1.00;
+  if (age <= 24) return 0.97;
+  if (age <= 26) return 0.93;
+  return 0.88;
 }
 
 
@@ -5959,8 +6187,8 @@ function top50RenderTable() {
     dateEl.textContent = new Date(top50Data[0].addedAt).toLocaleDateString('fr-FR');
 
   tbody.innerHTML = top50Data.map((p, i) => {
-    const ageBonus = p.age ? (p.age<=15?1.35:p.age<=17?1.20:p.age<=19?1.10:p.age<=21?1.05:p.age<=23?1.00:0.92) : 1;
-    const scoreFinal = p.age ? Math.min(10, p.score * ageBonus).toFixed(2) : p.score.toFixed(2);
+    const ageMult = p.age ? ageBonus(p.age) : 1;
+    const scoreFinal = p.age ? Math.min(10, parseFloat(p.score) * ageMult).toFixed(2) : parseFloat(p.score||0).toFixed(2);
     const tc = TIER_COLOR[p.tier] || '#aaa';
     const wrCol = p.wr >= 55 ? 'var(--lime)' : p.wr >= 50 ? 'var(--fg)' : 'var(--red,#F87171)';
     const kdaCol = p.kda >= 4 ? 'var(--lime)' : p.kda >= 3 ? 'var(--fg)' : 'var(--sub2)';
@@ -5982,7 +6210,7 @@ function top50RenderTable() {
       <td style="padding:.5rem .75rem;font-size:.82rem">${p.role||'?'}</td>
       <td style="padding:.5rem .75rem;text-align:center">
         <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${scCol}">${scoreFinal}</span>
-        ${p.age ? '<div style="font-size:.65rem;color:var(--lime)">+bonus âge</div>' : ''}
+        ${p.age ? `<div style="font-size:.65rem;color:var(--lime)">×${ageMult.toFixed(2)} (${p.age}ans)</div>` : ''}
       </td>
       <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${wrCol}">${p.wr}%</td>
       <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${kdaCol}">${p.kda}</td>
