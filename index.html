@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SPES Lab — Scouting LoL Semi-Pro v11</title>
+<title>VisionScore — Scouting LoL Semi-Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ════════════════════════════════
@@ -41,6 +41,9 @@
   --purple:   #A78BFA;
   --purple-dim:rgba(167,139,250,.09);
 
+  /* Alias text (compatibilité JS) */
+  --fg: #ECEAE4;
+
   /* Rayon */
   --r:    10px;
   --r-sm: 6px;
@@ -71,9 +74,11 @@ body {
 }
 .hd-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
 .hd-mark {
-  width:30px; height:30px; background:var(--lime); border-radius:7px;
+  width:30px; height:30px; border-radius:7px;
   display:flex; align-items:center; justify-content:center;
+  overflow:hidden; flex-shrink:0;
 }
+.hd-logo-img { width:30px; height:30px; object-fit:contain; }
 .hd-mark svg { width:15px; height:15px; }
 .hd-name { font-size:13px; font-weight:800; letter-spacing:.06em; color:var(--text); }
 .hd-ver { font-family:monospace; font-size:9px; color:var(--sub); letter-spacing:.06em; }
@@ -601,6 +606,391 @@ body {
 ::-webkit-scrollbar { width:4px; height:4px; }
 ::-webkit-scrollbar-track { background:transparent; }
 ::-webkit-scrollbar-thumb { background:var(--surf3); border-radius:2px; }
+
+/* ══════════════════════════════════════════════════════════
+   VisionScore — Améliorations esthétiques v2
+══════════════════════════════════════════════════════════ */
+
+/* ── Transitions globales ── */
+*, *::before, *::after { box-sizing:border-box; }
+a { transition:color .15s; }
+button { transition:all .18s ease; }
+
+/* ── Scrollbar custom ── */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(255,255,255,.08); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.14); }
+
+/* ── Sélection de texte ── */
+::selection { background:rgba(202,255,53,.2); color:var(--text); }
+
+/* ── Header amélioré ── */
+.hd {
+  height:54px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+  background:rgba(6,8,16,.92);
+  backdrop-filter:blur(24px) saturate(1.4);
+}
+.hd-mark {
+  width:28px; height:28px; border-radius:6px;
+  box-shadow:0 0 12px rgba(202,255,53,.25);
+}
+.hd-nav-item {
+  padding:5px 12px; font-size:11.5px;
+  border-radius:5px;
+}
+.hd-nav-item.active {
+  box-shadow:0 0 0 1px var(--lime-bd) inset;
+}
+.hd-mode-badge {
+  font-family:monospace; font-size:10px; letter-spacing:.06em;
+  padding:3px 10px; border-radius:4px; cursor:pointer;
+  transition:all .18s; border:1px solid transparent; background:none;
+}
+.hd-mode-agent {
+  color:var(--lime); border-color:var(--lime-bd);
+  background:var(--lime-dim);
+}
+.hd-mode-agent:hover { box-shadow:0 0 8px rgba(202,255,53,.2); }
+.hd-mode-coach {
+  color:var(--purple); border-color:rgba(167,139,250,.3);
+  background:var(--purple-dim);
+}
+.hd-mode-coach:hover { box-shadow:0 0 8px rgba(167,139,250,.2); }
+
+/* ── Cards améliorées ── */
+.card {
+  transition:border-color .2s, box-shadow .2s;
+}
+.card:hover {
+  border-color:rgba(255,255,255,.09);
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+}
+
+/* ── Inputs ── */
+.fi-input {
+  transition:border-color .18s, box-shadow .18s;
+}
+.fi-input:focus {
+  border-color:rgba(202,255,53,.35) !important;
+  box-shadow:0 0 0 3px rgba(202,255,53,.08);
+  outline:none;
+}
+
+/* ── Boutons ── */
+.btn-lime {
+  background:var(--lime) !important;
+  color:#080B10 !important;
+  box-shadow:0 2px 8px rgba(202,255,53,.2);
+}
+.btn-lime:hover {
+  background:#D4FF40 !important;
+  box-shadow:0 4px 16px rgba(202,255,53,.3);
+  transform:translateY(-1px);
+}
+.btn-lime:active { transform:translateY(0); }
+
+/* ── Toast notifications (stack) ── */
+#toast-stack {
+  position:fixed; bottom:20px; right:20px; z-index:99999;
+  display:flex; flex-direction:column; gap:8px; pointer-events:none;
+  max-width:360px;
+}
+.spes-toast {
+  display:flex; align-items:flex-start; gap:10px;
+  padding:12px 16px; border-radius:10px;
+  background:var(--surf2); border:1px solid var(--border2);
+  box-shadow:0 4px 24px rgba(0,0,0,.55);
+  font-size:13px; font-weight:500; color:var(--text);
+  pointer-events:all; line-height:1.4;
+  animation:toastSlideIn .25s cubic-bezier(.34,1.56,.64,1);
+  transition:opacity .3s, transform .3s;
+}
+.spes-toast.out { opacity:0; transform:translateX(16px); }
+.spes-toast-icon { flex-shrink:0; font-size:14px; margin-top:1px; }
+.spes-toast-msg  { flex:1; }
+.spes-toast-close {
+  flex-shrink:0; background:none; border:none; color:var(--sub);
+  cursor:pointer; font-size:14px; padding:0 0 0 4px; line-height:1;
+  transition:color .15s;
+}
+.spes-toast-close:hover { color:var(--text); }
+@keyframes toastSlideIn {
+  from { opacity:0; transform:translateX(20px); }
+  to   { opacity:1; transform:none; }
+}
+
+/* ── Modal system ── */
+.spes-modal-overlay {
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.7);
+  backdrop-filter:blur(6px);
+  z-index:99998;
+  display:flex; align-items:center; justify-content:center;
+  padding:1rem;
+  animation:fadeIn .18s ease;
+}
+.spes-modal-box {
+  background:var(--surf2);
+  border:1px solid var(--border2);
+  border-radius:var(--r-xl);
+  padding:28px 28px 24px;
+  min-width:340px; max-width:480px; width:100%;
+  box-shadow:0 24px 64px rgba(0,0,0,.6);
+  animation:modalIn .22s cubic-bezier(.34,1.56,.64,1);
+  position:relative;
+}
+.spes-modal-box::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:linear-gradient(90deg,var(--lime),var(--teal),rgba(45,212,191,0));
+  border-radius:var(--r-xl) var(--r-xl) 0 0;
+}
+.spes-modal-title {
+  font-size:15px; font-weight:800; margin-bottom:8px; color:var(--text);
+}
+.spes-modal-msg {
+  font-size:13px; color:var(--sub2); margin-bottom:20px; line-height:1.65;
+}
+.spes-modal-input {
+  width:100%; padding:10px 14px;
+  background:var(--surf3); border:1px solid var(--border2);
+  border-radius:var(--r); color:var(--text); font-size:13px;
+  font-family:inherit; margin-bottom:16px; outline:none;
+  transition:border-color .2s, box-shadow .2s;
+}
+.spes-modal-input:focus {
+  border-color:var(--lime-bd);
+  box-shadow:0 0 0 3px rgba(202,255,53,.08);
+}
+.spes-modal-actions { display:flex; gap:8px; justify-content:flex-end; }
+.btn-danger {
+  background:var(--red); color:#fff; border:none;
+  border-radius:var(--r-sm); padding:8px 18px;
+  font-size:12px; font-weight:700; cursor:pointer;
+  transition:all .18s; font-family:inherit;
+}
+.btn-danger:hover { background:#ff6b5b; transform:translateY(-1px); }
+
+@keyframes modalIn {
+  from { opacity:0; transform:scale(.93) translateY(14px); }
+  to   { opacity:1; transform:none; }
+}
+
+/* ── Backend status indicator ── */
+#backend-status {
+  display:flex; align-items:center; gap:5px;
+  font-family:monospace; font-size:10px; letter-spacing:.05em;
+  color:var(--sub); padding:4px 9px; border-radius:5px;
+  background:var(--surf2); border:1px solid var(--border);
+  cursor:default; transition:all .3s;
+}
+#backend-dot {
+  width:6px; height:6px; border-radius:50%;
+  background:var(--sub); flex-shrink:0; transition:background .4s;
+}
+#backend-dot.online  { background:var(--lime); box-shadow:0 0 5px rgba(202,255,53,.5); }
+#backend-dot.offline { background:var(--red);  box-shadow:0 0 5px rgba(255,90,74,.5); }
+#backend-dot.checking { background:var(--amber); animation:pulse .9s ease infinite; }
+@keyframes pulse {
+  0%,100% { opacity:1; } 50% { opacity:.4; }
+}
+
+/* ── Panels ── */
+.panel.active {
+  animation:panelIn .2s ease;
+}
+@keyframes panelIn {
+  from { opacity:0; transform:translateY(6px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Welcome screen ── */
+#panel-welcome {
+  background:radial-gradient(ellipse at 50% 0%, rgba(202,255,53,.06) 0%, transparent 65%),
+             var(--bg);
+}
+.welcome-mode-card {
+  background:var(--surf1);
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:2rem 1.5rem;
+  cursor:pointer;
+  transition:all .22s ease;
+  text-align:center;
+}
+.welcome-mode-card:hover {
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,.45);
+}
+.welcome-mode-card.agent:hover {
+  border-color:var(--lime-bd);
+  background:rgba(202,255,53,.04);
+}
+.welcome-mode-card.coach:hover {
+  border-color:rgba(167,139,250,.4);
+  background:rgba(167,139,250,.04);
+}
+/* Stats bottom bar on welcome */
+.welcome-stats {
+  display:flex; gap:1.5rem; justify-content:center; flex-wrap:wrap;
+  margin-top:2rem; padding-top:1.5rem;
+  border-top:1px solid var(--border);
+}
+.welcome-stat {
+  text-align:center;
+}
+.welcome-stat-val {
+  font-size:1.15rem; font-weight:800; color:var(--lime);
+  font-family:'DM Mono',monospace;
+}
+.welcome-stat-lbl {
+  font-size:.68rem; color:var(--sub); text-transform:uppercase;
+  letter-spacing:.08em; margin-top:2px;
+}
+
+/* ── Radar overlay ── */
+.radar-legend-dot {
+  width:9px; height:9px; border-radius:3px; flex-shrink:0;
+}
+
+/* ── Score ring ── */
+.ring-val {
+  transition:color .3s;
+}
+#ring-dash {
+  transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1), stroke .3s;
+}
+
+/* ── Badge pépite ── */
+#badge-pepite {
+  animation:pepiteGlow 2s ease-in-out infinite alternate;
+}
+@keyframes pepiteGlow {
+  from { box-shadow:0 0 8px rgba(202,255,53,.1); }
+  to   { box-shadow:0 0 18px rgba(202,255,53,.22); }
+}
+
+/* ── Top 50 table ── */
+#t50-table tr:hover td { background:rgba(255,255,255,.02); }
+#t50-table thead th { position:sticky; top:0; background:var(--surf2); z-index:2; }
+
+/* ── CRM Pipeline ── */
+.crm-stage-col {
+  background:var(--surf1);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:.875rem;
+  min-height:200px;
+}
+.crm-card {
+  background:var(--surf2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:.75rem;
+  margin-bottom:.5rem;
+  transition:all .18s;
+  cursor:default;
+}
+.crm-card:hover {
+  border-color:var(--border2);
+  box-shadow:0 2px 10px rgba(0,0,0,.25);
+  transform:translateY(-1px);
+}
+
+/* ── Analyse panel ── */
+#panel-analyse .analyse-slot {
+  transition:all .2s;
+}
+#panel-analyse .analyse-slot:hover {
+  transform:scale(1.01);
+}
+
+/* ── Progress bar ── */
+#t50-prog-fill {
+  background:linear-gradient(90deg, var(--lime), var(--teal));
+  box-shadow:0 0 8px rgba(202,255,53,.3);
+}
+
+/* ── Verdict card ── */
+.verdict-card {
+  background:var(--surf1);
+  border:1px solid var(--border);
+  border-radius:var(--r-lg);
+  padding:16px 20px;
+  margin-bottom:16px;
+  position:relative;
+  overflow:hidden;
+}
+.verdict-card::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:2px;
+}
+.verdict-card.positive::before { background:var(--lime); }
+.verdict-card.neutral::before  { background:var(--teal); }
+.verdict-card.warning::before  { background:var(--amber); }
+.verdict-card.negative::before { background:var(--red); }
+
+/* ── Age search panel ── */
+#age-search-panel {
+  animation:fadeIn .2s ease;
+}
+@keyframes fadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+/* ── Mode badge ── */
+#mode-badge {
+  font-family:monospace;
+  font-size:.68rem;
+  letter-spacing:.07em;
+  padding:2px 9px;
+  border-radius:4px;
+  border:1px solid;
+  animation:fadeIn .3s ease;
+}
+
+/* ── Rank icons ── */
+.rank-icon {
+  object-fit:contain;
+  vertical-align:middle;
+  filter:drop-shadow(0 1px 4px rgba(0,0,0,.45));
+  flex-shrink:0;
+}
+.rank-icon-sm  { width:20px; height:20px; }
+.rank-icon-md  { width:28px; height:28px; }
+.rank-icon-lg  { width:38px; height:38px; }
+.rank-badge-inner {
+  display:flex; align-items:center; gap:6px; justify-content:center;
+}
+
+/* ── More menu items ── */
+.more-menu-item {
+  display:flex; align-items:center; gap:8px;
+  width:100%; text-align:left; padding:8px 12px;
+  background:none; border:none; color:var(--text);
+  font-size:.82rem; cursor:pointer; border-radius:6px;
+  font-family:inherit; transition:background .15s;
+}
+.more-menu-item:hover { background:var(--surf3); }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+  .hd { padding:0 14px; }
+  .main { padding:16px 14px; }
+  .score-grid { grid-template-columns:1fr; }
+  .player-card { grid-template-columns:auto 1fr; }
+  .player-badges { display:none; }
+  .hd-nav { overflow-x:auto; gap:1px; }
+  .hd-nav-item { padding:5px 9px; font-size:11px; white-space:nowrap; }
+}
+@media (max-width:480px) {
+  .role-pills { flex-wrap:wrap; }
+  .hd-mode-badge { display:none; }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -613,23 +1003,23 @@ body {
 <header class="hd">
   <div class="hd-logo">
     <div class="hd-mark">
-      <svg viewBox="0 0 15 15" fill="none">
-        <polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#080B10"/>
-        <circle cx="7.5" cy="7.5" r="2" fill="#080B10"/>
-        <line x1="7.5" y1="1" x2="7.5" y2="5.5" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="13" y1="4.5" x2="9.2" y2="6.8" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="13" y1="10.5" x2="9.2" y2="8.2" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="7.5" y1="14" x2="7.5" y2="9.5" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="2" y1="10.5" x2="5.8" y2="8.2" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
-        <line x1="2" y1="4.5" x2="5.8" y2="6.8" stroke="#080B10" stroke-width="1.2" stroke-linecap="round"/>
+      <img src="assets/logos/logo-mark.svg" alt="VisionScore" class="hd-logo-img"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+      <svg viewBox="0 0 15 15" fill="none" style="display:none;width:15px;height:15px">
+        <polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#CAFF35"/>
       </svg>
     </div>
     <div>
-      <div class="hd-name">SPES LAB</div>
-      <div class="hd-ver">EUROPE · v12.0</div>
+      <div class="hd-name">VisionScore</div>
+      <div class="hd-ver">EUROPE · v1.0</div>
     </div>
   </div>
-  <nav class="hd-nav">
+  <nav class="hd-nav" id="hd-nav-main">
+    <button onclick="resetToWelcome()" id="nav-home" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--sub);font-size:.78rem;display:flex;align-items:center;gap:5px;border-radius:5px;transition:all .15s" title="Accueil — changer de mode" onmouseover="this.style.color='var(--text)';this.style.background='var(--surf2)'" onmouseout="this.style.color='var(--sub)';this.style.background='none'">
+      <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="currentColor"/></svg>
+    </button>
+    <span id="mode-badge" style="display:none;font-size:.68rem;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:4px;border:1px solid;font-family:monospace;margin-right:2px"></span>
+    <div style="width:1px;height:14px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')">🔍 Scouter</button>
     <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')">📋 Résultats</button>
     <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')">⚡ Comparer</button>
@@ -638,6 +1028,10 @@ body {
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)">··· Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
+    <div id="backend-status" title="Statut connexion backend Railway">
+      <span id="backend-dot" class="checking"></span>
+      <span id="backend-txt">API…</span>
+    </div>
     <button class="hd-mode-badge hd-mode-agent" onclick="setAppMode('agent')" id="mode-btn-agent" title="Mode Agent — scouting et placement de joueurs">🎯 Agent</button>
     <button class="hd-mode-badge hd-mode-coach" onclick="setAppMode('coach')" id="mode-btn-coach" title="Mode Coach — comparaison et roster">📊 Coach</button>
   </div>
@@ -646,24 +1040,9 @@ body {
 <div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-  <button onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"
-    style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 12px;
-    background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px"
-    onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">
-    📈 Graphiques
-  </button>
-  <button onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"
-    style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 12px;
-    background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px"
-    onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">
-    🗺 Carte
-  </button>
-  <button onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"
-    style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:8px 12px;
-    background:none;border:none;color:var(--text);font-size:.82rem;cursor:pointer;border-radius:6px"
-    onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background='none'">
-    📁 Historique
-  </button>
+  <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'">📈 Graphiques</button>
+  <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'">🗺 Carte</button>
+  <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'">📁 Historique</button>
 </div>
 
 <!-- ════ SHELL ════ -->
@@ -719,14 +1098,95 @@ body {
   <main class="main">
 
     <!-- ══ PANEL : SCOUT ══ -->
-    <div id="panel-scout" class="panel active">
+    <!-- ══ PANEL : ACCUEIL ══ -->
+    <div id="panel-welcome" class="panel active" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 120px)">
+      <div style="max-width:680px;width:100%;padding:0 1.5rem">
+        <!-- Logo centré -->
+        <div style="text-align:center;margin-bottom:3rem">
+          <div style="display:inline-flex;align-items:center;gap:12px;margin-bottom:.75rem">
+            <div style="width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+              <img src="assets/logos/logo-mark.svg" alt="VisionScore"
+                   style="width:52px;height:52px;object-fit:contain"
+                   onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+              <div style="display:none;width:52px;height:52px;background:var(--lime);border-radius:12px;align-items:center;justify-content:center">
+                <svg width="28" height="28" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#080B10"/></svg>
+              </div>
+            </div>
+            <div style="text-align:left">
+              <div style="font-size:1.4rem;font-weight:800;letter-spacing:.04em;color:var(--text)">VisionScore</div>
+              <div style="font-size:.72rem;color:var(--sub);font-family:monospace;letter-spacing:.08em">SCOUTING PLATFORM · LEAGUE OF LEGENDS</div>
+            </div>
+          </div>
+          <div style="font-size:.88rem;color:var(--sub2);max-width:400px;margin:0 auto;line-height:1.6">
+            La plateforme de référence pour le scouting semi-pro en Europe.<br>Choisissez votre mode d'utilisation.
+          </div>
+        </div>
+
+        <!-- Deux modes -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
+          <!-- MODE AGENT -->
+          <div onclick="setAppMode('agent')" class="welcome-mode-card agent">
+            <div style="font-size:2.5rem;margin-bottom:1rem">🤝</div>
+            <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Agent</div>
+            <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Trouvez des pépites SoloQ, gérez vos contacts et proposez des joueurs à des structures esport.</div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem">
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Top 50 prospects automatique</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> CRM structures esport</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Matching joueur ↔ recruteur</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Export rapport PDF pro</div>
+            </div>
+            <div style="background:var(--lime);color:#080B10;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:700;display:inline-block">Entrer en mode Agent →</div>
+          </div>
+
+          <!-- MODE COACH -->
+          <div onclick="setAppMode('coach')" class="welcome-mode-card coach">
+            <div style="font-size:2.5rem;margin-bottom:1rem">📊</div>
+            <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Coach</div>
+            <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Analysez des joueurs, comparez des profils et construisez un roster optimal avec de la data.</div>
+            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem">
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Fiche joueur complète SPES</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Comparaison même poste</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Construction de roster</div>
+              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Analyse collective équipe</div>
+            </div>
+            <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:#A78BFA;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:700;display:inline-block">Entrer en mode Coach →</div>
+          </div>
+        </div>
+
+        <!-- Stats rapides + accès direct -->
+        <div class="welcome-stats">
+          <div class="welcome-stat">
+            <div class="welcome-stat-val">5</div>
+            <div class="welcome-stat-lbl">Dimensions SPES</div>
+          </div>
+          <div class="welcome-stat">
+            <div class="welcome-stat-val">50+</div>
+            <div class="welcome-stat-lbl">Métriques API Riot</div>
+          </div>
+          <div class="welcome-stat">
+            <div class="welcome-stat-val">EUW · EUNE · NA</div>
+            <div class="welcome-stat-lbl">Serveurs supportés</div>
+          </div>
+          <div class="welcome-stat">
+            <div class="welcome-stat-val">PDF · CSV</div>
+            <div class="welcome-stat-lbl">Exports disponibles</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1.25rem">
+          <button onclick="setAppMode('agent')" style="background:none;border:none;color:var(--sub);font-size:.78rem;cursor:pointer;text-decoration:underline;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--sub)'">Passer directement sans choisir →</button>
+        </div>
+      </div>
+    </div><!-- /panel-welcome -->
+
+    <div id="panel-scout" class="panel">
 
       <!-- Onboarding — visible uniquement si aucun pseudo entré -->
-      <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(74,158,255,.08),rgba(74,222,128,.08));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:20px 24px;margin-bottom:16px;display:block">
+      <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(202,255,53,.05),rgba(45,212,191,.04));border:1px solid rgba(202,255,53,.15);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:block;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--lime),var(--teal))"></div>
         <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
           <div style="font-size:2rem">🚀</div>
           <div style="flex:1;min-width:200px">
-            <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">Bienvenue sur SPES Lab</div>
+            <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">Bienvenue sur VisionScore</div>
             <div style="font-size:.82rem;color:var(--sub);line-height:1.7;margin-bottom:12px">Votre outil de scouting LoL semi-pro. Pour analyser un joueur :</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap">
               <div style="background:var(--surf2);border-radius:8px;padding:8px 12px;font-size:.78rem;border:1px solid var(--border)">
@@ -869,7 +1329,13 @@ body {
           <div class="player-meta" id="pc-meta">—</div>
         </div>
         <div class="player-badges">
-          <div class="rank-badge"><div class="rank-tier" id="pc-rank">—</div><div class="rank-lp" id="pc-lp">— LP</div></div>
+          <div class="rank-badge">
+            <div class="rank-badge-inner">
+              <img id="pc-rank-icon" src="" alt="" class="rank-icon rank-icon-md" style="display:none" onerror="this.style.display='none'"/>
+              <div class="rank-tier" id="pc-rank">—</div>
+            </div>
+            <div class="rank-lp" id="pc-lp">— LP</div>
+          </div>
           <div class="age-badge"><div class="age-val" id="pc-age">—</div><div class="age-lbl">Âge</div></div>
         </div>
       </div>
@@ -1063,7 +1529,7 @@ body {
       <div class="card" style="margin-bottom:16px">
         <!-- PDF header — visible only on print -->
         <div class="pdf-header">
-          <div class="pdf-header-logo">⬡ SPES LAB — Rapport de scouting</div>
+          <div class="pdf-header-logo">◈ VisionScore — Rapport de scouting</div>
           <div class="pdf-header-date" id="pdf-date"></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 0;margin-bottom:-8px" class="res-actions">
@@ -1363,6 +1829,12 @@ body {
           <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
             <span style="color:var(--lime)">✅ Contactés : </span><strong id="t50-contacted">0</strong>
           </div>
+          <div style="background:rgba(200,245,60,.06);border:1px solid rgba(200,245,60,.2);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--lime)">🔥 Pépites : </span><strong id="t50-pepites">0</strong>
+          </div>
+          <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--teal)">🎂 Âges trouvés : </span><strong id="t50-ages-found">—</strong>
+          </div>
         </div>
 
         <!-- Table private view -->
@@ -1557,6 +2029,15 @@ let matchHistory = []; // raw match data for graphs
 let champHistory = []; // champ details for graphs
 
 const RANKS = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+
+// ── Rank icon helper ──────────────────────────────────────────
+function rankIcon(tier, sizeCls = 'rank-icon-sm') {
+  if (!tier) return '';
+  const t = String(tier).toLowerCase();
+  return `<img src="assets/ranks/${t}.svg" alt="${tier}"
+    class="rank-icon ${sizeCls}"
+    onerror="this.style.display='none'"/>`;
+}
 const W = { s1:.40, p:.20, e:.20, s2:.20 };
 const C = { s1:'#4A9EFF', p:'#2DD4BF', e:'#F5A623', s2:'#C084FC' };
 
@@ -2306,63 +2787,7 @@ function buildAllDims() {
 // GLOBAL SCORE UPDATE
 // ════════════════════════════════════════════
 
-// ════════════════════════════════════════════════════════════
-// MODE AGENT / COACH — Adapte la navigation
-// ════════════════════════════════════════════════════════════
-let appMode = localStorage.getItem('spes_mode') || 'agent';
-
-const MODE_CONFIG = {
-  agent: {
-    label: '🎯 Agent',
-    navItems: ['scout','results','top50','crm'],
-    defaultPanel: 'top50',
-    color: 'var(--lime)',
-    desc: 'Scouting & placement de joueurs',
-  },
-  coach: {
-    label: '📊 Coach',
-    navItems: ['scout','results','analyse','top50'],
-    defaultPanel: 'scout',
-    color: 'var(--blue)',
-    desc: 'Comparaison & construction de roster',
-  },
-};
-
-function setAppMode(mode) {
-  appMode = mode;
-  try { localStorage.setItem('spes_mode', mode); } catch(e) {}
-
-  const cfg = MODE_CONFIG[mode];
-  if (!cfg) return;
-
-  // Mettre en évidence le bouton actif
-  const agentBtn = document.getElementById('mode-btn-agent');
-  const coachBtn = document.getElementById('mode-btn-coach');
-  if (agentBtn) {
-    agentBtn.style.fontWeight = mode === 'agent' ? '700' : '400';
-    agentBtn.style.opacity    = mode === 'agent' ? '1' : '0.6';
-  }
-  if (coachBtn) {
-    coachBtn.style.fontWeight = mode === 'coach' ? '700' : '400';
-    coachBtn.style.opacity    = mode === 'coach' ? '1' : '0.6';
-  }
-
-  // Afficher/masquer les nav items selon le mode
-  const allNavIds = ['scout','results','analyse','top50','crm'];
-  allNavIds.forEach(id => {
-    const el = document.getElementById('nav-' + id);
-    if (!el) return;
-    el.style.display = cfg.navItems.includes(id) ? '' : 'none';
-  });
-
-  // Toast de confirmation
-  showToast(cfg.label + ' — ' + cfg.desc, mode === 'agent' ? 'lime' : 'blue');
-}
-
-// Init mode au chargement
-function initAppMode() {
-  setAppMode(appMode);
-}
+// Mode app géré par le bloc MODE_CONFIG ci-dessous
 
 function updateGlobal() {
   const g = globalScore(); // Calcule aussi _scorePerf et _scorePotentiel
@@ -2914,6 +3339,67 @@ function toggleDim(id) {
 // ════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// MODE APP — Agent vs Coach
+// ════════════════════════════════════════════════════════════
+let appMode = localStorage.getItem('spes_mode') || 'welcome';
+
+const MODE_CONFIG = {
+  agent: {
+    nav: ['scout','top50','crm','analyse'],
+    label: '🤝 Agent',
+    accent: 'var(--lime)',
+  },
+  coach: {
+    nav: ['scout','analyse','top50'],
+    label: '📊 Coach',
+    accent: '#A78BFA',
+  },
+};
+
+function setAppMode(mode) {
+  appMode = mode;
+  try { localStorage.setItem('spes_mode', mode); } catch(e) {}
+
+  // Masquer l'écran d'accueil
+  const welcome = document.getElementById('panel-welcome');
+  if (welcome) { welcome.classList.remove('active'); welcome.style.display = 'none'; }
+
+  // Badge mode dans la nav
+  const modeBadge = document.getElementById('mode-badge');
+  if (modeBadge) {
+    const cfg = MODE_CONFIG[mode];
+    modeBadge.textContent = cfg.label;
+    modeBadge.style.color = cfg.accent;
+    modeBadge.style.borderColor = cfg.accent + '55';
+    modeBadge.style.background = cfg.accent + '12';
+    modeBadge.style.display = 'inline-block';
+  }
+
+  // Mettre à jour les boutons mode dans le header
+  ['agent','coach'].forEach(m => {
+    const btn = document.getElementById('mode-btn-' + m);
+    if (btn) {
+      btn.style.opacity = m === mode ? '1' : '0.35';
+      btn.style.fontWeight = m === mode ? '700' : '400';
+    }
+  });
+
+  // Naviguer vers le bon panneau de départ
+  switchPanel(mode === 'agent' ? 'top50' : 'scout');
+}
+
+function resetToWelcome() {
+  appMode = 'welcome';
+  try { localStorage.removeItem('spes_mode'); } catch(e) {}
+  const welcome = document.getElementById('panel-welcome');
+  if (welcome) welcome.style.display = 'flex';
+  // Masquer tous les autres panels
+  document.querySelectorAll('.panel').forEach(p => {
+    if (p.id !== 'panel-welcome') p.classList.remove('active');
+  });
+}
+
 function switchPanel(id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
@@ -2924,7 +3410,7 @@ function switchPanel(id) {
   if (id === 'graphs') buildGraphs();
   if (id === 'map') initMapPanel();
   const navIdx = idx < 0 ? -1 : idx;
-  if (id === 'top50') { try { const k=localStorage.getItem('t50_key'); if(k) document.getElementById('t50-apikey').value=k; } catch(e){} top50RenderTable(); }
+  if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analyse',
                     top50:'nav-top50', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
@@ -2961,11 +3447,11 @@ function updateLinks() {
 
 
 // ════════════════════════════════════════════════════════════
-// ⚡ MODULE COMPARAISON PROSPECTS — SPES Lab
+// ⚡ MODULE COMPARAISON PROSPECTS — VisionScore
 // Sauvegarde jusqu'à 3 snapshots et affiche un tableau comparatif
 // ════════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════════
-// 📊 MODULE ANALYSE MULTI-JOUEURS — SPES Lab
+// 📊 MODULE ANALYSE MULTI-JOUEURS — VisionScore
 // Fusionne Scouting (2-3 joueurs) et Roster (4-5 joueurs)
 // S'adapte automatiquement selon le nombre de fiches ajoutées
 // ════════════════════════════════════════════════════════════
@@ -3034,11 +3520,11 @@ function compareSnapshotCurrent() {
 
 function analyseAddCurrent() {
   const pseudo = document.getElementById('d-pseudo')?.value?.trim();
-  if (!pseudo) { alert('Importez d\'abord une fiche joueur dans l\'onglet Fiche joueur.'); return; }
-  if (analyseSlots.length >= 5) { alert('Maximum 5 joueurs. Retirez-en un pour continuer.'); return; }
+  if (!pseudo) { showToast('Importez d\'abord une fiche joueur', 'warning'); return; }
+  if (analyseSlots.length >= 5) { showToast('Maximum 5 joueurs — retirez-en un pour continuer', 'warning'); return; }
   const tag = document.getElementById('d-tag')?.value?.trim() || 'EUW1';
   if (analyseSlots.find(s => s.pseudo === pseudo && s.tag === tag)) {
-    alert(pseudo + ' est déjà dans l\'analyse.'); return;
+    showToast(pseudo + ' est déjà dans l\'analyse', 'info'); return;
   }
   const snap = compareSnapshotCurrent();
   analyseSlots.push(snap);
@@ -3312,7 +3798,7 @@ function buildScoutView(container) {
       '</table>' +
     '</div>' +
     '<div style="font-size:.75rem;color:var(--sub);padding:8px 4px">' +
-      '💡 Les métriques 🔬 sont exclusives à SPES Lab — non disponibles sur OP.GG ou DPM.' +
+      '💡 Les métriques 🔬 sont exclusives à VisionScore — non disponibles sur OP.GG ou DPM.' +
     '</div>';
 }
 
@@ -3482,7 +3968,7 @@ function buildRosterView(container) {
 // ════════════════════════════════════════════════════════════
 function shareByURL() {
   const pseudo  = document.getElementById('d-pseudo')?.value?.trim() || '';
-  if (!pseudo) { alert('Importez d\'abord une fiche joueur.'); return; }
+  if (!pseudo) { showToast('Importez d\'abord une fiche joueur', 'warning'); return; }
 
   // Capture tout l'état
   const snapshot = {
@@ -3511,10 +3997,10 @@ function shareByURL() {
       showToast('🔗 Lien copié dans le presse-papier !', 'lime');
     }).catch(() => {
       // Fallback si clipboard API bloquée
-      prompt('Copiez ce lien et envoyez-le à votre coach :', url);
+      spesPrompt('Copiez ce lien et partagez-le à votre coach :', url, url);
     });
   } catch(e) {
-    alert('Erreur lors de la génération du lien : ' + e.message);
+    showToast('Erreur lors de la génération du lien : ' + e.message, 'error');
   }
 }
 
@@ -3583,33 +4069,147 @@ loadFromURL(); // Charge depuis URL si ?spes= présent
   }
 }
 
-// Toast notification (petit message en bas)
-function showToast(msg, color='lime') {
-  let toast = document.getElementById('spes-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'spes-toast';
-    toast.style.cssText = `
-      position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
-      background:var(--surf2);border:1px solid var(--border);color:var(--fg);
-      padding:10px 20px;border-radius:99px;font-size:.85rem;font-weight:600;
-      z-index:9999;opacity:0;transition:all .3s ease;pointer-events:none;
-      box-shadow:0 4px 24px rgba(0,0,0,.4);white-space:nowrap;
-    `;
-    document.body.appendChild(toast);
+// ═══════════════════════════════════════════════
+// SYSTÈME DE NOTIFICATIONS — Toast stack
+// ═══════════════════════════════════════════════
+function showToast(msg, type = 'success', dur = 3500) {
+  // Compatibilité ancienne API (color string)
+  const colorMap = { lime:'success', teal:'info', amber:'warning', red:'error' };
+  if (colorMap[type]) type = colorMap[type];
+
+  let stack = document.getElementById('toast-stack');
+  if (!stack) {
+    stack = document.createElement('div');
+    stack.id = 'toast-stack';
+    document.body.appendChild(stack);
   }
-  const col = color === 'lime' ? '#4ADE80' : color === 'teal' ? '#2DD4BF' : '#F59E0B';
-  toast.style.borderColor = col + '55';
-  toast.style.color = col;
-  toast.textContent = msg;
-  toast.style.opacity = '1';
-  toast.style.transform = 'translateX(-50%) translateY(0)';
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateX(-50%) translateY(20px)';
-  }, 3500);
+
+  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const borders = { success:'var(--lime)', error:'var(--red)', warning:'var(--amber)', info:'var(--blue)' };
+  const icon = icons[type] || '•';
+  const borderCol = borders[type] || 'var(--lime)';
+
+  const t = document.createElement('div');
+  t.className = 'spes-toast';
+  t.style.borderLeft = '3px solid ' + borderCol;
+  t.innerHTML = `
+    <span class="spes-toast-icon">${icon}</span>
+    <span class="spes-toast-msg">${msg}</span>
+    <button class="spes-toast-close" onclick="this.closest('.spes-toast').remove()">✕</button>`;
+  stack.appendChild(t);
+
+  // Max 4 toasts simultanés
+  while (stack.children.length > 4) stack.removeChild(stack.firstChild);
+
+  setTimeout(() => {
+    t.classList.add('out');
+    setTimeout(() => t.remove(), 320);
+  }, dur);
 }
+
+// ═══════════════════════════════════════════════
+// SYSTÈME DE MODALES — Remplace alert/confirm/prompt
+// ═══════════════════════════════════════════════
+function spesConfirm(msg, title = 'Confirmation', isDanger = false) {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'spes-modal-overlay';
+    const btnClass = isDanger ? 'btn-danger' : 'btn btn-lime btn-sm';
+    const btnLabel = isDanger ? 'Supprimer' : 'Confirmer';
+    overlay.innerHTML = `
+      <div class="spes-modal-box" role="dialog" aria-modal="true">
+        <div class="spes-modal-title">⚠️ ${title}</div>
+        <div class="spes-modal-msg">${msg}</div>
+        <div class="spes-modal-actions">
+          <button class="btn btn-ghost btn-sm" id="sm-cancel">Annuler</button>
+          <button class="${btnClass}" id="sm-ok">${btnLabel}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const close = v => { overlay.remove(); resolve(v); document.removeEventListener('keydown', onKey); };
+    overlay.querySelector('#sm-cancel').onclick = () => close(false);
+    overlay.querySelector('#sm-ok').onclick    = () => close(true);
+    overlay.onclick = e => { if (e.target === overlay) close(false); };
+    const onKey = e => {
+      if (e.key === 'Escape') close(false);
+      if (e.key === 'Enter')  close(true);
+    };
+    document.addEventListener('keydown', onKey);
+    setTimeout(() => overlay.querySelector('#sm-ok')?.focus(), 10);
+  });
+}
+
+function spesPrompt(msg, defaultVal = '', placeholder = '') {
+  return new Promise(resolve => {
+    const overlay = document.createElement('div');
+    overlay.className = 'spes-modal-overlay';
+    const safeDefault = String(defaultVal).replace(/"/g, '&quot;');
+    overlay.innerHTML = `
+      <div class="spes-modal-box" role="dialog" aria-modal="true">
+        <div class="spes-modal-title">✏️ Saisie</div>
+        <div class="spes-modal-msg">${msg}</div>
+        <input class="spes-modal-input" id="sm-input" type="text"
+          value="${safeDefault}" placeholder="${placeholder}"/>
+        <div class="spes-modal-actions">
+          <button class="btn btn-ghost btn-sm" id="sm-cancel">Annuler</button>
+          <button class="btn btn-lime btn-sm" id="sm-ok">Valider</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const input = overlay.querySelector('#sm-input');
+    const close = v => { overlay.remove(); resolve(v); };
+    overlay.querySelector('#sm-cancel').onclick = () => close(null);
+    overlay.querySelector('#sm-ok').onclick     = () => close(input.value);
+    overlay.onclick = e => { if (e.target === overlay) close(null); };
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter')  close(input.value);
+      if (e.key === 'Escape') close(null);
+    });
+    setTimeout(() => { input.focus(); input.select(); }, 10);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// STATUT BACKEND RAILWAY
+// ═══════════════════════════════════════════════
+async function checkBackendStatus() {
+  const dot = document.getElementById('backend-dot');
+  const txt = document.getElementById('backend-txt');
+  if (!dot || !txt) return;
+  const BACKEND = 'https://spes-backend-production.up.railway.app';
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6000);
+    await fetch(BACKEND, { method:'HEAD', signal: ctrl.signal, mode:'no-cors' });
+    clearTimeout(timer);
+    dot.className = 'online';
+    txt.textContent = 'API OK';
+    txt.style.color = 'var(--lime)';
+  } catch(e) {
+    dot.className = 'offline';
+    txt.textContent = 'API OFF';
+    txt.style.color = 'var(--red)';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RACCOURCIS CLAVIER
+// ═══════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  // Ctrl+S / Cmd+S — sauvegarder la fiche courante
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    const panel = document.querySelector('.panel.active');
+    if (panel && (panel.id === 'panel-scout' || panel.id === 'panel-results')) {
+      saveToHistory();
+    }
+  }
+  // Escape — fermer le menu "Plus"
+  if (e.key === 'Escape') {
+    const mm = document.getElementById('more-menu');
+    if (mm && mm.style.display !== 'none') mm.style.display = 'none';
+  }
+});
 
 
 // ════════════════════════════════════════════════════════════
@@ -3621,7 +4221,7 @@ function showToast(msg, color='lime') {
 // ① EXPORT PDF
 // ════════════════════════════════════════════════════════════
 function exportPDF() {
-  if (!window.jspdf) { alert('Librairie PDF non chargée — vérifiez votre connexion internet.'); return; }
+  if (!window.jspdf) { showToast('Librairie PDF non chargée — vérifiez votre connexion internet', 'error'); return; }
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -3734,7 +4334,7 @@ function exportPDF() {
   // Méta-infos bas de page de garde
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
   doc.setTextColor(...C.sub);
-  doc.text('Rapport confidentiel · SPES Lab · ' + dateStr, cx, 275, { align:'center' });
+  doc.text('Rapport confidentiel · VisionScore · ' + dateStr, cx, 275, { align:'center' });
   doc.text('Document destiné aux structures esport · Ne pas diffuser', cx, 281, { align:'center' });
 
   // Bande accent bas
@@ -3747,7 +4347,7 @@ function exportPDF() {
 
   // En-tête page 2
   doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.setTextColor(...C.sub); doc.text('SPES LAB  ·  ' + pseudo.toUpperCase() + '  ·  ANALYSE DÉTAILLÉE', M, 12);
+  doc.setTextColor(...C.sub); doc.text('VISIONSCORE  ·  ' + pseudo.toUpperCase() + '  ·  ANALYSE DÉTAILLÉE', M, 12);
   doc.setDrawColor(...C.bg3); doc.setLineWidth(0.3); doc.line(M, 14, W-M, 14);
 
   let y = 22;
@@ -3896,7 +4496,7 @@ function exportPDF() {
   doc.setFillColor(...C.lime); doc.rect(0, 0, W, 3, 'F');
 
   doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.setTextColor(...C.sub); doc.text('SPES LAB  ·  RECOMMANDATION AGENT', M, 12);
+  doc.setTextColor(...C.sub); doc.text('VISIONSCORE  ·  RECOMMANDATION AGENT', M, 12);
   doc.setDrawColor(...C.bg3); doc.setLineWidth(0.3); doc.line(M, 14, W-M, 14);
 
   y = 24;
@@ -3983,12 +4583,13 @@ function exportPDF() {
     doc.setFillColor(...C.bg2); doc.rect(0, 289, W, 8, 'F');
     doc.setFillColor(...C.lime); doc.rect(0, 289, 2, 8, 'F');
     doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
-    doc.text('SPES Lab · Document confidentiel · ' + dateStr, M+2, 294);
+    doc.text('VisionScore · Document confidentiel · ' + dateStr, M+2, 294);
     doc.text(i+'/'+pages, W-M, 294, { align:'right' });
   }
 
   const fname = 'SPES_' + pseudo.replace(/[^a-zA-Z0-9]/g,'_') + '_' + currentRole + '_' + new Date().toISOString().slice(0,10) + '.pdf';
   doc.save(fname);
+  showToast(`PDF exporté — ${fname}`, 'success');
 }
 // ════════════════════════════════════════════════════════════
 // ② HISTORIQUE — Sauvegarde & Restauration
@@ -4046,42 +4647,97 @@ function crmShowTab(tab) {
 }
 
 // ── STRUCTURES ──────────────────────────────────────────────
-function crmAddStructure() {
-  const nom = prompt('Nom de la structure (ex: Karmine Corp Academy) :');
-  if (!nom) return;
-  const recruteur = prompt('Nom du recruteur / manager :') || '';
-  const tier = prompt('Niveau compétitif (' + CRM_TIERS.join(', ') + ') :') || 'Semi-pro';
-  const roleRecherche = prompt('Poste(s) recherché(s) (ex: Mid, ADC) :') || '';
-  const budgetMax = prompt('Budget max estimé (en €/mois, ex: 1500) :') || '';
-  const contact = prompt('Email ou Discord du contact :') || '';
-  const notes = prompt('Notes libres :') || '';
+function crmAddStructure(editId) {
+  const existing = editId ? crmStructures.find(s => s.id === editId) : null;
+  // Créer le modal inline
+  const overlay = document.createElement('div');
+  overlay.id = 'crm-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+  overlay.innerHTML =
+    '<div style="background:var(--surf1);border:1px solid var(--border2);border-radius:16px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">' +
+        '<div style="font-size:1rem;font-weight:800">' + (existing ? '✏️ Modifier la structure' : '🏢 Nouvelle structure esport') + '</div>' +
+        '<button onclick="document.getElementById(\'crm-modal-overlay\').remove()" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem">✕</button>' +
+      '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:.875rem">' +
+        '<div>' +
+          '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Nom de la structure *</div>' +
+          '<input id="crm-f-nom" value="' + (existing?.nom||'') + '" placeholder="ex: Karmine Corp Academy" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none"/>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">' +
+          '<div>' +
+            '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Recruteur / Manager</div>' +
+            '<input id="crm-f-recruteur" value="' + (existing?.recruteur||'') + '" placeholder="Nom du contact" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none"/>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Niveau compétitif</div>' +
+            '<select id="crm-f-tier" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none">' +
+              CRM_TIERS.map(t => '<option value="' + t + '"' + (existing?.tier===t?' selected':'') + '>' + t + '</option>').join('') +
+            '</select>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Poste(s) recherché(s)</div>' +
+          '<div style="display:flex;gap:.375rem;flex-wrap:wrap">' +
+            CRM_ROLES.map(r => '<label style="display:flex;align-items:center;gap:.25rem;cursor:pointer;font-size:.8rem;padding:.25rem .6rem;background:var(--surf2);border:1px solid var(--border);border-radius:4px"><input type="checkbox" value="' + r + '"' + ((existing?.roleRecherche||'').includes(r)?' checked':'') + ' style="accent-color:var(--lime)"> ' + r + '</label>').join('') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">' +
+          '<div>' +
+            '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Budget max (€/mois)</div>' +
+            '<input id="crm-f-budget" type="number" value="' + (existing?.budgetMax||'') + '" placeholder="ex: 1500" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none"/>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Contact (email / Discord)</div>' +
+            '<input id="crm-f-contact" value="' + (existing?.contact||'') + '" placeholder="recruteur@structure.gg" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none"/>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.3rem">Notes</div>' +
+          '<textarea id="crm-f-notes" rows="2" placeholder="Informations complémentaires..." style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.88rem;color:var(--text);outline:none;resize:vertical">' + (existing?.notes||'') + '</textarea>' +
+        '</div>' +
+        '<button onclick="crmSaveStructureForm(' + (editId||'null') + ')" style="background:var(--lime);color:#080B10;border:none;border-radius:8px;padding:.625rem 1.25rem;font-size:.88rem;font-weight:700;cursor:pointer;width:100%">' + (existing ? 'Enregistrer les modifications' : 'Créer la structure') + '</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.getElementById('crm-f-nom')?.focus();
+}
 
-  crmStructures.push({
-    id: Date.now(),
-    nom, recruteur, tier, roleRecherche, budgetMax, contact, notes,
-    addedAt: new Date().toISOString(),
-    statut: 'Actif',
-  });
+function crmSaveStructureForm(editId) {
+  const nom = document.getElementById('crm-f-nom')?.value?.trim();
+  if (!nom) { showToast('Le nom de la structure est obligatoire', 'warning'); return; }
+  const recruteur = document.getElementById('crm-f-recruteur')?.value?.trim() || '';
+  const tier = document.getElementById('crm-f-tier')?.value || 'Semi-pro';
+  const roles = Array.from(document.querySelectorAll('#crm-modal-overlay input[type=checkbox]:checked')).map(c=>c.value);
+  const roleRecherche = roles.join(', ');
+  const budgetMax = document.getElementById('crm-f-budget')?.value || '';
+  const contact = document.getElementById('crm-f-contact')?.value?.trim() || '';
+  const notes = document.getElementById('crm-f-notes')?.value?.trim() || '';
+
+  if (editId) {
+    const s = crmStructures.find(x => x.id === editId);
+    if (s) Object.assign(s, { nom, recruteur, tier, roleRecherche, budgetMax, contact, notes });
+  } else {
+    crmStructures.push({ id:Date.now(), nom, recruteur, tier, roleRecherche, budgetMax, contact, notes, addedAt:new Date().toISOString(), statut:'Actif' });
+  }
   crmSave();
+  document.getElementById('crm-modal-overlay')?.remove();
   crmRenderStructures();
 }
 
 function crmEditStructure(id) {
-  const s = crmStructures.find(x => x.id === id);
-  if (!s) return;
-  s.notes = prompt('Notes pour ' + s.nom + ' :', s.notes || '') ?? s.notes;
-  s.roleRecherche = prompt('Poste(s) recherché(s) :', s.roleRecherche || '') ?? s.roleRecherche;
-  s.contact = prompt('Contact (email/Discord) :', s.contact || '') ?? s.contact;
-  crmSave();
-  crmRenderStructures();
+  crmAddStructure(id);
 }
 
-function crmDeleteStructure(id) {
-  if (!confirm('Supprimer cette structure ?')) return;
+async function crmDeleteStructure(id) {
+  const ok = await spesConfirm('Supprimer cette structure ? Les joueurs associés seront aussi retirés du pipeline.', 'Supprimer la structure', true);
+  if (!ok) return;
   crmStructures = crmStructures.filter(x => x.id !== id);
   crmPipeline   = crmPipeline.filter(x => x.structureId !== id);
   crmSave();
   crmRenderStructures();
+  showToast('Structure supprimée', 'info');
 }
 
 function crmRenderStructures() {
@@ -4130,34 +4786,110 @@ function crmRenderStructures() {
 function crmAddPlayerToStructure(structureId) {
   const struct = crmStructures.find(s => s.id === structureId);
   if (!struct) return;
-  const playerName = prompt('Pseudo du joueur (depuis votre Top 50 ou fiche) :');
-  if (!playerName) return;
-  const role = prompt('Rôle (' + CRM_ROLES.join(', ') + ') :') || 'Mid';
-  const score = prompt('Score SPES (ex: 7.5) :') || '';
-  const age = prompt('Âge :') || '';
-  const notes = prompt('Notes de présentation :') || '';
 
-  // Chercher dans top50Data si dispo
-  const t50match = typeof top50Data !== 'undefined'
-    ? top50Data.find(p => p.name.toLowerCase().includes(playerName.toLowerCase()))
-    : null;
+  // Construire la liste des joueurs disponibles (Top 50 + fiche courante)
+  const availablePlayers = [];
+  if (typeof top50Data !== 'undefined' && top50Data.length) {
+    top50Data.forEach(p => availablePlayers.push({ name:p.name, tag:p.tag||'', role:p.role||'', score:p.score, age:p.age||'' }));
+  }
+  const curPseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (curPseudo && !availablePlayers.find(p=>p.name===curPseudo)) {
+    availablePlayers.unshift({ name:curPseudo, tag:document.getElementById('d-tag')?.value||'EUW', role:window.currentRole||'Mid', score:window._scorePerf||'', age:document.getElementById('d-age')?.value||'' });
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'crm-player-modal';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1rem';
+
+  const playerOptions = availablePlayers.length
+    ? '<select id="crm-p-select" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.5rem .75rem;font-size:.85rem;color:var(--text);outline:none;margin-bottom:.75rem" onchange="crmFillPlayerFromSelect()">' +
+        '<option value="">— Saisir manuellement —</option>' +
+        availablePlayers.map((p,i) => '<option value="' + i + '">' + p.name + (p.tag?' #'+p.tag:'') + ' · ' + (p.role||'?') + (p.score?' · '+parseFloat(p.score).toFixed(1)+'/10':'') + (p.age?' · '+p.age+' ans':'') + '</option>').join('') +
+      '</select>'
+    : '';
+
+  overlay.innerHTML =
+    '<div style="background:var(--surf1);border:1px solid var(--border2);border-radius:16px;padding:1.5rem;width:100%;max-width:440px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
+        '<div style="font-size:.95rem;font-weight:800">➕ Ajouter au pipeline<br><span style="font-size:.75rem;color:var(--sub);font-weight:400">→ ' + struct.nom + '</span></div>' +
+        '<button onclick="document.getElementById(\'crm-player-modal\').remove()" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem">✕</button>' +
+      '</div>' +
+      (playerOptions ? '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.25rem;letter-spacing:.06em;text-transform:uppercase">Depuis votre liste</div>' + playerOptions : '') +
+      '<div style="display:flex;flex-direction:column;gap:.625rem">' +
+        '<div>' +
+          '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.25rem">Pseudo *</div>' +
+          '<input id="crm-p-name" placeholder="NomDuJoueur" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.45rem .7rem;font-size:.85rem;color:var(--text);outline:none"/>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">' +
+          '<div>' +
+            '<div style="font-size:.65rem;color:var(--sub);margin-bottom:.2rem;text-transform:uppercase">Rôle</div>' +
+            '<select id="crm-p-role" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .5rem;font-size:.8rem;color:var(--text);outline:none">' +
+              CRM_ROLES.map(r=>'<option>'+r+'</option>').join('') +
+            '</select>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.65rem;color:var(--sub);margin-bottom:.2rem;text-transform:uppercase">Score SPES</div>' +
+            '<input id="crm-p-score" type="number" step="0.1" min="0" max="10" placeholder="7.5" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .5rem;font-size:.8rem;color:var(--text);outline:none"/>' +
+          '</div>' +
+          '<div>' +
+            '<div style="font-size:.65rem;color:var(--sub);margin-bottom:.2rem;text-transform:uppercase">Âge</div>' +
+            '<input id="crm-p-age" type="number" min="14" max="35" placeholder="18" style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:5px;padding:.4rem .5rem;font-size:.8rem;color:var(--text);outline:none"/>' +
+          '</div>' +
+        '</div>' +
+        '<div>' +
+          '<div style="font-size:.72rem;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.25rem">Notes de présentation</div>' +
+          '<textarea id="crm-p-notes" rows="2" placeholder="Points clés à mettre en avant..." style="width:100%;background:var(--surf2);border:1px solid var(--border2);border-radius:6px;padding:.45rem .7rem;font-size:.82rem;color:var(--text);outline:none;resize:vertical"></textarea>' +
+        '</div>' +
+        '<button onclick="crmConfirmAddPlayer(' + structureId + ')" style="background:var(--lime);color:#080B10;border:none;border-radius:8px;padding:.55rem 1rem;font-size:.85rem;font-weight:700;cursor:pointer;width:100%">Ajouter au pipeline</button>' +
+      '</div>' +
+    '</div>';
+
+  // Stocker la liste pour le select
+  window._crmAvailablePlayers = availablePlayers;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+}
+
+function crmFillPlayerFromSelect() {
+  const sel = document.getElementById('crm-p-select');
+  const idx = parseInt(sel?.value);
+  if (isNaN(idx)) return;
+  const p = window._crmAvailablePlayers?.[idx];
+  if (!p) return;
+  const nameEl = document.getElementById('crm-p-name');
+  const roleEl = document.getElementById('crm-p-role');
+  const scoreEl = document.getElementById('crm-p-score');
+  const ageEl = document.getElementById('crm-p-age');
+  if (nameEl) nameEl.value = p.name + (p.tag ? ' #' + p.tag : '');
+  if (roleEl) roleEl.value = p.role || 'Mid';
+  if (scoreEl) scoreEl.value = p.score ? parseFloat(p.score).toFixed(1) : '';
+  if (ageEl) ageEl.value = p.age || '';
+}
+
+function crmConfirmAddPlayer(structureId) {
+  const struct = crmStructures.find(s => s.id === structureId);
+  if (!struct) return;
+  const playerName = document.getElementById('crm-p-name')?.value?.trim();
+  if (!playerName) { showToast('Le pseudo du joueur est obligatoire', 'warning'); return; }
+  const role = document.getElementById('crm-p-role')?.value || 'Mid';
+  const score = document.getElementById('crm-p-score')?.value || '';
+  const age = document.getElementById('crm-p-age')?.value || '';
+  const notes = document.getElementById('crm-p-notes')?.value?.trim() || '';
+
+  // Extraire tag si format "Pseudo #TAG"
+  const tagMatch = playerName.match(/#([^\s]+)$/);
+  const cleanName = tagMatch ? playerName.slice(0, tagMatch.index).trim() : playerName;
+  const tag = tagMatch ? tagMatch[1] : '';
 
   crmPipeline.push({
-    id: Date.now(),
-    structureId,
-    structureName: struct.nom,
-    playerName: t50match ? t50match.name : playerName,
-    playerTag: t50match?.tag || '',
-    role: t50match?.role || role,
-    score: t50match ? t50match.score : score,
-    age: t50match?.age || age,
-    stage: 'nouveau',
-    notes,
-    dateRelance: '',
+    id: Date.now(), structureId, structureName: struct.nom,
+    playerName: cleanName, playerTag: tag, role, score, age,
+    stage: 'nouveau', notes, dateRelance: '',
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté au pipeline' }],
   });
   crmSave();
+  document.getElementById('crm-player-modal')?.remove();
   crmShowTab('pipeline');
 }
 
@@ -4175,21 +4907,24 @@ function crmNextStage(id) {
   crmRenderPipeline();
 }
 
-function crmSetRelance(id) {
+async function crmSetRelance(id) {
   const p = crmPipeline.find(x => x.id === id);
   if (!p) return;
-  const date = prompt('Date de relance (JJ/MM/AAAA) :', p.dateRelance || '');
+  const date = await spesPrompt('Date de relance (JJ/MM/AAAA) :', p.dateRelance || '', 'ex: 15/06/2025');
   if (date === null) return;
   p.dateRelance = date;
   crmSave();
   crmRenderPipeline();
+  showToast('Date de relance enregistrée', 'success');
 }
 
-function crmDeletePipeline(id) {
-  if (!confirm('Retirer ce joueur du pipeline ?')) return;
+async function crmDeletePipeline(id) {
+  const ok = await spesConfirm('Retirer ce joueur du pipeline ? Cette action est irréversible.', 'Retirer du pipeline', true);
+  if (!ok) return;
   crmPipeline = crmPipeline.filter(x => x.id !== id);
   crmSave();
   crmRenderPipeline();
+  showToast('Joueur retiré du pipeline', 'info');
 }
 
 function crmRenderPipeline() {
@@ -4229,56 +4964,109 @@ function crmRenderPipeline() {
 function crmRunMatching() {
   const el = document.getElementById('crm-matching-results');
   if (!el) return;
-  if (!crmStructures.length || !crmPipeline.length && (typeof top50Data === 'undefined' || !top50Data.length)) {
-    el.innerHTML = '<div style="color:var(--amber);font-size:.85rem">Ajoutez des structures et scannez un Top 50 pour lancer le matching.</div>';
+  if (!crmStructures.length) {
+    el.innerHTML = '<div style="color:var(--amber);font-size:.85rem;padding:1.5rem;text-align:center">Ajoutez au moins une structure esport pour lancer le matching.</div>';
     return;
   }
 
-  // Sources de joueurs : pipeline + top50
   const allPlayers = [
-    ...(typeof top50Data !== 'undefined' ? top50Data : []).map(p => ({ name:p.name, tag:p.tag, role:p.role, score:parseFloat(p.score||0), age:p.age, source:'Top 50' })),
-    ...crmPipeline.filter(p => p.stage !== 'ecarte' && p.stage !== 'signe').map(p => ({ name:p.playerName, tag:p.playerTag, role:p.role, score:parseFloat(p.score||0), age:p.age, source:'Pipeline' })),
+    ...(typeof top50Data !== 'undefined' ? top50Data : []).map(p => ({
+      name:p.name, tag:p.tag||'', role:p.role||'', score:parseFloat(p.score||0),
+      age:p.age, scorePotentiel:p.scorePotentiel, source:'Top 50',
+    })),
+    ...crmPipeline.filter(p => p.stage !== 'ecarte' && p.stage !== 'signe').map(p => ({
+      name:p.playerName, tag:p.playerTag||'', role:p.role||'', score:parseFloat(p.score||0),
+      age:p.age, source:'Pipeline ' + p.stage,
+    })),
   ];
+
+  if (!allPlayers.length) {
+    el.innerHTML = '<div style="color:var(--amber);font-size:.85rem;padding:1.5rem;text-align:center">Aucun joueur disponible — scannez un Top 50 ou ajoutez des joueurs au pipeline.</div>';
+    return;
+  }
 
   const matches = [];
   crmStructures.forEach(struct => {
-    const rolesNeeded = (struct.roleRecherche || '').split(/[, ]+/).filter(Boolean);
+    const rolesNeeded = (struct.roleRecherche || '').split(/[,\s]+/).filter(Boolean);
     const budgetMax = parseFloat(struct.budgetMax) || Infinity;
+
     allPlayers.forEach(player => {
-      if (!rolesNeeded.length || rolesNeeded.some(r => r.toLowerCase() === (player.role||'').toLowerCase())) {
-        const scoreCompat = Math.min(10,
-          (player.score || 0) * 0.6 +
-          (rolesNeeded.includes(player.role) ? 2 : 0) +
-          (player.age && parseInt(player.age) <= 19 ? 1.5 : 0)
-        );
-        matches.push({ struct, player, scoreCompat: parseFloat(scoreCompat.toFixed(1)) });
-      }
+      const roleMatch = !rolesNeeded.length || rolesNeeded.some(r => r.toLowerCase() === (player.role||'').toLowerCase());
+      if (!roleMatch) return;
+
+      // Score de compatibilité détaillé
+      const scoreSPES    = (player.score || 0) * 0.55;          // 55% poids SPES
+      const bonusRole    = roleMatch ? 1.5 : 0;                   // Rôle correspondant
+      const bonusAge     = player.age && parseInt(player.age) <= 19 ? 1.5
+                         : player.age && parseInt(player.age) <= 22 ? 0.5 : 0;
+      const bonusPepite  = player.scorePotentiel && (player.scorePotentiel - player.score) >= 1.5 ? 1.0 : 0;
+      const bonusSource  = player.source === 'Top 50' ? 0.3 : 0.5; // Pipeline = déjà engagé
+
+      const scoreCompat  = Math.min(10, scoreSPES + bonusRole + bonusAge + bonusPepite + bonusSource);
+
+      matches.push({
+        struct, player, scoreCompat: parseFloat(scoreCompat.toFixed(1)),
+        detail: { scoreSPES: parseFloat(scoreSPES.toFixed(1)), bonusRole, bonusAge, bonusPepite },
+      });
     });
   });
 
   matches.sort((a,b) => b.scoreCompat - a.scoreCompat);
-  const top = matches.slice(0, 15);
+  const top = matches.slice(0, 20);
 
   if (!top.length) {
-    el.innerHTML = '<div style="color:var(--sub);font-size:.85rem">Aucune correspondance trouvée — vérifiez les rôles recherchés dans vos fiches structures.</div>';
+    el.innerHTML = '<div style="color:var(--sub);font-size:.85rem;padding:1.5rem;text-align:center">Aucune correspondance — vérifiez les rôles recherchés dans vos structures.</div>';
     return;
   }
 
-  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:.625rem">' +
-    top.map((m, i) => {
-      const col = m.scoreCompat >= 8 ? 'var(--lime)' : m.scoreCompat >= 6 ? 'var(--teal)' : 'var(--amber)';
-      return '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:10px;padding:.875rem 1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">' +
-        '<div style="font-size:.9rem;font-weight:700;color:var(--sub);min-width:1.5rem;text-align:center">' + (i+1) + '</div>' +
-        '<div style="font-size:1.1rem;font-weight:800;color:' + col + ';min-width:3rem;text-align:center">' + m.scoreCompat + '</div>' +
-        '<div style="flex:1">' +
-          '<div style="font-weight:700;font-size:.88rem">' + m.player.name + ' <span style="color:var(--sub);font-weight:400;font-size:.75rem">' + (m.player.role||'?') + (m.player.age?' · '+m.player.age+' ans':'') + '</span></div>' +
-          '<div style="font-size:.72rem;color:var(--sub2)">Score SPES : ' + (m.player.score||'?') + '/10 · Source : ' + m.player.source + '</div>' +
+  // Grouper par structure
+  const byStruct = {};
+  top.forEach(m => {
+    if (!byStruct[m.struct.id]) byStruct[m.struct.id] = { struct:m.struct, matches:[] };
+    byStruct[m.struct.id].matches.push(m);
+  });
+
+  el.innerHTML = '<div style="display:flex;flex-direction:column;gap:1.25rem">' +
+    Object.values(byStruct).map(group => {
+      const s = group.struct;
+      return '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:12px;overflow:hidden">' +
+        '<div style="background:var(--surf2);border-bottom:1px solid var(--border);padding:.75rem 1rem;display:flex;align-items:center;justify-content:space-between">' +
+          '<div>' +
+            '<span style="font-weight:700;font-size:.9rem">' + s.nom + '</span>' +
+            '<span style="font-size:.72rem;padding:1px 7px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--sub2);margin-left:.5rem">' + (s.tier||'') + '</span>' +
+          '</div>' +
+          '<div style="font-size:.72rem;color:var(--sub)">' + (s.roleRecherche ? 'Cherche : ' + s.roleRecherche : '') + (s.budgetMax ? ' · Budget : ' + s.budgetMax + '€/mois' : '') + '</div>' +
         '</div>' +
-        '<div style="text-align:right">' +
-          '<div style="font-weight:700;font-size:.82rem">' + m.struct.nom + '</div>' +
-          '<div style="font-size:.7rem;color:var(--sub)">' + (m.struct.tier||'') + (m.struct.roleRecherche?' · Cherche : '+m.struct.roleRecherche:'') + '</div>' +
+        '<div style="padding:.75rem;display:flex;flex-direction:column;gap:.5rem">' +
+          group.matches.slice(0,5).map((m, i) => {
+            const col = m.scoreCompat >= 8 ? 'var(--lime)' : m.scoreCompat >= 6 ? 'var(--teal)' : 'var(--amber)';
+            const pepite = m.detail.bonusPepite > 0;
+            return '<div style="display:flex;align-items:center;gap:.875rem;background:var(--surf2);border-radius:8px;padding:.625rem .875rem;border:1px solid ' + (i===0?'rgba(202,255,53,.15)':'var(--border)') + '">' +
+              '<div style="font-size:.75rem;font-weight:700;color:var(--sub);min-width:1.2rem;text-align:center">' + (i+1) + '</div>' +
+              '<div style="min-width:38px;text-align:center">' +
+                '<div style="font-size:1rem;font-weight:900;color:' + col + ';line-height:1">' + m.scoreCompat + '</div>' +
+                '<div style="font-size:.58rem;color:var(--sub)">compat.</div>' +
+              '</div>' +
+              '<div style="flex:1;min-width:0">' +
+                '<div style="font-weight:700;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
+                  m.player.name + (m.player.tag?' <span style="color:var(--sub);font-size:.72rem">#'+m.player.tag+'</span>':'') +
+                  (pepite ? ' <span style="font-size:.65rem;color:var(--lime)">🔥</span>' : '') +
+                '</div>' +
+                '<div style="font-size:.7rem;color:var(--sub2)">' +
+                  (m.player.role||'?') + ' · SPES ' + (m.player.score||'?') + '/10' +
+                  (m.player.age ? ' · ' + m.player.age + ' ans' : '') +
+                  ' · <span style="color:var(--sub)">' + m.player.source + '</span>' +
+                '</div>' +
+                '<div style="display:flex;gap:.25rem;margin-top:.25rem;flex-wrap:wrap">' +
+                  (m.detail.bonusRole ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.2);border-radius:3px;color:var(--teal)">+' + m.detail.bonusRole + ' rôle</span>' : '') +
+                  (m.detail.bonusAge ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusAge + ' jeune</span>' : '') +
+                  (m.detail.bonusPepite ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusPepite + ' pépite</span>' : '') +
+                '</div>' +
+              '</div>' +
+              '<button onclick="crmAddPlayerToStructure(' + m.struct.id + ')" style="font-size:.7rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:4px 10px;color:var(--lime);cursor:pointer;white-space:nowrap;flex-shrink:0">+ Pipeline</button>' +
+            '</div>';
+          }).join('') +
         '</div>' +
-        '<button onclick="crmAddPlayerToStructure(' + m.struct.id + ')" style="font-size:.72rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 9px;color:var(--lime);cursor:pointer;white-space:nowrap">+ Pipeline</button>' +
       '</div>';
     }).join('') +
   '</div>';
@@ -4287,9 +5075,26 @@ function crmRunMatching() {
 // Init CRM
 crmLoad();
 
+// ── Init au démarrage ─────────────────────────────────────
+(function initApp() {
+  const savedMode = localStorage.getItem('spes_mode');
+  if (savedMode && (savedMode === 'agent' || savedMode === 'coach')) {
+    // Restaurer le mode précédent
+    setTimeout(() => setAppMode(savedMode), 50);
+  } else {
+    // Afficher l'écran d'accueil — panel-scout ne doit pas être actif
+    const scout = document.getElementById('panel-scout');
+    if (scout) scout.classList.remove('active');
+    const welcome = document.getElementById('panel-welcome');
+    if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
+    // Désactiver nav items
+    document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
+  }
+})();
+
 function saveToHistory() {
   const pseudo = document.getElementById('d-pseudo')?.value?.trim();
-  if (!pseudo) { alert('Entrez un pseudo avant de sauvegarder.'); return; }
+  if (!pseudo) { showToast('Entrez un pseudo avant de sauvegarder', 'warning'); return; }
 
   const f = getRoleFields ? getRoleFields() : {};
   const snapshot = {
@@ -4314,7 +5119,7 @@ function saveToHistory() {
   if (history.length > 30) history = history.slice(0, 30);
   localStorage.setItem('spes_history', JSON.stringify(history));
 
-  alert(`✅ Fiche "${pseudo} · ${currentRole}" sauvegardée !`);
+  showToast(`Fiche "${pseudo} · ${currentRole}" sauvegardée`, 'success');
   renderHistory();
 }
 
@@ -4416,10 +5221,12 @@ function deleteHistorySnapshot(idx) {
   renderHistory();
 }
 
-function clearHistory() {
-  if (!confirm('Effacer tout l\'historique ? Cette action est irréversible.')) return;
+async function clearHistory() {
+  const ok = await spesConfirm('Effacer tout l\'historique ? Cette action est irréversible.', 'Effacer l\'historique', true);
+  if (!ok) return;
   localStorage.removeItem('spes_history');
   renderHistory();
+  showToast('Historique effacé', 'info');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -5267,6 +6074,12 @@ async function fetchRiotData() {
       if (soloQ) {
         document.getElementById('pc-rank').textContent = `${soloQ.tier} ${soloQ.rank}`;
         document.getElementById('pc-lp').textContent = `${soloQ.leaguePoints} LP`;
+        const pcIcon = document.getElementById('pc-rank-icon');
+        if (pcIcon) {
+          pcIcon.src = `assets/ranks/${soloQ.tier.toLowerCase()}.svg`;
+          pcIcon.alt = soloQ.tier;
+          pcIcon.style.display = 'block';
+        }
       }
       const age = document.getElementById('d-age')?.value;
       document.getElementById('pc-age').textContent = age ? age+' ans' : '—';
@@ -6742,7 +7555,7 @@ function t50SetProg(pct, txt) {
 async function top50Scan() {
   // Utilise la clé du champ t50 OU la clé du champ principal OU vide (→ backend Railway)
   const apiKey = (
-    document.getElementById('t50-apikey')?.value?.trim() ||
+    '' ||
     document.getElementById('riot-key')?.value?.trim() ||
     ''
   );
@@ -6751,7 +7564,7 @@ async function top50Scan() {
 
   // Clé directe OU backend Railway — les deux sont acceptés
   if (apiKey && !apiKey.startsWith('RGAPI-')) {
-    alert('La clé saisie ne semble pas valide (doit commencer par RGAPI-).');
+    showToast('Clé API invalide — doit commencer par RGAPI-', 'error');
     return;
   }
   // Sans clé = mode backend Railway automatique (comme le reste du site)
@@ -7197,6 +8010,18 @@ function top50RenderTable() {
   const dateEl = document.getElementById('t50-date');
   if (dateEl && top50Data[0]?.addedAt)
     dateEl.textContent = new Date(top50Data[0].addedAt).toLocaleDateString('fr-FR');
+  const pepitesEl = document.getElementById('t50-pepites');
+  if (pepitesEl) {
+    const pepCnt = top50Data.filter(p => {
+      if (!p.scorePotentiel || !p.score) return false;
+      const ri = typeof TIER_IDX !== 'undefined' ? (TIER_IDX[p.tier]||6) : 6;
+      const pl = typeof RANG_PLAFOND !== 'undefined' ? (RANG_PLAFOND[ri]||8.2) : 8.2;
+      return (p.scorePotentiel - Math.min(parseFloat(p.score), pl)) >= 1.5;
+    }).length;
+    pepitesEl.textContent = pepCnt;
+  }
+  const agesEl = document.getElementById('t50-ages-found');
+  if (agesEl) agesEl.textContent = top50Data.filter(p => p.age && p.ageStatus === '✅').length + '/' + top50Data.length;
 
   tbody.innerHTML = filteredData.map((p, i) => {
     const ageMult = p.age ? ageBonus(p.age) : 1;
@@ -7224,7 +8049,10 @@ function top50RenderTable() {
         <div style="font-size:.7rem;color:var(--sub)">${(p.champs||[]).slice(0,2).map(c=>c.name).join(' · ')||'—'}</div>
       </td>
       <td style="padding:.5rem .75rem;white-space:nowrap">
-        <span style="color:${tc};font-weight:600;font-size:.82rem">${p.tier} ${p.rank} — ${p.lp}LP</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          ${rankIcon(p.tier, 'rank-icon-sm')}
+          <span style="color:${tc};font-weight:600;font-size:.82rem">${p.tier} ${p.rank} — ${p.lp}LP</span>
+        </div>
       </td>
       <td style="padding:.5rem .75rem;font-size:.82rem">${p.role||'?'}</td>
       <td style="padding:.5rem .75rem;text-align:center">
@@ -7266,7 +8094,10 @@ function top50RenderTable() {
           <span style="font-family:monospace;font-weight:700;color:${parseFloat(p.score)>=8?'var(--lime)':'#A78BFA'}">${p.score}</span>
         </div>
         <div style="font-weight:700;font-size:.92rem;margin-bottom:.25rem">${p.name}</div>
-        <div style="font-size:.75rem;color:${TIER_COLOR[p.tier]||'#aaa'};font-weight:600">${p.tier} ${p.rank} — ${p.lp}LP</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:${TIER_COLOR[p.tier]||'#aaa'};font-weight:600">
+          ${rankIcon(p.tier,'rank-icon-sm')}
+          ${p.tier} ${p.rank} — ${p.lp}LP
+        </div>
         <div style="font-size:.72rem;color:var(--sub);margin-top:.375rem">${p.role||'?'} · ${p.wr}%WR · ${p.kda}KDA</div>
       </div>`).join('');
   }
@@ -7279,12 +8110,12 @@ function top50NextStatut(idx) {
   top50SaveLocal(); top50RenderTable();
 }
 
-function top50SetAge(idx) {
+async function top50SetAge(idx) {
   const p = top50Data[idx]; if (!p) return;
-  const val = prompt('Âge de ' + p.name + ' (laissez vide pour "En attente") :');
+  const val = await spesPrompt('Âge de ' + p.name + ' (laissez vide pour "En attente") :', p.age ? String(p.age) : '', 'ex: 17');
   if (val === null) return;
   if (val === '') { p.age = null; p.ageStatus = '⏳'; }
-  else { const n = parseInt(val); if (n > 10 && n < 40) { p.age = n; p.ageStatus = '✅'; } }
+  else { const n = parseInt(val); if (n > 10 && n < 40) { p.age = n; p.ageStatus = '✅'; showToast('Âge de ' + p.name + ' enregistré : ' + n + ' ans', 'success'); } else { showToast('Âge invalide (entre 11 et 39)', 'warning'); return; } }
   top50SaveLocal(); top50RenderTable();
 }
 
@@ -7292,10 +8123,14 @@ function top50SetNote(idx, val) {
   if (top50Data[idx]) { top50Data[idx].notes = val; top50SaveLocal(); }
 }
 
-function top50Remove(idx) {
-  if (confirm('Supprimer ce prospect ?')) {
-    top50Data.splice(idx, 1); top50SaveLocal(); top50RenderTable();
-  }
+async function top50Remove(idx) {
+  const p = top50Data[idx];
+  const ok = await spesConfirm('Supprimer <strong>' + (p?.name || 'ce prospect') + '</strong> de la liste ?', 'Supprimer le prospect', true);
+  if (!ok) return;
+  top50Data.splice(idx, 1);
+  top50SaveLocal();
+  top50RenderTable();
+  showToast('Prospect supprimé de la liste', 'info');
 }
 
 function top50OpenSPES(name, tag, server, role, tier, rank, lp) {
@@ -7328,7 +8163,7 @@ function top50ToggleView() {
 }
 
 function top50Export() {
-  if (!top50Data.length) { alert('Aucune donnée à exporter.'); return; }
+  if (!top50Data.length) { showToast('Aucun prospect à exporter — scannez d\'abord des joueurs', 'warning'); return; }
   const headers = ['Rang','Joueur','Tag','Tier','LP','Rôle','Score SPES','WR%','KDA','CS/min','Vision','KP%','Âge','Statut','Notes'];
   const rows = top50Data.map((p,i) => [
     i+1, p.name, p.tag||'', p.tier+' '+p.rank, p.lp, p.role||'',
@@ -7342,11 +8177,13 @@ function top50Export() {
   a.href = url;
   a.download = 'top50_prospects_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click(); URL.revokeObjectURL(url);
+  showToast(`Export CSV — ${top50Data.length} prospects`, 'success');
 }
 
 // Init
 top50LoadLocal();
 initAppMode();
+checkBackendStatus();
 
 
 </script>
@@ -7356,11 +8193,16 @@ initAppMode();
   <div onclick="event.stopPropagation()" style="max-width:900px;margin:0 auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px">
       <div style="display:flex;align-items:center;gap:12px">
-        <div style="width:36px;height:36px;background:var(--lime);border-radius:8px;display:flex;align-items:center;justify-content:center">
-          <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#080B10"/></svg>
+        <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+          <img src="assets/logos/logo-mark.svg" alt="VisionScore"
+               style="width:36px;height:36px;object-fit:contain"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+          <div style="display:none;width:36px;height:36px;background:var(--lime);border-radius:8px;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="#080B10"/></svg>
+          </div>
         </div>
         <div>
-          <div style="font-size:14px;font-weight:800;letter-spacing:.05em">SPES LAB</div>
+          <div style="font-size:14px;font-weight:800;letter-spacing:.05em">VisionScore</div>
           <div style="font-size:10px;color:var(--sub);font-family:monospace">RAPPORT SCOUTING</div>
         </div>
       </div>
@@ -7411,7 +8253,7 @@ initAppMode();
     </div>
 
     <div style="text-align:center;margin-top:24px;font-size:10px;color:var(--sub);font-family:monospace">
-      Généré par SPES Lab · <span id="pres-date"></span> · Cliquez n'importe où pour fermer
+      Généré par VisionScore · <span id="pres-date"></span> · Cliquez n'importe où pour fermer
     </div>
   </div>
 </div>
