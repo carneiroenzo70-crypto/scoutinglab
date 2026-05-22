@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>VisionScore — Scouting LoL Semi-Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ════════════════════════════════
    DESIGN SYSTEM
@@ -58,6 +58,48 @@
   --shadow-sm: 0 1px 6px rgba(100,120,160,.14);
   --shadow:    0 6px 28px rgba(100,120,160,.18);
 }
+/* ══ DARK THEME (toggle) ══════════════════════════════════ */
+body.theme-dark {
+  --bg:        #07090F;
+  --surf1:     #0B0E18;
+  --surf2:     #0F1320;
+  --surf3:     #141A28;
+  --border:    rgba(184,196,224,.06);
+  --border2:   rgba(184,196,224,.12);
+  --text:      #DFE2EF;
+  --sub:       #48526A;
+  --sub2:      #7A8BAA;
+  --fg:        #DFE2EF;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.4);
+  --shadow:    0 6px 24px rgba(0,0,0,.5);
+}
+body.theme-dark {
+  background-image:
+    radial-gradient(ellipse at 8% 12%, rgba(28,196,122,.05) 0%, transparent 42%),
+    radial-gradient(ellipse at 92% 88%, rgba(28,196,122,.04) 0%, transparent 38%);
+  background-attachment: fixed;
+}
+body.theme-dark .hd {
+  background: rgba(7,9,15,.96) !important;
+  border-bottom: 1px solid rgba(184,196,224,.06) !important;
+  box-shadow: none !important;
+}
+body.theme-dark .dim-header { background: rgba(15,19,32,.5) !important; }
+body.theme-dark .welcome-mode-card {
+  background: rgba(11,14,24,.85) !important;
+  border-color: rgba(184,196,224,.07) !important;
+  box-shadow: none !important;
+}
+body.theme-dark .card-title { color: rgba(184,196,224,.35) !important; }
+body.theme-dark .welcome-check-item { color: rgba(184,196,224,.45) !important; }
+body.theme-dark .welcome-stat-lbl { color: rgba(184,196,224,.35) !important; }
+body.theme-dark .map-tooltip { background: rgba(8,11,16,.95) !important; box-shadow: none !important; }
+body.theme-dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08) !important; }
+body.theme-dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14) !important; }
+body.theme-dark #theme-toggle { color: var(--sub2); }
+/* Dark theme — tint overlay de la carte */
+body.theme-dark .map-canvas-wrap { box-shadow: 0 22px 60px rgba(0,0,0,.45), 0 8px 20px rgba(0,0,0,.3); }
+
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 body {
   font-family:'Helvetica Neue', Arial, sans-serif;
@@ -80,7 +122,7 @@ h1,h2,h3,h4,h5,h6,
 button, .btn, select,
 .api-title, .hero-name, .hero-verdict,
 .dim-title, .dim-head, .score-lbl, .s-bar-label {
-  font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  font-family:'Outfit', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ── HEADER ── */
@@ -885,7 +927,7 @@ body.welcome-active #panel-welcome.active {
 }
 .welcome-stat-val {
   font-size:1.1rem; font-weight:700; color:var(--text);
-  font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  font-family:'Outfit', 'Helvetica Neue', Arial, sans-serif;
   letter-spacing:-.01em;
 }
 .welcome-stat-lbl {
@@ -1275,6 +1317,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
+    <!-- Toggle Dark / Light -->
+    <button id="theme-toggle" onclick="toggleTheme()" title="Basculer thème sombre/clair"
+      style="background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;
+             padding:5px 8px;display:flex;align-items:center;gap:4px;
+             color:var(--sub2);font-family:monospace;font-size:10px;letter-spacing:.04em;
+             transition:all .18s;">
+      <span id="theme-toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+      <span id="theme-toggle-lbl">Sombre</span>
+    </button>
     <div id="backend-status" title="Statut connexion backend Railway">
       <span id="backend-dot" class="checking"></span>
       <span id="backend-txt">API…</span>
@@ -6356,14 +6407,15 @@ async function fetchRiotData() {
             `<div class="rank-tier">${soloQ.tier} ${soloQ.rank}</div>`;
         }
       }
-      // Photo de profil DDragon
+      // Photo de profil DDragon — sum.profileIconId (pas acc qui n'a pas ce champ)
       const avatarEl = document.getElementById('pc-avatar');
-      if (avatarEl && acc.profileIconId != null) {
+      const iconId = sum?.profileIconId ?? acc?.profileIconId;
+      if (avatarEl && iconId != null) {
         fetch('https://ddragon.leagueoflegends.com/api/versions.json')
           .then(r => r.json())
           .then(versions => {
             const ver = versions[0];
-            avatarEl.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${ver}/img/profileicon/${acc.profileIconId}.png"
+            avatarEl.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${ver}/img/profileicon/${iconId}.png"
               style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:2px solid var(--lime-bd);display:block"
               onerror="this.style.display='none'">`;
           })
@@ -7128,11 +7180,16 @@ function processTimeline(timeline, puuid) {
         }
       }
 
-      if (evt.type === 'WARD_PLACED' && evt.creatorId === participantId && evt.position) {
-        mapData.wards.push({
-          x: evt.position.x, y: evt.position.y, t: evtMin,
-          wardType: evt.wardType || 'YELLOW_TRINKET'
-        });
+      // Wards — capture si c'est le joueur (ou tous si participantId non résolu)
+      if (evt.type === 'WARD_PLACED') {
+        const isPlayerWard = !participantId || (evt.creatorId === participantId) || (String(evt.creatorId) === String(participantId));
+        const pos = evt.position || evt.assistingParticipantIds; // fallback structure
+        if (isPlayerWard && evt.position && evt.position.x != null) {
+          mapData.wards.push({
+            x: evt.position.x, y: evt.position.y, t: evtMin,
+            wardType: evt.wardType || 'YELLOW_TRINKET'
+          });
+        }
       }
 
       if (evt.type === 'ELITE_MONSTER_KILL' && evt.position) {
@@ -7940,6 +7997,32 @@ if (window.location.protocol === 'file:') {
 
 
 // ── More menu nav ────────────────────────────────────────────
+// ── THEME TOGGLE ─────────────────────────────────────────
+function toggleTheme() {
+  const isDark = document.body.classList.toggle('theme-dark');
+  localStorage.setItem('vs-theme', isDark ? 'dark' : 'light');
+  const icon = document.getElementById('theme-toggle-icon');
+  const lbl  = document.getElementById('theme-toggle-lbl');
+  if (isDark) {
+    if (icon) icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    if (lbl) lbl.textContent = 'Clair';
+  } else {
+    if (icon) icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+    if (lbl) lbl.textContent = 'Sombre';
+  }
+}
+// Init theme depuis localStorage
+(function initTheme() {
+  const saved = localStorage.getItem('vs-theme');
+  if (saved === 'dark') {
+    document.body.classList.add('theme-dark');
+    const icon = document.getElementById('theme-toggle-icon');
+    const lbl  = document.getElementById('theme-toggle-lbl');
+    if (icon) icon.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+    if (lbl) lbl.textContent = 'Clair';
+  }
+})();
+
 function toggleMoreMenu(event) {
   const menu = document.getElementById('more-menu');
   if (!menu) return;
