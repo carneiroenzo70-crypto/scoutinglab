@@ -4,63 +4,78 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>VisionScore — Scouting LoL Semi-Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ════════════════════════════════
    DESIGN SYSTEM
 ════════════════════════════════ */
 :root {
-  /* Fond */
-  --bg:       #060810;
-  --surf1:    #0A0D15;
-  --surf2:    #0E1219;
-  --surf3:    #141820;
+  /* ── Fonds ── */
+  --bg:        #07090F;
+  --surf1:     #0B0E18;
+  --surf2:     #0F1320;
+  --surf3:     #141A28;
 
-  /* Bordures */
-  --border:   rgba(255,255,255,.055);
-  --border2:  rgba(255,255,255,.10);
+  /* ── Bordures ── */
+  --border:    rgba(184,196,224,.06);
+  --border2:   rgba(184,196,224,.12);
 
-  /* Texte */
-  --text:     #ECEAE4;
-  --sub:      #52596A;
-  --sub2:     #8899A6;
+  /* ── Texte Platine ── */
+  --text:      #DFE2EF;
+  --sub:       #48526A;
+  --sub2:      #7A8BAA;
+  --fg:        #DFE2EF;
 
-  /* Accents */
-  --lime:     #CAFF35;
-  --lime-dim: rgba(202,255,53,.09);
-  --lime-bd:  rgba(202,255,53,.20);
+  /* ── Émeraude — couleur primaire ── */
+  --lime:      #1CC47A;
+  --lime-dim:  rgba(28,196,122,.08);
+  --lime-bd:   rgba(28,196,122,.22);
+  --teal:      #15A878;
+  --teal-dim:  rgba(21,168,120,.08);
 
-  --red:      #FF5A4A;
-  --red-dim:  rgba(255,90,74,.09);
-  --amber:    #F5A623;
-  --amber-dim:rgba(245,166,35,.09);
-  --blue:     #4A9EFF;
-  --blue-dim: rgba(74,158,255,.09);
-  --teal:     #2DD4BF;
-  --teal-dim: rgba(45,212,191,.09);
-  --purple:   #A78BFA;
-  --purple-dim:rgba(167,139,250,.09);
+  /* ── Rouge électrique — CTA / alertes ── */
+  --red:       #E8194B;
+  --red-dim:   rgba(232,25,75,.08);
 
-  /* Alias text (compatibilité JS) */
-  --fg: #ECEAE4;
+  /* ── Accents secondaires (data viz seulement) ── */
+  --amber:     #D4714A;
+  --amber-dim: rgba(212,113,74,.08);
+  --blue:      #4A8FE8;
+  --blue-dim:  rgba(74,143,232,.08);
+  --purple:    #8A7FF5;
+  --purple-dim:rgba(138,127,245,.08);
 
-  /* Rayon */
-  --r:    10px;
-  --r-sm: 6px;
-  --r-lg: 14px;
-  --r-xl: 18px;
+  /* ── Platine accent ── */
+  --platinum:  #B8C4DC;
 
-  /* Ombres */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.35);
-  --shadow:    0 4px 16px rgba(0,0,0,.45);
+  /* ── Rayon ── */
+  --r:         10px;
+  --r-sm:      6px;
+  --r-lg:      14px;
+  --r-xl:      18px;
+
+  /* ── Ombres ── */
+  --shadow-sm: 0 1px 4px rgba(0,0,0,.4);
+  --shadow:    0 6px 24px rgba(0,0,0,.5);
 }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 body {
-  font-family:'Syne',sans-serif;
+  font-family:'Helvetica Neue', Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
   min-height:100vh;
   line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+/* Titres & UI labels → Space Grotesk */
+h1,h2,h3,h4,h5,h6,
+.hd-nav-item, .role-pill, .view-tab,
+.card-title, .player-name, .welcome-mode-card,
+button, .btn, select,
+.api-title, .hero-name, .hero-verdict,
+.dim-title, .dim-head, .score-lbl, .s-bar-label {
+  font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
 }
 
 /* ── HEADER ── */
@@ -84,6 +99,7 @@ body {
   font-size:12px; font-weight:600; letter-spacing:.04em;
   color:var(--sub2); cursor:pointer; border:none; background:none;
   transition:all .18s ease; position:relative;
+  display:inline-flex; align-items:center; gap:5px;
 }
 .hd-nav-item:hover { color:var(--text); background:var(--surf2); }
 .hd-nav-item.active {
@@ -183,6 +199,7 @@ body {
   font-size:12px; font-weight:600; letter-spacing:.03em;
   border:1px solid var(--border2); background:var(--surf1);
   color:var(--sub2); cursor:pointer; transition:all .15s;
+  display:inline-flex; align-items:center; gap:5px;
 }
 .role-pill:hover { border-color:var(--lime-bd); color:var(--text); }
 .role-pill.active { background:var(--lime-dim); border-color:var(--lime-bd); color:var(--lime); }
@@ -224,14 +241,14 @@ body {
 
 /* ── VERDICT ── */
 .verdict-card {
-  background:linear-gradient(135deg,rgba(202,255,53,.07),rgba(202,255,53,.03));
+  background:linear-gradient(135deg,rgba(28,196,122,.07),rgba(28,196,122,.03));
   border:1px solid var(--lime-bd);
   border-radius:var(--r-lg); padding:18px 20px; margin-bottom:16px;
   position:relative; overflow:hidden;
 }
 .verdict-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:1px;
-  background:linear-gradient(90deg,var(--lime),rgba(202,255,53,0));
+  background:linear-gradient(90deg,var(--lime),rgba(28,196,122,0));
 }
 .verdict-header { display:flex; align-items:center; gap:8px; margin-bottom:10px; }
 .verdict-icon {
@@ -247,7 +264,7 @@ body {
   font-family:monospace; font-size:10px;
   padding:3px 8px; border-radius:4px;
 }
-.vtag-g { background:rgba(200,245,60,.12); color:var(--lime); border:1px solid rgba(200,245,60,.2); }
+.vtag-g { background:rgba(28,196,122,.12); color:var(--lime); border:1px solid rgba(28,196,122,.2); }
 .vtag-r { background:var(--red-dim); color:var(--red); border:1px solid rgba(255,90,74,.2); }
 .vtag-n { background:var(--surf3); color:var(--sub2); border:1px solid var(--border); }
 
@@ -283,7 +300,7 @@ body {
 }
 .api-card::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:linear-gradient(90deg,var(--lime) 0%,var(--teal) 50%,rgba(45,212,191,0) 100%);
+  background:linear-gradient(90deg,var(--lime) 0%,var(--teal) 50%,rgba(21,168,120,0) 100%);
 }
 .api-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:14px; }
 .api-title { font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
@@ -312,7 +329,7 @@ body {
 }
 .fi-input:focus {
   border-color:var(--lime-bd);
-  box-shadow:0 0 0 3px rgba(202,255,53,.08);
+  box-shadow:0 0 0 3px rgba(28,196,122,.08);
 }
 .fi-input-wrap { position:relative; }
 .fi-eye {
@@ -330,11 +347,11 @@ body {
 }
 .btn-lime {
   background:var(--lime); color:#060810;
-  box-shadow:0 0 0 0 rgba(202,255,53,0);
+  box-shadow:0 0 0 0 rgba(28,196,122,0);
 }
 .btn-lime:hover {
-  background:#DCFF5A;
-  box-shadow:0 0 16px rgba(202,255,53,.18);
+  background:#22E28C;
+  box-shadow:0 0 18px rgba(28,196,122,.22);
   transform:translateY(-1px);
 }
 .btn-lime:active { transform:translateY(0); }
@@ -475,6 +492,7 @@ body {
   font-size:12px; font-weight:600;
   border:1px solid var(--border2); background:var(--surf2);
   color:var(--sub2); cursor:pointer; transition:all .15s;
+  display:inline-flex; align-items:center; gap:5px;
 }
 .view-tab.active { background:var(--lime-dim); border-color:var(--lime-bd); color:var(--lime); }
 
@@ -619,7 +637,7 @@ button { transition:all .18s ease; }
 ::-webkit-scrollbar-thumb:hover { background:rgba(255,255,255,.14); }
 
 /* ── Sélection de texte ── */
-::selection { background:rgba(202,255,53,.2); color:var(--text); }
+::selection { background:rgba(28,196,122,.22); color:var(--text); }
 
 /* ── Header amélioré ── */
 .hd {
@@ -629,7 +647,7 @@ button { transition:all .18s ease; }
   backdrop-filter:blur(24px) saturate(1.4);
 }
 .hd-mark {
-  box-shadow:0 0 12px rgba(202,255,53,.18);
+  /* clean — no glow on wordmark */
 }
 .hd-nav-item {
   padding:5px 12px; font-size:11.5px;
@@ -647,7 +665,7 @@ button { transition:all .18s ease; }
   color:var(--lime); border-color:var(--lime-bd);
   background:var(--lime-dim);
 }
-.hd-mode-agent:hover { box-shadow:0 0 8px rgba(202,255,53,.2); }
+.hd-mode-agent:hover { box-shadow:0 0 8px rgba(28,196,122,.22); }
 .hd-mode-coach {
   color:var(--purple); border-color:rgba(167,139,250,.3);
   background:var(--purple-dim);
@@ -668,20 +686,20 @@ button { transition:all .18s ease; }
   transition:border-color .18s, box-shadow .18s;
 }
 .fi-input:focus {
-  border-color:rgba(202,255,53,.35) !important;
-  box-shadow:0 0 0 3px rgba(202,255,53,.08);
+  border-color:rgba(28,196,122,.38) !important;
+  box-shadow:0 0 0 3px rgba(28,196,122,.08);
   outline:none;
 }
 
 /* ── Boutons ── */
 .btn-lime {
   background:var(--lime) !important;
-  color:#080B10 !important;
-  box-shadow:0 2px 8px rgba(202,255,53,.2);
+  color:#060810 !important;
+  box-shadow:0 2px 10px rgba(28,196,122,.22);
 }
 .btn-lime:hover {
-  background:#D4FF40 !important;
-  box-shadow:0 4px 16px rgba(202,255,53,.3);
+  background:#22E28C !important;
+  box-shadow:0 4px 18px rgba(28,196,122,.32);
   transform:translateY(-1px);
 }
 .btn-lime:active { transform:translateY(0); }
@@ -738,7 +756,7 @@ button { transition:all .18s ease; }
 }
 .spes-modal-box::before {
   content:''; position:absolute; top:0; left:0; right:0; height:2px;
-  background:linear-gradient(90deg,var(--lime),var(--teal),rgba(45,212,191,0));
+  background:linear-gradient(90deg,var(--lime),var(--teal),rgba(21,168,120,0));
   border-radius:var(--r-xl) var(--r-xl) 0 0;
 }
 .spes-modal-title {
@@ -756,7 +774,7 @@ button { transition:all .18s ease; }
 }
 .spes-modal-input:focus {
   border-color:var(--lime-bd);
-  box-shadow:0 0 0 3px rgba(202,255,53,.08);
+  box-shadow:0 0 0 3px rgba(28,196,122,.08);
 }
 .spes-modal-actions { display:flex; gap:8px; justify-content:flex-end; }
 .btn-danger {
@@ -784,7 +802,7 @@ button { transition:all .18s ease; }
   width:6px; height:6px; border-radius:50%;
   background:var(--sub); flex-shrink:0; transition:background .4s;
 }
-#backend-dot.online  { background:var(--lime); box-shadow:0 0 5px rgba(202,255,53,.5); }
+#backend-dot.online  { background:var(--lime); box-shadow:0 0 5px rgba(28,196,122,.5); }
 #backend-dot.offline { background:var(--red);  box-shadow:0 0 5px rgba(255,90,74,.5); }
 #backend-dot.checking { background:var(--amber); animation:pulse .9s ease infinite; }
 @keyframes pulse {
@@ -802,7 +820,8 @@ button { transition:all .18s ease; }
 
 /* ── Welcome screen ── */
 #panel-welcome {
-  background:radial-gradient(ellipse at 50% 0%, rgba(202,255,53,.06) 0%, transparent 65%),
+  background:radial-gradient(ellipse at 50% 0%, rgba(28,196,122,.07) 0%, transparent 60%),
+             radial-gradient(ellipse at 0% 100%, rgba(28,196,122,.04) 0%, transparent 50%),
              var(--bg);
 }
 body.welcome-active .sb { display:none !important; }
@@ -810,7 +829,8 @@ body.welcome-active .main {
   max-width:none !important;
   padding:0 !important;
 }
-body.welcome-active #panel-welcome {
+body.welcome-active #hd-nav-main { display:none !important; }
+body.welcome-active #panel-welcome.active {
   min-height:calc(100vh - 52px);
   display:flex !important;
   align-items:center;
@@ -831,7 +851,7 @@ body.welcome-active #panel-welcome {
 }
 .welcome-mode-card.agent:hover {
   border-color:var(--lime-bd);
-  background:rgba(202,255,53,.04);
+  background:rgba(28,196,122,.05);
 }
 .welcome-mode-card.coach:hover {
   border-color:rgba(167,139,250,.4);
@@ -847,12 +867,14 @@ body.welcome-active #panel-welcome {
   text-align:center;
 }
 .welcome-stat-val {
-  font-size:1.15rem; font-weight:800; color:var(--lime);
-  font-family:'DM Mono',monospace;
+  font-size:1.1rem; font-weight:700; color:var(--text);
+  font-family:'Space Grotesk', 'Helvetica Neue', Arial, sans-serif;
+  letter-spacing:-.01em;
 }
 .welcome-stat-lbl {
-  font-size:.68rem; color:var(--sub); text-transform:uppercase;
-  letter-spacing:.08em; margin-top:2px;
+  font-size:.66rem; color:rgba(184,196,224,.35); text-transform:uppercase;
+  letter-spacing:.1em; margin-top:3px;
+  font-family:monospace;
 }
 
 /* ── Radar overlay ── */
@@ -873,8 +895,8 @@ body.welcome-active #panel-welcome {
   animation:pepiteGlow 2s ease-in-out infinite alternate;
 }
 @keyframes pepiteGlow {
-  from { box-shadow:0 0 8px rgba(202,255,53,.1); }
-  to   { box-shadow:0 0 18px rgba(202,255,53,.22); }
+  from { box-shadow:0 0 8px rgba(28,196,122,.12); }
+  to   { box-shadow:0 0 20px rgba(28,196,122,.28); }
 }
 
 /* ── Top 50 table ── */
@@ -915,7 +937,7 @@ body.welcome-active #panel-welcome {
 /* ── Progress bar ── */
 #t50-prog-fill {
   background:linear-gradient(90deg, var(--lime), var(--teal));
-  box-shadow:0 0 8px rgba(202,255,53,.3);
+  box-shadow:0 0 8px rgba(28,196,122,.28);
 }
 
 /* ── Verdict card ── */
@@ -997,6 +1019,193 @@ body.welcome-active #panel-welcome {
   .role-pills { flex-wrap:wrap; }
   .hd-mode-badge { display:none; }
 }
+
+/* ══════════════════════════════════════════════════════════
+   VisionScore — Ultra Pro v3 · Platine / Émeraude / Rouge électrique
+══════════════════════════════════════════════════════════ */
+
+/* ── Header premium ── */
+.hd {
+  height:52px;
+  background:rgba(7,9,15,.96);
+  border-bottom:1px solid rgba(184,196,224,.06);
+  backdrop-filter:blur(28px) saturate(1.5);
+}
+.hd-mark svg {
+  filter:none;
+}
+/* Séparateur vertical dans nav */
+.hd-nav .hd-sep {
+  width:1px; height:14px;
+  background:rgba(184,196,224,.08);
+  margin:0 3px;
+  flex-shrink:0;
+}
+/* Bouton home (VS Mark) */
+#nav-home svg {
+  transition:opacity .18s, filter .18s;
+}
+#nav-home:hover svg {
+  filter:drop-shadow(0 0 6px rgba(28,196,122,.4));
+}
+
+/* ── Nav items pro ── */
+.hd-nav-item {
+  font-size:11.5px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.hd-nav-item.active {
+  box-shadow:inset 0 0 0 1px var(--lime-bd);
+}
+.hd-nav-item svg {
+  opacity:.7;
+  transition:opacity .15s;
+}
+.hd-nav-item:hover svg,
+.hd-nav-item.active svg { opacity:1; }
+
+/* ── Cards ultra pro ── */
+.card {
+  background:var(--surf1);
+  border:1px solid rgba(184,196,224,.06);
+  border-radius:12px;
+  transition:border-color .22s ease, box-shadow .22s ease;
+}
+.card:hover {
+  border-color:rgba(184,196,224,.11);
+  box-shadow:0 6px 28px rgba(0,0,0,.35);
+}
+.card-title {
+  font-size:9.5px;
+  letter-spacing:.14em;
+  color:rgba(184,196,224,.35);
+  text-transform:uppercase;
+  margin-bottom:16px;
+}
+
+/* ── Player card accent line ── */
+.player-card::after {
+  background:linear-gradient(180deg, var(--lime) 0%, var(--teal) 100%);
+}
+
+/* ── Score ring ── */
+.ring-val {
+  font-size:22px;
+  letter-spacing:-.02em;
+}
+
+/* ── Stat cells ── */
+.stat-cell {
+  background:var(--surf2);
+  border:1px solid rgba(184,196,224,.06);
+  border-radius:10px;
+  padding:14px 16px;
+}
+.stat-cell:hover {
+  border-color:rgba(184,196,224,.11);
+}
+.stat-val { font-size:20px; letter-spacing:-.02em; }
+.stat-lbl { font-size:8.5px; letter-spacing:.1em; }
+
+/* ── Role pills pro ── */
+.role-pill {
+  border-radius:6px;
+  letter-spacing:.04em;
+  font-size:11.5px;
+}
+
+/* ── Sections title bar ── */
+.dim-section {
+  border:1px solid rgba(184,196,224,.06);
+}
+.dim-header {
+  background:rgba(15,19,32,.5);
+}
+
+/* ── API card refinement ── */
+.api-card {
+  border:1px solid rgba(184,196,224,.06);
+}
+
+/* ── HD badge text ── */
+.hd-badge {
+  font-size:9px;
+  letter-spacing:.07em;
+  padding:2px 8px;
+}
+
+/* ── Verdict card v3 ── */
+.verdict-card.positive {
+  background:linear-gradient(135deg, rgba(28,196,122,.06), rgba(28,196,122,.02));
+}
+.verdict-card.negative {
+  background:linear-gradient(135deg, rgba(232,25,75,.06), rgba(232,25,75,.02));
+}
+.verdict-card.neutral {
+  background:linear-gradient(135deg, rgba(21,168,120,.06), rgba(21,168,120,.02));
+}
+.verdict-card.warning {
+  background:linear-gradient(135deg, rgba(212,113,74,.06), rgba(212,113,74,.02));
+}
+
+/* ── Table refinements ── */
+.champ-table th { font-size:8.5px; letter-spacing:.12em; }
+.champ-table td { font-size:11.5px; }
+
+/* ── Progress bar ── */
+.prog-fill {
+  background:linear-gradient(90deg, var(--lime), var(--teal));
+}
+
+/* ── Welcome screen ultra ── */
+.welcome-mode-card {
+  border-radius:14px;
+  padding:2.25rem 1.75rem;
+  background:rgba(11,14,24,.85);
+  border:1px solid rgba(184,196,224,.07);
+  backdrop-filter:blur(12px);
+  position:relative;
+  overflow:hidden;
+}
+.welcome-mode-card::after {
+  content:'';
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:2px;
+  opacity:0;
+  transition:opacity .22s;
+}
+.welcome-mode-card.agent::after {
+  background:linear-gradient(90deg, var(--lime), var(--teal));
+}
+.welcome-mode-card.coach::after {
+  background:linear-gradient(90deg, #8A7FF5, #A78BFA);
+}
+.welcome-mode-card:hover::after { opacity:1; }
+.welcome-mode-card:hover {
+  transform:translateY(-5px);
+  box-shadow:0 16px 48px rgba(0,0,0,.5);
+}
+
+/* ── Welcome check items pro ── */
+.welcome-check-item {
+  display:flex; align-items:center; gap:.45rem;
+  font-size:.72rem; color:rgba(184,196,224,.45);
+  justify-content:center;
+}
+.welcome-check-item svg { flex-shrink:0; }
+
+/* ── Scrollbar minimal ── */
+::-webkit-scrollbar { width:3px; height:3px; }
+::-webkit-scrollbar-thumb { background:rgba(184,196,224,.08); }
+::-webkit-scrollbar-thumb:hover { background:rgba(184,196,224,.16); }
+
+/* ── Focus ring custom ── */
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline:1.5px solid rgba(28,196,122,.4);
+  outline-offset:2px;
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -1009,40 +1218,57 @@ body.welcome-active #panel-welcome {
 <header class="hd">
   <div class="hd-logo">
     <div class="hd-mark">
-      <img src="assets/logos/logo-platine.svg" alt="VisionScore" class="hd-logo-img"
-           onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <span class="hd-name" style="display:none">VisionScore</span>
+      <!-- Logo principal only — no mark in header (mark = home button) -->
+      <svg style="height:28px;width:auto" viewBox="0 0 1321.3 252.15" fill="var(--text)" xmlns="http://www.w3.org/2000/svg">
+        <path d="M147.48,5.73h-35.23c8.31,13.46,12.32,28.07,12.32,43.24,0,12.03-2.29,24.62-10.03,46.68l-28.07,82.77-36.08-110.54C38.08,30.35,32.07,10.6,32.07,5.73H0l65.87,197.89h24.05l37.23-104.82c13.17-36.65,21.48-56.99,21.48-79.9,0-5.44-.57-9.73-1.15-13.17Z"/>
+        <path d="M181.56,0l-20.33,20.33,20.33,19.76,20.34-19.76L181.56,0ZM166.67,202.48h29.78c-.57-2.86-.86-21.48-.86-54.41V59l-29.5,5.72c.86,2.58,1.43,21.2,1.43,54.13v29.21c0,32.93-.29,51.55-.86,54.41Z"/>
+        <path d="M322.75,162.95c0,27.2-23.77,43.53-51.26,43.53-20.91,0-40.96-9.73-56.99-24.63l20.05-24.05c9.73,20.62,24.34,36.37,40.66,36.37,12.03,0,21.77-7.73,21.77-21.2,0-18.71-20.36-26.55-39.77-36.31-2.19-1.1-4.38-2.23-6.52-3.4h0c-15.14-8.29-28.16-18.73-28.16-37.89,0-22.91,20.04-38.66,49.83-38.66,21.19,0,37.81,8.31,49.26,17.47l-18.9,21.76c-7.73-13.74-18.9-27.2-34.94-27.2-12.31,0-19.76,7.16-19.76,17.76,0,21.23,30.01,26.94,52,40.52,2.9,1.79,5.65,3.71,8.18,5.82.39.33.78.67,1.17,1,.59.52,1.17,1.05,1.72,1.6.48.46.94.94,1.4,1.42,2.16,2.29,4.05,4.78,5.61,7.53,2.94,5.18,4.67,11.26,4.67,18.58Z"/>
+        <path d="M376.02,152.3c-.86-.22-1.78-.43-2.76-.64-2.02-.42-4.3-.81-7-1.2-3.41-.5-7.01-.93-10.81-1.38-2.44-.29-4.95-.6-7.49-.92,0,32.87-.29,51.46-.86,54.32h29.78c-.54-2.74-.83-19.88-.86-50.17ZM346.52,64.72c.86,2.58,1.43,21.2,1.43,54.13v2.08c2.74-.34,5.52-.65,8.21-.96,3.58-.4,6.96-.78,10.28-1.21,2.84-.37,5.13-.72,7.2-1.09.84-.15,1.64-.3,2.38-.45v-58.22l-29.5,5.72ZM361.99,0l-20.34,20.33,20.34,19.76,20.33-19.76L361.99,0Z"/>
+        <path d="M582.21,148.81l-.64.08c-2.04.24-4.09.47-6.09.69-2.34.26-4.62.52-6.84.79-2.33.28-4.6.57-6.81.9-1.89.29-3.57.56-5.12.86-.92.18-1.78.36-2.57.54-.02,30.05-.31,47.07-.86,49.8h29.78c-.56-2.84-.85-21.2-.86-53.66Z"/>
+        <path d="M674.42,202.48h-30.65c0-4.3-1.43-21.2-5.73-53.84l-.79-6.11-.88-6.72-.12-.89h0s-.91-7-.91-7l-3.31-25.39c-2.29-18.04-9.73-25.2-19.19-25.2-8.59,0-17.18,6.3-30.64,22.34v21.53c-2.01-.26-4-.5-5.94-.73-5.06-.61-9.85-1.18-14.19-1.91-1.87-.32-3.48-.64-4.93-.96-1.09-.25-2.09-.51-3.01-.77v-11.71c0-14.89-1.15-28.07-3.15-40.39l27.77-5.72c1.43,8.3,2,16.89,2.29,25.77,17.47-19.47,30.64-26.35,44.67-26.35,18.04,0,31.22,11.17,34.94,38.66l4.51,34.62.98,7.53,8.25,63.25Z"/>
+        <path d="M582.21,134.87v.26c-2.24.28-4.51.54-6.79.79-2.27.26-4.54.51-6.79.77-3,.35-5.96.73-8.82,1.15-1.95.29-3.84.6-5.67.96-10.68,2.06-19.15,5.36-21.71,12.11-3.91-11.42-6.39-13.47-21.15-16.05-.16-.03-.33-.05-.5-.09.17-.03.33-.05.5-.08,1.58-.26,3.15-.66,4.59-1.37,8.59-4.27,13.25-12.99,9.78-22.36-1.2-3.24-2.56-6.52-4.26-9.54-3.23-5.73-6.76-10.49-11.36-15.2-4.87-4.97-5.12-5.21-10.56-9.56-.01-.01-.03-.03-.05-.03-.64-.5-2.6-1.74-3.27-2.04l3.48,1.38c.24.11.49.22.73.33,19.36,8.84,30.61,23.73,36.46,42.39,1.16,3.73,3.4,6.77,6.48,8.4,3.04,1.6,6.73,2.79,10.85,3.73,1.81.41,3.71.77,5.67,1.11,2.82.48,5.78.89,8.82,1.27,2.23.29,4.49.56,6.79.83,2.25.27,4.52.54,6.79.84Z"/>
+        <path d="M482.04,68.23c-11.42,3.91-13.47,6.39-16.05,21.15-.03.16-.05.33-.09.49-.03-.17-.05-.33-.08-.5-.26-1.58-.66-3.15-1.37-4.6-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.11.37-6.23,1.15-3.24,1.2-6.52,2.57-9.54,4.27-5.73,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.5.64-1.74,2.61-2.04,3.28l1.38-3.49c.11-.24.22-.49.33-.73,8.84-19.36,23.73-30.6,42.4-36.44,3.72-1.16,6.76-3.4,8.39-6.48,4.85-9.18,5.86-24.31,7.83-39.33.03-.22.06-.43.09-.65.03.22.05.43.08.66,2.67,21.35,3.57,45.52,15.83,50.18Z"/>
+        <path d="M526.07,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.39,36.44-3.72,1.16-6.77,3.4-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.05.43-.08.66-.03-.22-.05-.43-.09-.66-2.67-21.36-3.56-45.52-15.83-50.18,11.42-3.91,13.48-6.39,16.05-21.15.03-.17.05-.33.08-.5.03.17.05.34.08.5.26,1.58.67,3.15,1.38,4.6,3.3,6.64,9.26,10.93,16.13,10.93,2.02,0,4.1-.37,6.22-1.15,3.25-1.19,6.52-2.56,9.55-4.26,5.73-3.23,10.49-6.76,15.19-11.36,4.98-4.87,5.21-5.12,9.57-10.56.01-.01.02-.03.03-.04.49-.63,1.73-2.61,2.03-3.28Z"/>
+        <path d="M435.62,194.95l-3.48-1.37c-.24-.11-.49-.22-.73-.34-19.36-8.84-30.6-23.73-36.44-42.39-1.17-3.72-3.4-6.77-6.48-8.39-3.43-1.81-7.7-3.09-12.48-4.08-2.48-.52-5.1-.95-7.81-1.34-6.04-.88-12.56-1.55-19.05-2.41-.22-.03-.43-.05-.65-.08.22-.03.43-.05.65-.09,6.3-.78,12.84-1.42,19.05-2.23,2.68-.35,5.29-.73,7.81-1.19,11.43-2.03,20.64-5.31,23.34-12.41,3.91,11.42,6.39,13.48,21.15,16.05.16.03.33.06.49.09-.17.03-.33.06-.5.08-1.58.26-3.16.66-4.6,1.38-8.59,4.26-13.25,12.99-9.78,22.36,1.2,3.25,2.57,6.52,4.27,9.55,3.23,5.73,6.76,10.49,11.36,15.19,4.87,4.98,5.12,5.21,10.55,9.57.01.01.03.03.05.03.64.5,2.61,1.73,3.27,2.03Z"/>
+        <path d="M823.19,137.12c1.28,4.42,1.91,9.09,1.91,14.03,0,33.22-28.92,54.98-64.43,54.98s-58.71-20.62-68.74-49.83l27.5-11.45c7.45,29.78,24.05,48.11,46.11,48.11,18.61,0,33.79-12.6,33.79-32.08,0-14.31-8.31-28.64-34.08-41.23l-26.06-12.6c-27.78-13.46-41.53-32.36-41.53-54.7,0-31.79,27.78-52.12,60.43-52.12s58.13,19.76,72.74,52.41l-28.35,7.74c-9.16-28.07-24.05-47.55-48.4-47.55-18.33,0-31.79,11.17-31.79,29.79,0,14.89,8.59,28.35,34.08,41.23l26.34,12.89c20.04,9.92,32.93,21.41,38.76,35.48.67,1.6,1.24,3.23,1.72,4.9Z"/>
+        <path d="M1148.71,148.33l-1.21.16-.31.04-.37.05c-2.93.36-5.9.69-8.78,1.02-4.83.54-9.39,1.05-13.68,1.69-.54.08-1.07.16-1.58.24-.75.12-1.47.24-2.15.36-.02,30.15-.31,47.22-.85,49.96h29.78c-.56-2.84-.86-21.14-.86-53.51Z"/>
+        <path d="M1279,182.81c-21.75.59-38.52-15.57-45.24-41.45l19.16-5.95.59-.19,67.18-20.86c-6.66-34.2-28.22-57.96-58.28-57.15-32.9.89-57.54,31.42-57.29,73.21,0,.75.01,1.5.03,2.25.09,3.43.34,6.76.74,10,4.72,38.38,30.31,62.79,62.52,61.92,26.05-.71,43.36-17.51,52.89-35.81l-4.24-8.48c-9.94,14.02-23.47,22.12-38.07,22.52ZM1230.56,118.52c-.83-30.63,10.71-48.71,27.6-49.17,17.75-.48,29.18,19.27,33.52,42.06l-60.22,19.11c-.39-4-.79-8-.9-12.01Z"/>
+        <path d="M1202.26,60.94l-5.44,33.22c-8.88-4.58-15.18-7.73-19.47-7.73-5.61,0-10.4,4.38-18.9,18.52-1.59,2.63-3.3,5.6-5.17,8.94-1.35,2.42-2.78,5.04-4.31,7.86l-1.48-.19-.22-.03-.37-.05c-2.71-.35-5.43-.68-8.06-1-5.08-.6-9.88-1.18-14.24-1.92-.5-.09-1.01-.18-1.52-.26-.86-.16-1.67-.31-2.44-.48v-13.34c0-14.31-1.15-27.49-3.43-40.38l27.78-5.73c1.72,14.89,2.57,28.64,2.57,45.82,1.24-2.6,2.42-5.07,3.56-7.41,4.17-8.61,7.72-15.5,11-20.95,8.02-13.33,14.4-18.03,24.39-18.03,5.15,0,10.31,1.15,15.75,3.15Z"/>
+        <path d="M1145.79,135.02c-.22.03-.43.05-.65.08-7.57.94-15.51,1.67-22.8,2.76-.57.09-1.13.18-1.7.26-12.5,2-22.81,5.24-25.68,12.81-3.91-11.42-6.39-13.48-21.16-16.05-.16-.03-.33-.05-.49-.09.17-.03.33-.05.5-.08,1.57-.26,3.15-.66,4.59-1.38,8.59-4.26,13.25-12.98,9.78-22.36-1.2-3.24-2.57-6.52-4.27-9.54-3.23-5.73-6.75-10.49-11.36-15.2-4.87-4.98-5.12-5.21-10.55-9.56-.01-.01-.03-.03-.05-.03-.64-.51-2.61-1.74-3.27-2.04l3.48,1.37c.25.11.5.22.74.34,19.36,8.84,30.59,23.73,36.43,42.4,1.17,3.71,3.41,6.76,6.48,8.39,3.98,2.1,9.09,3.48,14.82,4.53.56.1,1.13.2,1.7.3,7.05,1.19,14.94,1.96,22.8,2.99.22.03.43.06.65.09Z"/>
+        <path d="M998.15,194.95l-3.48-1.37c-.25-.11-.5-.22-.74-.34-19.36-8.84-30.59-23.73-36.43-42.39-1.17-3.72-3.41-6.77-6.48-8.39-5.21-2.76-12.34-4.27-20.28-5.43-6.04-.88-12.55-1.55-19.04-2.4-.22-.03-.43-.06-.65-.09.22-.03.43-.05.65-.08,6.29-.79,12.83-1.42,19.04-2.23,14.87-1.95,27.86-4.94,31.14-13.6,3.91,11.42,6.39,13.48,21.16,16.05.16.03.32.06.49.09-.17.03-.34.05-.5.08-1.58.26-3.15.66-4.59,1.38-8.59,4.26-13.25,12.98-9.78,22.36,1.2,3.25,2.56,6.52,4.26,9.54,3.23,5.74,6.76,10.49,11.36,15.2,4.88,4.98,5.12,5.21,10.56,9.56.01.01.03.03.05.03.64.51,2.61,1.74,3.27,2.04Z"/>
+        <path d="M1044.57,68.24c-11.42,3.9-13.48,6.38-16.05,21.15-.03.16-.05.33-.08.49-.03-.17-.05-.33-.08-.5-.26-1.58-.67-3.15-1.38-4.59-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.1.37-6.22,1.15-3.25,1.2-6.52,2.57-9.54,4.27-5.74,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.51.64-1.74,2.61-2.04,3.27l1.37-3.48c.11-.25.22-.5.34-.74,8.84-19.36,23.73-30.59,42.39-36.43,3.72-1.17,6.77-3.4,8.39-6.48,4.85-9.17,5.86-24.31,7.83-39.32.03-.22.05-.43.09-.65.03.22.05.43.08.65,2.67,21.36,3.56,45.53,15.83,50.19Z"/>
+        <path d="M870.35,117.64c0,2.82.11,5.61.32,8.34.18,2.29.43,4.54.75,6.75.05.39.11.77.17,1.15.07.45.14.89.22,1.33.07.43.15.85.22,1.27.44,2.4.96,4.74,1.57,7.01,6.18,23.21,20.88,39.73,41.14,39.73,13.46,0,25.11-7.2,32.97-19.62,1.49,3.54,3.16,6.9,5.02,10.08-9.08,17.21-25.64,31.02-48.87,31.02-31.81,0-56.51-26.64-59.3-64.88-.18-2.38-.26-4.82-.26-7.29,0-1.07.01-2.14.05-3.21,1.23-39.24,24.93-71.82,59.23-71.82,22.37,0,41.2,13.38,51.14,41.76.24.68.48,1.36.7,2.06l-1.62.38-25.3,5.93c-5.44-22.05-15.47-38.38-30.08-38.38-17.18,0-28.07,20.62-28.07,48.4Z"/>
+        <path d="M1088.6,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.4,36.43-3.71,1.17-6.76,3.41-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.06.43-.09.65-.03-.22-.05-.43-.08-.65-2.67-21.36-3.57-45.53-15.83-50.19,11.42-3.9,13.47-6.38,16.05-21.14.03-.16.06-.33.09-.5.03.17.05.33.08.5.26,1.58.66,3.15,1.38,4.59,3.3,6.64,9.26,10.93,16.13,10.93,2.01,0,4.1-.37,6.22-1.15,3.25-1.2,6.52-2.56,9.54-4.27,5.74-3.22,10.49-6.76,15.2-11.36,4.98-4.87,5.21-5.12,9.56-10.55.01-.01.03-.03.03-.05.5-.64,1.74-2.61,2.04-3.27Z"/>
+      </svg>
     </div>
   </div>
   <nav class="hd-nav" id="hd-nav-main">
-    <button onclick="resetToWelcome()" id="nav-home" style="background:none;border:none;cursor:pointer;padding:5px 8px;color:var(--sub);font-size:.78rem;display:flex;align-items:center;gap:5px;border-radius:5px;transition:all .15s" title="Accueil — changer de mode" onmouseover="this.style.color='var(--text)';this.style.background='var(--surf2)'" onmouseout="this.style.color='var(--sub)';this.style.background='none'">
-      <svg width="13" height="13" viewBox="0 0 15 15" fill="none"><polygon points="7.5,1 13,4.5 13,10.5 7.5,14 2,10.5 2,4.5" fill="currentColor"/></svg>
+    <button onclick="resetToWelcome()" id="nav-home" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--sub);display:flex;align-items:center;border-radius:6px;transition:all .15s;opacity:.65" title="Accueil — changer de mode" onmouseover="this.style.opacity='1';this.style.background='var(--surf2)'" onmouseout="this.style.opacity='.65';this.style.background='none'">
+      <svg style="height:22px;width:22px" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/><path d="M199.45,216.97l11-4.58c2.98,11.92,9.62,19.25,18.45,19.25,7.45,0,13.52-5.04,13.52-12.83,0-5.73-3.32-11.46-13.63-16.5l-10.43-5.04c-11.11-5.38-16.61-12.95-16.61-21.88,0-12.72,11.11-20.85,24.18-20.85s23.26,7.91,29.1,20.97l-11.34,3.09c-3.67-11.23-9.62-19.02-19.36-19.02-7.33,0-12.72,4.47-12.72,11.92,0,5.96,3.44,11.34,13.63,16.5l10.54,5.16c11.34,5.61,16.96,12.49,16.96,21.77,0,13.29-11.57,22-25.78,22s-23.49-8.25-27.5-19.94Z"/><path d="M136.4,155.5h12.83c0,1.95,2.41,9.85,7.33,24.86l14.44,44.23,11.23-33.11c3.09-8.82,4.01-13.86,4.01-18.68,0-6.07-1.6-11.92-4.93-17.3h14.09c.23,1.37.46,3.09.46,5.27,0,9.17-3.32,17.3-8.59,31.97l-14.89,41.94h-9.62l-26.35-79.17Z"/></svg>
     </button>
     <span id="mode-badge" style="display:none;font-size:.68rem;font-weight:700;letter-spacing:.06em;padding:2px 9px;border-radius:4px;border:1px solid;font-family:monospace;margin-right:2px"></span>
     <div style="width:1px;height:14px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
-    <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')">🔍 Scouter</button>
-    <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')">📋 Résultats</button>
-    <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')">⚡ Comparer</button>
-    <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')">🏆 Top 50</button>
-    <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')">🤝 Agent</button>
-    <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)">··· Plus</button>
+    <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouter</button>
+    <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Résultats</button>
+    <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg> Comparer</button>
+    <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
+    <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Agent</button>
+    <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
     <div id="backend-status" title="Statut connexion backend Railway">
       <span id="backend-dot" class="checking"></span>
       <span id="backend-txt">API…</span>
     </div>
-    <button class="hd-mode-badge hd-mode-agent" onclick="setAppMode('agent')" id="mode-btn-agent" title="Mode Agent — scouting et placement de joueurs">🎯 Agent</button>
-    <button class="hd-mode-badge hd-mode-coach" onclick="setAppMode('coach')" id="mode-btn-coach" title="Mode Coach — comparaison et roster">📊 Coach</button>
   </div>
 </header>
 <!-- Dropdown Plus — flottant, hors du flux normal -->
 <div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-  <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'">📈 Graphiques</button>
-  <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'">🗺 Carte</button>
-  <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'">📁 Historique</button>
+  <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Graphiques</button>
+  <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Carte</button>
+  <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
 </div>
 
 <!-- ════ SHELL ════ -->
@@ -1082,12 +1308,12 @@ body.welcome-active #panel-welcome {
     </button>
 
     <button class="sb-item" onclick="switchPanel('analyse');setSbActive(this)">
-      <span class="sb-dot"></span>📊 Analyse multi-joueurs
+      <span class="sb-dot"></span>Analyse multi-joueurs
     </button>
 
     <div class="sb-sect">Liens</div>
     <button class="sb-item" onclick="switchPanel('history');setSbActive(this)">
-      <span class="sb-dot"></span>📁 Historique
+      <span class="sb-dot"></span>Historique
     </button>
     <div id="sb-links" style="display:flex;flex-direction:column;gap:4px;padding:0 6px">
       <span style="font-size:11px;color:var(--sub)">Entrez un pseudo</span>
@@ -1104,14 +1330,43 @@ body.welcome-active #panel-welcome {
         <!-- Logo centré -->
         <div style="text-align:center;margin-bottom:3rem">
           <div style="margin-bottom:1.25rem">
-            <img src="assets/logos/logo-platine.svg" alt="VisionScore"
-                 style="height:80px;width:auto;object-fit:contain;max-width:100%"
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
-            <div style="display:none;font-size:2rem;font-weight:800;letter-spacing:.04em;color:var(--text)">VisionScore</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:20px">
+              <!-- Logo mark inline -->
+              <svg style="height:72px;width:72px;flex-shrink:0" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg">
+                <path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/>
+                <path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/>
+                <path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/>
+                <path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/>
+                <path d="M199.45,216.97l11-4.58c2.98,11.92,9.62,19.25,18.45,19.25,7.45,0,13.52-5.04,13.52-12.83,0-5.73-3.32-11.46-13.63-16.5l-10.43-5.04c-11.11-5.38-16.61-12.95-16.61-21.88,0-12.72,11.11-20.85,24.18-20.85s23.26,7.91,29.1,20.97l-11.34,3.09c-3.67-11.23-9.62-19.02-19.36-19.02-7.33,0-12.72,4.47-12.72,11.92,0,5.96,3.44,11.34,13.63,16.5l10.54,5.16c11.34,5.61,16.96,12.49,16.96,21.77,0,13.29-11.57,22-25.78,22s-23.49-8.25-27.5-19.94Z"/>
+                <path d="M136.4,155.5h12.83c0,1.95,2.41,9.85,7.33,24.86l14.44,44.23,11.23-33.11c3.09-8.82,4.01-13.86,4.01-18.68,0-6.07-1.6-11.92-4.93-17.3h14.09c.23,1.37.46,3.09.46,5.27,0,9.17-3.32,17.3-8.59,31.97l-14.89,41.94h-9.62l-26.35-79.17Z"/>
+              </svg>
+              <!-- Logo principal inline -->
+              <svg style="height:54px;width:auto" viewBox="0 0 1321.3 252.15" fill="var(--text)" xmlns="http://www.w3.org/2000/svg">
+                <path d="M147.48,5.73h-35.23c8.31,13.46,12.32,28.07,12.32,43.24,0,12.03-2.29,24.62-10.03,46.68l-28.07,82.77-36.08-110.54C38.08,30.35,32.07,10.6,32.07,5.73H0l65.87,197.89h24.05l37.23-104.82c13.17-36.65,21.48-56.99,21.48-79.9,0-5.44-.57-9.73-1.15-13.17Z"/>
+                <path d="M181.56,0l-20.33,20.33,20.33,19.76,20.34-19.76L181.56,0ZM166.67,202.48h29.78c-.57-2.86-.86-21.48-.86-54.41V59l-29.5,5.72c.86,2.58,1.43,21.2,1.43,54.13v29.21c0,32.93-.29,51.55-.86,54.41Z"/>
+                <path d="M322.75,162.95c0,27.2-23.77,43.53-51.26,43.53-20.91,0-40.96-9.73-56.99-24.63l20.05-24.05c9.73,20.62,24.34,36.37,40.66,36.37,12.03,0,21.77-7.73,21.77-21.2,0-18.71-20.36-26.55-39.77-36.31-2.19-1.1-4.38-2.23-6.52-3.4h0c-15.14-8.29-28.16-18.73-28.16-37.89,0-22.91,20.04-38.66,49.83-38.66,21.19,0,37.81,8.31,49.26,17.47l-18.9,21.76c-7.73-13.74-18.9-27.2-34.94-27.2-12.31,0-19.76,7.16-19.76,17.76,0,21.23,30.01,26.94,52,40.52,2.9,1.79,5.65,3.71,8.18,5.82.39.33.78.67,1.17,1,.59.52,1.17,1.05,1.72,1.6.48.46.94.94,1.4,1.42,2.16,2.29,4.05,4.78,5.61,7.53,2.94,5.18,4.67,11.26,4.67,18.58Z"/>
+                <path d="M376.02,152.3c-.86-.22-1.78-.43-2.76-.64-2.02-.42-4.3-.81-7-1.2-3.41-.5-7.01-.93-10.81-1.38-2.44-.29-4.95-.6-7.49-.92,0,32.87-.29,51.46-.86,54.32h29.78c-.54-2.74-.83-19.88-.86-50.17ZM346.52,64.72c.86,2.58,1.43,21.2,1.43,54.13v2.08c2.74-.34,5.52-.65,8.21-.96,3.58-.4,6.96-.78,10.28-1.21,2.84-.37,5.13-.72,7.2-1.09.84-.15,1.64-.3,2.38-.45v-58.22l-29.5,5.72ZM361.99,0l-20.34,20.33,20.34,19.76,20.33-19.76L361.99,0Z"/>
+                <path d="M582.21,148.81l-.64.08c-2.04.24-4.09.47-6.09.69-2.34.26-4.62.52-6.84.79-2.33.28-4.6.57-6.81.9-1.89.29-3.57.56-5.12.86-.92.18-1.78.36-2.57.54-.02,30.05-.31,47.07-.86,49.8h29.78c-.56-2.84-.85-21.2-.86-53.66Z"/>
+                <path d="M674.42,202.48h-30.65c0-4.3-1.43-21.2-5.73-53.84l-.79-6.11-.88-6.72-.12-.89h0s-.91-7-.91-7l-3.31-25.39c-2.29-18.04-9.73-25.2-19.19-25.2-8.59,0-17.18,6.3-30.64,22.34v21.53c-2.01-.26-4-.5-5.94-.73-5.06-.61-9.85-1.18-14.19-1.91-1.87-.32-3.48-.64-4.93-.96-1.09-.25-2.09-.51-3.01-.77v-11.71c0-14.89-1.15-28.07-3.15-40.39l27.77-5.72c1.43,8.3,2,16.89,2.29,25.77,17.47-19.47,30.64-26.35,44.67-26.35,18.04,0,31.22,11.17,34.94,38.66l4.51,34.62.98,7.53,8.25,63.25Z"/>
+                <path d="M582.21,134.87v.26c-2.24.28-4.51.54-6.79.79-2.27.26-4.54.51-6.79.77-3,.35-5.96.73-8.82,1.15-1.95.29-3.84.6-5.67.96-10.68,2.06-19.15,5.36-21.71,12.11-3.91-11.42-6.39-13.47-21.15-16.05-.16-.03-.33-.05-.5-.09.17-.03.33-.05.5-.08,1.58-.26,3.15-.66,4.59-1.37,8.59-4.27,13.25-12.99,9.78-22.36-1.2-3.24-2.56-6.52-4.26-9.54-3.23-5.73-6.76-10.49-11.36-15.2-4.87-4.97-5.12-5.21-10.56-9.56-.01-.01-.03-.03-.05-.03-.64-.5-2.6-1.74-3.27-2.04l3.48,1.38c.24.11.49.22.73.33,19.36,8.84,30.61,23.73,36.46,42.39,1.16,3.73,3.4,6.77,6.48,8.4,3.04,1.6,6.73,2.79,10.85,3.73,1.81.41,3.71.77,5.67,1.11,2.82.48,5.78.89,8.82,1.27,2.23.29,4.49.56,6.79.83,2.25.27,4.52.54,6.79.84Z"/>
+                <path d="M482.04,68.23c-11.42,3.91-13.47,6.39-16.05,21.15-.03.16-.05.33-.09.49-.03-.17-.05-.33-.08-.5-.26-1.58-.66-3.15-1.37-4.6-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.11.37-6.23,1.15-3.24,1.2-6.52,2.57-9.54,4.27-5.73,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.5.64-1.74,2.61-2.04,3.28l1.38-3.49c.11-.24.22-.49.33-.73,8.84-19.36,23.73-30.6,42.4-36.44,3.72-1.16,6.76-3.4,8.39-6.48,4.85-9.18,5.86-24.31,7.83-39.33.03-.22.06-.43.09-.65.03.22.05.43.08.66,2.67,21.35,3.57,45.52,15.83,50.18Z"/>
+                <path d="M526.07,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.39,36.44-3.72,1.16-6.77,3.4-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.05.43-.08.66-.03-.22-.05-.43-.09-.66-2.67-21.36-3.56-45.52-15.83-50.18,11.42-3.91,13.48-6.39,16.05-21.15.03-.17.05-.33.08-.5.03.17.05.34.08.5.26,1.58.67,3.15,1.38,4.6,3.3,6.64,9.26,10.93,16.13,10.93,2.02,0,4.1-.37,6.22-1.15,3.25-1.19,6.52-2.56,9.55-4.26,5.73-3.23,10.49-6.76,15.19-11.36,4.98-4.87,5.21-5.12,9.57-10.56.01-.01.02-.03.03-.04.49-.63,1.73-2.61,2.03-3.28Z"/>
+                <path d="M435.62,194.95l-3.48-1.37c-.24-.11-.49-.22-.73-.34-19.36-8.84-30.6-23.73-36.44-42.39-1.17-3.72-3.4-6.77-6.48-8.39-3.43-1.81-7.7-3.09-12.48-4.08-2.48-.52-5.1-.95-7.81-1.34-6.04-.88-12.56-1.55-19.05-2.41-.22-.03-.43-.05-.65-.08.22-.03.43-.05.65-.09,6.3-.78,12.84-1.42,19.05-2.23,2.68-.35,5.29-.73,7.81-1.19,11.43-2.03,20.64-5.31,23.34-12.41,3.91,11.42,6.39,13.48,21.15,16.05.16.03.33.06.49.09-.17.03-.33.06-.5.08-1.58.26-3.16.66-4.6,1.38-8.59,4.26-13.25,12.99-9.78,22.36,1.2,3.25,2.57,6.52,4.27,9.55,3.23,5.73,6.76,10.49,11.36,15.19,4.87,4.98,5.12,5.21,10.55,9.57.01.01.03.03.05.03.64.5,2.61,1.73,3.27,2.03Z"/>
+                <path d="M823.19,137.12c1.28,4.42,1.91,9.09,1.91,14.03,0,33.22-28.92,54.98-64.43,54.98s-58.71-20.62-68.74-49.83l27.5-11.45c7.45,29.78,24.05,48.11,46.11,48.11,18.61,0,33.79-12.6,33.79-32.08,0-14.31-8.31-28.64-34.08-41.23l-26.06-12.6c-27.78-13.46-41.53-32.36-41.53-54.7,0-31.79,27.78-52.12,60.43-52.12s58.13,19.76,72.74,52.41l-28.35,7.74c-9.16-28.07-24.05-47.55-48.4-47.55-18.33,0-31.79,11.17-31.79,29.79,0,14.89,8.59,28.35,34.08,41.23l26.34,12.89c20.04,9.92,32.93,21.41,38.76,35.48.67,1.6,1.24,3.23,1.72,4.9Z"/>
+                <path d="M1148.71,148.33l-1.21.16-.31.04-.37.05c-2.93.36-5.9.69-8.78,1.02-4.83.54-9.39,1.05-13.68,1.69-.54.08-1.07.16-1.58.24-.75.12-1.47.24-2.15.36-.02,30.15-.31,47.22-.85,49.96h29.78c-.56-2.84-.86-21.14-.86-53.51Z"/>
+                <path d="M1279,182.81c-21.75.59-38.52-15.57-45.24-41.45l19.16-5.95.59-.19,67.18-20.86c-6.66-34.2-28.22-57.96-58.28-57.15-32.9.89-57.54,31.42-57.29,73.21,0,.75.01,1.5.03,2.25.09,3.43.34,6.76.74,10,4.72,38.38,30.31,62.79,62.52,61.92,26.05-.71,43.36-17.51,52.89-35.81l-4.24-8.48c-9.94,14.02-23.47,22.12-38.07,22.52ZM1230.56,118.52c-.83-30.63,10.71-48.71,27.6-49.17,17.75-.48,29.18,19.27,33.52,42.06l-60.22,19.11c-.39-4-.79-8-.9-12.01Z"/>
+                <path d="M1202.26,60.94l-5.44,33.22c-8.88-4.58-15.18-7.73-19.47-7.73-5.61,0-10.4,4.38-18.9,18.52-1.59,2.63-3.3,5.6-5.17,8.94-1.35,2.42-2.78,5.04-4.31,7.86l-1.48-.19-.22-.03-.37-.05c-2.71-.35-5.43-.68-8.06-1-5.08-.6-9.88-1.18-14.24-1.92-.5-.09-1.01-.18-1.52-.26-.86-.16-1.67-.31-2.44-.48v-13.34c0-14.31-1.15-27.49-3.43-40.38l27.78-5.73c1.72,14.89,2.57,28.64,2.57,45.82,1.24-2.6,2.42-5.07,3.56-7.41,4.17-8.61,7.72-15.5,11-20.95,8.02-13.33,14.4-18.03,24.39-18.03,5.15,0,10.31,1.15,15.75,3.15Z"/>
+                <path d="M1145.79,135.02c-.22.03-.43.05-.65.08-7.57.94-15.51,1.67-22.8,2.76-.57.09-1.13.18-1.7.26-12.5,2-22.81,5.24-25.68,12.81-3.91-11.42-6.39-13.48-21.16-16.05-.16-.03-.33-.05-.49-.09.17-.03.33-.05.5-.08,1.57-.26,3.15-.66,4.59-1.38,8.59-4.26,13.25-12.98,9.78-22.36-1.2-3.24-2.57-6.52-4.27-9.54-3.23-5.73-6.75-10.49-11.36-15.2-4.87-4.98-5.12-5.21-10.55-9.56-.01-.01-.03-.03-.05-.03-.64-.51-2.61-1.74-3.27-2.04l3.48,1.37c.25.11.5.22.74.34,19.36,8.84,30.59,23.73,36.43,42.4,1.17,3.71,3.41,6.76,6.48,8.39,3.98,2.1,9.09,3.48,14.82,4.53.56.1,1.13.2,1.7.3,7.05,1.19,14.94,1.96,22.8,2.99.22.03.43.06.65.09Z"/>
+                <path d="M998.15,194.95l-3.48-1.37c-.25-.11-.5-.22-.74-.34-19.36-8.84-30.59-23.73-36.43-42.39-1.17-3.72-3.41-6.77-6.48-8.39-5.21-2.76-12.34-4.27-20.28-5.43-6.04-.88-12.55-1.55-19.04-2.4-.22-.03-.43-.06-.65-.09.22-.03.43-.05.65-.08,6.29-.79,12.83-1.42,19.04-2.23,14.87-1.95,27.86-4.94,31.14-13.6,3.91,11.42,6.39,13.48,21.16,16.05.16.03.32.06.49.09-.17.03-.34.05-.5.08-1.58.26-3.15.66-4.59,1.38-8.59,4.26-13.25,12.98-9.78,22.36,1.2,3.25,2.56,6.52,4.26,9.54,3.23,5.74,6.76,10.49,11.36,15.2,4.88,4.98,5.12,5.21,10.56,9.56.01.01.03.03.05.03.64.51,2.61,1.74,3.27,2.04Z"/>
+                <path d="M1044.57,68.24c-11.42,3.9-13.48,6.38-16.05,21.15-.03.16-.05.33-.08.49-.03-.17-.05-.33-.08-.5-.26-1.58-.67-3.15-1.38-4.59-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.1.37-6.22,1.15-3.25,1.2-6.52,2.57-9.54,4.27-5.74,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.51.64-1.74,2.61-2.04,3.27l1.37-3.48c.11-.25.22-.5.34-.74,8.84-19.36,23.73-30.59,42.39-36.43,3.72-1.17,6.77-3.4,8.39-6.48,4.85-9.17,5.86-24.31,7.83-39.32.03-.22.05-.43.09-.65.03.22.05.43.08.65,2.67,21.36,3.56,45.53,15.83,50.19Z"/>
+                <path d="M870.35,117.64c0,2.82.11,5.61.32,8.34.18,2.29.43,4.54.75,6.75.05.39.11.77.17,1.15.07.45.14.89.22,1.33.07.43.15.85.22,1.27.44,2.4.96,4.74,1.57,7.01,6.18,23.21,20.88,39.73,41.14,39.73,13.46,0,25.11-7.2,32.97-19.62,1.49,3.54,3.16,6.9,5.02,10.08-9.08,17.21-25.64,31.02-48.87,31.02-31.81,0-56.51-26.64-59.3-64.88-.18-2.38-.26-4.82-.26-7.29,0-1.07.01-2.14.05-3.21,1.23-39.24,24.93-71.82,59.23-71.82,22.37,0,41.2,13.38,51.14,41.76.24.68.48,1.36.7,2.06l-1.62.38-25.3,5.93c-5.44-22.05-15.47-38.38-30.08-38.38-17.18,0-28.07,20.62-28.07,48.4Z"/>
+                <path d="M1088.6,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.4,36.43-3.71,1.17-6.76,3.41-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.06.43-.09.65-.03-.22-.05-.43-.08-.65-2.67-21.36-3.57-45.53-15.83-50.19,11.42-3.9,13.47-6.38,16.05-21.14.03-.16.06-.33.09-.5.03.17.05.33.08.5.26,1.58.66,3.15,1.38,4.59,3.3,6.64,9.26,10.93,16.13,10.93,2.01,0,4.1-.37,6.22-1.15,3.25-1.2,6.52-2.56,9.54-4.27,5.74-3.22,10.49-6.76,15.2-11.36,4.98-4.87,5.21-5.12,9.56-10.55.01-.01.03-.03.03-.05.5-.64,1.74-2.61,2.04-3.27Z"/>
+              </svg>
+            </div>
           </div>
-          <div style="font-size:.72rem;color:var(--sub);font-family:monospace;letter-spacing:.12em;margin-bottom:1rem">SCOUTING PLATFORM · LEAGUE OF LEGENDS</div>
-          <div style="font-size:.88rem;color:var(--sub2);max-width:420px;margin:0 auto;line-height:1.6">
-            La plateforme de référence pour le scouting semi-pro en Europe.<br>Choisissez votre mode d'utilisation.
+          <div style="font-size:.68rem;color:rgba(184,196,224,.3);font-family:monospace;letter-spacing:.16em;margin-bottom:1rem;text-transform:uppercase">Scouting Platform &nbsp;·&nbsp; League of Legends</div>
+          <div style="font-size:.9rem;color:var(--sub2);max-width:420px;margin:0 auto;line-height:1.7;font-family:'Helvetica Neue',Arial,sans-serif">
+            La plateforme de référence pour le scouting semi-pro.<br>Choisissez votre mode d'utilisation.
           </div>
         </div>
 
@@ -1119,30 +1374,30 @@ body.welcome-active #panel-welcome {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
           <!-- MODE AGENT -->
           <div onclick="setAppMode('agent')" class="welcome-mode-card agent">
-            <div style="font-size:2.5rem;margin-bottom:1rem">🤝</div>
+            <div style="margin-bottom:1rem;display:flex;justify-content:center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" style="color:var(--lime)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Agent</div>
             <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Trouvez des pépites SoloQ, gérez vos contacts et proposez des joueurs à des structures esport.</div>
-            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem">
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Top 50 prospects automatique</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> CRM structures esport</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Matching joueur ↔ recruteur</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:var(--teal)">✓</span> Export rapport PDF pro</div>
+            <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.5rem">
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Top 50 prospects automatique</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> CRM structures esport</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Matching joueur ↔ recruteur</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Export rapport PDF pro</div>
             </div>
-            <div style="background:var(--lime);color:#080B10;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:700;display:inline-block">Entrer en mode Agent →</div>
+            <div style="background:var(--lime);color:#060810;border-radius:8px;padding:.55rem 1.25rem;font-size:.8rem;font-weight:700;display:inline-block;letter-spacing:.04em">Entrer en mode Agent →</div>
           </div>
 
           <!-- MODE COACH -->
           <div onclick="setAppMode('coach')" class="welcome-mode-card coach">
-            <div style="font-size:2.5rem;margin-bottom:1rem">📊</div>
+            <div style="margin-bottom:1rem;display:flex;justify-content:center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" style="color:#A78BFA"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><rect x="3" y="20" width="18" height="0.01" stroke-width="1.8"/></svg></div>
             <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Coach</div>
             <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Analysez des joueurs, comparez des profils et construisez un roster optimal avec de la data.</div>
-            <div style="display:flex;flex-direction:column;gap:.3rem;margin-bottom:1.25rem">
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Fiche joueur complète SPES</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Comparaison même poste</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Construction de roster</div>
-              <div style="font-size:.72rem;color:var(--sub);display:flex;align-items:center;gap:.4rem;justify-content:center"><span style="color:#A78BFA">✓</span> Analyse collective équipe</div>
+            <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.5rem">
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fiche joueur complète SPES</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Comparaison même poste</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Construction de roster</div>
+              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Analyse collective équipe</div>
             </div>
-            <div style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.3);color:#A78BFA;border-radius:8px;padding:.5rem 1rem;font-size:.82rem;font-weight:700;display:inline-block">Entrer en mode Coach →</div>
+            <div style="background:rgba(138,127,245,.14);border:1px solid rgba(138,127,245,.28);color:#A78BFA;border-radius:8px;padding:.55rem 1.25rem;font-size:.8rem;font-weight:700;display:inline-block;letter-spacing:.04em">Entrer en mode Coach →</div>
           </div>
         </div>
 
@@ -1174,10 +1429,10 @@ body.welcome-active #panel-welcome {
     <div id="panel-scout" class="panel">
 
       <!-- Onboarding — visible uniquement si aucun pseudo entré -->
-      <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(202,255,53,.05),rgba(45,212,191,.04));border:1px solid rgba(202,255,53,.15);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:block;position:relative;overflow:hidden">
+      <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(28,196,122,.05),rgba(21,168,120,.04));border:1px solid rgba(28,196,122,.15);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:block;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--lime),var(--teal))"></div>
         <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap">
-          <div style="font-size:2rem">🚀</div>
+          <div style="flex-shrink:0"><svg width="36" height="36" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
           <div style="flex:1;min-width:200px">
             <div style="font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px">Bienvenue sur VisionScore</div>
             <div style="font-size:.82rem;color:var(--sub);line-height:1.7;margin-bottom:12px">Votre outil de scouting LoL semi-pro. Pour analyser un joueur :</div>
@@ -1265,18 +1520,18 @@ body.welcome-active #panel-welcome {
 
       <!-- Role pills -->
       <div class="role-pills">
-        <button class="role-pill" onclick="setRole('Top',this)">🛡 Top</button>
-        <button class="role-pill" onclick="setRole('Jgl',this)">🌿 Jungle</button>
-        <button class="role-pill active" onclick="setRole('Mid',this)">⚡ Mid</button>
-        <button class="role-pill" onclick="setRole('ADC',this)">🎯 ADC</button>
-        <button class="role-pill" onclick="setRole('Sup',this)">💙 Support</button>
+        <button class="role-pill" onclick="setRole('Top',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Top</button>
+        <button class="role-pill" onclick="setRole('Jgl',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> Jungle</button>
+        <button class="role-pill active" onclick="setRole('Mid',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Mid</button>
+        <button class="role-pill" onclick="setRole('ADC',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg> ADC</button>
+        <button class="role-pill" onclick="setRole('Sup',this)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> Support</button>
       </div>
 
       <!-- API card -->
       <div class="api-card">
         <div class="api-head">
           <div>
-            <div class="api-title">🤖 Import Riot API <span class="api-pill">AUTO</span></div>
+            <div class="api-title" style="display:flex;align-items:center;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg> Import Riot API <span class="api-pill">AUTO</span></div>
             <div class="api-sub">Remplit automatiquement les stats in-game depuis vos 50 dernières parties SoloQ</div>
             <div class="api-chips">
               <span class="api-chip">KDA</span><span class="api-chip">WR</span><span class="api-chip">CS/min</span>
@@ -1284,11 +1539,11 @@ body.welcome-active #panel-welcome {
               <span class="api-chip">Pool champs</span><span class="api-chip">Rang</span>
             </div>
           </div>
-          <button class="btn btn-ghost btn-sm" id="api-toggle-btn" onclick="toggleApiCard()">▲ Réduire</button>
+          <button class="btn btn-ghost btn-sm" id="api-toggle-btn" onclick="toggleApiCard()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg> Réduire</button>
         </div>
         <div id="api-body">
           <div style="background:var(--teal-dim);border:1px solid rgba(45,212,191,.2);border-radius:var(--r-sm);padding:8px 12px;font-size:11px;color:var(--teal);margin-bottom:10px;line-height:1.6">
-            🔒 <strong>Backend sécurisé actif</strong> — clé API Riot gérée côté serveur, aucune saisie requise.
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> <strong>Backend sécurisé actif</strong> — clé API Riot gérée côté serveur, aucune saisie requise.
           </div>
           <div class="api-body-row">
 
@@ -1300,7 +1555,7 @@ body.welcome-active #panel-welcome {
                 <option value="100">100 parties</option>
               </select>
             </div>
-            <button class="btn btn-lime" id="btn-fetch" onclick="fetchRiotData()">⬇ Importer</button>
+            <button class="btn btn-lime" id="btn-fetch" onclick="fetchRiotData()" style="display:flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Importer</button>
           </div>
           <div id="api-progress" style="display:none" class="prog-wrap">
             <div class="prog-info"><span id="api-prog-txt"></span><span id="api-prog-pct">0%</span></div>
@@ -1308,7 +1563,7 @@ body.welcome-active #panel-welcome {
           </div>
           <div id="api-status"></div>
           <div style="margin-top:8px">
-            <button class="btn btn-ghost btn-sm" onclick="toggleDebug()" style="font-size:10px">🔧 Logs techniques</button>
+            <button class="btn btn-ghost btn-sm" onclick="toggleDebug()" style="font-size:10px;display:inline-flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Logs techniques</button>
             <div class="debug-log" id="debug-log"></div>
           </div>
         </div>
@@ -1316,7 +1571,7 @@ body.welcome-active #panel-welcome {
 
       <!-- Player display card (shown after API import) -->
       <div id="player-card-display" style="display:none" class="player-card">
-        <div class="player-avatar" id="pc-avatar">⚔️</div>
+        <div class="player-avatar" id="pc-avatar"><svg width="28" height="28" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:.5"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
         <div>
           <div class="player-name" id="pc-name">—</div>
           <div class="player-meta" id="pc-meta">—</div>
@@ -1337,7 +1592,7 @@ body.welcome-active #panel-welcome {
 
       <!-- Score Grid : ring + radar -->
       <!-- Badge pépite (affiché si potentiel >> performance) -->
-      <div id="badge-pepite" style="display:none;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(200,245,60,.12),rgba(255,166,35,.10));border:1px solid rgba(200,245,60,.35);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:var(--lime);line-height:1.5"></div>
+      <div id="badge-pepite" style="display:none;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(28,196,122,.12),rgba(212,113,74,.08));border:1px solid rgba(28,196,122,.32);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:var(--lime);line-height:1.5"></div>
 
       <div class="score-grid">
         <div class="card">
@@ -1366,7 +1621,7 @@ body.welcome-active #panel-welcome {
               <div id="score-perf-val" style="font-size:16px;font-weight:800;color:var(--sub)">—</div>
               <div style="font-family:monospace;font-size:9px;color:var(--sub);margin-top:2px">actuel · plafonné rang</div>
             </div>
-            <div id="score-potentiel-card" style="display:none;flex:1;background:rgba(200,245,60,.06);border:1px solid rgba(200,245,60,.2);border-radius:6px;padding:8px 10px;text-align:center">
+            <div id="score-potentiel-card" style="display:none;flex:1;background:rgba(28,196,122,.06);border:1px solid rgba(28,196,122,.2);border-radius:6px;padding:8px 10px;text-align:center">
               <div style="font-family:monospace;font-size:9px;color:var(--lime);letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px">Potentiel</div>
               <div id="score-potentiel-val" style="font-size:16px;font-weight:800;color:var(--lime)">—</div>
               <div style="font-family:monospace;font-size:9px;color:var(--sub);margin-top:2px">projection âge + prog.</div>
@@ -1419,8 +1674,8 @@ body.welcome-active #panel-welcome {
       <!-- ── ANALYSE AVANCÉE SPES (challenges Riot) ── -->
       <div class="card" id="advanced-card" style="display:none;margin-bottom:16px">
         <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <span>🔬 Analyse Avancée SPES</span>
-          <span style="font-size:10px;background:linear-gradient(90deg,#7C3AED,#2DD4BF);color:#fff;padding:2px 7px;border-radius:99px;font-weight:700">EXCLUSIF</span>
+          <span>Analyse Avancée SPES</span>
+          <span style="font-size:9px;background:linear-gradient(90deg,rgba(138,127,245,.25),rgba(21,168,120,.2));color:var(--text);padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(138,127,245,.25)">EXCLUSIF VS</span>
         </div>
         <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
       </div>
@@ -1525,11 +1780,11 @@ body.welcome-active #panel-welcome {
           <div class="pdf-header-date" id="pdf-date"></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 0;margin-bottom:-8px" class="res-actions">
-          <button class="btn btn-ghost btn-sm" onclick="exportPDF()">📄 Exporter PDF</button>
-          <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF">🔗 Partager par lien</button>
-          <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF">📊 Ajouter à l'analyse</button>
-          <button class="btn btn-ghost btn-sm" onclick="saveToHistory()">💾 Sauvegarder fiche</button>
-          <button class="btn btn-ghost btn-sm" onclick="enterPresentationMode()">🖥 Mode Coach</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Exporter PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
+          <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
+          <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
+          <button class="btn btn-ghost btn-sm" onclick="enterPresentationMode()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Mode Coach</button>
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
@@ -1566,11 +1821,11 @@ body.welcome-active #panel-welcome {
 
       <!-- Empty state -->
       <div id="graphs-empty" class="card" style="margin-bottom:16px;text-align:center;padding:40px">
-        <div style="font-size:32px;margin-bottom:12px">📊</div>
+        <div style="display:flex;justify-content:center;margin-bottom:14px"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sub)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
         <div style="font-size:14px;font-weight:700;margin-bottom:6px">Aucune donnée à afficher</div>
         <div style="font-size:12px;color:var(--sub);margin-bottom:16px">Importez les stats via l'API Riot pour générer les graphiques</div>
-        <button class="btn btn-lime" onclick="switchPanel('scout');setSbActive(document.querySelector('.sb-item'))">
-          ⬇ Aller à l'import
+        <button class="btn btn-lime" onclick="switchPanel('scout');setSbActive(document.querySelector('.sb-item'))" style="display:inline-flex;align-items:center;gap:6px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Aller à l'import
         </button>
       </div>
 
@@ -1580,10 +1835,10 @@ body.welcome-active #panel-welcome {
 
         <!-- View tabs -->
         <div class="view-tabs">
-          <button class="view-tab active" onclick="setGraphTab('performance',this)">📈 Performance</button>
-          <button class="view-tab" onclick="setGraphTab('progression',this)">🏆 Progression rang</button>
-          <button class="view-tab" onclick="setGraphTab('activite',this)">📅 Activité</button>
-          <button class="view-tab" onclick="setGraphTab('progression_temp',this)">📈 Progression</button>
+          <button class="view-tab active" onclick="setGraphTab('performance',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Performance</button>
+          <button class="view-tab" onclick="setGraphTab('progression',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Progression rang</button>
+          <button class="view-tab" onclick="setGraphTab('activite',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Activité</button>
+          <button class="view-tab" onclick="setGraphTab('progression_temp',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Évolution</button>
         </div>
 
         <!-- TAB: Performance -->
@@ -1658,7 +1913,7 @@ body.welcome-active #panel-welcome {
 
       <!-- Import section -->
       <div id="map-import-card" class="map-import-card">
-        <div style="font-size:32px;margin-bottom:12px">🗺️</div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sub)"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg></div>
         <div style="font-size:15px;font-weight:800;margin-bottom:6px">Carte des positions</div>
         <div style="font-size:12px;color:var(--sub);margin-bottom:6px;line-height:1.7">
           Heatmap kills · morts · wards · trajectoires<br>
@@ -1668,8 +1923,8 @@ body.welcome-active #panel-welcome {
           ⚠ Importez d'abord les stats via l'API Riot (onglet Fiche joueur)
         </div>
         <div style="display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap">
-          <button class="btn btn-lime" id="btn-load-map" onclick="loadMapData()">
-            🗺️ Charger la carte
+          <button class="btn btn-lime" id="btn-load-map" onclick="loadMapData()" style="display:inline-flex;align-items:center;gap:6px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Charger la carte
           </button>
           <div class="fi" style="min-width:120px;text-align:left">
             <div class="fi-label">Parties à analyser</div>
@@ -1717,11 +1972,11 @@ body.welcome-active #panel-welcome {
 
           <!-- View controls -->
           <div class="map-controls">
-            <button class="map-view-btn active" id="mvb-kills" onclick="setMapView('kills',this)">💀 Kills</button>
-            <button class="map-view-btn" id="mvb-deaths" onclick="setMapView('deaths',this)">☠️ Morts</button>
-            <button class="map-view-btn" id="mvb-wards" onclick="setMapView('wards',this)">👁 Wards</button>
-            <button class="map-view-btn" id="mvb-position" onclick="setMapView('position',this)">📍 Positionnement</button>
-            <button class="map-view-btn" id="mvb-objectives" onclick="setMapView('objectives',this)">🐉 Objectifs</button>
+            <button class="map-view-btn active" id="mvb-kills" onclick="setMapView('kills',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Kills</button>
+            <button class="map-view-btn" id="mvb-deaths" onclick="setMapView('deaths',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Morts</button>
+            <button class="map-view-btn" id="mvb-wards" onclick="setMapView('wards',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Wards</button>
+            <button class="map-view-btn" id="mvb-position" onclick="setMapView('position',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Positions</button>
+            <button class="map-view-btn" id="mvb-objectives" onclick="setMapView('objectives',this)" style="display:inline-flex;align-items:center;gap:4px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg> Objectifs</button>
             <div style="margin-left:auto;display:flex;gap:6px;align-items:center">
               <label style="font-size:11px;color:var(--sub);font-family:monospace;display:flex;align-items:center;gap:5px;cursor:pointer">
                 <input type="checkbox" id="map-show-heatmap" checked onchange="renderMap()"/> Heatmap
@@ -1758,7 +2013,7 @@ body.welcome-active #panel-welcome {
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem">🏆 Top 50 Prospects EUW</div>
+            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:9px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50 Prospects EUW</div>
             <div style="font-size:.8rem;color:var(--sub);margin-top:.25rem">Diamond+ · Score SPES automatique · Bonus âge · Workflow recrutement</div>
           </div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
@@ -1788,15 +2043,15 @@ body.welcome-active #panel-welcome {
               <option value="19">≤ 19 ans (jeunes)</option>
               <option value="22">≤ 22 ans</option>
             </select>
-            <button id="t50-scan-btn" onclick="top50Scan()" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.85rem;font-weight:700;cursor:pointer;letter-spacing:.02em">⚡ Scanner</button>
-            <button onclick="top50Export()" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer">📥 CSV</button>
-            <button onclick="top50ToggleView()" id="t50-view-btn" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer">👁 Vue publique</button>
+            <button id="t50-scan-btn" onclick="top50Scan()" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.85rem;font-weight:700;cursor:pointer;letter-spacing:.02em;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Scanner</button>
+            <button onclick="top50Export()" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
+            <button onclick="top50ToggleView()" id="t50-view-btn" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem .75rem;font-size:.8rem;color:var(--sub);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vue publique</button>
           </div>
         </div>
 
         <!-- Backend sécurisé -->
         <div style="background:var(--teal-dim);border:1px solid rgba(45,212,191,.2);border-radius:8px;padding:.625rem 1rem;font-size:.78rem;color:var(--teal);margin-bottom:1rem">
-          🔒 <strong>Backend sécurisé actif</strong> — scan via le serveur SPES, clé API Riot gérée côté serveur.
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> <strong>Backend sécurisé actif</strong> — scan via le serveur SPES, clé API Riot gérée côté serveur.
         </div>
 
         <!-- Progress -->
@@ -1819,13 +2074,13 @@ body.welcome-active #panel-welcome {
             <span style="color:var(--sub)">Dernière MAJ : </span><strong id="t50-date">—</strong>
           </div>
           <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
-            <span style="color:var(--lime)">✅ Contactés : </span><strong id="t50-contacted">0</strong>
+            <span style="color:var(--lime)">Contactés : </span><strong id="t50-contacted">0</strong>
           </div>
-          <div style="background:rgba(200,245,60,.06);border:1px solid rgba(200,245,60,.2);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
-            <span style="color:var(--lime)">🔥 Pépites : </span><strong id="t50-pepites">0</strong>
+          <div style="background:rgba(28,196,122,.06);border:1px solid rgba(28,196,122,.2);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
+            <span style="color:var(--lime)">◆ Pépites : </span><strong id="t50-pepites">0</strong>
           </div>
           <div style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:.625rem 1rem;font-size:.8rem">
-            <span style="color:var(--teal)">🎂 Âges trouvés : </span><strong id="t50-ages-found">—</strong>
+            <span style="color:var(--teal)">Âges : </span><strong id="t50-ages-found">—</strong>
           </div>
         </div>
 
@@ -1870,7 +2125,7 @@ body.welcome-active #panel-welcome {
         <!-- Header dynamique -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
           <div>
-            <h2 style="font-size:1.4rem;font-weight:800;margin:0" id="analyse-title">📊 Analyse multi-joueurs</h2>
+            <h2 style="font-size:1.4rem;font-weight:800;margin:0;display:flex;align-items:center;gap:9px" id="analyse-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Analyse multi-joueurs</h2>
             <p style="color:var(--sub);font-size:.82rem;margin:4px 0 0" id="analyse-subtitle">Ajoutez jusqu'à 5 fiches — scouting (2-3 joueurs) ou analyse de roster (4-5 joueurs)</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -1878,20 +2133,20 @@ body.welcome-active #panel-welcome {
             <div id="analyse-slots-bar" style="display:flex;gap:4px">
               ${[1,2,3,4,5].map(i=>`<div id="aslot-${i}" style="width:28px;height:28px;border-radius:50%;background:var(--surf3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--sub)">${i}</div>`).join('')}
             </div>
-            <button onclick="analyseAddCurrent()" class="btn btn-lime" style="font-size:.82rem">➕ Ajouter fiche actuelle</button>
-            <button onclick="analyseClear()" class="btn" style="font-size:.82rem;background:var(--surf2);color:var(--red);border:1px solid rgba(255,90,74,.3)">🗑 Vider</button>
+            <button onclick="analyseAddCurrent()" class="btn btn-lime" style="font-size:.82rem;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter fiche actuelle</button>
+            <button onclick="analyseClear()" class="btn" style="font-size:.82rem;background:var(--surf2);color:var(--red);border:1px solid rgba(255,90,74,.3);display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Vider</button>
           </div>
         </div>
 
         <!-- Mode selector (visible quand ≥1 joueur) -->
         <div id="analyse-mode-bar" style="display:none;gap:8px;margin-bottom:16px">
-          <button id="mode-btn-scout" onclick="setAnalyseMode('scout')" class="btn btn-lime" style="font-size:.8rem">🔍 Mode Scouting</button>
-          <button id="mode-btn-roster" onclick="setAnalyseMode('roster')" class="btn" style="font-size:.8rem;background:var(--surf2);border:1px solid var(--border)">👥 Mode Roster</button>
+          <button id="mode-btn-scout" onclick="setAnalyseMode('scout')" class="btn btn-lime" style="font-size:.8rem;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Mode Scouting</button>
+          <button id="mode-btn-roster" onclick="setAnalyseMode('roster')" class="btn" style="font-size:.8rem;background:var(--surf2);border:1px solid var(--border);display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Mode Roster</button>
         </div>
 
         <!-- Empty state -->
         <div id="analyse-empty" style="text-align:center;padding:60px 20px;color:var(--sub)">
-          <div style="font-size:3.5rem;margin-bottom:12px">📊</div>
+          <div style="display:flex;justify-content:center;margin-bottom:14px"><svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--sub)"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
           <div style="font-size:1rem;font-weight:600;color:var(--fg);margin-bottom:8px">Aucun joueur ajouté</div>
           <div style="font-size:.85rem;line-height:1.8">
             Importez une fiche dans <strong>Fiche joueur</strong><br>
@@ -1899,11 +2154,11 @@ body.welcome-active #panel-welcome {
           </div>
           <div style="margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
             <div style="background:var(--surf2);border-radius:10px;padding:12px 16px;font-size:.78rem;border:1px solid var(--border);max-width:200px">
-              <div style="font-weight:700;color:var(--lime);margin-bottom:4px">🔍 Mode Scouting</div>
+              <div style="font-weight:700;color:var(--lime);margin-bottom:4px">Mode Scouting</div>
               <div style="color:var(--sub)">2-3 prospects — lequel recruter ?</div>
             </div>
             <div style="background:var(--surf2);border-radius:10px;padding:12px 16px;font-size:.78rem;border:1px solid var(--border);max-width:200px">
-              <div style="font-weight:700;color:#4A9EFF;margin-bottom:4px">👥 Mode Roster</div>
+              <div style="font-weight:700;color:#4A9EFF;margin-bottom:4px">Mode Roster</div>
               <div style="color:var(--sub)">4-5 joueurs — analyser une équipe</div>
             </div>
           </div>
@@ -1921,11 +2176,11 @@ body.welcome-active #panel-welcome {
       <div class="card" style="margin-bottom:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-size:15px;font-weight:800">📁 Fiches sauvegardées</div>
+            <div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:7px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Fiches sauvegardées</div>
             <div style="font-size:11px;color:var(--sub);margin-top:2px">Stockées localement · Rechargez une fiche pour continuer l'analyse</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="clearHistory()" style="color:var(--red);border-color:rgba(255,90,74,.3)">🗑 Tout effacer</button>
+            <button class="btn btn-ghost btn-sm" onclick="clearHistory()" style="color:var(--red);border-color:rgba(255,90,74,.3);display:inline-flex;align-items:center;gap:5px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Tout effacer</button>
           </div>
         </div>
 
@@ -1934,7 +2189,7 @@ body.welcome-active #panel-welcome {
           <input
             id="history-search"
             type="text"
-            placeholder="🔍  Rechercher un joueur, un rôle, un rang…"
+            placeholder="Rechercher un joueur, un rôle, un rang…"
             oninput="renderHistory()"
             style="width:100%;background:var(--surf3);border:1px solid var(--border);border-radius:8px;
                    padding:9px 14px;color:var(--text);font-size:.85rem;outline:none;
@@ -1972,13 +2227,13 @@ body.welcome-active #panel-welcome {
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <div style="font-weight:800;font-size:1.4rem">🤝 CRM Agent</div>
+            <div style="font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:9px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM Agent</div>
             <div style="font-size:.8rem;color:var(--sub);margin-top:.25rem">Structures esport · Pipeline joueurs · Matching</div>
           </div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-            <button onclick="crmShowTab('structures')" id="crm-tab-structures" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer">🏢 Structures</button>
-            <button onclick="crmShowTab('pipeline')" id="crm-tab-pipeline" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer">📬 Pipeline</button>
-            <button onclick="crmShowTab('matching')" id="crm-tab-matching" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer">⚡ Matching</button>
+            <button onclick="crmShowTab('structures')" id="crm-tab-structures" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Structures</button>
+            <button onclick="crmShowTab('pipeline')" id="crm-tab-pipeline" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg> Pipeline</button>
+            <button onclick="crmShowTab('matching')" id="crm-tab-matching" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Matching</button>
           </div>
         </div>
 
@@ -2000,7 +2255,7 @@ body.welcome-active #panel-welcome {
         <!-- Tab: Matching -->
         <div id="crm-tab-matching-content" style="display:none">
           <div style="font-size:.85rem;color:var(--sub);margin-bottom:1rem">Trouvez les meilleures correspondances entre vos prospects et les besoins des structures.</div>
-          <button onclick="crmRunMatching()" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:1rem">⚡ Lancer le matching</button>
+          <button onclick="crmRunMatching()" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:1rem;display:inline-flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Lancer le matching</button>
           <div id="crm-matching-results"></div>
         </div>
 
@@ -2026,9 +2281,8 @@ const RANKS = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','M
 function rankIcon(tier, sizeCls = 'rank-icon-sm') {
   if (!tier) return '';
   const t = String(tier).toLowerCase();
-  return `<img src="assets/ranks/${t}.svg" alt="${tier}"
-    class="rank-icon ${sizeCls}"
-    onerror="this.style.display='none'"/>`;
+  const cdn = `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/images/ranked-mini-crests/${t}.png`;
+  return `<img src="assets/ranks/${t}.svg" alt="${tier}" class="rank-icon ${sizeCls}" onerror="this.onerror=null;this.src='${cdn}'"/>`;
 }
 const W = { s1:.40, p:.20, e:.20, s2:.20 };
 const C = { s1:'#4A9EFF', p:'#2DD4BF', e:'#F5A623', s2:'#C084FC' };
@@ -2676,7 +2930,7 @@ function pctLabel(val, thr) {
   if (val >= thr.good)  return '<span class="top">top 20%</span>';
   if (val >= thr.avg)   return '<span class="mid">dans la norme</span>';
   if (val >= thr.bad)   return '<span class="low">en dessous moy.</span>';
-  return '<span class="low">⚠ faible</span>';
+  return '<span class="low">faible</span>';
 }
 
 // ════════════════════════════════════════════
@@ -2873,7 +3127,7 @@ function buildRadar(svgId, w, h) {
   const hasData = dims.some(d => d.val !== null);
   if (hasData) {
     const pts = dims.map((d,i) => pt(i, d.val !== null ? Math.max(0.05, d.val/10) : 0.05).join(',')).join(' ');
-    svg += `<polygon points="${pts}" fill="rgba(200,245,60,.10)" stroke="var(--lime)" stroke-width="1.8" stroke-linejoin="round"/>`;
+    svg += `<polygon points="${pts}" fill="rgba(28,196,122,.10)" stroke="var(--lime)" stroke-width="1.8" stroke-linejoin="round"/>`;
     dims.forEach((d,i) => {
       if (d.val === null) return;
       const [x,y] = pt(i, Math.max(0.05, d.val/10));
@@ -2970,12 +3224,12 @@ function updateVerdict() {
   if (g === null) {
     verdict = 'Complétez les données pour générer le verdict automatique.';
   } else {
-    if (g >= 9)   { reco = '✅ Recruter en priorité absolue.'; }
-    else if (g >= 8) { reco = '✅ Profil recommandé sans réserve pour un tryout.'; }
-    else if (g >= 7) { reco = '🟡 Bon profil — tryout recommandé avec suivi ciblé.'; }
-    else if (g >= 6) { reco = '🟡 Potentiel identifié — travail sur axes faibles nécessaire avant structure.'; }
-    else if (g >= 5) { reco = '🔴 Profil en développement — semi-pro prématuré à ce stade.'; }
-    else           { reco = '🔴 Niveau insuffisant pour le circuit semi-pro actuellement.'; }
+    if (g >= 9)   { reco = 'Recruter en priorité absolue.'; }
+    else if (g >= 8) { reco = 'Profil recommandé sans réserve pour un tryout.'; }
+    else if (g >= 7) { reco = 'Bon profil — tryout recommandé avec suivi ciblé.'; }
+    else if (g >= 6) { reco = 'Potentiel identifié — travail sur axes faibles nécessaire avant structure.'; }
+    else if (g >= 5) { reco = 'Profil en développement — semi-pro prématuré à ce stade.'; }
+    else           { reco = 'Niveau insuffisant pour le circuit semi-pro actuellement.'; }
 
     const topStat = Object.entries(thr).map(([id,t]) => {
       const v = parseFloat(rawData[id]);
@@ -3022,7 +3276,7 @@ function buildResults() {
   const rn = document.getElementById('res-name');
   const rs = document.getElementById('res-score');
   const rv = document.getElementById('res-verdict');
-  if (rn) rn.textContent = `${pseudo} · ${currentRole} · ${rank}`;
+  if (rn) rn.innerHTML = `${rankIcon(rank,'rank-icon-sm')} ${pseudo} · ${currentRole} · ${rank}`;
   if (rs) { rs.textContent = g !== null ? g.toFixed(2) : '—'; rs.style.color = scColor(g); }
 
   // Phrase coach en gros (verdict principal)
@@ -3091,13 +3345,13 @@ function buildResults() {
     const top = all.slice(0,2), bot = all.slice(-2);
     reco.innerHTML = `
       <div style="margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--sub);margin-bottom:6px">✅ POINTS FORTS</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--lime);margin-bottom:6px;text-transform:uppercase">POINTS FORTS</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${top.map(x => `<span class="vtag vtag-g">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
         </div>
       </div>
       <div style="margin-bottom:12px">
-        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--sub);margin-bottom:6px">⚠️ AXES À TRAVAILLER</div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:6px;text-transform:uppercase">AXES À TRAVAILLER</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           ${bot.map(x => `<span class="vtag vtag-r">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
         </div>
@@ -3244,7 +3498,7 @@ function renderAgeSearchPanel(gameName, tag, currentAge) {
       '<a href="' + l.url + '" target="_blank" rel="noopener" style="font-size:11px;padding:3px 9px;background:var(--surf2);border:1px solid var(--border);border-radius:4px;color:var(--sub2);text-decoration:none;font-family:monospace;transition:all .15s">' + l.label + ' ↗</a>'
     ).join('') +
     '</div>' +
-    '<button onclick="autoFindAge()" style="font-size:11px;padding:3px 10px;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;color:var(--lime);cursor:pointer;font-family:monospace">🔍 Auto-recherche</button>' +
+    '<button onclick="autoFindAge()" style="font-size:11px;padding:3px 10px;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;color:var(--lime);cursor:pointer;font-family:monospace">Auto-recherche</button>' +
     '</div>' +
     '<div id="age-search-result" style="margin-top:6px;font-size:11px;color:var(--sub)"></div>';
 }
@@ -3264,7 +3518,7 @@ async function autoFindAge() {
       onIdentityChange();
     }
     if (resultEl) {
-      resultEl.innerHTML = '<span style="color:var(--teal)">✅ Âge trouvé via ' + found.source + ' : <strong>' + found.age + ' ans</strong>' +
+      resultEl.innerHTML = '<span style="color:var(--teal)">Âge trouvé via ' + found.source + ' : <strong>' + found.age + ' ans</strong>' +
         (found.birthdate ? ' (' + found.birthdate + ')' : '') +
         (found.name !== pseudo ? ' — profil : ' + found.name : '') + '</span>';
     }
@@ -3288,7 +3542,7 @@ async function top50FetchAges(prospects) {
         p.ageSource = result.source;
         found++;
       } else {
-        if (!p.age) p.ageStatus = '🔍';
+        if (!p.age) p.ageStatus = 'Recherche…';
       }
     } catch(e) {}
     // Petit délai pour ne pas surcharger l'API Leaguepedia
@@ -3339,12 +3593,12 @@ let appMode = localStorage.getItem('spes_mode') || 'welcome';
 const MODE_CONFIG = {
   agent: {
     nav: ['scout','top50','crm','analyse'],
-    label: '🤝 Agent',
+    label: 'Agent',
     accent: 'var(--lime)',
   },
   coach: {
     nav: ['scout','analyse','top50'],
-    label: '📊 Coach',
+    label: 'Coach',
     accent: '#A78BFA',
   },
 };
@@ -3527,7 +3781,7 @@ function analyseAddCurrent() {
   if (analyseSlots.length >= 4) analyseMode = 'roster';
   else analyseMode = 'scout';
 
-  showToast(`✅ ${pseudo} ajouté (${analyseSlots.length}/5)`, 'teal');
+  showToast(`${pseudo} ajouté (${analyseSlots.length}/5)`, 'success');
   if (document.getElementById('panel-analyse')?.classList.contains('active')) buildAnalysePanel();
   switchPanel('analyse');
 }
@@ -3592,7 +3846,9 @@ function buildAnalysePanel() {
 
   // Titre dynamique
   const isRoster = analyseMode === 'roster' || analyseSlots.length >= 4;
-  if (title) title.textContent = isRoster ? '👥 Analyse de Roster' : '🔍 Comparaison Scouting';
+  if (title) title.innerHTML = isRoster
+    ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Analyse de Roster'
+    : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Comparaison Scouting';
   if (subtitle) subtitle.textContent = isRoster
     ? `${analyseSlots.length} joueurs · Forces collectives, failles et poste à recruter`
     : `${analyseSlots.length} prospect${analyseSlots.length>1?'s':''} · Lequel recruter ?`;
@@ -3632,13 +3888,13 @@ function detectPlaystyleFromSnap(s) {
   const cs     = parseFloat(s.stats?.cs_min)     || 0;
   const wr     = parseFloat(s.stats?.winrate)    || 0;
   const styles = [];
-  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'Carry', icon:'🗡', color:'#FF5A4A' });
-  if (kp >= 68 && dmg < 28)    styles.push({ lbl:'Teamplay', icon:'🤝', color:'#4A9EFF' });
-  if (wr >= 54 && kda >= 3.0)  styles.push({ lbl:'Consistant', icon:'📊', color:'#C8F53C' });
-  if (kp >= 72 && kda >= 3.0)  styles.push({ lbl:'Agressif', icon:'⚡', color:'#F5A623' });
-  if (cs >= 8.5 && kp < 55)    styles.push({ lbl:'Farmer', icon:'🌾', color:'#2DD4BF' });
-  if (vision >= 55)             styles.push({ lbl:'Vision', icon:'👁', color:'#C084FC' });
-  if (!styles.length)           styles.push({ lbl:'Équilibré', icon:'⚖️', color:'var(--sub2)' });
+  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'Carry', icon:'▲', color:'#FF5A4A' });
+  if (kp >= 68 && dmg < 28)    styles.push({ lbl:'Teamplay', icon:'◈', color:'#4A9EFF' });
+  if (wr >= 54 && kda >= 3.0)  styles.push({ lbl:'Consistant', icon:'◆', color:'#1CC47A' });
+  if (kp >= 72 && kda >= 3.0)  styles.push({ lbl:'Agressif', icon:'▲', color:'#F5A623' });
+  if (cs >= 8.5 && kp < 55)    styles.push({ lbl:'Farmer', icon:'◇', color:'#2DD4BF' });
+  if (vision >= 55)             styles.push({ lbl:'Vision', icon:'◎', color:'#C084FC' });
+  if (!styles.length)           styles.push({ lbl:'Équilibré', icon:'·', color:'var(--sub2)' });
   // Style principal = premier détecté
   const main = styles[0];
   // Profil lisible pour un coach
@@ -3693,7 +3949,7 @@ function buildScoutView(container) {
   const roles = [...new Set(cols.map(c => c.role))];
   const isSameRole = roles.length === 1;
   const sameRoleBanner = isSameRole
-    ? '<div style="background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:8px;padding:8px 14px;font-size:.8rem;color:var(--lime);margin-bottom:14px">✅ Comparaison même poste — <strong>' + roles[0] + '</strong> · Mode optimal</div>'
+    ? '<div style="background:rgba(28,196,122,.08);border:1px solid rgba(28,196,122,.2);border-radius:8px;padding:8px 14px;font-size:.8rem;color:var(--lime);margin-bottom:14px">Comparaison même poste — <strong>' + roles[0] + '</strong> · Mode optimal</div>'
     : '<div style="background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.2);border-radius:8px;padding:8px 14px;font-size:.8rem;color:var(--amber);margin-bottom:14px">⚠ Postes différents (' + roles.join(', ') + ') — pour comparer efficacement, utilisez le même rôle</div>';
 
   // Carte résumé par joueur — enrichie avec style + potentiel
@@ -3706,7 +3962,7 @@ function buildScoutView(container) {
       ? calcScorePotentiel(scorePerf2, s.age, rankIdx2) : null;
     const isPepite = pot && (pot - scorePerf2) >= 1.5;
     return '<div style="background:var(--surf2);border-radius:12px;padding:16px;border:2px solid ' + PLAYER_COLORS[i] + '44;flex:1;min-width:200px;position:relative">' +
-      (isPepite ? '<div style="position:absolute;top:8px;right:8px;font-size:.68rem;background:rgba(200,245,60,.15);border:1px solid rgba(200,245,60,.3);border-radius:4px;padding:1px 7px;color:var(--lime)">🔥 PÉPITE</div>' : '') +
+      (isPepite ? '<div style="position:absolute;top:8px;right:8px;font-size:.68rem;background:rgba(28,196,122,.15);border:1px solid rgba(28,196,122,.3);border-radius:4px;padding:1px 7px;color:var(--lime);letter-spacing:.04em;font-weight:700">◆ PÉPITE</div>' : '') +
       '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">' +
         '<div>' +
           '<div style="font-weight:800;font-size:.95rem;color:' + PLAYER_COLORS[i] + '">' + s.pseudo + '</div>' +
@@ -3719,13 +3975,13 @@ function buildScoutView(container) {
           '<div style="font-size:2rem;font-weight:900;color:' + scCol(s.global) + ';line-height:1">' + (s.global!==null?parseFloat(s.global).toFixed(2):'—') + '</div>' +
           '<div style="font-size:.65rem;color:var(--sub)">Score SPES</div>' +
         '</div>' +
-        (pot ? '<div style="background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:6px;padding:4px 8px;text-align:center">' +
+        (pot ? '<div style="background:rgba(28,196,122,.08);border:1px solid rgba(28,196,122,.2);border-radius:6px;padding:4px 8px;text-align:center">' +
           '<div style="font-size:.85rem;font-weight:700;color:var(--lime)">' + pot.toFixed(1) + '</div>' +
           '<div style="font-size:.62rem;color:var(--sub)">Potentiel</div>' +
         '</div>' : '') +
       '</div>' +
       '<div style="font-size:.75rem;font-weight:700;color:' + scCol(s.global) + ';margin-bottom:10px">' +
-        (s.global>=8?'✅ Recruter':s.global>=6.5?'👀 À suivre':s.global>=5?'📝 Tryout':'❌ Pas prêt') +
+        (s.global>=8?'◆ Recruter':s.global>=6.5?'→ À suivre':s.global>=5?'◇ Tryout':'— Pas prêt') +
       '</div>' +
       '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px">' +
         ps.styles.slice(0,2).map(st => '<span style="font-size:.7rem;padding:2px 7px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:' + st.color + '">' + st.icon + ' ' + st.lbl + '</span>').join('') +
@@ -3736,7 +3992,7 @@ function buildScoutView(container) {
 
   // Table comparative
   const rows = [
-    { lbl:'🏆 Score SPES', vals:cols.map(s=>s.global?.toFixed(2)||'—'), big:true },
+    { lbl:'Score SPES', vals:cols.map(s=>s.global?.toFixed(2)||'—'), big:true },
     { lbl:'D1 Stats pures',  vals:cols.map(s=>fmtVal(s.dimScores?.d1)) },
     { lbl:'D2 Objectifs',    vals:cols.map(s=>fmtVal(s.dimScores?.d2)) },
     { lbl:'D3 Impact',       vals:cols.map(s=>fmtVal(s.dimScores?.d3)) },
@@ -3746,9 +4002,9 @@ function buildScoutView(container) {
     { lbl:'Win Rate',        vals:cols.map(s=>s.stats?.winrate!=null?fmtVal(s.stats.winrate)+'%':'—') },
     { lbl:'CS/min',          vals:cols.map(s=>fmtVal(s.stats?.cs_min,2)) },
     { lbl:'Kill Part.',      vals:cols.map(s=>s.stats?.kill_part!=null?fmtVal(s.stats.kill_part)+'%':'—') },
-    { lbl:'🔬 Solo Kills',   vals:cols.map(s=>fmtVal(s.adv?.soloKills,2)), adv:true },
-    { lbl:'🔬 Skillshots évités', vals:cols.map(s=>fmtVal(s.adv?.skillshotsDodged,1)), adv:true },
-    { lbl:'🔬 Vision Avantage', vals:cols.map(s=>fmtVal(s.adv?.visionAdv,2)), adv:true },
+    { lbl:'Solo Kills',         vals:cols.map(s=>fmtVal(s.adv?.soloKills,2)), adv:true },
+    { lbl:'Skillshots évités',  vals:cols.map(s=>fmtVal(s.adv?.skillshotsDodged,1)), adv:true },
+    { lbl:'Vision Avantage',    vals:cols.map(s=>fmtVal(s.adv?.visionAdv,2)), adv:true },
   ].map(row => {
     const b = bestIdx(row.vals.map(v=>parseFloat(v)));
     const cells = row.vals.map((v,i) => {
@@ -3784,7 +4040,7 @@ function buildScoutView(container) {
 
   container.innerHTML =
     sameRoleBanner +
-    (verdictHTML ? '<div style="background:rgba(200,245,60,.06);border:1px solid rgba(200,245,60,.25);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;color:var(--sub2);line-height:1.7">⭐ <strong style="color:var(--lime)">Recommandation SPES</strong> · ' + verdictHTML + '</div>' : '') +
+    (verdictHTML ? '<div style="background:rgba(28,196,122,.06);border:1px solid rgba(28,196,122,.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;color:var(--sub2);line-height:1.7">◆ <strong style="color:var(--lime)">Recommandation SPES</strong> · ' + verdictHTML + '</div>' : '') +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' + playerCards + '</div>' +
     '<div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);margin-bottom:12px">' +
       '<table style="width:100%;border-collapse:collapse;background:var(--surf1)">' +
@@ -3792,7 +4048,7 @@ function buildScoutView(container) {
       '</table>' +
     '</div>' +
     '<div style="font-size:.75rem;color:var(--sub);padding:8px 4px">' +
-      '💡 Les métriques 🔬 sont exclusives à VisionScore — non disponibles sur OP.GG ou DPM.' +
+      'Les métriques exclusives VisionScore ne sont pas disponibles sur OP.GG ou DPM.' +
     '</div>';
 }
 
@@ -3871,11 +4127,11 @@ function buildRosterView(container) {
   // Recommandation poste
   let recoPoste = '';
   if (missing.length) {
-    recoPoste = `⚠️ <strong>Postes manquants :</strong> ${missing.join(', ')} — roster incomplet, recrutement prioritaire.`;
+    recoPoste = `<strong>Postes manquants :</strong> ${missing.join(', ')} — roster incomplet, recrutement prioritaire.`;
   } else if (weakPlayer.global < 5.5) {
-    recoPoste = `🎯 <strong>Poste à renforcer :</strong> ${weakPlayer.role} (${weakPlayer.pseudo} · ${weakPlayer.global?.toFixed(2)}) — profil en-dessous du seuil semi-pro.`;
+    recoPoste = `<strong>Poste à renforcer :</strong> ${weakPlayer.role} (${weakPlayer.pseudo} · ${weakPlayer.global?.toFixed(2)}) — profil en-dessous du seuil semi-pro.`;
   } else {
-    recoPoste = `✅ Roster équilibré — tous les joueurs sont au-dessus du seuil semi-pro.`;
+    recoPoste = `Roster équilibré — tous les joueurs sont au-dessus du seuil semi-pro.`;
   }
 
   // Score d'équipe pondéré — ADC/Mid/Jgl comptent plus
@@ -3893,9 +4149,9 @@ function buildRosterView(container) {
       '<span style="font-size:1.6rem;font-weight:900;color:' + scCol(weightedScore) + ';line-height:1">' + (weightedScore !== null ? weightedScore.toFixed(2) : '—') + '</span>' +
       '<span style="font-size:.72rem;color:var(--sub)">/10 pondéré · ' + teamGrade + '</span>' +
     '</div>' +
-    '<div>💪 <strong>Point fort :</strong> ' + (strongest?.lbl||'?') + ' <span style="color:#4ADE80">(' + (strongest?.avg.toFixed(1)||'?') + '/10)</span></div>' +
-    '<div>📉 <strong>Faille :</strong> ' + (weakest?.lbl||'?') + ' <span style="color:#F87171">(' + (weakest?.avg.toFixed(1)||'?') + '/10)</span> — priorité coaching</div>' +
-    '<div>🌟 <strong>Leader :</strong> ' + (bestPlayer?.pseudo||'?') + ' · ' + (bestPlayer?.role||'?') + ' (' + (bestPlayer?.global?.toFixed(2)||'?') + '/10)</div>' +
+    '<div><strong style="color:var(--lime)">Point fort :</strong> ' + (strongest?.lbl||'?') + ' <span style="color:var(--lime)">(' + (strongest?.avg.toFixed(1)||'?') + '/10)</span></div>' +
+    '<div><strong style="color:var(--amber)">Faille :</strong> ' + (weakest?.lbl||'?') + ' <span style="color:var(--amber)">(' + (weakest?.avg.toFixed(1)||'?') + '/10)</span> — priorité coaching</div>' +
+    '<div><strong style="color:var(--platinum)">Leader :</strong> ' + (bestPlayer?.pseudo||'?') + ' · ' + (bestPlayer?.role||'?') + ' (' + (bestPlayer?.global?.toFixed(2)||'?') + '/10)</div>' +
     '<div style="margin-top:4px">' + recoPoste + '</div>' +
   '</div>';
 
@@ -3922,7 +4178,7 @@ function buildRosterView(container) {
         </td>`;
       }).join('')}
       <td style="padding:9px 10px;text-align:center;font-size:.75rem;font-weight:700;border-left:1px solid var(--border);color:${scCol(s.global)}">
-        ${(s.global||0)>=8?'✅ Fort':(s.global||0)>=6?'👀 OK':(s.global||0)>=5?'⚠️ Moyen':'🔴 Faible'}
+        ${(s.global||0)>=8?'Fort':(s.global||0)>=6?'OK':(s.global||0)>=5?'Moyen':'Faible'}
       </td>
     </tr>`).join('');
 
@@ -3934,7 +4190,7 @@ function buildRosterView(container) {
         <div style="margin-top:12px;display:flex;flex-direction:column;gap:5px">${legend}</div>
       </div>
       <div style="background:var(--surf2);border-radius:12px;padding:16px;border:1px solid var(--border)">
-        <div style="font-size:.7rem;font-weight:700;color:var(--sub);letter-spacing:.08em;margin-bottom:12px">🎯 ANALYSE COLLECTIVE</div>
+        <div style="font-size:.7rem;font-weight:700;color:var(--sub);letter-spacing:.08em;margin-bottom:12px">ANALYSE COLLECTIVE</div>
         ${collective}
       </div>
     </div>
@@ -3988,7 +4244,7 @@ function shareByURL() {
 
     // Copie dans le presse-papier
     navigator.clipboard.writeText(url).then(() => {
-      showToast('🔗 Lien copié dans le presse-papier !', 'lime');
+      showToast('Lien copié dans le presse-papier', 'success');
     }).catch(() => {
       // Fallback si clipboard API bloquée
       spesPrompt('Copiez ce lien et partagez-le à votre coach :', url, url);
@@ -4078,9 +4334,14 @@ function showToast(msg, type = 'success', dur = 3500) {
     document.body.appendChild(stack);
   }
 
-  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const svgIcons = {
+    success: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+    error:   '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+    warning: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    info:    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
   const borders = { success:'var(--lime)', error:'var(--red)', warning:'var(--amber)', info:'var(--blue)' };
-  const icon = icons[type] || '•';
+  const icon = svgIcons[type] || '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sub2)" stroke-width="2.2"><circle cx="12" cy="12" r="4"/></svg>';
   const borderCol = borders[type] || 'var(--lime)';
 
   const t = document.createElement('div');
@@ -4089,7 +4350,7 @@ function showToast(msg, type = 'success', dur = 3500) {
   t.innerHTML = `
     <span class="spes-toast-icon">${icon}</span>
     <span class="spes-toast-msg">${msg}</span>
-    <button class="spes-toast-close" onclick="this.closest('.spes-toast').remove()">✕</button>`;
+    <button class="spes-toast-close" onclick="this.closest('.spes-toast').remove()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   stack.appendChild(t);
 
   // Max 4 toasts simultanés
@@ -4112,7 +4373,7 @@ function spesConfirm(msg, title = 'Confirmation', isDanger = false) {
     const btnLabel = isDanger ? 'Supprimer' : 'Confirmer';
     overlay.innerHTML = `
       <div class="spes-modal-box" role="dialog" aria-modal="true">
-        <div class="spes-modal-title">⚠️ ${title}</div>
+        <div class="spes-modal-title">${title}</div>
         <div class="spes-modal-msg">${msg}</div>
         <div class="spes-modal-actions">
           <button class="btn btn-ghost btn-sm" id="sm-cancel">Annuler</button>
@@ -4236,12 +4497,12 @@ function exportPDF() {
     bg:    [8,  11, 16],   // fond principal
     bg2:   [12, 16, 24],   // fond secondaire
     bg3:   [18, 23, 34],   // fond cards
-    lime:  [200,245,60],   // accent principal
-    teal:  [45, 212,191],  // accent secondaire
-    amber: [245,166,35],   // warning
-    red:   [255,90, 74],   // danger
-    white: [232,230,224],  // texte principal
-    sub:   [90, 96, 112],  // texte secondaire
+    lime:  [28, 196,122],  // émeraude — accent principal
+    teal:  [21, 168,120],  // émeraude sombre — accent secondaire
+    amber: [212,113,74],   // cuivre — warning
+    red:   [232,25, 75],   // rouge électrique — danger
+    white: [223,226,239],  // platine — texte principal
+    sub:   [72, 82, 106],  // platine sombre — texte secondaire
     sub2:  [138,144,144],  // texte tertiaire
   };
 
@@ -4597,12 +4858,12 @@ let crmStructures = [];
 let crmPipeline   = [];
 
 const CRM_PIPELINE_STAGES = [
-  { id:'nouveau',    label:'🆕 Nouveau',    color:'var(--sub)' },
-  { id:'contact',    label:'📬 Contacté',   color:'var(--blue)' },
-  { id:'entretien',  label:'🎤 Entretien',  color:'var(--amber)' },
-  { id:'proposition',label:'📋 Proposition',color:'var(--teal)' },
-  { id:'signe',      label:'✅ Signé',      color:'var(--lime)' },
-  { id:'ecarte',     label:'❌ Écarté',     color:'var(--red)' },
+  { id:'nouveau',    label:'Nouveau',    color:'var(--sub)' },
+  { id:'contact',    label:'Contacté',   color:'var(--blue)' },
+  { id:'entretien',  label:'Entretien',  color:'var(--amber)' },
+  { id:'proposition',label:'Proposition',color:'var(--teal)' },
+  { id:'signe',      label:'Signé',      color:'var(--lime)' },
+  { id:'ecarte',     label:'Écarté',     color:'var(--red)' },
 ];
 
 const CRM_ROLES = ['Top','Jgl','Mid','ADC','Sup'];
@@ -4650,7 +4911,7 @@ function crmAddStructure(editId) {
   overlay.innerHTML =
     '<div style="background:var(--surf1);border:1px solid var(--border2);border-radius:16px;padding:1.5rem;width:100%;max-width:480px;max-height:90vh;overflow-y:auto">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">' +
-        '<div style="font-size:1rem;font-weight:800">' + (existing ? '✏️ Modifier la structure' : '🏢 Nouvelle structure esport') + '</div>' +
+        '<div style="font-size:1rem;font-weight:800">' + (existing ? 'Modifier la structure' : 'Nouvelle structure esport') + '</div>' +
         '<button onclick="document.getElementById(\'crm-modal-overlay\').remove()" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem">✕</button>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:.875rem">' +
@@ -4753,17 +5014,17 @@ function crmRenderStructures() {
             '<span style="font-size:.7rem;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.06);color:' + tierColor + ';border:1px solid currentColor">' + (s.tier||'') + '</span>' +
           '</div>' +
           '<div style="display:flex;gap:1.25rem;flex-wrap:wrap;font-size:.78rem;color:var(--sub2)">' +
-            (s.recruteur ? '<span>👤 ' + s.recruteur + '</span>' : '') +
-            (s.roleRecherche ? '<span>🎯 ' + s.roleRecherche + '</span>' : '') +
-            (s.budgetMax ? '<span>💶 ' + s.budgetMax + '€/mois</span>' : '') +
-            (s.contact ? '<span>✉️ ' + s.contact + '</span>' : '') +
+            (s.recruteur ? '<span>' + s.recruteur + '</span>' : '') +
+            (s.roleRecherche ? '<span style="color:var(--sub)">' + s.roleRecherche + '</span>' : '') +
+            (s.budgetMax ? '<span>' + s.budgetMax + ' €/mois</span>' : '') +
+            (s.contact ? '<span style="color:var(--sub2)">' + s.contact + '</span>' : '') +
           '</div>' +
           (s.notes ? '<div style="font-size:.75rem;color:var(--sub);margin-top:.375rem;font-style:italic">' + s.notes + '</div>' : '') +
         '</div>' +
         '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.375rem">' +
           '<div style="display:flex;gap:.375rem">' +
             '<span style="font-size:.72rem;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--sub)">' + pipeCount + ' joueur(s)</span>' +
-            (signed ? '<span style="font-size:.72rem;background:rgba(200,245,60,.1);border:1px solid rgba(200,245,60,.25);border-radius:4px;padding:2px 8px;color:var(--lime)">' + signed + ' signé(s)</span>' : '') +
+            (signed ? '<span style="font-size:.72rem;background:rgba(28,196,122,.1);border:1px solid rgba(28,196,122,.22);border-radius:4px;padding:2px 8px;color:var(--lime)">' + signed + ' signé(s)</span>' : '') +
           '</div>' +
           '<div style="display:flex;gap:.375rem">' +
             '<button onclick="crmAddPlayerToStructure(' + s.id + ')" style="font-size:.72rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 9px;color:var(--lime);cursor:pointer">+ Joueur</button>' +
@@ -4938,11 +5199,11 @@ function crmRenderPipeline() {
         '<div style="font-weight:700;font-size:.85rem;margin-bottom:.25rem">' + p.playerName + (p.playerTag ? ' <span style="color:var(--sub);font-size:.7rem">#' + p.playerTag + '</span>' : '') + '</div>' +
         '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.375rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
         '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + p.structureName + '</div>' +
-        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? '⚠ Relance : ' : '📅 ') + p.dateRelance + '</div>' : '') +
+        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? 'Relance : ' : '') + p.dateRelance + '</div>' : '') +
         (p.notes ? '<div style="font-size:.7rem;color:var(--sub);font-style:italic;margin-bottom:.5rem">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
         '<div style="display:flex;gap:.25rem;flex-wrap:wrap">' +
           (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" style="font-size:.68rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:3px;padding:1px 7px;color:var(--lime);cursor:pointer">→ Suivant</button>' : '') +
-          '<button onclick="crmSetRelance(' + p.id + ')" style="font-size:.68rem;background:var(--surf2);border:1px solid var(--border);border-radius:3px;padding:1px 7px;color:var(--sub);cursor:pointer">📅</button>' +
+          '<button onclick="crmSetRelance(' + p.id + ')" style="font-size:.68rem;background:var(--surf2);border:1px solid var(--border);border-radius:3px;padding:1px 7px;color:var(--sub);cursor:pointer">Relance</button>' +
           '<button onclick="crmDeletePipeline(' + p.id + ')" style="font-size:.68rem;background:none;border:1px solid rgba(255,90,74,.25);border-radius:3px;padding:1px 6px;color:var(--red);cursor:pointer">✕</button>' +
         '</div>' +
       '</div>';
@@ -5035,7 +5296,7 @@ function crmRunMatching() {
           group.matches.slice(0,5).map((m, i) => {
             const col = m.scoreCompat >= 8 ? 'var(--lime)' : m.scoreCompat >= 6 ? 'var(--teal)' : 'var(--amber)';
             const pepite = m.detail.bonusPepite > 0;
-            return '<div style="display:flex;align-items:center;gap:.875rem;background:var(--surf2);border-radius:8px;padding:.625rem .875rem;border:1px solid ' + (i===0?'rgba(202,255,53,.15)':'var(--border)') + '">' +
+            return '<div style="display:flex;align-items:center;gap:.875rem;background:var(--surf2);border-radius:8px;padding:.625rem .875rem;border:1px solid ' + (i===0?'rgba(28,196,122,.18)':'var(--border)') + '">' +
               '<div style="font-size:.75rem;font-weight:700;color:var(--sub);min-width:1.2rem;text-align:center">' + (i+1) + '</div>' +
               '<div style="min-width:38px;text-align:center">' +
                 '<div style="font-size:1rem;font-weight:900;color:' + col + ';line-height:1">' + m.scoreCompat + '</div>' +
@@ -5044,7 +5305,7 @@ function crmRunMatching() {
               '<div style="flex:1;min-width:0">' +
                 '<div style="font-weight:700;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
                   m.player.name + (m.player.tag?' <span style="color:var(--sub);font-size:.72rem">#'+m.player.tag+'</span>':'') +
-                  (pepite ? ' <span style="font-size:.65rem;color:var(--lime)">🔥</span>' : '') +
+                  (pepite ? ' <span style="font-size:.65rem;color:var(--lime);font-weight:700">◆</span>' : '') +
                 '</div>' +
                 '<div style="font-size:.7rem;color:var(--sub2)">' +
                   (m.player.role||'?') + ' · SPES ' + (m.player.score||'?') + '/10' +
@@ -5053,8 +5314,8 @@ function crmRunMatching() {
                 '</div>' +
                 '<div style="display:flex;gap:.25rem;margin-top:.25rem;flex-wrap:wrap">' +
                   (m.detail.bonusRole ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.2);border-radius:3px;color:var(--teal)">+' + m.detail.bonusRole + ' rôle</span>' : '') +
-                  (m.detail.bonusAge ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusAge + ' jeune</span>' : '') +
-                  (m.detail.bonusPepite ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(200,245,60,.08);border:1px solid rgba(200,245,60,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusPepite + ' pépite</span>' : '') +
+                  (m.detail.bonusAge ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(28,196,122,.08);border:1px solid rgba(28,196,122,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusAge + ' jeune</span>' : '') +
+                  (m.detail.bonusPepite ? '<span style="font-size:.6rem;padding:1px 5px;background:rgba(28,196,122,.08);border:1px solid rgba(28,196,122,.2);border-radius:3px;color:var(--lime)">+' + m.detail.bonusPepite + ' pépite</span>' : '') +
                 '</div>' +
               '</div>' +
               '<button onclick="crmAddPlayerToStructure(' + m.struct.id + ')" style="font-size:.7rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:4px 10px;color:var(--lime);cursor:pointer;white-space:nowrap;flex-shrink:0">+ Pipeline</button>' +
@@ -5298,7 +5559,7 @@ function buildProgressionTemp() {
     const pct = m.prev !== 0 ? delta / Math.abs(m.prev) * 100 : 0;
     return m.higher ? pct < -2 : pct > 2;
   }).length;
-  const trendIcon  = improvements > regressions ? '📈' : improvements < regressions ? '📉' : '➡️';
+  const trendIcon  = improvements > regressions ? '↑' : improvements < regressions ? '↓' : '→';
   const trendColor = improvements > regressions ? 'var(--lime)' : improvements < regressions ? 'var(--red)' : 'var(--sub)';
   const trendLabel = improvements > regressions ? 'En progression' : improvements < regressions ? 'En régression' : 'Stable';
 
@@ -5382,25 +5643,25 @@ function detectPlaystyle() {
   const styles = [];
 
   // Carry: high dmg share + high KDA
-  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'🗡 Carry', color:'#FF5A4A', desc:'Fort impact offensif' });
+  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'Carry', color:'#FF5A4A', desc:'Fort impact offensif' });
 
   // Teamplay: high KP + lower dmg
-  if (kp >= 68 && dmg < 28) styles.push({ lbl:'🤝 Teamplay', color:'#4A9EFF', desc:'Très impliqué en équipe' });
+  if (kp >= 68 && dmg < 28) styles.push({ lbl:'Teamplay', color:'#4A9EFF', desc:'Très impliqué en équipe' });
 
   // Consistant: high WR + decent KDA
-  if (wr >= 54 && kda >= 3.0) styles.push({ lbl:'📊 Consistant', color:'#C8F53C', desc:'Résultats stables' });
+  if (wr >= 54 && kda >= 3.0) styles.push({ lbl:'Consistant', color:'#1CC47A', desc:'Résultats stables' });
 
   // Agressif: very high KP + decent KDA
-  if (kp >= 72 && kda >= 3.0) styles.push({ lbl:'⚡ Agressif', color:'#F5A623', desc:'Cherche le fight' });
+  if (kp >= 72 && kda >= 3.0) styles.push({ lbl:'Agressif', color:'#F5A623', desc:'Cherche le fight' });
 
   // Passif / Farm: very high CS + low KP
-  if (cs >= 8.5 && kp < 55) styles.push({ lbl:'🌾 Farmer', color:'#2DD4BF', desc:'Priorité CS & scaling' });
+  if (cs >= 8.5 && kp < 55) styles.push({ lbl:'Farmer', color:'#2DD4BF', desc:'Priorité CS & scaling' });
 
   // Vision focused (support)
-  if (vision >= 55) styles.push({ lbl:'👁 Vision', color:'#C084FC', desc:'Contrôle de la vision' });
+  if (vision >= 55) styles.push({ lbl:'Vision', color:'#C084FC', desc:'Contrôle de la vision' });
 
   // Fallback
-  if (!styles.length) styles.push({ lbl:'⚖️ Équilibré', color:'var(--sub2)', desc:'Profil polyvalent' });
+  if (!styles.length) styles.push({ lbl:'Équilibré', color:'var(--sub2)', desc:'Profil polyvalent' });
 
   content.innerHTML = styles.map(s => `
     <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:100px">
@@ -5551,7 +5812,7 @@ function buildAdvancedSection(ch, role) {
   // Définition des blocs par catégorie avec seuils d'évaluation
   const blocks = [
     {
-      title: '⚔️ Mécaniques offensives',
+      title: 'Mécaniques offensives',
       color: '#F87171',
       metrics: [
         { lbl:'Solo Kills/game',    val:ch.soloKills,       bad:0.1, avg:0.4, good:0.8, elite:1.5, tip:'Kills 1v1 sans aide — indicateur clé de confiance mécanique' },
@@ -5571,7 +5832,7 @@ function buildAdvancedSection(ch, role) {
       ]
     },
     {
-      title: '👁️ Vision & contrôle',
+      title: 'Vision & contrôle',
       color: '#34D399',
       metrics: [
         { lbl:'Wards furtifs/game', val:ch.stealthWards,    bad:1,   avg:3,   good:5,   elite:8,   tip:'Wards invisibles placés — habitude vision proactive' },
@@ -5705,7 +5966,7 @@ function loadKey() {
   } catch(_) {}
 }
 function toggleKeyVisible() {}
-function toggleApiCard() { const b = document.getElementById('api-body'); const btn = document.getElementById('api-toggle-btn'); const v = b.style.display!=='none'; b.style.display=v?'none':'block'; btn.textContent=v?'▼ Développer':'▲ Réduire'; }
+function toggleApiCard() { const b = document.getElementById('api-body'); const btn = document.getElementById('api-toggle-btn'); const v = b.style.display!=='none'; b.style.display=v?'none':'block'; btn.innerHTML=v?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Développer':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg> Réduire'; }
 function toggleDebug() { const l = document.getElementById('debug-log'); l.style.display=l.style.display==='none'?'block':'none'; }
 
 // Suivi du temps pour l'estimation
@@ -5999,7 +6260,7 @@ async function fetchRiotData() {
   }
 
   const btn = document.getElementById('btn-fetch');
-  btn.disabled = true; btn.textContent = '⏳ Import…';
+  btn.disabled = true; btn.textContent = 'Import…';
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
 
   try {
@@ -6088,7 +6349,7 @@ async function fetchRiotData() {
             if (found) {
               const ageInput = document.getElementById('d-age');
               if (ageInput) { ageInput.value = found.age; onIdentityChange(); }
-              if (resultEl) resultEl.innerHTML = '<span style="color:var(--teal)">✅ Âge trouvé via ' + found.source + ' : <strong>' + found.age + ' ans</strong>' + (found.birthdate ? ' (' + found.birthdate + ')' : '') + '</span>';
+              if (resultEl) resultEl.innerHTML = '<span style="color:var(--teal)">Âge trouvé via ' + found.source + ' : <strong>' + found.age + ' ans</strong>' + (found.birthdate ? ' (' + found.birthdate + ')' : '') + '</span>';
             } else {
               if (resultEl) resultEl.innerHTML = '<span style="color:var(--amber)">⚠ Âge non trouvé automatiquement — utilisez les liens pour chercher manuellement.</span>';
             }
@@ -6100,19 +6361,19 @@ async function fetchRiotData() {
     setProgress(100, '✓ Import terminé');
     const top3 = stats.champDetails.slice(0,3).map(c => `<strong>${c.name}</strong> (${c.games}G · ${c.wr}% WR)`).join(' · ');
     setStatus('success', `
-      ✅ <strong>${stats.totalGames} parties analysées</strong> — ${stats.wins}V / ${stats.totalGames-stats.wins}D<br>
-      🏆 ${soloQ ? soloQ.tier+' '+soloQ.rank+' — '+soloQ.leaguePoints+' LP' : 'Non classé SoloQ'}<br>
-      🎮 ${top3 || '—'}<br>
-      🎯 Pool qualifié (≥5 games, ≥55% WR) : ${stats.champ_pool} champion${stats.champ_pool!==1?'s':''}<br>
+      <strong>${stats.totalGames} parties analysées</strong> — ${stats.wins}V / ${stats.totalGames-stats.wins}D<br>
+      ${soloQ ? rankIcon(soloQ.tier,'rank-icon-sm')+' '+soloQ.tier+' '+soloQ.rank+' — '+soloQ.leaguePoints+' LP' : '<span style="opacity:.6">Non classé SoloQ</span>'}<br>
+      <span style="opacity:.7">Champions :</span> ${top3 || '—'}<br>
+      Pool qualifié (≥5 parties, ≥55% WR) : ${stats.champ_pool} champion${stats.champ_pool!==1?'s':''}<br>
       <span style="font-size:10px;opacity:.7">Stats S1 remplies automatiquement. Complétez P, E, S2 pour le score global.</span>
     `);
     setTimeout(() => { document.getElementById('api-progress').style.display='none'; }, 5000);
 
   } catch(err) {
     document.getElementById('api-progress').style.display = 'none';
-    setStatus('error', `❌ <strong>Erreur :</strong> ${err.message}<br><small style="opacity:.7">Cliquez "Logs techniques" pour le détail.</small>`);
+    setStatus('error', `<strong>Erreur :</strong> ${err.message}<br><small style="opacity:.7">Cliquez "Logs techniques" pour le détail.</small>`);
   } finally {
-    btn.disabled = false; btn.textContent = '⬇ Importer';
+    btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Importer';
   }
 }
 
@@ -6131,10 +6392,35 @@ function destroyChart(id) {
 const CHART_DEFAULTS = {
   responsive: true,
   maintainAspectRatio: true,
-  plugins: { legend: { display: false }, tooltip: { backgroundColor:'#0C0F16', borderColor:'rgba(255,255,255,.1)', borderWidth:1, titleColor:'#E8E6E0', bodyColor:'#8A9090', titleFont:{ family:'DM Mono', size:11 }, bodyFont:{ family:'DM Mono', size:11 }, padding:10 } },
+  animation: { duration: 700, easing: 'easeOutQuart' },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0A0D14',
+      borderColor: 'rgba(28,196,122,.18)',
+      borderWidth: 1,
+      titleColor: '#E8E6E0',
+      bodyColor: '#8A9090',
+      titleFont: { family: 'DM Mono', size: 11, weight: '700' },
+      bodyFont: { family: 'DM Mono', size: 11 },
+      padding: 12,
+      cornerRadius: 8,
+      caretSize: 5,
+      caretPadding: 8,
+      displayColors: false,
+    }
+  },
   scales: {
-    x: { grid:{ color:'rgba(255,255,255,.04)', drawBorder:false }, ticks:{ color:'#5A6070', font:{ family:'DM Mono', size:10 } } },
-    y: { grid:{ color:'rgba(255,255,255,.04)', drawBorder:false }, ticks:{ color:'#5A6070', font:{ family:'DM Mono', size:10 } } }
+    x: {
+      grid: { color: 'rgba(255,255,255,.025)', drawBorder: false },
+      border: { display: false },
+      ticks: { color: '#3E4860', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 12 }
+    },
+    y: {
+      grid: { color: 'rgba(255,255,255,.04)', drawBorder: false },
+      border: { display: false },
+      ticks: { color: '#3E4860', font: { family: 'DM Mono', size: 10 } }
+    }
   }
 };
 
@@ -6197,10 +6483,9 @@ function buildChartKDA() {
     return { x: i + 1, y: parseFloat(kda.toFixed(2)), win: p.win };
   }).filter(Boolean);
 
-  // Smoothed line (rolling avg 5)
   const smoothed = data.map((d, i) => {
-    const window = data.slice(Math.max(0, i-2), i+3);
-    return window.reduce((a,b) => a + b.y, 0) / window.length;
+    const w = data.slice(Math.max(0, i-2), i+3);
+    return parseFloat((w.reduce((a,b) => a + b.y, 0) / w.length).toFixed(2));
   });
 
   chartInstances['kda'] = new Chart(canvas, {
@@ -6212,18 +6497,26 @@ function buildChartKDA() {
           type: 'bar',
           label: 'KDA',
           data: data.map(d => d.y),
-          backgroundColor: data.map(d => d.win ? 'rgba(200,245,60,.25)' : 'rgba(255,90,74,.2)'),
-          borderColor: data.map(d => d.win ? 'rgba(200,245,60,.6)' : 'rgba(255,90,74,.5)'),
-          borderWidth: 1, borderRadius: 2,
+          backgroundColor: data.map(d => d.win ? 'rgba(28,196,122,.18)' : 'rgba(232,25,75,.14)'),
+          borderColor: data.map(d => d.win ? 'rgba(28,196,122,.65)' : 'rgba(232,25,75,.55)'),
+          borderWidth: 1.5,
+          borderRadius: 4,
+          borderSkipped: false,
         },
         {
           type: 'line',
           label: 'Tendance',
           data: smoothed,
-          borderColor: '#C8F53C',
-          borderWidth: 2,
+          borderColor: '#1CC47A',
+          borderWidth: 2.5,
           pointRadius: 0,
-          tension: 0.4,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#1CC47A',
+          pointHoverBorderColor: '#060810',
+          pointHoverBorderWidth: 2,
+          tension: 0.45,
+          fill: false,
+          order: -1,
         }
       ]
     },
@@ -6231,7 +6524,10 @@ function buildChartKDA() {
       ...CHART_DEFAULTS,
       plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
         callbacks: {
-          label: ctx => ctx.datasetIndex === 0 ? `KDA: ${ctx.raw} (${data[ctx.dataIndex]?.win ? 'Victoire' : 'Défaite'})` : `Tendance: ${ctx.raw.toFixed(2)}`
+          title: ctx => `Partie ${ctx[0].dataIndex + 1}`,
+          label: ctx => ctx.datasetIndex === 0
+            ? `KDA  ${ctx.raw}  ·  ${data[ctx.dataIndex]?.win ? '▲ Victoire' : '▼ Défaite'}`
+            : `Tendance  ${ctx.raw}`,
         }
       }}
     }
@@ -6246,12 +6542,14 @@ function buildChartWR() {
   const reversed = matchHistory.slice().reverse();
   const wrData = reversed.map((_, i) => {
     if (i < 9) return null;
-    const window = reversed.slice(i-9, i+1);
-    const wins = window.filter(m => getParticipant(m)?.win).length;
+    const w = reversed.slice(i-9, i+1);
+    const wins = w.filter(m => getParticipant(m)?.win).length;
     return parseFloat((wins/10*100).toFixed(1));
   }).filter(v => v !== null);
 
   const labels = reversed.slice(9).map((_, i) => 'G'+(i+10));
+  const avgWR = wrData.length ? wrData.reduce((a,b)=>a+b,0)/wrData.length : 50;
+  const lineColor = avgWR >= 53 ? '#1CC47A' : avgWR >= 48 ? '#D4714A' : '#E8194B';
 
   chartInstances['wr'] = new Chart(canvas, {
     type: 'line',
@@ -6260,20 +6558,33 @@ function buildChartWR() {
       datasets: [{
         label: 'WR 10 parties',
         data: wrData,
-        borderColor: '#C8F53C',
-        backgroundColor: 'rgba(200,245,60,.06)',
+        borderColor: lineColor,
+        backgroundColor: function(ctx) {
+          const chart = ctx.chart;
+          const {ctx: c, chartArea} = chart;
+          if (!chartArea) return 'transparent';
+          const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          const rgb = avgWR >= 53 ? '28,196,122' : avgWR >= 48 ? '212,113,74' : '232,25,75';
+          g.addColorStop(0, `rgba(${rgb},.3)`);
+          g.addColorStop(0.55, `rgba(${rgb},.06)`);
+          g.addColorStop(1, `rgba(${rgb},.0)`);
+          return g;
+        },
         fill: true,
-        borderWidth: 2,
-        pointRadius: 3,
-        pointBackgroundColor: wrData.map(v => v >= 55 ? '#C8F53C' : v >= 50 ? '#F5A623' : '#FF5A4A'),
-        tension: 0.4,
+        borderWidth: 2.5,
+        pointRadius: 3.5,
+        pointHoverRadius: 6,
+        pointBackgroundColor: wrData.map(v => v >= 55 ? '#1CC47A' : v >= 50 ? '#D4714A' : '#E8194B'),
+        pointBorderColor: 'transparent',
+        tension: 0.42,
       }, {
         label: '50%',
         data: labels.map(() => 50),
         borderColor: 'rgba(255,255,255,.1)',
         borderWidth: 1,
-        borderDash: [4,4],
+        borderDash: [5, 5],
         pointRadius: 0,
+        fill: false,
       }]
     },
     options: {
@@ -6283,7 +6594,18 @@ function buildChartWR() {
         y: { ...CHART_DEFAULTS.scales.y, min: 20, max: 80,
           ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v+'%' }
         }
-      }
+      },
+      plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
+        callbacks: {
+          title: ctx => `Après ${ctx[0].label}`,
+          label: ctx => ctx.datasetIndex === 0 ? `Win Rate  ${ctx.raw}%` : null,
+          afterLabel: ctx => {
+            if (ctx.datasetIndex !== 0) return null;
+            const v = ctx.raw;
+            return v >= 55 ? '↑ Forme excellente' : v >= 50 ? '→ En équilibre' : '↓ Série difficile';
+          }
+        }
+      }}
     }
   });
 }
@@ -6315,23 +6637,76 @@ function buildChartMulti() {
   }
 
   const labels = reversed.map((_, i) => 'G'+(i+1));
+  const makeGrad = (ctx, color) => function(context) {
+    const chart = context.chart;
+    const {ctx: c, chartArea} = chart;
+    if (!chartArea) return 'transparent';
+    const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+    g.addColorStop(0, color.replace(')', ',.15)').replace('rgb','rgba'));
+    g.addColorStop(1, color.replace(')', ',.0)').replace('rgb','rgba'));
+    return g;
+  };
+
   chartInstances['multi'] = new Chart(canvas, {
     type: 'line',
     data: {
       labels,
       datasets: [
-        { label:'CS/min',    data:rollingAvg(reversed,'cs_min'), borderColor:'#4A9EFF', borderWidth:2, pointRadius:0, tension:.4, yAxisID:'y' },
-        { label:'Kill Part.%',data:rollingAvg(reversed,'kp'),   borderColor:'#2DD4BF', borderWidth:2, pointRadius:0, tension:.4, yAxisID:'y2' },
-        { label:'Vision',    data:rollingAvg(reversed,'vision'), borderColor:'#C084FC', borderWidth:2, pointRadius:0, tension:.4, yAxisID:'y2' },
+        {
+          label: 'CS/min',
+          data: rollingAvg(reversed,'cs_min'),
+          borderColor: '#4A9EFF',
+          backgroundColor: function(ctx) {
+            const chart = ctx.chart;
+            const {ctx: c, chartArea} = chart;
+            if (!chartArea) return 'transparent';
+            const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            g.addColorStop(0, 'rgba(74,158,255,.2)');
+            g.addColorStop(1, 'rgba(74,158,255,.0)');
+            return g;
+          },
+          fill: true,
+          borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4, tension: .42, yAxisID:'y'
+        },
+        {
+          label: 'Kill Part.%',
+          data: rollingAvg(reversed,'kp'),
+          borderColor: '#2DD4BF',
+          backgroundColor: 'transparent',
+          fill: false,
+          borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .42, yAxisID:'y2'
+        },
+        {
+          label: 'Vision',
+          data: rollingAvg(reversed,'vision'),
+          borderColor: '#C084FC',
+          backgroundColor: 'transparent',
+          fill: false,
+          borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .42, yAxisID:'y2'
+        },
       ]
     },
     options: {
       ...CHART_DEFAULTS,
-      plugins: { ...CHART_DEFAULTS.plugins, legend: { display:true, labels:{ color:'#8A9090', font:{ family:'DM Mono', size:10 }, boxWidth:12, padding:16 } } },
+      plugins: {
+        ...CHART_DEFAULTS.plugins,
+        legend: {
+          display: true,
+          labels: {
+            color: '#6A7080',
+            font: { family: 'DM Mono', size: 10 },
+            boxWidth: 10,
+            boxHeight: 2,
+            padding: 18,
+            usePointStyle: true,
+            pointStyle: 'line',
+          }
+        }
+      },
       scales: {
         x: CHART_DEFAULTS.scales.x,
         y: { ...CHART_DEFAULTS.scales.y, position:'left', title:{ display:true, text:'CS/min', color:'#4A9EFF', font:{family:'DM Mono',size:10} } },
-        y2: { ...CHART_DEFAULTS.scales.y, position:'right', grid:{ drawOnChartArea:false }, title:{ display:true, text:'% / Score', color:'#2DD4BF', font:{family:'DM Mono',size:10} } }
+        y2: { ...CHART_DEFAULTS.scales.y, position:'right', grid:{ drawOnChartArea:false, color:'rgba(255,255,255,.02)' }, title:{ display:true, text:'% / Score', color:'#2DD4BF', font:{family:'DM Mono',size:10} } }
       }
     }
   });
@@ -6356,6 +6731,9 @@ function buildChartLP() {
   const minLP  = Math.min(...lpData);
   const trend  = lpData[lpData.length-1] - lpData[0];
 
+  const lineColor = trend >= 0 ? '#1CC47A' : '#E8194B';
+  const rgb = trend >= 0 ? '28,196,122' : '232,25,75';
+
   chartInstances['lp'] = new Chart(canvas, {
     type:'line',
     data:{
@@ -6363,20 +6741,46 @@ function buildChartLP() {
       datasets:[{
         label:'LP estimés',
         data: lpData,
-        borderColor: trend >= 0 ? '#C8F53C' : '#FF5A4A',
-        backgroundColor: trend >= 0 ? 'rgba(200,245,60,.06)' : 'rgba(255,90,74,.06)',
-        fill:true, borderWidth:2, pointRadius:0, tension:.3,
+        borderColor: lineColor,
+        backgroundColor: function(ctx) {
+          const chart = ctx.chart;
+          const {ctx: c, chartArea} = chart;
+          if (!chartArea) return 'transparent';
+          const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+          g.addColorStop(0, `rgba(${rgb},.28)`);
+          g.addColorStop(0.6, `rgba(${rgb},.06)`);
+          g.addColorStop(1, `rgba(${rgb},.0)`);
+          return g;
+        },
+        fill: true,
+        borderWidth: 2.5,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: lineColor,
+        pointHoverBorderColor: '#060810',
+        pointHoverBorderWidth: 2,
+        tension: .35,
       },{
-        label:'Baseline',
+        label:'Référence',
         data: reversed.map(() => 0),
-        borderColor:'rgba(255,255,255,.08)',
-        borderWidth:1, borderDash:[4,4], pointRadius:0,
+        borderColor:'rgba(255,255,255,.09)',
+        borderWidth: 1,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: false,
       }]
     },
     options:{
       ...CHART_DEFAULTS,
       plugins:{ ...CHART_DEFAULTS.plugins, tooltip:{ ...CHART_DEFAULTS.plugins.tooltip,
-        callbacks:{ label: ctx => ctx.datasetIndex===0 ? `LP: ${ctx.raw > 0 ? '+':''}${ctx.raw}` : null }
+        callbacks:{
+          title: ctx => `Partie ${ctx[0].dataIndex + 1}`,
+          label: ctx => ctx.datasetIndex === 0 ? `LP  ${ctx.raw > 0 ? '+':''}${ctx.raw}` : null,
+          afterLabel: ctx => {
+            if (ctx.datasetIndex !== 0) return null;
+            return trend >= 0 ? `↑ Tendance haussière (+${trend} LP total)` : `↓ Tendance baissière (${trend} LP total)`;
+          }
+        }
       }},
       scales:{
         x: CHART_DEFAULTS.scales.x,
@@ -6398,24 +6802,24 @@ function buildChartChamps() {
       labels: top8.map(c => c.name),
       datasets:[
         { label:'Win Rate %', data:top8.map(c=>parseFloat(c.wr)),
-          backgroundColor: top8.map(c => parseFloat(c.wr)>=55?'rgba(200,245,60,.3)':parseFloat(c.wr)>=50?'rgba(245,166,35,.3)':'rgba(255,90,74,.25)'),
-          borderColor:     top8.map(c => parseFloat(c.wr)>=55?'rgba(200,245,60,.8)':parseFloat(c.wr)>=50?'rgba(245,166,35,.8)':'rgba(255,90,74,.7)'),
-          borderWidth:1, borderRadius:3, yAxisID:'y',
+          backgroundColor: top8.map(c => parseFloat(c.wr)>=55?'rgba(28,196,122,.2)':parseFloat(c.wr)>=50?'rgba(212,113,74,.2)':'rgba(232,25,75,.18)'),
+          borderColor:     top8.map(c => parseFloat(c.wr)>=55?'rgba(28,196,122,.72)':parseFloat(c.wr)>=50?'rgba(212,113,74,.72)':'rgba(232,25,75,.65)'),
+          borderWidth:1.5, borderRadius:4, borderSkipped:false, yAxisID:'y',
         },
         { label:'Parties', data:top8.map(c=>c.games),
-          backgroundColor:'rgba(74,158,255,.15)',
-          borderColor:'rgba(74,158,255,.5)',
-          borderWidth:1, borderRadius:3, yAxisID:'y2', type:'bar',
+          backgroundColor:'rgba(74,158,255,.12)',
+          borderColor:'rgba(74,158,255,.45)',
+          borderWidth:1.5, borderRadius:4, borderSkipped:false, yAxisID:'y2', type:'bar',
         }
       ]
     },
     options:{
       ...CHART_DEFAULTS,
-      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{ color:'#8A9090', font:{family:'DM Mono',size:10}, boxWidth:12, padding:16 } } },
+      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{ color:'#6A7080', font:{family:'DM Mono',size:10}, boxWidth:10, boxHeight:2, padding:18, usePointStyle:true, pointStyle:'rect' } } },
       scales:{
         x: CHART_DEFAULTS.scales.x,
         y:{ ...CHART_DEFAULTS.scales.y, position:'left', min:0, max:100, ticks:{...CHART_DEFAULTS.scales.y.ticks, callback:v=>v+'%'} },
-        y2:{ ...CHART_DEFAULTS.scales.y, position:'right', grid:{drawOnChartArea:false} }
+        y2:{ ...CHART_DEFAULTS.scales.y, position:'right', grid:{drawOnChartArea:false, color:'rgba(255,255,255,.02)'} }
       }
     }
   });
@@ -6439,10 +6843,10 @@ function buildHeatmap() {
   const intensityColors = (v) => {
     if (v === 0) return 'rgba(255,255,255,.03)';
     const pct = v / maxVal;
-    if (pct >= .75) return 'rgba(200,245,60,.85)';
-    if (pct >= .5)  return 'rgba(200,245,60,.55)';
-    if (pct >= .25) return 'rgba(200,245,60,.30)';
-    return 'rgba(200,245,60,.12)';
+    if (pct >= .75) return 'rgba(28,196,122,.85)';
+    if (pct >= .5)  return 'rgba(28,196,122,.55)';
+    if (pct >= .25) return 'rgba(28,196,122,.28)';
+    return 'rgba(28,196,122,.12)';
   };
 
   // Hour labels
@@ -6471,7 +6875,7 @@ function buildHeatmap() {
   // Legend
   const legend = document.getElementById('heatmap-legend');
   if (legend) {
-    legend.innerHTML = ['rgba(255,255,255,.03)','rgba(200,245,60,.12)','rgba(200,245,60,.30)','rgba(200,245,60,.55)','rgba(200,245,60,.85)']
+    legend.innerHTML = ['rgba(255,255,255,.03)','rgba(28,196,122,.12)','rgba(28,196,122,.28)','rgba(28,196,122,.55)','rgba(28,196,122,.85)']
       .map(c => `<div class="heatmap-legend-cell" style="background:${c}"></div>`).join('');
   }
 }
@@ -6497,8 +6901,8 @@ function buildChartWeekday() {
     data:{
       labels: DAYS,
       datasets:[
-        { label:'Parties', data:counts, backgroundColor:'rgba(74,158,255,.2)', borderColor:'rgba(74,158,255,.6)', borderWidth:1, borderRadius:3, yAxisID:'y' },
-        { label:'WR %', data:wr, type:'line', borderColor:'#C8F53C', borderWidth:2, pointRadius:4, pointBackgroundColor:'#C8F53C', tension:.3, yAxisID:'y2' }
+        { label:'Parties', data:counts, backgroundColor:'rgba(74,143,232,.18)', borderColor:'rgba(74,143,232,.55)', borderWidth:1, borderRadius:3, yAxisID:'y' },
+        { label:'WR %', data:wr, type:'line', borderColor:'#1CC47A', borderWidth:2, pointRadius:4, pointBackgroundColor:'#1CC47A', tension:.3, yAxisID:'y2' }
       ]
     },
     options:{
@@ -6609,7 +7013,7 @@ async function loadMapData() {
   const server = document.getElementById('d-server')?.value || 'euw1';
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
   const btn = document.getElementById('btn-load-map');
-  btn.disabled = true; btn.textContent = '⏳ Chargement…';
+  btn.disabled = true; btn.textContent = 'Chargement…';
 
   // Reset data
   mapData = { kills:[], deaths:[], wards:[], positions:[], objectives:[], gamesAnalyzed:0 };
@@ -6640,8 +7044,8 @@ async function loadMapData() {
   mapData.gamesAnalyzed = loaded;
 
   if (!loaded) {
-    setMapStatus('error', '❌ Impossible de charger les timelines. Vérifiez votre clé API.');
-    btn.disabled = false; btn.textContent = '🗺️ Charger la carte';
+    setMapStatus('error', 'Impossible de charger les timelines. Vérifiez votre clé API.');
+    btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Charger la carte';
     return;
   }
 
@@ -6654,9 +7058,9 @@ async function loadMapData() {
   await drawMapBase();
   renderMap();
 
-  setMapStatus('success', `✅ ${loaded} parties analysées — ${mapData.kills.length} kills · ${mapData.deaths.length} morts · ${mapData.wards.length} wards`);
+  setMapStatus('success', `${loaded} parties analysées — ${mapData.kills.length} kills · ${mapData.deaths.length} morts · ${mapData.wards.length} wards`);
 
-  btn.disabled = false; btn.textContent = '🗺️ Recharger';
+  btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Recharger';
 }
 
 function processTimeline(timeline, puuid) {
@@ -7088,8 +7492,8 @@ function renderMap() {
     ctx.globalAlpha = 1.0;
   }
 
-  if (currentMapView === 'kills')      renderKillsDeaths(ctx, size, mapData.kills,    showHeatmap, showMarkers, '#C8F53C', '#FF5A4A');
-  if (currentMapView === 'deaths')     renderKillsDeaths(ctx, size, mapData.deaths,   showHeatmap, showMarkers, '#FF5A4A', '#C8F53C');
+  if (currentMapView === 'kills')      renderKillsDeaths(ctx, size, mapData.kills,    showHeatmap, showMarkers, '#1CC47A', '#E8194B');
+  if (currentMapView === 'deaths')     renderKillsDeaths(ctx, size, mapData.deaths,   showHeatmap, showMarkers, '#E8194B', '#1CC47A');
   if (currentMapView === 'wards')      renderWards(ctx, size, showHeatmap, showMarkers);
   if (currentMapView === 'position')   renderPositions(ctx, size);
   if (currentMapView === 'objectives') renderObjectives(ctx, size);
@@ -7110,12 +7514,12 @@ function renderKillsDeaths(ctx, size, points, showHeatmap, showMarkers, markerCo
       const r = size * 0.055;
       const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
       if (isKill) {
-        grad.addColorStop(0, 'rgba(200,245,60,.55)');
-        grad.addColorStop(0.4, 'rgba(200,245,60,.25)');
+        grad.addColorStop(0, 'rgba(28,196,122,.55)');
+        grad.addColorStop(0.4, 'rgba(28,196,122,.22)');
         grad.addColorStop(1, 'rgba(0,0,0,0)');
       } else {
-        grad.addColorStop(0, 'rgba(255,90,74,.55)');
-        grad.addColorStop(0.4, 'rgba(255,90,74,.25)');
+        grad.addColorStop(0, 'rgba(232,25,75,.55)');
+        grad.addColorStop(0.4, 'rgba(232,25,75,.22)');
         grad.addColorStop(1, 'rgba(0,0,0,0)');
       }
       ctx.fillStyle = grad;
@@ -7127,8 +7531,8 @@ function renderKillsDeaths(ctx, size, points, showHeatmap, showMarkers, markerCo
 
   if (showMarkers && filtered.length > 0) {
     const isKill = currentMapView === 'kills';
-    const markerColor = isKill ? '#C8F53C' : '#FF5A4A';
-    const glowColor   = isKill ? 'rgba(200,245,60,.35)' : 'rgba(255,90,74,.35)';
+    const markerColor = isKill ? '#1CC47A' : '#E8194B';
+    const glowColor   = isKill ? 'rgba(28,196,122,.35)' : 'rgba(232,25,75,.35)';
 
     filtered.forEach(p => {
       const [cx, cy] = mapCoordToCanvas(p.x, p.y, size);
@@ -7254,7 +7658,7 @@ function renderPositions(ctx, size) {
 
   // Connecting path (last 50 positions for readability)
   const sample = filtered.slice(-50);
-  ctx.strokeStyle = 'rgba(200,245,60,.3)';
+  ctx.strokeStyle = 'rgba(28,196,122,.28)';
   ctx.lineWidth = 1.5;
   ctx.setLineDash([3, 3]);
   ctx.beginPath();
@@ -7289,7 +7693,7 @@ function renderObjectives(ctx, size) {
     ctx.stroke();
 
     // Background
-    ctx.fillStyle = p.isAlly ? `rgba(200,245,60,.15)` : 'rgba(255,90,74,.12)';
+    ctx.fillStyle = p.isAlly ? 'rgba(28,196,122,.15)' : 'rgba(232,25,75,.12)';
     ctx.fill();
 
     // Emoji
@@ -7300,7 +7704,7 @@ function renderObjectives(ctx, size) {
 
     // Phase label
     ctx.font = `${size*0.012}px DM Mono`;
-    ctx.fillStyle = p.isAlly ? '#C8F53C' : '#FF5A4A';
+    ctx.fillStyle = p.isAlly ? '#1CC47A' : '#E8194B';
     ctx.fillText(Math.round(p.t)+'m', cx, cy + size*0.028);
   });
 }
@@ -7333,29 +7737,29 @@ function updateMapLegend() {
   if (!el) return;
   const legends = {
     kills: [
-      { color:'#C8F53C', label:'Kill' },
-      { color:'rgba(200,245,60,.2)', label:'Zone de danger (heatmap)' },
+      { color:'#1CC47A', label:'Kill' },
+      { color:'rgba(28,196,122,.22)', label:'Zone de danger (heatmap)' },
     ],
     deaths: [
-      { color:'#FF5A4A', label:'Mort' },
-      { color:'rgba(255,90,74,.2)', label:'Zone de risque (heatmap)' },
+      { color:'#E8194B', label:'Mort' },
+      { color:'rgba(232,25,75,.2)', label:'Zone de risque (heatmap)' },
     ],
     wards: [
-      { color:'#F5A623', label:'Vision ward' },
-      { color:'#4A9EFF', label:'Control ward' },
-      { color:'#2DD4BF', label:'Œil bleu' },
+      { color:'#D4714A', label:'Vision ward' },
+      { color:'#4A8FE8', label:'Control ward' },
+      { color:'#15A878', label:'Œil bleu' },
     ],
     position: [
-      { color:'#C8F53C', label:'Très fréquenté' },
-      { color:'#F5A623', label:'Fréquenté' },
-      { color:'#4A9EFF', label:'Occasionnel' },
-      { color:'#2DD4BF', label:'Rare' },
+      { color:'#1CC47A', label:'Très fréquenté' },
+      { color:'#D4714A', label:'Fréquenté' },
+      { color:'#4A8FE8', label:'Occasionnel' },
+      { color:'#15A878', label:'Rare' },
     ],
     objectives: [
-      { color:'#C8F53C', label:'Objectif pris (allié)' },
-      { color:'#FF5A4A', label:'Objectif perdu' },
-      { color:'#F5A623', label:'Dragon' },
-      { color:'#C084FC', label:'Baron' },
+      { color:'#1CC47A', label:'Objectif pris (allié)' },
+      { color:'#E8194B', label:'Objectif perdu' },
+      { color:'#D4714A', label:'Dragon' },
+      { color:'#8A7FF5', label:'Baron' },
     ],
   };
   const items = legends[currentMapView] || [];
@@ -7534,7 +7938,7 @@ loadKey();
 // ════════════════════════════════════════════
 let top50Data = [];
 let top50ViewMode = 'private'; // 'private' | 'public'
-const STATUT_FLOW = ['🆕 Nouveau','👁 Observation','📬 Contacté','🎤 Entretien','✅ Signé','❌ Écarté'];
+const STATUT_FLOW = ['Nouveau','Observation','Contacté','Entretien','Signé','Écarté'];
 const TIER_IDX = {IRON:0,BRONZE:1,SILVER:2,GOLD:3,PLATINUM:4,EMERALD:5,DIAMOND:6,MASTER:7,GRANDMASTER:8,CHALLENGER:9};
 
 function t50SetProg(pct, txt) {
@@ -7563,7 +7967,7 @@ async function top50Scan() {
   // Sans clé = mode backend Railway automatique (comme le reste du site)
 
   const btn = document.getElementById('t50-scan-btn');
-  btn.disabled = true; btn.textContent = '⏳ Scan…';
+  btn.disabled = true; btn.textContent = 'Scan…';
   t50SetProg(2, 'Initialisation du scan…');
 
   const regional = { euw1:'europe', eun1:'europe', na1:'americas', kr:'asia' }[server] || 'europe';
@@ -7701,8 +8105,8 @@ async function top50Scan() {
           dmgAvg: parseFloat(dmgAvg.toFixed(1)), role, champs,
           score: parseFloat(parseFloat(score).toFixed(2)),
           age:       existing?.age       ?? null,
-          ageStatus: existing?.ageStatus ?? '🔍',
-          statut:    existing?.statut    ?? '🆕 Nouveau',
+          ageStatus: existing?.ageStatus ?? '—',
+          statut:    existing?.statut    ?? 'Nouveau',
           notes:     existing?.notes     ?? '',
           addedAt:   existing?.addedAt   ?? new Date().toISOString(),
         });
@@ -7746,10 +8150,10 @@ async function top50Scan() {
 
     if (!top50Data.length) {
       t50SetProg(0, '⚠ Aucun prospect récupéré. Consultez les logs techniques pour le détail.');
-      btn.disabled = false; btn.textContent = '⚡ Scanner';
+      btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Scanner';
       return;
     }
-    t50SetProg(100, '✅ ' + top50Data.length + ' prospects générés !');
+    t50SetProg(100, top50Data.length + ' prospects générés');
     document.getElementById('t50-stats-bar').style.display = 'flex';
     document.getElementById('t50-count').textContent = top50Data.length;
     const dateEl = document.getElementById('t50-date');
@@ -7758,10 +8162,10 @@ async function top50Scan() {
     setTimeout(() => { document.getElementById('t50-progress').style.display = 'none'; }, 4000);
 
   } catch(e) {
-    t50SetProg(0, '❌ ' + e.message);
-    dbgLog && dbgLog('❌ Scan error: ' + e.message);
+    t50SetProg(0, 'Erreur : ' + e.message);
+    dbgLog && dbgLog('Scan error: ' + e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '⚡ Scanner';
+    btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Scanner';
   }
 }
 
@@ -7962,7 +8366,7 @@ function guessRole(champs) {
 // ════════════════════════════════════════════
 // TOP 50 — RENDER TABLE + ACTIONS
 // ════════════════════════════════════════════
-const STATUT_FLOW_T50 = ['🆕 Nouveau','👁 Observation','📬 Contacté','🎤 Entretien','✅ Signé','❌ Écarté'];
+const STATUT_FLOW_T50 = ['Nouveau','Observation','Contacté','Entretien','Signé','Écarté'];
 const TIER_COLOR = {
   IRON:'#7A7A7A', BRONZE:'#CD7F32', SILVER:'#C0C0C0', GOLD:'#FFD700',
   PLATINUM:'#00B4D8', EMERALD:'#50C878', DIAMOND:'#A78BFA',
@@ -7999,7 +8403,7 @@ function top50RenderTable() {
   if (countEl) countEl.textContent = filteredData.length + (filteredData.length < top50Data.length ? ' / ' + top50Data.length + ' total' : '');
   const contactedEl = document.getElementById('t50-contacted');
   if (contactedEl) contactedEl.textContent = top50Data.filter(p =>
-    !['🆕 Nouveau','👁 Observation'].includes(p.statut)).length;
+    !['Nouveau','Observation'].includes(p.statut)).length;
   const dateEl = document.getElementById('t50-date');
   if (dateEl && top50Data[0]?.addedAt)
     dateEl.textContent = new Date(top50Data[0].addedAt).toLocaleDateString('fr-FR');
@@ -8030,11 +8434,11 @@ function top50RenderTable() {
       ? '<div style="display:flex;flex-direction:column;align-items:center;gap:1px">' +
           '<span style="color:var(--lime);font-weight:700">' + p.age + ' ans</span>' +
           (p.ageSource ? '<span style="font-size:.6rem;color:var(--teal)">' + p.ageSource + '</span>' : '') +
-          (isPepite ? '<span style="font-size:.65rem;color:var(--lime)">🔥 pot.' + parseFloat(p.scorePotentiel).toFixed(1) + '</span>' : '') +
+          (isPepite ? '<span style="font-size:.65rem;color:var(--lime);font-weight:700">◆ pot.' + parseFloat(p.scorePotentiel).toFixed(1) + '</span>' : '') +
         '</div>'
-      : '<span style="font-size:.7rem;color:var(--amber)">' + (p.ageStatus||'🔍') + '</span>';
+      : '<span style="font-size:.7rem;color:var(--amber)">' + (p.ageStatus||'—') + '</span>';
 
-    const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(200,245,60,.04),transparent);' : '';
+    const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(28,196,122,.04),transparent);' : '';
     return `<tr style="border-bottom:.5px solid var(--border);${pepiteBg}" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
       <td style="padding:.5rem .75rem;color:var(--sub);font-family:monospace;font-size:.8rem">${i+1}</td>
       <td style="padding:.5rem .75rem">
@@ -8070,7 +8474,7 @@ function top50RenderTable() {
       </td>
       <td style="padding:.5rem .75rem">
         <div style="display:flex;gap:4px">
-          <button onclick="top50OpenSPES('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${(p.tier||'DIAMOND').replace(/'/g,"\'")}','${(p.rank||'I')}',${p.lp})" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--lime);cursor:pointer">📋 SPES</button>
+          <button onclick="top50OpenSPES('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${(p.tier||'DIAMOND').replace(/'/g,"\'")}','${(p.rank||'I')}',${p.lp})" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--lime);cursor:pointer">SPES →</button>
           <button onclick="top50Remove(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sub);cursor:pointer">✕</button>
         </div>
       </td>
@@ -8107,7 +8511,7 @@ async function top50SetAge(idx) {
   const p = top50Data[idx]; if (!p) return;
   const val = await spesPrompt('Âge de ' + p.name + ' (laissez vide pour "En attente") :', p.age ? String(p.age) : '', 'ex: 17');
   if (val === null) return;
-  if (val === '') { p.age = null; p.ageStatus = '⏳'; }
+  if (val === '') { p.age = null; p.ageStatus = '—'; }
   else { const n = parseInt(val); if (n > 10 && n < 40) { p.age = n; p.ageStatus = '✅'; showToast('Âge de ' + p.name + ' enregistré : ' + n + ' ans', 'success'); } else { showToast('Âge invalide (entre 11 et 39)', 'warning'); return; } }
   top50SaveLocal(); top50RenderTable();
 }
@@ -8228,7 +8632,7 @@ checkBackendStatus();
 
     <!-- Verdict -->
     <div style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:16px;padding:24px 32px;margin-bottom:24px">
-      <div style="font-size:12px;font-weight:700;color:var(--lime);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">⭐ Verdict coach</div>
+      <div style="font-size:10px;font-weight:700;color:var(--lime);letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px">Verdict Coach</div>
       <div id="pres-verdict" style="font-size:15px;color:var(--sub2);line-height:1.75"></div>
       <div id="pres-tags" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px"></div>
     </div>
@@ -8236,11 +8640,11 @@ checkBackendStatus();
     <!-- Playstyle + links -->
     <div style="display:flex;gap:12px">
       <div id="pres-style" style="flex:1;background:var(--surf1);border:1px solid var(--border);border-radius:12px;padding:18px 24px">
-        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">🎮 Style de jeu</div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Style de jeu</div>
         <div id="pres-style-content"></div>
       </div>
       <div style="background:var(--surf1);border:1px solid var(--border);border-radius:12px;padding:18px 24px;display:flex;flex-direction:column;gap:8px;min-width:160px">
-        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">🔗 Profils</div>
+        <div style="font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Profils</div>
         <div id="pres-links" style="display:flex;flex-direction:column;gap:6px"></div>
       </div>
     </div>
