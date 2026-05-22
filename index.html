@@ -10,28 +10,28 @@
    DESIGN SYSTEM
 ════════════════════════════════ */
 :root {
-  /* ── Fonds ── */
-  --bg:        #07090F;
-  --surf1:     #0B0E18;
-  --surf2:     #0F1320;
-  --surf3:     #141A28;
+  /* ── Fonds Platine clair ── */
+  --bg:        #EEF1F7;
+  --surf1:     #FFFFFF;
+  --surf2:     #F4F7FC;
+  --surf3:     #E8EDF6;
 
   /* ── Bordures ── */
-  --border:    rgba(184,196,224,.06);
-  --border2:   rgba(184,196,224,.12);
+  --border:    rgba(100,120,160,.10);
+  --border2:   rgba(100,120,160,.22);
 
-  /* ── Texte Platine ── */
-  --text:      #DFE2EF;
-  --sub:       #48526A;
-  --sub2:      #7A8BAA;
-  --fg:        #DFE2EF;
+  /* ── Texte ── */
+  --text:      #1A2038;
+  --sub:       #8A9BB8;
+  --sub2:      #5A6880;
+  --fg:        #1A2038;
 
   /* ── Émeraude — couleur primaire ── */
   --lime:      #1CC47A;
-  --lime-dim:  rgba(28,196,122,.08);
-  --lime-bd:   rgba(28,196,122,.22);
+  --lime-dim:  rgba(28,196,122,.10);
+  --lime-bd:   rgba(28,196,122,.30);
   --teal:      #15A878;
-  --teal-dim:  rgba(21,168,120,.08);
+  --teal-dim:  rgba(21,168,120,.10);
 
   /* ── Rouge électrique — CTA / alertes ── */
   --red:       #E8194B;
@@ -39,11 +39,11 @@
 
   /* ── Accents secondaires (data viz seulement) ── */
   --amber:     #D4714A;
-  --amber-dim: rgba(212,113,74,.08);
+  --amber-dim: rgba(212,113,74,.10);
   --blue:      #4A8FE8;
-  --blue-dim:  rgba(74,143,232,.08);
+  --blue-dim:  rgba(74,143,232,.10);
   --purple:    #8A7FF5;
-  --purple-dim:rgba(138,127,245,.08);
+  --purple-dim:rgba(138,127,245,.10);
 
   /* ── Platine accent ── */
   --platinum:  #B8C4DC;
@@ -54,14 +54,19 @@
   --r-lg:      14px;
   --r-xl:      18px;
 
-  /* ── Ombres ── */
-  --shadow-sm: 0 1px 4px rgba(0,0,0,.4);
-  --shadow:    0 6px 24px rgba(0,0,0,.5);
+  /* ── Ombres légères (thème clair) ── */
+  --shadow-sm: 0 1px 6px rgba(100,120,160,.14);
+  --shadow:    0 6px 28px rgba(100,120,160,.18);
 }
 *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
 body {
   font-family:'Helvetica Neue', Arial, sans-serif;
   background:var(--bg);
+  background-image:
+    radial-gradient(ellipse at 8% 12%, rgba(28,196,122,.055) 0%, transparent 42%),
+    radial-gradient(ellipse at 92% 88%, rgba(28,196,122,.045) 0%, transparent 38%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.80' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+  background-attachment: fixed;
   color:var(--text);
   min-height:100vh;
   line-height:1.5;
@@ -507,6 +512,17 @@ button, .btn, select,
   position:relative; width:100%;
   aspect-ratio:1/1; max-height:620px; margin:0 auto;
   border-radius:6px; overflow:hidden;
+  transform: perspective(1400px) rotateX(22deg) scale(1.05);
+  transform-origin: 50% 38%;
+  transition: transform .5s cubic-bezier(.25,.8,.25,1);
+  box-shadow: 0 22px 60px rgba(0,0,0,.22), 0 8px 20px rgba(0,0,0,.14);
+}
+.map-canvas-wrap:hover {
+  transform: perspective(1400px) rotateX(14deg) scale(1.07);
+}
+.map-canvas-wrap-outer {
+  padding-bottom: 2rem;
+  overflow: visible;
 }
 #map-base-canvas, #map-overlay-canvas {
   position:absolute; top:0; left:0; width:100%; height:100%;
@@ -538,11 +554,12 @@ button, .btn, select,
 .map-stat-val { font-size:20px; font-weight:800; }
 .map-stat-lbl { font-family:monospace; font-size:9px; text-transform:uppercase; letter-spacing:.08em; color:var(--sub); margin-top:3px; }
 .map-tooltip {
-  position:absolute; background:rgba(8,11,16,.95);
+  position:absolute; background:rgba(255,255,255,.97);
   border:1px solid var(--border2); border-radius:var(--r-sm);
   padding:8px 12px; font-size:11px; pointer-events:none;
   z-index:10; display:none; max-width:180px; line-height:1.6;
   font-family:monospace; color:var(--text);
+  box-shadow:0 4px 16px rgba(100,120,160,.18);
 }
 .map-import-card {
   background:var(--surf1); border:1px solid var(--border);
@@ -642,8 +659,8 @@ button { transition:all .18s ease; }
 /* ── Header amélioré ── */
 .hd {
   height:54px;
-  border-bottom:1px solid rgba(255,255,255,.05);
-  background:rgba(6,8,16,.92);
+  border-bottom:1px solid rgba(100,120,160,.12);
+  background:rgba(238,241,247,.97);
   backdrop-filter:blur(24px) saturate(1.4);
 }
 .hd-mark {
@@ -872,7 +889,7 @@ body.welcome-active #panel-welcome.active {
   letter-spacing:-.01em;
 }
 .welcome-stat-lbl {
-  font-size:.66rem; color:rgba(184,196,224,.35); text-transform:uppercase;
+  font-size:.66rem; color:rgba(80,100,140,.55); text-transform:uppercase;
   letter-spacing:.1em; margin-top:3px;
   font-family:monospace;
 }
@@ -988,9 +1005,9 @@ body.welcome-active #panel-welcome.active {
   filter:drop-shadow(0 1px 4px rgba(0,0,0,.45));
   flex-shrink:0;
 }
-.rank-icon-sm  { width:20px; height:20px; }
-.rank-icon-md  { width:28px; height:28px; }
-.rank-icon-lg  { width:38px; height:38px; }
+.rank-icon-sm  { width:22px; height:22px; }
+.rank-icon-md  { width:32px; height:32px; }
+.rank-icon-lg  { width:44px; height:44px; filter:drop-shadow(0 2px 8px rgba(0,0,0,.18)); }
 .rank-badge-inner {
   display:flex; align-items:center; gap:6px; justify-content:center;
 }
@@ -1027,9 +1044,10 @@ body.welcome-active #panel-welcome.active {
 /* ── Header premium ── */
 .hd {
   height:52px;
-  background:rgba(7,9,15,.96);
-  border-bottom:1px solid rgba(184,196,224,.06);
+  background:rgba(240,243,249,.97);
+  border-bottom:1px solid rgba(100,120,160,.12);
   backdrop-filter:blur(28px) saturate(1.5);
+  box-shadow:0 1px 8px rgba(100,120,160,.10);
 }
 .hd-mark svg {
   filter:none;
@@ -1079,7 +1097,7 @@ body.welcome-active #panel-welcome.active {
 .card-title {
   font-size:9.5px;
   letter-spacing:.14em;
-  color:rgba(184,196,224,.35);
+  color:rgba(80,100,140,.55);
   text-transform:uppercase;
   margin-bottom:16px;
 }
@@ -1120,7 +1138,7 @@ body.welcome-active #panel-welcome.active {
   border:1px solid rgba(184,196,224,.06);
 }
 .dim-header {
-  background:rgba(15,19,32,.5);
+  background:rgba(228,232,244,.6);
 }
 
 /* ── API card refinement ── */
@@ -1162,9 +1180,10 @@ body.welcome-active #panel-welcome.active {
 .welcome-mode-card {
   border-radius:14px;
   padding:2.25rem 1.75rem;
-  background:rgba(11,14,24,.85);
-  border:1px solid rgba(184,196,224,.07);
+  background:rgba(255,255,255,.88);
+  border:1px solid rgba(100,120,160,.12);
   backdrop-filter:blur(12px);
+  box-shadow:0 2px 20px rgba(100,120,160,.10);
   position:relative;
   overflow:hidden;
 }
@@ -1191,15 +1210,15 @@ body.welcome-active #panel-welcome.active {
 /* ── Welcome check items pro ── */
 .welcome-check-item {
   display:flex; align-items:center; gap:.45rem;
-  font-size:.72rem; color:rgba(184,196,224,.45);
+  font-size:.72rem; color:rgba(70,90,130,.55);
   justify-content:center;
 }
 .welcome-check-item svg { flex-shrink:0; }
 
 /* ── Scrollbar minimal ── */
 ::-webkit-scrollbar { width:3px; height:3px; }
-::-webkit-scrollbar-thumb { background:rgba(184,196,224,.08); }
-::-webkit-scrollbar-thumb:hover { background:rgba(184,196,224,.16); }
+::-webkit-scrollbar-thumb { background:rgba(100,120,160,.22); border-radius:2px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(100,120,160,.38); }
 
 /* ── Focus ring custom ── */
 button:focus-visible, input:focus-visible, select:focus-visible {
@@ -1963,12 +1982,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
           </div>
 
-          <!-- Map canvas -->
+          <!-- Map canvas — vue 3D perspective isométrique -->
+          <div class="map-canvas-wrap-outer" style="overflow:visible;padding-bottom:2.5rem;">
           <div class="map-canvas-wrap" id="map-canvas-wrap">
             <canvas id="map-base-canvas"></canvas>
             <canvas id="map-overlay-canvas"></canvas>
             <div class="map-tooltip" id="map-tooltip"></div>
           </div>
+          </div><!-- /map-canvas-wrap-outer -->
 
           <!-- View controls -->
           <div class="map-controls">
@@ -6335,6 +6356,20 @@ async function fetchRiotData() {
             `<div class="rank-tier">${soloQ.tier} ${soloQ.rank}</div>`;
         }
       }
+      // Photo de profil DDragon
+      const avatarEl = document.getElementById('pc-avatar');
+      if (avatarEl && acc.profileIconId != null) {
+        fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+          .then(r => r.json())
+          .then(versions => {
+            const ver = versions[0];
+            avatarEl.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${ver}/img/profileicon/${acc.profileIconId}.png"
+              style="width:52px;height:52px;border-radius:10px;object-fit:cover;border:2px solid var(--lime-bd);display:block"
+              onerror="this.style.display='none'">`;
+          })
+          .catch(() => {/* garde l'icone VS par défaut */});
+      }
+
       const age = document.getElementById('d-age')?.value;
       document.getElementById('pc-age').textContent = age ? age+' ans' : '—';
       // Auto-recherche d'âge via Leaguepedia si âge non saisi
@@ -6396,11 +6431,11 @@ const CHART_DEFAULTS = {
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: '#0A0D14',
-      borderColor: 'rgba(28,196,122,.18)',
+      backgroundColor: 'rgba(255,255,255,.97)',
+      borderColor: 'rgba(28,196,122,.28)',
       borderWidth: 1,
-      titleColor: '#E8E6E0',
-      bodyColor: '#8A9090',
+      titleColor: '#1A2038',
+      bodyColor: '#5A6880',
       titleFont: { family: 'DM Mono', size: 11, weight: '700' },
       bodyFont: { family: 'DM Mono', size: 11 },
       padding: 12,
@@ -6408,18 +6443,19 @@ const CHART_DEFAULTS = {
       caretSize: 5,
       caretPadding: 8,
       displayColors: false,
+      boxShadow: '0 4px 16px rgba(100,120,160,.18)',
     }
   },
   scales: {
     x: {
-      grid: { color: 'rgba(255,255,255,.025)', drawBorder: false },
+      grid: { color: 'rgba(100,120,160,.08)', drawBorder: false },
       border: { display: false },
-      ticks: { color: '#3E4860', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 12 }
+      ticks: { color: '#8A9BB8', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 12 }
     },
     y: {
-      grid: { color: 'rgba(255,255,255,.04)', drawBorder: false },
+      grid: { color: 'rgba(100,120,160,.10)', drawBorder: false },
       border: { display: false },
-      ticks: { color: '#3E4860', font: { family: 'DM Mono', size: 10 } }
+      ticks: { color: '#8A9BB8', font: { family: 'DM Mono', size: 10 } }
     }
   }
 };
@@ -7592,34 +7628,47 @@ function renderWards(ctx, size, showHeatmap, showMarkers) {
     filtered.forEach(p => {
       const [cx, cy] = mapCoordToCanvas(p.x, p.y, size);
       const wc = wardColors[p.wardType] || wardColors['UNDEFINED'];
-      const r = size * 0.009;
+      const r = size * 0.016; // Plus grand — icônes visibles
 
-      // Glow halo
-      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r*2.5);
-      grad.addColorStop(0, wc.fill + '55');
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(cx, cy, r*2.5, 0, Math.PI*2); ctx.fill();
+      // Large outer glow
+      const gOuter = ctx.createRadialGradient(cx, cy, 0, cx, cy, r*4);
+      gOuter.addColorStop(0, wc.fill + '40');
+      gOuter.addColorStop(0.6, wc.fill + '18');
+      gOuter.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gOuter;
+      ctx.beginPath(); ctx.arc(cx, cy, r*4, 0, Math.PI*2); ctx.fill();
 
-      // White outline diamond
+      // Mid glow
+      const gMid = ctx.createRadialGradient(cx, cy, 0, cx, cy, r*2);
+      gMid.addColorStop(0, wc.fill + '70');
+      gMid.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gMid;
+      ctx.beginPath(); ctx.arc(cx, cy, r*2, 0, Math.PI*2); ctx.fill();
+
+      // White outer ring (diamond outline)
       ctx.beginPath();
-      const ro = r + 1.5;
+      const ro = r + 2.5;
       ctx.moveTo(cx, cy-ro); ctx.lineTo(cx+ro, cy); ctx.lineTo(cx, cy+ro); ctx.lineTo(cx-ro, cy);
       ctx.closePath();
-      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
       ctx.fill();
 
-      // Colored diamond
+      // Colored diamond body
       ctx.beginPath();
       ctx.moveTo(cx, cy-r); ctx.lineTo(cx+r, cy); ctx.lineTo(cx, cy+r); ctx.lineTo(cx-r, cy);
       ctx.closePath();
       ctx.fillStyle = wc.fill;
       ctx.fill();
 
-      // Eye icon dot
+      // Stroke pour définition
+      ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // Center highlight dot
       ctx.beginPath();
-      ctx.arc(cx, cy, r*0.3, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.arc(cx, cy, r*0.32, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
       ctx.fill();
     });
   }
@@ -8446,8 +8495,8 @@ function top50RenderTable() {
         <div style="font-size:.7rem;color:var(--sub)">${(p.champs||[]).slice(0,2).map(c=>c.name).join(' · ')||'—'}</div>
       </td>
       <td style="padding:.5rem .75rem;white-space:nowrap">
-        <div style="display:flex;align-items:center;gap:6px">
-          ${rankIcon(p.tier, 'rank-icon-sm')}
+        <div style="display:flex;align-items:center;gap:8px">
+          ${rankIcon(p.tier, 'rank-icon-lg')}
           <span style="color:${tc};font-weight:600;font-size:.82rem">${p.tier} ${p.rank} — ${p.lp}LP</span>
         </div>
       </td>
@@ -8491,8 +8540,8 @@ function top50RenderTable() {
           <span style="font-family:monospace;font-weight:700;color:${parseFloat(p.score)>=8?'var(--lime)':'#A78BFA'}">${p.score}</span>
         </div>
         <div style="font-weight:700;font-size:.92rem;margin-bottom:.25rem">${p.name}</div>
-        <div style="display:flex;align-items:center;gap:5px;font-size:.75rem;color:${TIER_COLOR[p.tier]||'#aaa'};font-weight:600">
-          ${rankIcon(p.tier,'rank-icon-sm')}
+        <div style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:${TIER_COLOR[p.tier]||'#aaa'};font-weight:600">
+          ${rankIcon(p.tier,'rank-icon-lg')}
           ${p.tier} ${p.rank} — ${p.lp}LP
         </div>
         <div style="font-size:.72rem;color:var(--sub);margin-top:.375rem">${p.role||'?'} · ${p.wr}%WR · ${p.kda}KDA</div>
