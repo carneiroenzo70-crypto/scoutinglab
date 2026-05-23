@@ -4547,11 +4547,132 @@ document.addEventListener('keydown', e => {
 // ════════════════════════════════════════════════════════════
 // ① EXPORT PDF
 // ════════════════════════════════════════════════════════════
-function exportPDF() {
+// ═══════════════════════════════════════════════════════════
+// EXPORT PDF v2 PRO — Radar canvas + Charts embarqués
+// ═══════════════════════════════════════════════════════════
+async function exportPDF() {
   if (!window.jspdf) { showToast('Librairie PDF non chargée — vérifiez votre connexion internet', 'error'); return; }
+
+  // Feedback
+  showToast('Génération du rapport PDF…', 'info');
+  const btn = document.querySelector('[onclick="exportPDF()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Génération…'; }
+
+  await new Promise(r => setTimeout(r, 80)); // Laisser le UI se mettre à jour
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  // ── Helpers ────────────────────────────────────────────────
+
+  function _getChartImg(canvasId) {
+    try { const c = document.getElementById(canvasId); return c ? c.toDataURL('image/png') : null; }
+    catch(e) { return null; }
+  }
+
+  function _getAvatarImg() {
+    try {
+      const img = document.querySelector('#pc-avatar img');
+      if (!img || !img.complete || !img.naturalWidth) return null;
+      const cv = document.createElement('canvas');
+      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+      cv.getContext('2d').drawImage(img, 0, 0);
+      return cv.toDataURL('image/png');
+    } catch(e) { return null; }
+  }
+
+  function _drawRadarPNG(scores, size) {
+    size = size || 260;
+    const cv = document.createElement('canvas');
+    cv.width = size; cv.height = size;
+    const ctx = cv.getContext('2d');
+    const cx = size/2, cy = size/2, r = size*0.36, N = 5;
+    const labels  = ['Stats','Objectifs','Impact','Progression','Entretien'];
+    const dotClrs = ['#4A9EFF','#F5A623','#2DD4BF','#C084FC','#FF7A5A'];
+    const ang = i => Math.PI*2*i/N - Math.PI/2;
+    // bg
+    ctx.fillStyle = '#0B0E18'; ctx.fillRect(0,0,size,size);
+    // grid rings
+    for (let ring=2; ring<=10; ring+=2) {
+      ctx.beginPath();
+      for (let i=0;i<N;i++) {
+        const a=ang(i), d=r*ring/10;
+        i===0 ? ctx.moveTo(cx+Math.cos(a)*d, cy+Math.sin(a)*d)
+              : ctx.lineTo(cx+Math.cos(a)*d, cy+Math.sin(a)*d);
+      }
+      ctx.closePath();
+      ctx.strokeStyle = ring===10 ? 'rgba(28,196,122,0.22)' : 'rgba(100,120,160,0.18)';
+      ctx.lineWidth = ring===10 ? 1 : 0.7; ctx.stroke();
+    }
+    // spokes
+    for (let i=0;i<N;i++) {
+      const a=ang(i);
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
+      ctx.strokeStyle='rgba(100,120,160,0.20)'; ctx.lineWidth=0.7; ctx.stroke();
+    }
+    // data polygon
+    ctx.beginPath();
+    for (let i=0;i<N;i++) {
+      const v=Math.max(0,Math.min(10,scores[i]||0)), a=ang(i), d=r*v/10;
+      i===0 ? ctx.moveTo(cx+Math.cos(a)*d,cy+Math.sin(a)*d)
+            : ctx.lineTo(cx+Math.cos(a)*d,cy+Math.sin(a)*d);
+    }
+    ctx.closePath();
+    ctx.fillStyle='rgba(28,196,122,0.15)'; ctx.fill();
+    ctx.strokeStyle='#1CC47A'; ctx.lineWidth=2; ctx.stroke();
+    // dots + labels
+    ctx.font = 'bold 11px Arial'; ctx.textAlign='center';
+    for (let i=0;i<N;i++) {
+      const v=Math.max(0,Math.min(10,scores[i]||0)), a=ang(i), d=r*v/10;
+      ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,4,0,Math.PI*2);
+      ctx.fillStyle=dotClrs[i]; ctx.fill();
+      const lx=cx+Math.cos(a)*(r+22), ly=cy+Math.sin(a)*(r+22);
+      ctx.fillStyle=dotClrs[i]; ctx.fillText(labels[i],lx,ly+4);
+    }
+    // center score
+    const gs = scores.filter(v=>v!==null&&v!==undefined);
+    if (gs.length) {
+      const avg = gs.reduce((a,b)=>a+b,0)/gs.length;
+      ctx.font='bold 18px Arial'; ctx.fillStyle='rgba(223,226,239,0.9)';
+      ctx.fillText(avg.toFixed(1),cx,cy+6);
+    }
+    return cv.toDataURL('image/png');
+  }
+
+  function _drawSparklinePNG(matches, w, h) {
+    w=w||380; h=h||56;
+    const cv = document.createElement('canvas');
+    cv.width=w; cv.height=h;
+    const ctx = cv.getContext('2d');
+    ctx.fillStyle='#0F1320'; ctx.fillRect(0,0,w,h);
+    if (!matches || matches.length < 2) {
+      ctx.fillStyle='rgba(100,120,160,0.4)'; ctx.font='12px Arial';
+      ctx.textAlign='center'; ctx.fillText('Données insuffisantes',w/2,h/2+5);
+      return cv.toDataURL('image/png');
+    }
+    const pad=8, iw=w-pad*2, ih=h-pad*2, step=iw/(matches.length-1);
+    // baseline
+    ctx.strokeStyle='rgba(100,120,160,0.15)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad,h/2); ctx.lineTo(w-pad,h/2); ctx.stroke();
+    // connect line
+    ctx.beginPath();
+    matches.forEach((m,i) => {
+      const x=pad+i*step, win=m.win===true||m.win===1, y=win?pad+ih*0.2:pad+ih*0.8;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle='rgba(28,196,122,0.4)'; ctx.lineWidth=1.5; ctx.stroke();
+    // dots
+    matches.forEach((m,i) => {
+      const x=pad+i*step, win=m.win===true||m.win===1, y=win?pad+ih*0.2:pad+ih*0.8;
+      ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
+      ctx.fillStyle=win?'#1CC47A':'#E81950'; ctx.fill();
+    });
+    // W/L labels at ends
+    ctx.font='bold 10px Arial'; ctx.textAlign='left'; ctx.fillStyle='rgba(100,120,160,0.6)';
+    ctx.fillText('← plus ancien',pad,h-2);
+    ctx.textAlign='right'; ctx.fillText('récent →',w-pad,h-2);
+    return cv.toDataURL('image/png');
+  }
 
   // ── Données joueur ──────────────────────────────────────
   const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || 'Joueur';
@@ -4562,361 +4683,472 @@ function exportPDF() {
   const rankName = ranks[rankIdx] || 'Diamond';
   const dateStr  = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
   const globalVal = (typeof globalScore === 'function') ? globalScore() : null;
-  const W = 210, M = 16;
+  const W = 210, H = 297, M = 14;
 
   // ── Palette ──────────────────────────────────────────────
   const C = {
-    bg:    [8,  11, 16],   // fond principal
-    bg2:   [12, 16, 24],   // fond secondaire
-    bg3:   [18, 23, 34],   // fond cards
-    lime:  [28, 196,122],  // émeraude — accent principal
-    teal:  [21, 168,120],  // émeraude sombre — accent secondaire
-    amber: [212,113,74],   // cuivre — warning
-    red:   [232,25, 75],   // rouge électrique — danger
-    white: [223,226,239],  // platine — texte principal
-    sub:   [72, 82, 106],  // platine sombre — texte secondaire
-    sub2:  [138,144,144],  // texte tertiaire
+    bg:    [8,  11, 16],
+    bg2:   [12, 16, 24],
+    bg3:   [18, 23, 34],
+    bg4:   [22, 28, 42],
+    lime:  [28, 196,122],
+    teal:  [21, 168,120],
+    amber: [212,113,74],
+    red:   [232, 25, 75],
+    white: [223,226,239],
+    sub:   [72,  82,106],
+    sub2:  [138,144,160],
+    blue:  [74, 158,255],
+    purple:[192,132,252],
   };
 
   const scoreColor = (v) => {
-    if (v === null) return C.sub;
+    if (v === null || v === undefined) return C.sub;
     if (v >= 8)   return C.lime;
     if (v >= 6.5) return C.teal;
     if (v >= 5)   return C.amber;
     return C.red;
   };
+  const verdictText = (v) =>
+    v === null ? 'Données insuffisantes'
+    : v >= 8.5 ? 'Exceptionnel — Recruter immédiatement'
+    : v >= 7.5 ? 'Très solide — Fort potentiel semi-pro'
+    : v >= 6.5 ? 'Bon profil — Tryout recommandé'
+    : v >= 5.5 ? 'Profil moyen — À surveiller'
+    : 'En développement — Potentiel à confirmer';
 
-  // ── PAGE DE GARDE ────────────────────────────────────────
-  // Fond total
-  doc.setFillColor(...C.bg); doc.rect(0, 0, W, 297, 'F');
+  const DIM_COLORS = [C.blue,[245,166,35],[45,212,191],[192,132,252],[255,122,90]];
+  const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Entretien'];
+  const f = (typeof getRoleFields==='function') ? getRoleFields() : {};
+  const dimKeys  = ['d1','d2','d3','d4','d5'];
+  const dimScores = dimKeys.map(k => (typeof dimAvg==='function'&&f[k]) ? dimAvg(f[k]) : null);
 
-  // Bande accent haut
-  doc.setFillColor(...C.lime); doc.rect(0, 0, W, 3, 'F');
+  // Pre-render assets
+  const avatarImg    = _getAvatarImg();
+  const radarImg     = _drawRadarPNG(dimScores.map(v => v??0));
+  const kdaImg       = _getChartImg('chart-kda');
+  const wrImg        = _getChartImg('chart-wr');
+  const recentMatches = (typeof matchHistory!=='undefined') ? matchHistory.slice(0,20) : [];
+  const sparklineData = recentMatches.map(m => {
+    try { return { win: getParticipant(m)?.win === true }; } catch(e) { return { win: false }; }
+  });
+  const sparklineImg = _drawSparklinePNG(sparklineData);
 
-  // Logo / titre
-  doc.setFont('helvetica','bold'); doc.setFontSize(28);
-  doc.setTextColor(...C.lime); doc.text('SPES', M, 28);
-  doc.setTextColor(...C.white); doc.text(' LAB', M + 30, 28);
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  doc.setTextColor(...C.sub); doc.text('Scouting Platform for Esport Structures', M, 36);
-
-  // Ligne de séparation
-  doc.setDrawColor(...C.sub); doc.setLineWidth(0.2);
-  doc.line(M, 40, W-M, 40);
-
-  // Bloc joueur — centré
-  const cx = W / 2;
-  doc.setFont('helvetica','bold'); doc.setFontSize(32);
-  doc.setTextColor(...C.white); doc.text(pseudo, cx, 80, { align:'center' });
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(11);
-  doc.setTextColor(...C.sub2);
-  doc.text('#' + tag + '  ·  ' + currentRole + '  ·  ' + rankName + (age ? '  ·  ' + age + ' ans' : ''), cx, 90, { align:'center' });
-
-  // Score global — grand affichage
-  if (globalVal !== null) {
-    const gc = scoreColor(globalVal);
-    doc.setFont('helvetica','bold'); doc.setFontSize(72);
-    doc.setTextColor(...gc); doc.text(globalVal.toFixed(1), cx, 135, { align:'center' });
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    doc.setTextColor(...C.sub); doc.text('SCORE SPES GLOBAL / 10', cx, 144, { align:'center' });
-
-    const verdictLbl = globalVal>=8?'Profil exceptionnel — recruter maintenant'
-      : globalVal>=7?'Très solide — fort potentiel semi-pro'
-      : globalVal>=6?'Bon profil — à suivre de près'
-      : globalVal>=5?'Profil moyen — tryout recommandé'
-      : 'En développement — potentiel à confirmer';
-
-    doc.setFont('helvetica','bold'); doc.setFontSize(10);
-    doc.setTextColor(...gc);
-    doc.text(verdictLbl, cx, 154, { align:'center' });
+  // Helper: page header
+  function _hdr(doc, title) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    doc.setTextColor(...C.sub);
+    doc.text('VISIONSCORE  ·  '+pseudo.toUpperCase()+'  ·  '+title, M, 12);
+    doc.setDrawColor(...C.bg4); doc.setLineWidth(0.25);
+    doc.line(M, 14, W-M, 14);
   }
 
-  // Score Performance vs Potentiel
-  const perf = typeof window._scorePerf !== 'undefined' ? window._scorePerf : null;
-  const pot  = typeof window._scorePotentiel !== 'undefined' ? window._scorePotentiel : null;
+  // ══════════════════════════════════════════════════════════
+  // PAGE 1 — COVER PREMIUM
+  // ══════════════════════════════════════════════════════════
+  doc.setFillColor(...C.bg); doc.rect(0, 0, W, H, 'F');
 
-  if (perf !== null || pot !== null) {
-    const bx1 = cx - 35, bx2 = cx + 5;
-    const by = 165;
-    if (perf !== null) {
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx1, by, 30, 18, 2, 2, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...scoreColor(perf));
-      doc.text(perf.toFixed(1), bx1+15, by+9, { align:'center' });
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-      doc.text('Performance', bx1+15, by+15, { align:'center' });
-    }
-    if (pot !== null) {
-      doc.setFillColor(16,32,20); doc.roundedRect(bx2, by, 30, 18, 2, 2, 'F');
-      doc.setDrawColor(...C.lime); doc.setLineWidth(0.3);
-      doc.roundedRect(bx2, by, 30, 18, 2, 2, 'S');
-      doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(...C.lime);
-      doc.text(pot.toFixed(1), bx2+15, by+9, { align:'center' });
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-      doc.text('Potentiel', bx2+15, by+15, { align:'center' });
-    }
-  }
+  // Top accent bar
+  doc.setFillColor(...C.lime); doc.rect(0, 0, W, 2.5, 'F');
 
-  // Méta-infos bas de page de garde
+  // Header band
+  doc.setFillColor(11,16,26); doc.rect(0, 2.5, W, 52, 'F');
+  doc.setFillColor(13,20,18); doc.rect(100, 2.5, W-100, 52, 'F'); // subtle green tint right
+
+  // LOGO
+  doc.setFont('helvetica','bold'); doc.setFontSize(20);
+  doc.setTextColor(...C.lime); doc.text('SPES', M, 22);
+  doc.setTextColor(...C.white); doc.text(' LAB', M+21, 22);
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.sub);
-  doc.text('Rapport confidentiel · VisionScore · ' + dateStr, cx, 275, { align:'center' });
-  doc.text('Document destiné aux structures esport · Ne pas diffuser', cx, 281, { align:'center' });
+  doc.setTextColor(...C.sub); doc.text('Scouting Platform for Esport Structures', M, 29);
+  doc.setFontSize(6.5); doc.text('Rapport confidentiel · ' + dateStr, M, 36);
 
-  // Bande accent bas
-  doc.setFillColor(...C.lime); doc.rect(0, 294, W, 3, 'F');
-
-  // ── PAGE 2 : ANALYSE DÉTAILLÉE ───────────────────────────
-  doc.addPage();
-  doc.setFillColor(...C.bg); doc.rect(0, 0, W, 297, 'F');
-  doc.setFillColor(...C.lime); doc.rect(0, 0, W, 3, 'F');
-
-  // En-tête page 2
+  // Profile avatar top-right
+  if (avatarImg) {
+    try { doc.addImage(avatarImg,'PNG',W-M-20,7,20,20,'','FAST'); } catch(e){}
+    doc.setFillColor(...C.lime); doc.setLineWidth(0.6);
+    doc.setDrawColor(...C.lime); doc.rect(W-M-20,7,20,20,'S');
+  }
   doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.setTextColor(...C.sub); doc.text('VISIONSCORE  ·  ' + pseudo.toUpperCase() + '  ·  ANALYSE DÉTAILLÉE', M, 12);
-  doc.setDrawColor(...C.bg3); doc.setLineWidth(0.3); doc.line(M, 14, W-M, 14);
+  doc.setTextColor(...C.lime); doc.text(rankName, W-M, 32, {align:'right'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+  doc.setTextColor(...C.sub); doc.text(currentRole, W-M, 38, {align:'right'});
 
+  // Separator
+  doc.setDrawColor(...C.sub); doc.setLineWidth(0.12); doc.line(M, 56, W-M, 56);
+
+  // PLAYER NAME
+  const cx = W/2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(36);
+  doc.setTextColor(...C.white); doc.text(pseudo, cx, 95, {align:'center'});
+
+  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...C.sub2);
+  doc.text('#'+tag+'  ·  '+currentRole+'  ·  '+rankName+(age?'  ·  '+age+' ans':''), cx, 105, {align:'center'});
+
+  // SCORE — hero circle
+  const gc = scoreColor(globalVal);
+  doc.setFillColor(...C.bg3); doc.circle(cx, 140, 27, 'F');
+  doc.setDrawColor(...gc); doc.setLineWidth(1.4); doc.circle(cx, 140, 27, 'S');
+  if (globalVal !== null) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(34); doc.setTextColor(...gc);
+    doc.text(globalVal.toFixed(1), cx, 147, {align:'center'});
+  }
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+  doc.setTextColor(...C.sub); doc.text('SCORE SPES / 10', cx, 156, {align:'center'});
+
+  // Verdict
+  doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 167, {align:'center'});
+
+  // Perf / Potentiel sub-cards
+  const perf = typeof window._scorePerf!=='undefined' ? window._scorePerf : null;
+  const pot  = typeof window._scorePotentiel!=='undefined' ? window._scorePotentiel : null;
+  if (perf!==null || pot!==null) {
+    const cW=40, cH=22, cY=176;
+    if (perf!==null && pot!==null) {
+      const bx1=cx-cW-2, bx2=cx+2;
+      doc.setFillColor(...C.bg3); doc.roundedRect(bx1,cY,cW,cH,2,2,'F');
+      doc.setDrawColor(...scoreColor(perf)); doc.setLineWidth(0.3);
+      doc.roundedRect(bx1,cY,cW,cH,2,2,'S');
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...scoreColor(perf));
+      doc.text(perf.toFixed(1),bx1+cW/2,cY+13,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
+      doc.text('Performance',bx1+cW/2,cY+19.5,{align:'center'});
+
+      doc.setFillColor(...C.bg3); doc.roundedRect(bx2,cY,cW,cH,2,2,'F');
+      doc.setDrawColor(...C.lime); doc.setLineWidth(0.3);
+      doc.roundedRect(bx2,cY,cW,cH,2,2,'S');
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.lime);
+      doc.text(pot.toFixed(1),bx2+cW/2,cY+13,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
+      doc.text('Potentiel',bx2+cW/2,cY+19.5,{align:'center'});
+    }
+  }
+
+  // Dimension mini-strip
+  const stripY = 213;
+  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
+  doc.text('SCORES PAR DIMENSION', cx, stripY, {align:'center'});
+  const stripW = (W-M*2-16)/5;
+  dimKeys.forEach((k,i) => {
+    const bx=M+i*(stripW+4), rgb=DIM_COLORS[i], v=dimScores[i];
+    doc.setFillColor(...C.bg3); doc.roundedRect(bx,stripY+3,stripW,16,1.5,1.5,'F');
+    doc.setFillColor(...rgb); doc.rect(bx,stripY+3,stripW,1.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...rgb);
+    doc.text(v!==null?v.toFixed(1):'—',bx+stripW/2,stripY+13,{align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
+    doc.text(DIM_LABELS[i].replace(/^D\d · /,''),bx+stripW/2,stripY+17.5,{align:'center'});
+  });
+
+  // Footer meta
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+  doc.text('Document confidentiel · destiné aux structures esport uniquement · ne pas diffuser', cx, 271, {align:'center'});
+  doc.text('VisionScore · Rapport généré le '+dateStr, cx, 277, {align:'center'});
+  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
+
+  // ══════════════════════════════════════════════════════════
+  // PAGE 2 — DASHBOARD : Radar + Dimensions + Stats + Champions
+  // ══════════════════════════════════════════════════════════
+  doc.addPage();
+  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  _hdr(doc,'DASHBOARD ANALYTIQUE');
   let y = 22;
 
-  // ── 5 DIMENSIONS ──────────────────────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(7);
-  doc.setTextColor(...C.sub); doc.text('SCORES PAR DIMENSION', M, y); y += 5;
-
-  const DIM_COLORS_HEX = ['#4A9EFF','#F5A623','#2DD4BF','#C084FC','#FF7A5A'];
-  const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Entretien'];
-  const f = (typeof getRoleFields === 'function') ? getRoleFields() : {};
-  const dimKeys = ['d1','d2','d3','d4','d5'];
-  const bw = (W - M*2 - 16) / 5;
-
-  dimKeys.forEach((k, i) => {
-    const avg = (typeof dimAvg === 'function' && f[k]) ? dimAvg(f[k]) : null;
-    const bx = M + i * (bw + 4);
-    const rgb = DIM_COLORS_HEX[i].match(/\w\w/g).map(h=>parseInt(h,16));
-    doc.setFillColor(...C.bg3); doc.roundedRect(bx, y, bw, 18, 2, 2, 'F');
-    doc.setFillColor(...rgb); doc.rect(bx, y, bw, 1.5, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(...rgb);
-    doc.text(avg !== null ? avg.toFixed(1) : '—', bx + bw/2, y + 10, { align:'center' });
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
-    doc.text(DIM_LABELS[i], bx + bw/2, y + 16, { align:'center' });
-  });
-  y += 24;
-
-  // ── BARRES DÉTAIL DIMENSIONS ──────────────────────────────
-  doc.setFont('helvetica','bold'); doc.setFontSize(7);
-  doc.setTextColor(...C.sub); doc.text('DÉTAIL PAR DIMENSION', M, y); y += 4;
-  const barMax = W - M*2 - 55;
-
-  dimKeys.forEach((k, i) => {
-    const avg = (typeof dimAvg === 'function' && f[k]) ? dimAvg(f[k]) : null;
-    const rgb = DIM_COLORS_HEX[i].match(/\w\w/g).map(h=>parseInt(h,16));
-    const barW = avg !== null ? barMax * avg / 10 : 0;
-    doc.setFillColor(...C.bg3); doc.rect(M, y, W-M*2, 6, 'F');
-    if (avg !== null) { doc.setFillColor(...rgb); doc.rect(M, y, barW + 55, 6, 'F'); }
+  // Radar (left) + Dimension bars (right)
+  const radarMM = 70;
+  if (radarImg) {
+    try { doc.addImage(radarImg,'PNG',M-2,y,radarMM,radarMM,'','FAST'); } catch(e){}
+  }
+  const dimX = M+radarMM+4, dimW = W-M-radarMM-8;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+  doc.text('PROFIL DIMENSIONNEL',dimX,y+3);
+  let dy = y+8;
+  dimKeys.forEach((k,i) => {
+    const v=dimScores[i], rgb=DIM_COLORS[i];
+    const bw2 = v!==null ? dimW*v/10 : 0;
+    doc.setFillColor(...C.bg3); doc.roundedRect(dimX,dy,dimW,9,1,1,'F');
+    if (v!==null && bw2>0) { doc.setFillColor(...rgb); doc.roundedRect(dimX,dy,bw2,9,1,1,'F'); }
     doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
-    doc.text(DIM_LABELS[i].replace('D1 · ','').replace('D2 · ','').replace('D3 · ','').replace('D4 · ','').replace('D5 · ',''), M + 2, y + 4);
-    if (avg !== null) { doc.setTextColor(...rgb); doc.text(avg.toFixed(2)+'/10', W-M-2, y+4, {align:'right'}); }
-    y += 8;
+    doc.text(DIM_LABELS[i],dimX+3,dy+6);
+    if (v!==null) { doc.setTextColor(...rgb); doc.text(v.toFixed(1)+'/10',dimX+dimW-2,dy+6,{align:'right'}); }
+    dy+=11.5;
   });
-  y += 6;
+  dy+=2;
+  if (globalVal!==null) {
+    const gcol=scoreColor(globalVal);
+    doc.setFillColor(...C.bg4); doc.roundedRect(dimX,dy,dimW,12,1.5,1.5,'F');
+    doc.setDrawColor(...gcol); doc.setLineWidth(0.3); doc.roundedRect(dimX,dy,dimW,12,1.5,1.5,'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...gcol);
+    doc.text('Score global : '+globalVal.toFixed(2)+' / 10',dimX+dimW/2,dy+7.5,{align:'center'});
+  }
+  y = Math.max(y+radarMM+4, dy+16);
 
-  // ── STATS API CLÉS ────────────────────────────────────────
+  // Key stats
   const apiStats = [
-    { id:'kda', lbl:'KDA', dec:2 },
-    { id:'winrate', lbl:'Win Rate', dec:1, unit:'%' },
-    { id:'cs_min', lbl:'CS/min', dec:2 },
-    { id:'kill_part', lbl:'Kill Part.', dec:1, unit:'%' },
-    { id:'dmg_share', lbl:'Dmg Share', dec:1, unit:'%' },
-    { id:'vision', lbl:'Vision', dec:1 },
+    {id:'kda',lbl:'KDA',dec:2},
+    {id:'winrate',lbl:'Win Rate',dec:1,unit:'%'},
+    {id:'cs_min',lbl:'CS/min',dec:2},
+    {id:'kill_part',lbl:'Kill Part.',dec:1,unit:'%'},
+    {id:'dmg_share',lbl:'Dmg Share',dec:1,unit:'%'},
+    {id:'vision',lbl:'Vision Score',dec:1},
   ];
   const validStats = apiStats.map(s => {
-    const v = rawData[s.id];
-    return v !== undefined && !isNaN(v) ? { lbl:s.lbl, val:parseFloat(v).toFixed(s.dec)+(s.unit||'') } : null;
+    const v=rawData[s.id];
+    return (v!==undefined&&!isNaN(v)) ? {lbl:s.lbl,val:parseFloat(v).toFixed(s.dec)+(s.unit||'')} : null;
   }).filter(Boolean);
-
   if (validStats.length) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.setTextColor(...C.sub); doc.text('STATISTIQUES CLÉS', M, y); y += 4;
-    const sw = (W - M*2 - (validStats.length-1)*3) / validStats.length;
-    validStats.forEach((s, i) => {
-      const bx = M + i*(sw+3);
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx, y, sw, 14, 1, 1, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...C.lime);
-      doc.text(s.val, bx+sw/2, y+7, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+    doc.text('STATISTIQUES CLÉS — 20 DERNIÈRES PARTIES',M,y); y+=4;
+    const sw=(W-M*2-(validStats.length-1)*3)/validStats.length;
+    validStats.forEach((s,i) => {
+      const bx=M+i*(sw+3);
+      doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,sw,16,1.5,1.5,'F');
+      doc.setFillColor(...C.lime); doc.rect(bx,y,sw,1.5,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...C.lime);
+      doc.text(s.val,bx+sw/2,y+9,{align:'center'});
       doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
-      doc.text(s.lbl, bx+sw/2, y+12, { align:'center' });
+      doc.text(s.lbl,bx+sw/2,y+14,{align:'center'});
     });
-    y += 18;
+    y+=20;
   }
 
-  // ── STYLE DE JEU ─────────────────────────────────────────
-  const styleEl = document.getElementById('playstyle-content');
-  if (styleEl && styleEl.children.length) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.setTextColor(...C.sub); doc.text('STYLE DE JEU DÉTECTÉ', M, y); y += 4;
-    const badges = Array.from(styleEl.querySelectorAll('span')).map(el => el.textContent).filter(t=>t.length>2);
-    if (badges.length) {
-      badges.forEach((b, bi) => {
-        const bx = M + bi * 42;
-        doc.setFillColor(...C.bg3); doc.roundedRect(bx, y, 38, 8, 1, 1, 'F');
+  // Playstyle badges
+  const styleEl2 = document.getElementById('playstyle-content');
+  if (styleEl2 && styleEl2.children.length) {
+    const badges2 = Array.from(styleEl2.querySelectorAll('span')).map(el=>el.textContent.trim()).filter(t=>t.length>2).slice(0,5);
+    if (badges2.length) {
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+      doc.text('STYLE DE JEU DÉTECTÉ',M,y); y+=4;
+      badges2.forEach((b,bi) => {
+        const bx=M+bi*40;
+        doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,36,8,1.5,1.5,'F');
         doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.teal);
-        doc.text(b.slice(0,18), bx+19, y+5, { align:'center' });
+        doc.text(b.slice(0,16),bx+18,y+5.5,{align:'center'});
       });
-      y += 12;
+      y+=12;
     }
   }
 
-  // ── CHAMPION POOL ─────────────────────────────────────────
-  const champs = (typeof champHistory !== 'undefined' ? champHistory : []).slice(0,5);
+  // Champion pool
+  const champs=(typeof champHistory!=='undefined'?champHistory:[]).slice(0,6);
   if (champs.length) {
-    if (y > 240) { doc.addPage(); doc.setFillColor(...C.bg); doc.rect(0,0,W,297,'F'); y = 20; }
-    doc.setFont('helvetica','bold'); doc.setFontSize(7);
-    doc.setTextColor(...C.sub); doc.text('POOL DE CHAMPIONS', M, y); y += 4;
-    champs.forEach((c, i) => {
-      const bx = M + i * 38;
-      const rgb = DIM_COLORS_HEX[i%5].match(/\w\w/g).map(h=>parseInt(h,16));
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx, y, 34, 16, 2, 2, 'F');
-      doc.setFillColor(...rgb); doc.rect(bx, y, 34, 2, 'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.white);
-      doc.text(c.name.slice(0,12), bx+17, y+9, { align:'center', maxWidth:30 });
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
-      doc.text(c.games+'G · '+(c.wr||'?')+'%WR', bx+17, y+14, { align:'center' });
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+    doc.text('POOL DE CHAMPIONS',M,y); y+=4;
+    const cw=(W-M*2-(champs.length-1)*3)/champs.length;
+    champs.forEach((c,i) => {
+      const bx=M+i*(cw+3), rgb=DIM_COLORS[i%5];
+      doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,cw,18,2,2,'F');
+      doc.setFillColor(...rgb); doc.rect(bx,y,cw,2,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.white);
+      doc.text(c.name.slice(0,12),bx+cw/2,y+9.5,{align:'center'});
+      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
+      doc.text(c.games+'G  ·  '+(c.wr||'?')+'%',bx+cw/2,y+15.5,{align:'center'});
     });
-    y += 20;
+    y+=22;
+  }
+  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
+
+  // ══════════════════════════════════════════════════════════
+  // PAGE 3 — CHARTS & FORME RÉCENTE
+  // ══════════════════════════════════════════════════════════
+  doc.addPage();
+  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  _hdr(doc,'ÉVOLUTION & STATISTIQUES');
+  y=22;
+
+  // KDA + WR charts side by side
+  const chartH=52, chartW=(W-M*2-6)/2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+  doc.text('RATIO KDA — 20 PARTIES',M,y);
+  doc.setFillColor(...C.bg3); doc.roundedRect(M,y+3,chartW,chartH,2,2,'F');
+  if (kdaImg) { try { doc.addImage(kdaImg,'PNG',M,y+3,chartW,chartH,'','FAST'); } catch(e){} }
+  else {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.sub);
+    doc.text('Graphique non disponible',M+chartW/2,y+3+chartH/2,{align:'center'});
   }
 
-  // ── TABLEAU CRITÈRES ─────────────────────────────────────
-  const allRows = [];
-  dimKeys.forEach((k, di) => {
+  const wrX=M+chartW+6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+  doc.text('WIN RATE — 20 PARTIES',wrX,y);
+  doc.setFillColor(...C.bg3); doc.roundedRect(wrX,y+3,chartW,chartH,2,2,'F');
+  if (wrImg) { try { doc.addImage(wrImg,'PNG',wrX,y+3,chartW,chartH,'','FAST'); } catch(e){} }
+  else {
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.sub);
+    doc.text('Graphique non disponible',wrX+chartW/2,y+3+chartH/2,{align:'center'});
+  }
+  y+=chartH+10;
+
+  // Recent form sparkline
+  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+  doc.text('FORME RÉCENTE — '+recentMatches.length+' DERNIÈRES PARTIES',M,y);
+  const wins2=sparklineData.filter(m=>m.win===true).length;
+  if (recentMatches.length>0) {
+    const gcSpark=wins2/recentMatches.length>=0.5?C.lime:C.amber;
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...gcSpark);
+    doc.text(wins2+'V / '+(recentMatches.length-wins2)+'D',W-M,y,{align:'right'});
+  }
+  doc.setFillColor(...C.bg3); doc.roundedRect(M,y+3,W-M*2,18,2,2,'F');
+  if (sparklineImg) { try { doc.addImage(sparklineImg,'PNG',M,y+3,W-M*2,18,'','FAST'); } catch(e){} }
+  y+=26;
+
+  // Full criteria table
+  const allRows=[];
+  dimKeys.forEach((k,di) => {
     if (!f[k]) return;
     f[k].forEach(field => {
       if (!field.label && !field.lbl) return;
-      const sc = (typeof computeFieldScore === 'function') ? computeFieldScore(field) : null;
-      allRows.push([DIM_LABELS[di].slice(0,2), field.lbl||field.label, sc !== null ? sc.toFixed(2) : '—']);
+      const sc=(typeof computeFieldScore==='function') ? computeFieldScore(field) : null;
+      allRows.push([DIM_LABELS[di].slice(0,2), field.lbl||field.label, sc!==null?sc.toFixed(2):'—']);
     });
   });
-
-  if (allRows.length && y < 230) {
+  if (allRows.length) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
+    doc.text('TABLEAU DE CRITÈRES COMPLET',M,y); y+=3;
     doc.autoTable({
-      startY: y,
-      head: [['Dim.','Critère','Score /10']],
-      body: allRows,
-      theme: 'plain',
-      headStyles: { fillColor: C.bg2, textColor: C.sub, fontSize: 6.5, fontStyle:'bold', cellPadding:2 },
-      bodyStyles: { fontSize: 6.5, cellPadding: 2, textColor: C.white, fillColor: C.bg3 },
-      alternateRowStyles: { fillColor: C.bg2 },
-      columnStyles: { 0:{cellWidth:10}, 1:{cellWidth:'auto'}, 2:{cellWidth:18, halign:'right', fontStyle:'bold'} },
-      margin: { left:M, right:M },
-      didParseCell: (data) => {
-        if (data.section==='body' && data.column.index===2 && data.cell.text[0]!=='—') {
-          const v = parseFloat(data.cell.text[0]);
-          data.cell.styles.textColor = scoreColor(v);
+      startY:y,
+      head:[['Dim.','Critère','Score /10']],
+      body:allRows,
+      theme:'plain',
+      headStyles:{fillColor:C.bg2,textColor:C.sub,fontSize:6.5,fontStyle:'bold',cellPadding:2.5},
+      bodyStyles:{fontSize:6.5,cellPadding:2.5,textColor:C.white,fillColor:C.bg3},
+      alternateRowStyles:{fillColor:C.bg2},
+      columnStyles:{0:{cellWidth:10},1:{cellWidth:'auto'},2:{cellWidth:20,halign:'right',fontStyle:'bold'}},
+      margin:{left:M,right:M},
+      didParseCell:(data) => {
+        if (data.section==='body'&&data.column.index===2&&data.cell.text[0]!=='—') {
+          data.cell.styles.textColor = scoreColor(parseFloat(data.cell.text[0]));
         }
       }
     });
-    y = doc.lastAutoTable.finalY + 8;
   }
+  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
 
-  // ── PAGE 3 : RECOMMANDATION AGENT ────────────────────────
+  // ══════════════════════════════════════════════════════════
+  // PAGE 4 — RECOMMANDATION & NOTES AGENT
+  // ══════════════════════════════════════════════════════════
   doc.addPage();
-  doc.setFillColor(...C.bg); doc.rect(0, 0, W, 297, 'F');
-  doc.setFillColor(...C.lime); doc.rect(0, 0, W, 3, 'F');
+  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  _hdr(doc,'RECOMMANDATION AGENT');
+  y=22;
 
-  doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.setTextColor(...C.sub); doc.text('VISIONSCORE  ·  RECOMMANDATION AGENT', M, 12);
-  doc.setDrawColor(...C.bg3); doc.setLineWidth(0.3); doc.line(M, 14, W-M, 14);
+  // Hero synthesis block
+  const gc3=scoreColor(globalVal);
+  doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,28,3,3,'F');
+  doc.setFillColor(...gc3); doc.rect(M,y,3,28,'F');
+  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...gc3);
+  doc.text(globalVal!==null?globalVal.toFixed(1)+'/10':'—',M+9,y+14);
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...C.white);
+  const synLines=doc.splitTextToSize(verdictText(globalVal),W-M*2-50);
+  doc.text(synLines,M+46,y+10);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub2);
+  doc.text('Score SPES · Méthode propriétaire · Données API Riot Games officielles',M+46,y+22);
+  y+=34;
 
-  y = 24;
-
-  // Titre section
-  doc.setFont('helvetica','bold'); doc.setFontSize(16);
-  doc.setTextColor(...C.white); doc.text('Proposition de recrutement', M, y); y += 8;
-  doc.setFont('helvetica','normal'); doc.setFontSize(9);
-  doc.setTextColor(...C.sub2); doc.text('Profil ' + pseudo + ' · ' + currentRole + ' · ' + rankName, M, y); y += 10;
-
-  // Bloc synthèse
-  doc.setFillColor(...C.bg3); doc.roundedRect(M, y, W-M*2, 32, 3, 3, 'F');
-  const gc2 = scoreColor(globalVal);
-  doc.setFillColor(...gc2); doc.rect(M, y, 2, 32, 'F');
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(...gc2);
-  doc.text(globalVal !== null ? globalVal.toFixed(1)+'/10' : '—', M+8, y+14);
-
-  const synthese = globalVal>=8 ? 'Profil exceptionnel — recommandé pour intégration directe en semi-pro'
-    : globalVal>=7 ? 'Profil très solide — recommandé pour tryout avec option signature'
-    : globalVal>=6 ? 'Bon profil — recommandé pour période d\'essai'
-    : globalVal>=5 ? 'Profil en développement — potentiel identifié, accompagnement nécessaire'
-    : 'Profil non recommandé à ce stade';
-
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(...C.white);
-  const lines = doc.splitTextToSize(synthese, W - M*2 - 40);
-  doc.text(lines, M+40, y+10);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.sub2);
-  doc.text('Score SPES · Méthode propriétaire basée sur données API Riot', M+40, y+24);
-  y += 38;
-
-  // Points forts
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.sub); doc.text('POINTS FORTS', M, y); y += 5;
-  const items = [];
+  // 2-col: strengths / weaknesses
+  const colW2=(W-M*2-6)/2, colR=M+colW2+6;
+  const items2=[];
   dimKeys.forEach(k => {
     if (!f[k]) return;
     f[k].forEach(field => {
-      const sc = (typeof computeFieldScore === 'function') ? computeFieldScore(field) : null;
-      if (sc !== null) items.push({ label:field.lbl||field.label, score:sc });
+      const sc=(typeof computeFieldScore==='function')?computeFieldScore(field):null;
+      if (sc!==null) items2.push({label:field.lbl||field.label,score:sc});
     });
   });
-  items.sort((a,b) => b.score - a.score);
-  items.slice(0,4).forEach(item => {
-    const rgb = scoreColor(item.score);
-    doc.setFillColor(...C.bg3); doc.roundedRect(M, y, W-M*2, 8, 1, 1, 'F');
-    doc.setFillColor(...rgb); doc.rect(M, y, 2, 8, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.white);
-    doc.text(item.label, M+5, y+5);
-    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1)+'/10', W-M-2, y+5, {align:'right'});
-    y += 10;
-  });
-  y += 4;
+  items2.sort((a,b)=>b.score-a.score);
+  const strengths=items2.slice(0,4);
+  const weaknesses=[...items2].reverse().slice(0,4);
 
-  // Axes de développement
   doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.sub); doc.text("AXES DE DÉVELOPPEMENT", M, y); y += 5;
-  [...items].reverse().slice(0,3).forEach(item => {
-    const rgb = item.score < 5 ? C.red : C.amber;
-    doc.setFillColor(...C.bg3); doc.roundedRect(M, y, W-M*2, 8, 1, 1, 'F');
-    doc.setFillColor(...rgb); doc.rect(M, y, 2, 8, 'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.white);
-    doc.text(item.label, M+5, y+5);
-    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1)+'/10', W-M-2, y+5, {align:'right'});
-    y += 10;
+  doc.setTextColor(...C.lime); doc.text('POINTS FORTS',M,y);
+  doc.setTextColor(...C.amber); doc.text('AXES DE DÉVELOPPEMENT',colR,y);
+  y+=5;
+
+  const iH=9;
+  strengths.forEach((item,idx) => {
+    const rgb=scoreColor(item.score);
+    doc.setFillColor(...C.bg3); doc.roundedRect(M,y+idx*iH,colW2,iH-1,1,1,'F');
+    doc.setFillColor(...rgb); doc.rect(M,y+idx*iH,2,iH-1,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
+    doc.text(item.label.slice(0,26),M+4,y+idx*iH+5.5);
+    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1),M+colW2-2,y+idx*iH+5.5,{align:'right'});
   });
-  y += 6;
+  weaknesses.forEach((item,idx) => {
+    const rgb=item.score<5?C.red:C.amber;
+    doc.setFillColor(...C.bg3); doc.roundedRect(colR,y+idx*iH,colW2,iH-1,1,1,'F');
+    doc.setFillColor(...rgb); doc.rect(colR,y+idx*iH,2,iH-1,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
+    doc.text(item.label.slice(0,26),colR+4,y+idx*iH+5.5);
+    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1),colR+colW2-2,y+idx*iH+5.5,{align:'right'});
+  });
+  y+=Math.max(strengths.length,weaknesses.length)*iH+8;
 
-  // Note de confiance
-  doc.setFillColor(12,20,12); doc.roundedRect(M, y, W-M*2, 22, 2, 2, 'F');
-  doc.setDrawColor(...C.teal); doc.setLineWidth(0.2); doc.roundedRect(M, y, W-M*2, 22, 2, 2, 'S');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.teal);
-  doc.text('NOTE SPES', M+4, y+7);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.sub2);
-  const note = 'Ce rapport est généré automatiquement à partir des données API Riot officielle. Le score SPES est calculé sur seuils absolus par rôle (non relatifs au rang). La dimension D5 intègre des données non-API à compléter en entretien.';
-  const noteLines = doc.splitTextToSize(note, W-M*2-8);
-  doc.text(noteLines, M+4, y+14);
-  y += 28;
-
-  // ── FOOTER toutes pages ───────────────────────────────────
-  const pages = doc.getNumberOfPages();
-  for (let i = 1; i <= pages; i++) {
-    doc.setPage(i);
-    doc.setFillColor(...C.bg2); doc.rect(0, 289, W, 8, 'F');
-    doc.setFillColor(...C.lime); doc.rect(0, 289, 2, 8, 'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
-    doc.text('VisionScore · Document confidentiel · ' + dateStr, M+2, 294);
-    doc.text(i+'/'+pages, W-M, 294, { align:'right' });
+  // Agent notes (CRM)
+  const agentNotes = document.getElementById('note-agent')?.value?.trim()
+    || document.querySelector('textarea[name="noteAgent"]')?.value?.trim()
+    || document.querySelector('.note-agent-textarea')?.value?.trim()
+    || '';
+  if (agentNotes) {
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.sub);
+    doc.text('NOTES DE L\'AGENT SCOUT',M,y); y+=4;
+    const noteH=Math.min(32, 8+doc.splitTextToSize(agentNotes,W-M*2-6).length*4);
+    doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,noteH,2,2,'F');
+    doc.setDrawColor(...C.sub); doc.setLineWidth(0.12); doc.roundedRect(M,y,W-M*2,noteH,2,2,'S');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.white);
+    const nLines=doc.splitTextToSize(agentNotes,W-M*2-6);
+    doc.text(nLines.slice(0,7),M+3,y+7);
+    y+=noteH+6;
   }
 
-  const fname = 'SPES_' + pseudo.replace(/[^a-zA-Z0-9]/g,'_') + '_' + currentRole + '_' + new Date().toISOString().slice(0,10) + '.pdf';
+  // External links
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.sub);
+  doc.text('LIENS DE RÉFÉRENCE',M,y); y+=4;
+  const server2=tag?.toLowerCase()||'euw';
+  const cleanName=encodeURIComponent(pseudo);
+  const links2=[
+    {lbl:'OP.GG',url:`op.gg/summoners/${server2}/${cleanName}-${tag}`},
+    {lbl:'U.GG',url:`u.gg/lol/profile/${server2}1/${cleanName}-${tag}`},
+    {lbl:'Porofessor',url:`porofessor.gg/live/${server2}/${cleanName}-${tag}`},
+  ];
+  links2.forEach((lk,li) => {
+    const lx=M+li*62;
+    doc.setFillColor(...C.bg3); doc.roundedRect(lx,y,58,10,1.5,1.5,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.blue);
+    doc.text(lk.lbl,lx+29,y+5.5,{align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
+    doc.text(lk.url.slice(0,36),lx+29,y+9,{align:'center'});
+  });
+  y+=16;
+
+  // Methodology note
+  doc.setFillColor(9,17,11); doc.roundedRect(M,y,W-M*2,30,2,2,'F');
+  doc.setDrawColor(...C.teal); doc.setLineWidth(0.18); doc.roundedRect(M,y,W-M*2,30,2,2,'S');
+  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.teal);
+  doc.text('MÉTHODOLOGIE SPES',M+4,y+8);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub2);
+  const method='Ce rapport est généré automatiquement via l\'API officielle Riot Games. Le score SPES est calculé sur seuils absolus par rôle — non relatifs au rang — et couvre 5 dimensions : statistiques individuelles (D1), objectifs collectifs (D2), impact sur la partie (D3), courbe de progression (D4) et données d\'entretien (D5). La dimension D5 intègre des éléments non-API qui nécessitent un entretien complémentaire.';
+  const mLines=doc.splitTextToSize(method,W-M*2-8);
+  doc.text(mLines,M+4,y+16);
+  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
+
+  // ── FOOTER all pages ──────────────────────────────────────
+  const pages=doc.getNumberOfPages();
+  for (let p=1;p<=pages;p++) {
+    doc.setPage(p);
+    doc.setFillColor(...C.bg2); doc.rect(0,H-9,W,6,'F');
+    doc.setFillColor(...C.lime); doc.rect(0,H-9,2,6,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
+    doc.text('VisionScore · Document confidentiel · '+dateStr,M+2,H-5);
+    doc.text(p+' / '+pages,W-M,H-5,{align:'right'});
+  }
+
+  // ── Save ──────────────────────────────────────────────────
+  if (btn) { btn.disabled=false; btn.textContent='Exporter PDF'; }
+  const fname='SPES_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+currentRole+'_'+new Date().toISOString().slice(0,10)+'.pdf';
   doc.save(fname);
-  showToast(`PDF exporté — ${fname}`, 'success');
+  showToast('Rapport PDF pro exporté — '+fname,'success');
 }
 // ════════════════════════════════════════════════════════════
 // ② HISTORIQUE — Sauvegarde & Restauration
