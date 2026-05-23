@@ -2437,6 +2437,35 @@ const SEUILS_ABSOLUS = {
     ADC: [0.8, 2.0, 3.5, 5.5],
     Sup: [1.0, 2.5, 4.0, 6.0],
   },
+  // ── Challenges API (valeurs moyennes par partie) ─────────────
+  chal_turret_plates:     { all: [0.3, 0.8, 1.5, 2.4] },
+  chal_turret_takedowns:  { all: [0.3, 0.8, 1.4, 2.2] },
+  chal_solo_turrets:      { all: [0.0, 0.05, 0.13, 0.28] },
+  chal_first_blood:       { all: [10,  18,   27,   38  ] },
+  chal_jungle_inv:        { all: [0.1, 0.4,  0.9,  1.6 ] },
+  chal_solo_kills:        { all: [0.1, 0.3,  0.7,  1.2 ] },
+  chal_takedowns_14: {
+    Top: [0.4, 1.0, 2.0, 3.2],
+    Jgl: [0.6, 1.5, 2.8, 4.2],
+    Mid: [0.5, 1.2, 2.2, 3.5],
+    ADC: [0.4, 1.0, 2.0, 3.2],
+    Sup: [0.5, 1.6, 3.0, 5.0],
+  },
+  chal_epic_steals:       { all: [0.0, 0.03, 0.08, 0.18] },
+  chal_save_ally:         { Sup: [0.0, 0.10, 0.25, 0.48], all: [0.0, 0.04, 0.12, 0.25] },
+  chal_skillshots_dodged: { all: [3,   6,    11,   17  ] },
+  chal_control_wards:     { Sup: [0.8, 1.5,  2.2,  3.2 ], all: [0.4, 0.9,  1.5, 2.2] },
+  chal_stealth_wards: {
+    Sup: [5,  9,  13, 18],
+    Jgl: [4,  7,  11, 15],
+    all: [2,  5,   8, 12],
+  },
+  chal_cs10: {
+    Top: [32, 48, 60, 73],
+    Mid: [38, 54, 66, 78],
+    ADC: [42, 58, 70, 82],
+  },
+  chal_max_lvl_lead:      { all: [0.0, 0.3,  0.7,  1.3 ] },
 };
 
 // ── Score par seuils absolus ──────────────────────────────────
@@ -2551,6 +2580,46 @@ function scoreStatCalibrated(id, val) {
     case 'champ_pool':
       return scoreAbsolu(v, 0.5, 1.5, 3.0, 5.0);
 
+    // ── Challenges API ─────────────────────────────────────────
+    case 'chal_turret_plates':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_turret_plates.all);
+    case 'chal_turret_takedowns':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_turret_takedowns.all);
+    case 'chal_solo_turrets':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_solo_turrets.all);
+    case 'chal_first_blood':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_first_blood.all);
+    case 'chal_jungle_inv':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_jungle_inv.all);
+    case 'chal_solo_kills':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_solo_kills.all);
+    case 'chal_takedowns_14': {
+      const s14 = SEUILS_ABSOLUS.chal_takedowns_14[role] || SEUILS_ABSOLUS.chal_takedowns_14.Mid;
+      return scoreAbsolu(v, ...s14);
+    }
+    case 'chal_epic_steals':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_epic_steals.all);
+    case 'chal_save_ally': {
+      const ssv = SEUILS_ABSOLUS.chal_save_ally[role] || SEUILS_ABSOLUS.chal_save_ally.all;
+      return scoreAbsolu(v, ...ssv);
+    }
+    case 'chal_skillshots_dodged':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_skillshots_dodged.all);
+    case 'chal_control_wards': {
+      const scw = SEUILS_ABSOLUS.chal_control_wards[role] || SEUILS_ABSOLUS.chal_control_wards.all;
+      return scoreAbsolu(v, ...scw);
+    }
+    case 'chal_stealth_wards': {
+      const ssw = SEUILS_ABSOLUS.chal_stealth_wards[role] || SEUILS_ABSOLUS.chal_stealth_wards.all;
+      return scoreAbsolu(v, ...ssw);
+    }
+    case 'chal_cs10': {
+      const sc = SEUILS_ABSOLUS.chal_cs10[role];
+      return sc ? scoreAbsolu(v, ...sc) : null; // null pour Jgl/Sup
+    }
+    case 'chal_max_lvl_lead':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_max_lvl_lead.all);
+
     default:
       return null;
   }
@@ -2563,102 +2632,129 @@ function getCurrentRankIdx() {
 }
 
 
+// ════════════════════════════════════════════════════════════
+// D1 — Stats individuelles (mécanique pure, 100% API/auto)
+// Mesure la performance individuelle : farming, trades, 1v1
+// ════════════════════════════════════════════════════════════
 const D1_FIELDS = {
   Top: [
-    { id:'cs_min',    lbl:'CS/min',        badge:'api', type:'auto', bad:5.5, avg:7.0, good:8.2, elite:9.0,  unit:'/min' },
-    { id:'kda',       lbl:'KDA',           badge:'api', type:'auto', bad:1.5, avg:2.4, good:3.5, elite:4.5,  unit:'' },
-    { id:'dmg_share', lbl:'Dmg Share',     badge:'api', type:'auto', bad:18,  avg:24,  good:30,  elite:36,   unit:'%' },
-    { id:'winrate',   lbl:'Win Rate',      badge:'api', type:'auto', bad:46,  avg:51,  good:55,  elite:60,   unit:'%' },
-    { id:'dmg_tower', lbl:'Dmg Tours/g',   badge:'api', type:'auto', bad:1500,avg:2800,good:4200,elite:5800, unit:'' },
+    { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
+    { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
+    { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
   ],
   Jgl: [
-    { id:'cs_min',    lbl:'CS/min',        badge:'api', type:'auto', bad:4.5, avg:5.8, good:6.8, elite:7.8,  unit:'/min' },
-    { id:'kda',       lbl:'KDA',           badge:'api', type:'auto', bad:2.0, avg:3.0, good:4.0, elite:5.5,  unit:'' },
-    { id:'winrate',   lbl:'Win Rate',      badge:'api', type:'auto', bad:46,  avg:51,  good:55,  elite:60,   unit:'%' },
-    { id:'champ_pool',lbl:'Pool qualifié', badge:'api', type:'auto', bad:0.5, avg:1.5, good:3.0, elite:4.5,  unit:'' },
+    { id:'cs_min',               lbl:'Camps+CS/min',         badge:'api', type:'auto' },
+    { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
+    { id:'chal_jungle_inv',      lbl:'Invasion jungle/g',    badge:'api', type:'auto' },
+    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
+    { id:'winrate',              lbl:'Win Rate',             badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'cs_min',    lbl:'CS/min',        badge:'api', type:'auto', bad:6.5, avg:8.0, good:9.0, elite:9.8,  unit:'/min' },
-    { id:'dmg_share', lbl:'Dmg Share',     badge:'api', type:'auto', bad:22,  avg:28,  good:33,  elite:38,   unit:'%' },
-    { id:'kda',       lbl:'KDA',           badge:'api', type:'auto', bad:2.0, avg:3.0, good:4.2, elite:5.5,  unit:'' },
-    { id:'winrate',   lbl:'Win Rate',      badge:'api', type:'auto', bad:46,  avg:51,  good:55,  elite:60,   unit:'%' },
+    { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
+    { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
+    { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'chal_solo_kills',      lbl:'Solo kills/g',         badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'dmg_share', lbl:'Dmg Share',     badge:'api', type:'auto', bad:25,  avg:32,  good:37,  elite:43,   unit:'%' },
-    { id:'cs_min',    lbl:'CS/min',        badge:'api', type:'auto', bad:7.0, avg:8.5, good:9.5, elite:10.5, unit:'/min' },
-    { id:'kda',       lbl:'KDA',           badge:'api', type:'auto', bad:2.5, avg:3.5, good:4.5, elite:6.0,  unit:'' },
-    { id:'winrate',   lbl:'Win Rate',      badge:'api', type:'auto', bad:46,  avg:51,  good:55,  elite:60,   unit:'%' },
+    { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
+    { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
+    { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
   ],
   Sup: [
-    { id:'kda',       lbl:'KDA',           badge:'api', type:'auto', bad:2.5, avg:3.5, good:4.8, elite:6.5,  unit:'' },
-    { id:'dmg_share', lbl:'Dmg Share',     badge:'api', type:'auto', bad:5,   avg:10,  good:14,  elite:18,   unit:'%' },
-    { id:'winrate',   lbl:'Win Rate',      badge:'api', type:'auto', bad:46,  avg:51,  good:55,  elite:60,   unit:'%' },
-    { id:'champ_pool',lbl:'Pool qualifié', badge:'api', type:'auto', bad:0.5, avg:1.5, good:3.0, elite:4.5,  unit:'' },
+    { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
+    { id:'vision',               lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_control_wards',   lbl:'Control Wards/g',      badge:'api', type:'auto' },
+    { id:'chal_save_ally',       lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
+    { id:'winrate',              lbl:'Win Rate',             badge:'api', type:'auto' },
   ],
 };
 
-// D2 — Objectifs & macro (API auto + sliders rôle-spécifiques)
+// ════════════════════════════════════════════════════════════
+// D2 — Objectifs & macro (100% API/auto, aucun slider)
+// Mesure l'impact collectif : tours, objectifs, early game
+// ════════════════════════════════════════════════════════════
 const D2_FIELDS = {
   Top: [
-    { id:'dmg_tower',   lbl:'Dégâts tours/g',  badge:'api', type:'auto',   bad:1500,avg:2800,good:4200,elite:5800,unit:'' },
-    { id:'obj_score',   lbl:'Participation obj.',badge:'api',type:'auto',  bad:1.0, avg:2.5, good:4.0, elite:6.0, unit:'' },
-    { id:'split_push',  lbl:'Pression split push',badge:'man',type:'slider' },
-    { id:'tp_usage',    lbl:'Utilisation TP',    badge:'man',type:'slider' },
+    { id:'dmg_tower',             lbl:'Dégâts tours/g',      badge:'api', type:'auto' },
+    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'chal_solo_turrets',     lbl:'Tours solo tardif/g',  badge:'api', type:'auto' },
+    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
   ],
   Jgl: [
-    { id:'obj_score',   lbl:'Obj. Score (drag+baron)',badge:'api',type:'auto',bad:2.0,avg:3.5,good:5.0,elite:7.0,unit:'' },
-    { id:'dragon_ctrl', lbl:'Contrôle Dragon (%)',badge:'man',type:'slider' },
-    { id:'baron_ctrl',  lbl:'Contrôle Baron (%)', badge:'man',type:'slider' },
-    { id:'obj_steal',   lbl:'Steals réalisés',    badge:'man',type:'slider' },
-    { id:'herald_use',  lbl:'Utilisation Herald', badge:'man',type:'slider' },
+    { id:'obj_score',             lbl:'Obj Score drag+baron', badge:'api', type:'auto' },
+    { id:'chal_epic_steals',      lbl:'Steals épiques/g',     badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'obj_score',   lbl:'Participation obj.', badge:'api',type:'auto',  bad:1.0, avg:2.5, good:4.0, elite:6.0, unit:'' },
-    { id:'roam_impact', lbl:'Impact roaming',      badge:'man',type:'slider' },
-    { id:'wave_ctrl',   lbl:'Wave management',     badge:'man',type:'slider' },
-    { id:'tp_usage',    lbl:'Utilisation TP/Ignite',badge:'man',type:'slider' },
+    { id:'dmg_tower',             lbl:'Dégâts tours/g',       badge:'api', type:'auto' },
+    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
+    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'obj_score',   lbl:'Participation obj.', badge:'api',type:'auto',  bad:1.0, avg:2.5, good:4.0, elite:6.0, unit:'' },
-    { id:'baron_prio',  lbl:'Priorité objectives', badge:'man',type:'slider' },
-    { id:'positioning', lbl:'Positioning teamfight',badge:'man',type:'slider' },
+    { id:'dmg_tower',             lbl:'Dégâts tours/g',       badge:'api', type:'auto' },
+    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
+    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'obj_score',   lbl:'Setup kill rate',    badge:'api',type:'auto',  bad:1.0, avg:2.5, good:4.0, elite:6.0, unit:'' },
-    { id:'dragon_setup',lbl:'Setup Dragon',        badge:'man',type:'slider' },
-    { id:'engage_qual', lbl:'Qualité engages',     badge:'man',type:'slider' },
-    { id:'peel_quality',lbl:'Qualité peel/save',   badge:'man',type:'slider' },
+    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
+    { id:'chal_epic_steals',      lbl:'Steals épiques/g',     badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
   ],
 };
 
-// D3 — Impact carte (API auto)
+// ════════════════════════════════════════════════════════════
+// D3 — Impact carte & présence (100% API/auto, aucun slider)
+// Mesure la présence sur la carte : kills, vision, duels
+// ════════════════════════════════════════════════════════════
 const D3_FIELDS = {
   Top: [
-    { id:'kill_part',   lbl:'Kill Participation', badge:'api',type:'auto', bad:45, avg:58, good:68, elite:78, unit:'%' },
-    { id:'vision',      lbl:'Vision Score/g',     badge:'api',type:'auto', bad:15, avg:22, good:30, elite:40, unit:'' },
-    { id:'map_presence',lbl:'Présence top/river',  badge:'man',type:'slider' },
+    { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
+    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   Jgl: [
-    { id:'kill_part',   lbl:'Kill Participation', badge:'api',type:'auto', bad:50, avg:63, good:72, elite:82, unit:'%' },
-    { id:'vision',      lbl:'Vision Score/g',     badge:'api',type:'auto', bad:22, avg:32, good:42, elite:55, unit:'' },
-    { id:'gank_quality',lbl:'Qualité ganks',       badge:'man',type:'slider' },
-    { id:'counter_jgl', lbl:'Counter-jungle',      badge:'man',type:'slider' },
+    { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
+    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
+    { id:'chal_control_wards',    lbl:'Control Wards/g',      badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau/g',      badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'kill_part',   lbl:'Kill Participation', badge:'api',type:'auto', bad:48, avg:60, good:70, elite:80, unit:'%' },
-    { id:'vision',      lbl:'Vision Score/g',     badge:'api',type:'auto', bad:16, avg:24, good:32, elite:42, unit:'' },
-    { id:'roam_timing', lbl:'Timing roam/recall', badge:'man',type:'slider' },
+    { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
+    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'kill_part',   lbl:'Kill Participation', badge:'api',type:'auto', bad:42, avg:55, good:65, elite:75, unit:'%' },
-    { id:'vision',      lbl:'Vision Score/g',     badge:'api',type:'auto', bad:10, avg:16, good:22, elite:30, unit:'' },
-    { id:'lane_dominance',lbl:'Dominance lane',   badge:'man',type:'slider' },
+    { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
+    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'kill_part',   lbl:'Kill Participation', badge:'api',type:'auto', bad:58, avg:70, good:80, elite:90, unit:'%' },
-    { id:'vision',      lbl:'Vision Score/g',     badge:'api',type:'auto', bad:35, avg:52, good:65, elite:80, unit:'' },
-    { id:'ward_cov',    lbl:'Couverture vision',  badge:'man',type:'slider' },
-    { id:'roam_sup',    lbl:'Roaming support',    badge:'man',type:'slider' },
+    { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
+    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'chal_save_ally',        lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
+    { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
+    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api', type:'auto' },
   ],
 };
 
@@ -6619,6 +6715,23 @@ async function fetchRiotData() {
     if (stats.challenges) {
       window._lastChallenges = stats.challenges;
       buildAdvancedSection(stats.challenges, currentRole);
+      // ── Injection dans rawData pour le moteur de scoring ──
+      const ch = stats.challenges;
+      rawData.chal_turret_plates     = ch.turretPlates        ?? 0;
+      rawData.chal_turret_takedowns  = ch.turretTakedowns     ?? 0;
+      rawData.chal_solo_turrets      = ch.soloTurretsLate     ?? 0;
+      rawData.chal_first_blood       = ch.firstBloodRate      ?? 0;
+      rawData.chal_jungle_inv        = ch.jungleInvasion      ?? 0;
+      rawData.chal_solo_kills        = ch.soloKills           ?? 0;
+      rawData.chal_takedowns_14      = ch.takedownsFirst14    ?? 0;
+      rawData.chal_epic_steals       = ch.epicSteals          ?? 0;
+      rawData.chal_save_ally         = ch.saveAlly            ?? 0;
+      rawData.chal_skillshots_dodged = ch.skillshotsDodged    ?? 0;
+      rawData.chal_control_wards     = ch.controlWards        ?? 0;
+      rawData.chal_stealth_wards     = ch.stealthWards        ?? 0;
+      rawData.chal_cs10              = ch.laneMinions10       ?? 0;
+      rawData.chal_max_lvl_lead      = ch.maxLevelLead        ?? 0;
+      buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
     matchHistory = matches;
     champHistory = stats.champDetails || [];
@@ -7449,13 +7562,13 @@ async function drawMapBase() {
   const base = document.getElementById('map-base-canvas');
   const ctx = base.getContext('2d');
 
-  // Try local map.png first (uploaded to GitHub repo), then fallback
+  // Carte officielle Riot — Community Dragon minimap haute résolution
   let loaded = false;
   const urls = [
+    'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
+    'https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
+    'https://cdn.communitydragon.org/latest/map/sr/minimap',
     './map.png',
-    'map.png',
-    'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/map/map11.png',
-    'https://ddragon.leagueoflegends.com/cdn/15.1.1/img/map/map11.png',
   ];
 
   for (const url of urls) {
@@ -7491,294 +7604,257 @@ async function drawMapBase() {
 }
 
 function drawSummonersRift(ctx, S) {
-  const s = S; // alias
+  const s = S;
 
-  // ── 1. BACKGROUND — deep forest ──────────────────────────
-  const bgGrad = ctx.createRadialGradient(s*.5,s*.5,0, s*.5,s*.5,s*.72);
-  bgGrad.addColorStop(0,   '#0E2010');
-  bgGrad.addColorStop(0.5, '#091608');
-  bgGrad.addColorStop(1,   '#060E06');
+  // ── 1. BACKGROUND — terrain naturel SR 2024 ──────────────
+  // Fond principal terrain herbe foncée
+  const bgGrad = ctx.createLinearGradient(0, s, s, 0);
+  bgGrad.addColorStop(0,   '#071A05');
+  bgGrad.addColorStop(0.35,'#0C2208');
+  bgGrad.addColorStop(0.65,'#0E2810');
+  bgGrad.addColorStop(1,   '#081D06');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, s, s);
 
-  // ── 2. TERRAIN ZONES ─────────────────────────────────────
-  // Blue base corner (bottom-left)
-  const blueBase = ctx.createRadialGradient(s*.04,s*.96,0, s*.04,s*.96,s*.22);
-  blueBase.addColorStop(0, 'rgba(30,60,120,.55)');
-  blueBase.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = blueBase;
-  ctx.fillRect(0, 0, s, s);
+  // Texture terrain — variation couleur aléatoire
+  ctx.save();
+  const N_PATCHES = 120;
+  for (let i=0;i<N_PATCHES;i++) {
+    const px = Math.random()*s, py = Math.random()*s;
+    const r = s*(0.02+Math.random()*0.06);
+    const g2 = ctx.createRadialGradient(px,py,0,px,py,r);
+    const bright = Math.random()>0.5;
+    g2.addColorStop(0, bright?'rgba(20,50,14,.18)':'rgba(4,10,3,.22)');
+    g2.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g2; ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2); ctx.fill();
+  }
+  ctx.restore();
 
-  // Red base corner (top-right)
-  const redBase = ctx.createRadialGradient(s*.96,s*.04,0, s*.96,s*.04,s*.22);
-  redBase.addColorStop(0, 'rgba(120,30,30,.55)');
-  redBase.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = redBase;
-  ctx.fillRect(0, 0, s, s);
+  // ── 2. BASES PLATFORMS ───────────────────────────────────
+  // Blue base (bottom-left) stone platform
+  function drawBasePlatform(x, y, col, r) {
+    const cx=x*s, cy=y*s;
+    // Outer glow aura
+    const aura = ctx.createRadialGradient(cx,cy,r*.5,cx,cy,r*2.4);
+    aura.addColorStop(0, col+'55'); aura.addColorStop(0.6, col+'1A'); aura.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=aura; ctx.beginPath(); ctx.arc(cx,cy,r*2.4,0,Math.PI*2); ctx.fill();
+    // Platform stone
+    ctx.fillStyle = col+'28'; ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = col+'55'; ctx.lineWidth=1.5; ctx.stroke();
+  }
+  drawBasePlatform(.06,.94,'#4A9EFF',s*.095);
+  drawBasePlatform(.94,.06,'#E85050',s*.095);
 
   // ── 3. RIVER ─────────────────────────────────────────────
   ctx.save();
-  // River body — thick bezier path clipped
-  ctx.strokeStyle = '#1A3A6E';
-  ctx.lineWidth = s * 0.085;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  // Top-right river segment
-  ctx.beginPath();
-  ctx.moveTo(s*.45, 0);
-  ctx.bezierCurveTo(s*.44, s*.12, s*.38, s*.28, s*.32, s*.36);
-  ctx.bezierCurveTo(s*.26, s*.44, s*.12, s*.46, 0, s*.47);
-  ctx.stroke();
-  // Bottom-left river segment
-  ctx.beginPath();
-  ctx.moveTo(s, s*.53);
-  ctx.bezierCurveTo(s*.88, s*.54, s*.74, s*.56, s*.68, s*.64);
-  ctx.bezierCurveTo(s*.62, s*.72, s*.56, s*.88, s*.55, s);
-  ctx.stroke();
+  // River body — wide fill path
+  function riverPath() {
+    ctx.beginPath();
+    ctx.moveTo(s*.46,0);
+    ctx.bezierCurveTo(s*.45,s*.10, s*.38,s*.26, s*.32,s*.35);
+    ctx.bezierCurveTo(s*.26,s*.44, s*.11,s*.46, 0,s*.47);
+    ctx.lineTo(0, s*.56);
+    ctx.bezierCurveTo(s*.13,s*.55, s*.29,s*.53, s*.36,s*.44);
+    ctx.bezierCurveTo(s*.42,s*.35, s*.48,s*.20, s*.50,0);
+    ctx.closePath();
+  }
+  riverPath();
+  const riverGrad = ctx.createLinearGradient(s*.46,0, 0,s*.52);
+  riverGrad.addColorStop(0,'#0E2555'); riverGrad.addColorStop(0.5,'#122B62'); riverGrad.addColorStop(1,'#0D2250');
+  ctx.fillStyle = riverGrad; ctx.fill();
 
-  // River shimmer — lighter inner line
-  ctx.strokeStyle = '#2255A8';
-  ctx.lineWidth = s * 0.04;
-  ctx.globalAlpha = 0.6;
+  // Lower river
   ctx.beginPath();
-  ctx.moveTo(s*.45, 0);
-  ctx.bezierCurveTo(s*.44, s*.12, s*.38, s*.28, s*.32, s*.36);
-  ctx.bezierCurveTo(s*.26, s*.44, s*.12, s*.46, 0, s*.47);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(s, s*.53);
-  ctx.bezierCurveTo(s*.88, s*.54, s*.74, s*.56, s*.68, s*.64);
-  ctx.bezierCurveTo(s*.62, s*.72, s*.56, s*.88, s*.55, s);
-  ctx.stroke();
+  ctx.moveTo(s,s*.54);
+  ctx.bezierCurveTo(s*.87,s*.55, s*.71,s*.57, s*.64,s*.66);
+  ctx.bezierCurveTo(s*.57,s*.75, s*.52,s*.88, s*.50,s);
+  ctx.lineTo(s*.58,s);
+  ctx.bezierCurveTo(s*.60,s*.88, s*.64,s*.76, s*.71,s*.67);
+  ctx.bezierCurveTo(s*.78,s*.57, s*.90,s*.55, s,s*.46);
+  ctx.closePath();
+  ctx.fillStyle = riverGrad; ctx.fill();
 
-  // River sparkle
-  ctx.strokeStyle = 'rgba(80,140,255,.18)';
-  ctx.lineWidth = s * 0.012;
-  ctx.globalAlpha = 1;
-  ctx.beginPath();
-  ctx.moveTo(s*.44, 0);
-  ctx.bezierCurveTo(s*.43, s*.1, s*.37, s*.27, s*.31, s*.35);
-  ctx.bezierCurveTo(s*.25, s*.43, s*.1, s*.45, 0, s*.46);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(s, s*.54);
-  ctx.bezierCurveTo(s*.87, s*.55, s*.73, s*.57, s*.67, s*.65);
-  ctx.bezierCurveTo(s*.61, s*.73, s*.56, s*.89, s*.56, s);
-  ctx.stroke();
+  // River surface shimmer
+  ctx.strokeStyle='rgba(50,100,220,.22)'; ctx.lineWidth=s*.018;
+  ctx.beginPath(); ctx.moveTo(s*.47,0); ctx.bezierCurveTo(s*.46,s*.12,s*.40,s*.27,s*.34,s*.36); ctx.bezierCurveTo(s*.28,s*.44,s*.12,s*.47,0,s*.47); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s,s*.53); ctx.bezierCurveTo(s*.88,s*.54,s*.73,s*.56,s*.67,s*.65); ctx.bezierCurveTo(s*.61,s*.73,s*.57,s*.88,s*.56,s); ctx.stroke();
+  // Highlight
+  ctx.strokeStyle='rgba(100,160,255,.10)'; ctx.lineWidth=s*.006;
+  ctx.beginPath(); ctx.moveTo(s*.48,0); ctx.bezierCurveTo(s*.47,s*.12,s*.41,s*.27,s*.35,s*.36); ctx.bezierCurveTo(s*.29,s*.44,s*.14,s*.47,0,s*.47); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s,s*.53); ctx.bezierCurveTo(s*.87,s*.54,s*.72,s*.56,s*.66,s*.65); ctx.bezierCurveTo(s*.60,s*.74,s*.56,s*.89,s*.55,s); ctx.stroke();
   ctx.restore();
 
   // ── 4. LANES ─────────────────────────────────────────────
   function drawLane(points, w, col, alpha) {
-    ctx.save();
-    ctx.strokeStyle = col;
-    ctx.lineWidth = w;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.globalAlpha = alpha;
-    ctx.beginPath();
-    points.forEach(([x,y],i) => i===0 ? ctx.moveTo(x*s,y*s) : ctx.lineTo(x*s,y*s));
-    ctx.stroke();
-    ctx.restore();
+    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.globalAlpha=alpha;
+    ctx.beginPath(); points.forEach(([x,y],i) => i===0?ctx.moveTo(x*s,y*s):ctx.lineTo(x*s,y*s)); ctx.stroke(); ctx.restore();
   }
+  // Shadow under lanes
+  drawLane([[.07,.93],[.07,.5],[.07,.08],[.5,.08],[.93,.08]], s*.058,'#2A1F06',.8);
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.08]], s*.058,'#2A1F06',.8);
+  drawLane([[.07,.93],[.3,.70],[.5,.5],[.7,.30],[.93,.08]], s*.058,'#2A1F06',.8);
+  // Lane stone/dirt base
+  drawLane([[.07,.93],[.07,.5],[.07,.08],[.5,.08],[.93,.08]], s*.042,'#4A3C18',.9);
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.08]], s*.042,'#4A3C18',.9);
+  drawLane([[.07,.93],[.3,.70],[.5,.5],[.7,.30],[.93,.08]], s*.042,'#4A3C18',.9);
+  // Lane surface gold
+  drawLane([[.07,.93],[.07,.5],[.07,.08],[.5,.08],[.93,.08]], s*.022,'#B89A52',.55);
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.08]], s*.022,'#B89A52',.55);
+  drawLane([[.07,.93],[.3,.70],[.5,.5],[.7,.30],[.93,.08]], s*.022,'#B89A52',.55);
+  // Center highlight
+  drawLane([[.07,.93],[.07,.5],[.07,.08],[.5,.08],[.93,.08]], s*.007,'#E8C870',.18);
+  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.08]], s*.007,'#E8C870',.18);
+  drawLane([[.07,.93],[.3,.70],[.5,.5],[.7,.30],[.93,.08]], s*.007,'#E8C870',.18);
 
-  // Top lane (left edge → top edge)
-  drawLane([[.07,.93],[.07,.5],[.07,.07],[.5,.07],[.93,.07]], s*.042, '#6B5A2A', .7);
-  drawLane([[.07,.93],[.07,.5],[.07,.07],[.5,.07],[.93,.07]], s*.022, '#C8AA6E', .35);
-
-  // Bot lane (bottom edge → right edge)
-  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.07]], s*.042, '#6B5A2A', .7);
-  drawLane([[.07,.93],[.5,.93],[.93,.93],[.93,.5],[.93,.07]], s*.022, '#C8AA6E', .35);
-
-  // Mid lane (diagonal)
-  drawLane([[.07,.93],[.3,.7],[.5,.5],[.7,.3],[.93,.07]], s*.042, '#6B5A2A', .7);
-  drawLane([[.07,.93],[.3,.7],[.5,.5],[.7,.3],[.93,.07]], s*.022, '#C8AA6E', .35);
-
-  // Lane glow (gold shimmer on top)
-  drawLane([[.07,.93],[.07,.07],[.93,.07]], s*.008, '#F0D080', .12);
-  drawLane([[.07,.93],[.93,.93],[.93,.07]], s*.008, '#F0D080', .12);
-  drawLane([[.07,.93],[.93,.07]], s*.008, '#F0D080', .12);
-
-  // ── 5. JUNGLE ZONES ──────────────────────────────────────
-  // Blue-side jungle (top-left)
+  // ── 5. JUNGLE VEGETATION ─────────────────────────────────
   ctx.save();
-  ctx.fillStyle = 'rgba(8,22,8,.5)';
-  ctx.beginPath();
-  ctx.moveTo(s*.08,s*.08); ctx.lineTo(s*.44,s*.08); ctx.lineTo(s*.28,s*.28);
-  ctx.lineTo(s*.08,s*.44); ctx.closePath(); ctx.fill();
-  // Red-side jungle (bottom-right)
-  ctx.beginPath();
-  ctx.moveTo(s*.92,s*.92); ctx.lineTo(s*.56,s*.92); ctx.lineTo(s*.72,s*.72);
-  ctx.lineTo(s*.92,s*.56); ctx.closePath(); ctx.fill();
+  // Blue-side jungle darker overlay
+  const jBlu = ctx.createRadialGradient(s*.22,s*.22,0, s*.22,s*.22,s*.28);
+  jBlu.addColorStop(0,'rgba(4,14,4,.50)'); jBlu.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=jBlu; ctx.fillRect(0,0,s,s);
+  // Red-side jungle
+  const jRed = ctx.createRadialGradient(s*.78,s*.78,0, s*.78,s*.78,s*.28);
+  jRed.addColorStop(0,'rgba(4,14,4,.50)'); jRed.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=jRed; ctx.fillRect(0,0,s,s);
   ctx.restore();
 
-  // ── 6. JUNGLE CAMPS ──────────────────────────────────────
-  function drawCamp(x, y, r, col, label) {
-    const cx = x*s, cy = y*s;
-    // Glow
-    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.5);
-    g.addColorStop(0, col+'44'); g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(cx,cy,r*2.5,0,Math.PI*2); ctx.fill();
-    // Circle
+  // ── 6. OBJECTIVE PITS ────────────────────────────────────
+  function drawPit(x, y, r, col, glow) {
+    const cx=x*s, cy=y*s;
+    // Pit floor
+    const pg = ctx.createRadialGradient(cx,cy,r*.3,cx,cy,r*1.6);
+    pg.addColorStop(0, col+'33'); pg.addColorStop(0.7,col+'15'); pg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=pg; ctx.beginPath(); ctx.arc(cx,cy,r*1.6,0,Math.PI*2); ctx.fill();
+    // Pit border
+    ctx.save(); ctx.strokeStyle=col; ctx.lineWidth=s*.008; ctx.globalAlpha=.55;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.stroke(); ctx.restore();
+    // Glow pulse
+    ctx.save(); ctx.strokeStyle=glow; ctx.lineWidth=s*.004; ctx.globalAlpha=.35;
+    ctx.setLineDash([s*.015,s*.015]);
+    ctx.beginPath(); ctx.arc(cx,cy,r*1.15,0,Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]); ctx.restore();
+  }
+  drawPit(.745,.755,s*.048,'#E8901A','#F5A623'); // Dragon pit
+  drawPit(.255,.245,s*.048,'#A855F7','#C084FC'); // Baron/Herald pit
+
+  // ── 7. JUNGLE CAMPS ──────────────────────────────────────
+  function drawCamp(x, y, r, col, lbl) {
+    const cx=x*s, cy=y*s;
+    const g=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.8);
+    g.addColorStop(0,col+'40'); g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r*2.8,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.fillStyle = col+'33';
-    ctx.fill();
-    ctx.strokeStyle = col+'99'; ctx.lineWidth = 1.2;
-    ctx.stroke();
-    // Label
-    if(label) {
-      ctx.fillStyle = col+'CC';
-      ctx.font = `bold ${r*1.1}px DM Mono,monospace`;
-      ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(label, cx, cy);
+    ctx.fillStyle=col+'28'; ctx.fill();
+    ctx.strokeStyle=col+'BB'; ctx.lineWidth=1.5; ctx.stroke();
+    if(lbl) {
+      ctx.save(); ctx.fillStyle=col+'EE'; ctx.font=`bold ${Math.round(r*.85)}px monospace`;
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lbl,cx,cy); ctx.restore();
     }
   }
+  // Buffs (coordonnées précises SR)
+  drawCamp(.178,.564,s*.022,'#4E9EFF','B'); // Blue buff blue-side
+  drawCamp(.342,.692,s*.022,'#FF5040','R'); // Red buff blue-side
+  drawCamp(.822,.436,s*.022,'#4E9EFF','B'); // Blue buff red-side
+  drawCamp(.658,.308,s*.022,'#FF5040','R'); // Red buff red-side
+  // Small camps
+  const SC='#6A7878';
+  drawCamp(.188,.432,s*.014,SC,'');  // Wolves blue
+  drawCamp(.812,.568,s*.014,SC,'');  // Wolves red
+  drawCamp(.375,.770,s*.014,SC,'');  // Raptors blue
+  drawCamp(.625,.230,s*.014,SC,'');  // Raptors red
+  drawCamp(.115,.312,s*.014,SC,'');  // Gromp blue
+  drawCamp(.885,.688,s*.014,SC,'');  // Gromp red
+  drawCamp(.298,.775,s*.014,'#9A8050','');  // Krugs blue
+  drawCamp(.702,.225,s*.014,'#9A8050','');  // Krugs red
+  // Rift Scuttler river spots
+  drawCamp(.295,.478,s*.016,'#2DD4BF','');  // Scuttler top-river
+  drawCamp(.705,.522,s*.016,'#2DD4BF','');  // Scuttler bot-river
 
-  // Blue buff (blue-side)
-  drawCamp(.19,.56, s*.018, '#4A9EFF', 'B');
-  // Red buff (blue-side)
-  drawCamp(.34,.7, s*.018, '#FF5A4A', 'R');
-  // Blue buff (red-side)
-  drawCamp(.81,.44, s*.018, '#4A9EFF', 'B');
-  // Red buff (red-side)
-  drawCamp(.66,.3, s*.018, '#FF5A4A', 'R');
-  // Dragon pit
-  drawCamp(.74,.75, s*.02, '#F5A623', '⚔');
-  // Baron pit
-  drawCamp(.26,.25, s*.02, '#C084FC', '⚔');
-  // Rift Herald (same spot as baron pre-20)
-  drawCamp(.26,.25, s*.013, '#2DD4BF', '');
-  // Krugs blue
-  drawCamp(.29,.78, s*.013, '#8A9090', '');
-  drawCamp(.71,.22, s*.013, '#8A9090', '');
-  // Wolves
-  drawCamp(.19,.42, s*.013, '#8A9090', '');
-  drawCamp(.81,.58, s*.013, '#8A9090', '');
-  // Raptors
-  drawCamp(.38,.78, s*.013, '#8A9090', '');
-  drawCamp(.62,.22, s*.013, '#8A9090', '');
-  // Gromp
-  drawCamp(.1,.32, s*.013, '#8A9090', '');
-  drawCamp(.9,.68, s*.013, '#8A9090', '');
-
-  // ── 7. TOWERS ────────────────────────────────────────────
+  // ── 8. TOWERS ────────────────────────────────────────────
   function drawTower(x, y, col) {
-    const cx = x*s, cy = y*s, r = s*.016;
-    // Outer ring glow
-    ctx.beginPath(); ctx.arc(cx,cy,r*2,0,Math.PI*2);
-    ctx.fillStyle = col+'22'; ctx.fill();
-    // Tower body (square rotated 45°)
-    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
-    ctx.fillStyle = col+'BB';
-    ctx.fillRect(-r,-r,r*2,r*2);
-    ctx.strokeStyle = col; ctx.lineWidth = 1.5;
-    ctx.strokeRect(-r,-r,r*2,r*2);
+    const cx=x*s, cy=y*s, r=s*.018;
+    // Range circle (faint)
+    ctx.beginPath(); ctx.arc(cx,cy,r*3.5,0,Math.PI*2);
+    ctx.strokeStyle=col+'18'; ctx.lineWidth=0.8; ctx.stroke();
+    // Glow
+    const tg=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.2);
+    tg.addColorStop(0,col+'44'); tg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=tg; ctx.beginPath(); ctx.arc(cx,cy,r*2.2,0,Math.PI*2); ctx.fill();
+    // Body hexagon
+    ctx.save(); ctx.translate(cx,cy);
+    ctx.fillStyle=col+'CC'; ctx.strokeStyle=col; ctx.lineWidth=1.5;
+    ctx.beginPath();
+    for(let i=0;i<6;i++) { const a=i*Math.PI/3-Math.PI/6; i===0?ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r):ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // Cannon on top
+    ctx.fillStyle='rgba(255,255,255,.75)'; ctx.beginPath(); ctx.arc(0,0,r*.38,0,Math.PI*2); ctx.fill();
     ctx.restore();
-    // Center dot
-    ctx.beginPath(); ctx.arc(cx,cy,r*.4,0,Math.PI*2);
-    ctx.fillStyle = '#fff'; ctx.fill();
   }
-
-  // Blue towers (gold color)
-  const GOLD = '#C8AA6E';
-  // Top lane blue towers
-  drawTower(.08,.75, GOLD); drawTower(.08,.54, GOLD); drawTower(.08,.27, GOLD);
-  // Mid lane blue towers
-  drawTower(.26,.74, GOLD); drawTower(.4,.6, GOLD);
-  // Bot lane blue towers
-  drawTower(.27,.92, GOLD); drawTower(.54,.92, GOLD); drawTower(.77,.92, GOLD);
-  // Inhibitor towers blue
-  drawTower(.08,.2, GOLD); drawTower(.2,.92, GOLD); drawTower(.2,.82, GOLD);
-
-  // Red towers (enemy)
-  const RED_T = '#C84B4B';
-  // Top lane red towers
-  drawTower(.92,.25, RED_T); drawTower(.92,.46, RED_T); drawTower(.92,.73, RED_T);
-  // Mid lane red towers
-  drawTower(.74,.26, RED_T); drawTower(.6,.4, RED_T);
-  // Bot lane red towers
-  drawTower(.73,.08, RED_T); drawTower(.46,.08, RED_T); drawTower(.23,.08, RED_T);
-  // Inhibitor towers red
-  drawTower(.92,.8, RED_T); drawTower(.8,.08, RED_T); drawTower(.8,.18, RED_T);
-
-  // ── 8. BASES ─────────────────────────────────────────────
-  function drawBase(x, y, col, label) {
-    const cx = x*s, cy = y*s, r = s*.07;
-    // Outer glow
-    const g = ctx.createRadialGradient(cx,cy,r*.3,cx,cy,r*1.8);
-    g.addColorStop(0, col+'55'); g.addColorStop(0.5, col+'22'); g.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2); ctx.fill();
-    // Base platform
-    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.fillStyle = col+'33'; ctx.fill();
-    ctx.strokeStyle = col+'BB'; ctx.lineWidth = 2;
-    ctx.stroke();
-    // Nexus crystal
-    const nr = s*.022;
-    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
-    ctx.fillStyle = col+'EE';
-    ctx.fillRect(-nr,-nr,nr*2,nr*2);
-    ctx.restore();
-    // Nexus glow
-    const ng = ctx.createRadialGradient(cx,cy,0,cx,cy,nr*2.5);
-    ng.addColorStop(0, col+'88'); ng.addColorStop(1,'rgba(0,0,0,0)');
-    ctx.fillStyle = ng; ctx.beginPath(); ctx.arc(cx,cy,nr*2.5,0,Math.PI*2); ctx.fill();
-    // Label
-    ctx.fillStyle = col+'EE';
-    ctx.font = `bold ${s*.016}px Syne,sans-serif`;
-    ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText(label, cx, cy+r*.6);
-  }
-
-  drawBase(.06,.94, '#4A9EFF', 'BLUE');
-  drawBase(.94,.06, '#FF5A4A', 'RED');
+  const GOLD='#C8AA6E', RCOL='#E85050';
+  // Blue turrets — outer lanes
+  drawTower(.082,.748,GOLD); drawTower(.082,.540,GOLD); drawTower(.082,.275,GOLD); // Top outer→inhib
+  drawTower(.270,.918,GOLD); drawTower(.540,.918,GOLD); drawTower(.775,.918,GOLD); // Bot outer→inhib
+  // Blue turrets — mid
+  drawTower(.265,.735,GOLD); drawTower(.398,.598,GOLD);
+  // Blue inhibitor + nexus area
+  drawTower(.082,.192,GOLD); drawTower(.195,.918,GOLD); drawTower(.142,.862,GOLD);
+  // Red turrets — outer
+  drawTower(.918,.252,RCOL); drawTower(.918,.460,RCOL); drawTower(.918,.725,RCOL); // Top
+  drawTower(.730,.082,RCOL); drawTower(.460,.082,RCOL); drawTower(.225,.082,RCOL); // Bot
+  drawTower(.735,.265,RCOL); drawTower(.602,.402,RCOL); // Mid
+  drawTower(.918,.808,RCOL); drawTower(.805,.082,RCOL); drawTower(.858,.138,RCOL);
 
   // ── 9. INHIBITORS ────────────────────────────────────────
   function drawInhibitor(x, y, col) {
-    const cx=x*s,cy=y*s,r=s*.014;
-    ctx.beginPath(); ctx.arc(cx,cy,r*1.8,0,Math.PI*2);
-    ctx.fillStyle=col+'22'; ctx.fill();
+    const cx=x*s, cy=y*s, r=s*.016;
+    const ig=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2);
+    ig.addColorStop(0,col+'44'); ig.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ig; ctx.beginPath(); ctx.arc(cx,cy,r*2,0,Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
-    ctx.fillStyle=col+'77'; ctx.fill();
-    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle=col+'66'; ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.stroke();
+    // Crystal inside
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
+    ctx.fillStyle=col+'CC'; ctx.fillRect(-r*.5,-r*.5,r,r); ctx.restore();
   }
+  drawInhibitor(.095,.828,'#4A9EFF'); drawInhibitor(.172,.928,'#4A9EFF'); drawInhibitor(.136,.880,'#4A9EFF');
+  drawInhibitor(.905,.172,'#E85050'); drawInhibitor(.828,.072,'#E85050'); drawInhibitor(.864,.120,'#E85050');
 
-  drawInhibitor(.09,.83, '#4A9EFF');
-  drawInhibitor(.17,.93, '#4A9EFF');
-  drawInhibitor(.14,.88, '#4A9EFF');
-  drawInhibitor(.91,.17, '#FF5A4A');
-  drawInhibitor(.83,.07, '#FF5A4A');
-  drawInhibitor(.86,.12, '#FF5A4A');
-
-  // ── 10. DRAGON / BARON PITS ──────────────────────────────
-  // Dragon pit outline
-  ctx.save();
-  ctx.strokeStyle = 'rgba(245,166,35,.4)';
-  ctx.lineWidth = 1.5;
-  ctx.setLineDash([3,4]);
-  ctx.beginPath(); ctx.arc(s*.74,s*.76,s*.04,0,Math.PI*2); ctx.stroke();
-  // Baron pit outline
-  ctx.strokeStyle = 'rgba(192,132,252,.4)';
-  ctx.beginPath(); ctx.arc(s*.26,s*.24,s*.04,0,Math.PI*2); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-
-  // ── 11. GRID / FOG EFFECT ─────────────────────────────────
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,.025)';
-  ctx.lineWidth = .5;
-  for(let i=1; i<10; i++) {
-    ctx.beginPath(); ctx.moveTo(0,s*i/10); ctx.lineTo(s,s*i/10); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(s*i/10,0); ctx.lineTo(s*i/10,s); ctx.stroke();
+  // ── 10. NEXUS ────────────────────────────────────────────
+  function drawNexus(x, y, col) {
+    const cx=x*s, cy=y*s, r=s*.026;
+    const ng=ctx.createRadialGradient(cx,cy,0,cx,cy,r*2.8);
+    ng.addColorStop(0,col+'88'); ng.addColorStop(0.5,col+'33'); ng.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=ng; ctx.beginPath(); ctx.arc(cx,cy,r*2.8,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle=col+'44'; ctx.beginPath(); ctx.arc(cx,cy,r*1.5,0,Math.PI*2); ctx.fill();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.PI/4);
+    ctx.fillStyle=col+'EE'; ctx.fillRect(-r,-r,r*2,r*2);
+    ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.strokeRect(-r,-r,r*2,r*2); ctx.restore();
+    ctx.fillStyle='rgba(255,255,255,.9)'; ctx.beginPath(); ctx.arc(cx,cy,r*.22,0,Math.PI*2); ctx.fill();
   }
-  ctx.restore();
+  drawNexus(.104,.872,'#4E9EFF');
+  drawNexus(.896,.128,'#E85050');
 
-  // ── 12. VIGNETTE ──────────────────────────────────────────
-  const vig = ctx.createRadialGradient(s*.5,s*.5,s*.3,s*.5,s*.5,s*.72);
-  vig.addColorStop(0, 'rgba(0,0,0,0)');
-  vig.addColorStop(1, 'rgba(0,0,0,.55)');
-  ctx.fillStyle = vig;
-  ctx.fillRect(0,0,s,s);
+  // ── 11. LANE MARKERS (tour-de-garde zones) ───────────────
+  ctx.save(); ctx.strokeStyle='rgba(180,160,80,.10)'; ctx.lineWidth=s*.003; ctx.setLineDash([s*.01,s*.012]);
+  // Diagonal lane boundaries (subtle)
+  ctx.beginPath(); ctx.moveTo(s*.13,s*.87); ctx.lineTo(s*.42,s*.58); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(s*.58,s*.42); ctx.lineTo(s*.87,s*.13); ctx.stroke();
+  ctx.setLineDash([]); ctx.restore();
+
+  // ── 12. VIGNETTE + FOG OF WAR CORNERS ────────────────────
+  // Corner fog (unexplored zones feel)
+  ctx.save();
+  const fogBL=ctx.createRadialGradient(0,s,0,0,s,s*.25);
+  fogBL.addColorStop(0,'rgba(2,6,2,.62)'); fogBL.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=fogBL; ctx.fillRect(0,0,s,s);
+  const fogTR=ctx.createRadialGradient(s,0,0,s,0,s*.25);
+  fogTR.addColorStop(0,'rgba(2,6,2,.62)'); fogTR.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=fogTR; ctx.fillRect(0,0,s,s);
+  ctx.restore();
+  // Global vignette
+  const vig=ctx.createRadialGradient(s*.5,s*.5,s*.28,s*.5,s*.5,s*.75);
+  vig.addColorStop(0,'rgba(0,0,0,0)'); vig.addColorStop(1,'rgba(0,0,0,.52)');
+  ctx.fillStyle=vig; ctx.fillRect(0,0,s,s);
 }
 
 function mapCoordToCanvas(x, y, size) {
