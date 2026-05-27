@@ -199,7 +199,7 @@ button, .btn, select,
 .sb-item.active .sb-count { color:var(--lime); opacity:.6; }
 
 /* ── MAIN ── */
-.main { flex:1; padding:28px 32px; max-width:1020px; }
+.main { flex:1; padding:28px 32px; max-width:none; }
 
 /* ── PANELS ── */
 .panel { display:none; }
@@ -980,10 +980,8 @@ body.welcome-active .main {
 }
 body.welcome-active #hd-nav-main { display:none !important; }
 body.welcome-active #panel-welcome.active {
-  min-height:calc(100vh - 52px);
-  display:flex !important;
-  align-items:center;
-  justify-content:center;
+  display:block !important;
+  padding:0 !important;
 }
 .welcome-mode-card {
   background:var(--surf1);
@@ -1006,6 +1004,62 @@ body.welcome-active #panel-welcome.active {
   border-color:rgba(167,139,250,.4);
   background:rgba(167,139,250,.04);
 }
+/* ── Welcome 4-quadrant cube ── */
+.wq-grid {
+  display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
+  width:100%; min-height:calc(100vh - 52px); position:relative;
+}
+.wq {
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; padding:3rem 2rem; position:relative; overflow:hidden;
+  user-select:none; transition:background .28s ease;
+}
+.wq::after { content:''; position:absolute; inset:0; opacity:0; transition:opacity .3s; border-radius:0; }
+.wq:hover::after { opacity:1; }
+.wq-scout  { border-right:1px solid rgba(28,196,122,.18); border-bottom:1px solid rgba(28,196,122,.18); }
+.wq-scout::after  { background:radial-gradient(circle at 25% 25%, rgba(28,196,122,.12), transparent 65%); }
+.wq-results { border-left:1px solid rgba(28,196,122,.18); border-bottom:1px solid rgba(28,196,122,.18); }
+.wq-results::after { background:radial-gradient(circle at 75% 25%, rgba(74,158,255,.12), transparent 65%); }
+.wq-compare { border-right:1px solid rgba(28,196,122,.18); border-top:1px solid rgba(28,196,122,.18); }
+.wq-compare::after { background:radial-gradient(circle at 25% 75%, rgba(45,212,191,.12), transparent 65%); }
+.wq-agent  { border-left:1px solid rgba(28,196,122,.18); border-top:1px solid rgba(28,196,122,.18); }
+.wq-agent::after  { background:radial-gradient(circle at 75% 75%, rgba(245,166,35,.12), transparent 65%); }
+.wq-icon-wrap {
+  width:64px; height:64px; border-radius:16px;
+  display:flex; align-items:center; justify-content:center;
+  margin-bottom:1.2rem; transition:transform .28s;
+}
+.wq:hover .wq-icon-wrap { transform:scale(1.1) translateY(-3px); }
+.wq-name {
+  font-size:1.55rem; font-weight:900; letter-spacing:-.02em;
+  margin-bottom:.3rem; font-family:'aquavit','Helvetica Neue',sans-serif;
+}
+.wq-desc { font-size:.75rem; color:var(--sub); letter-spacing:.06em; text-transform:uppercase; }
+.wq-corner-arrow {
+  position:absolute; bottom:1.25rem; right:1.5rem;
+  opacity:0; transition:opacity .25s, transform .25s; transform:translateX(-6px);
+  font-size:.85rem; color:var(--sub);
+}
+.wq:hover .wq-corner-arrow { opacity:.7; transform:translateX(0); }
+.wq-center-btn {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  width:112px; height:112px; border-radius:50%;
+  background:var(--bg); border:2px solid rgba(28,196,122,.5);
+  box-shadow:0 0 0 10px var(--bg), 0 0 40px rgba(28,196,122,.2), inset 0 0 20px rgba(28,196,122,.05);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  cursor:pointer; z-index:10; transition:all .28s ease; gap:4px;
+}
+.wq-center-btn:hover {
+  border-color:var(--lime);
+  box-shadow:0 0 0 10px var(--bg), 0 0 60px rgba(28,196,122,.4), inset 0 0 20px rgba(28,196,122,.1);
+  transform:translate(-50%,-50%) scale(1.07);
+}
+.wq-center-lbl {
+  font-size:.55rem; letter-spacing:.14em; color:var(--lime);
+  text-transform:uppercase; opacity:0; transition:opacity .2s; font-weight:700;
+}
+.wq-center-btn:hover .wq-center-lbl { opacity:1; }
 /* Stats bottom bar on welcome */
 .welcome-stats {
   display:flex; gap:1.5rem; justify-content:center; flex-wrap:wrap;
@@ -1746,104 +1800,54 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     </div><!-- /panel-landing -->
 
-    <div id="panel-welcome" class="panel" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)">
-      <div style="max-width:760px;width:100%;padding:2rem 1.5rem">
-        <!-- Logo centré -->
-        <div style="text-align:center;margin-bottom:3rem">
-          <div style="margin-bottom:1.25rem">
-            <div style="display:flex;align-items:center;justify-content:center;gap:20px">
-              <!-- Logo mark inline -->
-              <svg style="height:72px;width:72px;flex-shrink:0" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg">
-                <path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/>
-                <path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/>
-                <path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/>
-                <path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/>
-                <path d="M199.45,216.97l11-4.58c2.98,11.92,9.62,19.25,18.45,19.25,7.45,0,13.52-5.04,13.52-12.83,0-5.73-3.32-11.46-13.63-16.5l-10.43-5.04c-11.11-5.38-16.61-12.95-16.61-21.88,0-12.72,11.11-20.85,24.18-20.85s23.26,7.91,29.1,20.97l-11.34,3.09c-3.67-11.23-9.62-19.02-19.36-19.02-7.33,0-12.72,4.47-12.72,11.92,0,5.96,3.44,11.34,13.63,16.5l10.54,5.16c11.34,5.61,16.96,12.49,16.96,21.77,0,13.29-11.57,22-25.78,22s-23.49-8.25-27.5-19.94Z"/>
-                <path d="M136.4,155.5h12.83c0,1.95,2.41,9.85,7.33,24.86l14.44,44.23,11.23-33.11c3.09-8.82,4.01-13.86,4.01-18.68,0-6.07-1.6-11.92-4.93-17.3h14.09c.23,1.37.46,3.09.46,5.27,0,9.17-3.32,17.3-8.59,31.97l-14.89,41.94h-9.62l-26.35-79.17Z"/>
-              </svg>
-              <!-- Logo principal inline -->
-              <svg style="height:54px;width:auto" viewBox="0 0 1321.3 252.15" fill="var(--text)" xmlns="http://www.w3.org/2000/svg">
-                <path d="M147.48,5.73h-35.23c8.31,13.46,12.32,28.07,12.32,43.24,0,12.03-2.29,24.62-10.03,46.68l-28.07,82.77-36.08-110.54C38.08,30.35,32.07,10.6,32.07,5.73H0l65.87,197.89h24.05l37.23-104.82c13.17-36.65,21.48-56.99,21.48-79.9,0-5.44-.57-9.73-1.15-13.17Z"/>
-                <path d="M181.56,0l-20.33,20.33,20.33,19.76,20.34-19.76L181.56,0ZM166.67,202.48h29.78c-.57-2.86-.86-21.48-.86-54.41V59l-29.5,5.72c.86,2.58,1.43,21.2,1.43,54.13v29.21c0,32.93-.29,51.55-.86,54.41Z"/>
-                <path d="M322.75,162.95c0,27.2-23.77,43.53-51.26,43.53-20.91,0-40.96-9.73-56.99-24.63l20.05-24.05c9.73,20.62,24.34,36.37,40.66,36.37,12.03,0,21.77-7.73,21.77-21.2,0-18.71-20.36-26.55-39.77-36.31-2.19-1.1-4.38-2.23-6.52-3.4h0c-15.14-8.29-28.16-18.73-28.16-37.89,0-22.91,20.04-38.66,49.83-38.66,21.19,0,37.81,8.31,49.26,17.47l-18.9,21.76c-7.73-13.74-18.9-27.2-34.94-27.2-12.31,0-19.76,7.16-19.76,17.76,0,21.23,30.01,26.94,52,40.52,2.9,1.79,5.65,3.71,8.18,5.82.39.33.78.67,1.17,1,.59.52,1.17,1.05,1.72,1.6.48.46.94.94,1.4,1.42,2.16,2.29,4.05,4.78,5.61,7.53,2.94,5.18,4.67,11.26,4.67,18.58Z"/>
-                <path d="M376.02,152.3c-.86-.22-1.78-.43-2.76-.64-2.02-.42-4.3-.81-7-1.2-3.41-.5-7.01-.93-10.81-1.38-2.44-.29-4.95-.6-7.49-.92,0,32.87-.29,51.46-.86,54.32h29.78c-.54-2.74-.83-19.88-.86-50.17ZM346.52,64.72c.86,2.58,1.43,21.2,1.43,54.13v2.08c2.74-.34,5.52-.65,8.21-.96,3.58-.4,6.96-.78,10.28-1.21,2.84-.37,5.13-.72,7.2-1.09.84-.15,1.64-.3,2.38-.45v-58.22l-29.5,5.72ZM361.99,0l-20.34,20.33,20.34,19.76,20.33-19.76L361.99,0Z"/>
-                <path d="M582.21,148.81l-.64.08c-2.04.24-4.09.47-6.09.69-2.34.26-4.62.52-6.84.79-2.33.28-4.6.57-6.81.9-1.89.29-3.57.56-5.12.86-.92.18-1.78.36-2.57.54-.02,30.05-.31,47.07-.86,49.8h29.78c-.56-2.84-.85-21.2-.86-53.66Z"/>
-                <path d="M674.42,202.48h-30.65c0-4.3-1.43-21.2-5.73-53.84l-.79-6.11-.88-6.72-.12-.89h0s-.91-7-.91-7l-3.31-25.39c-2.29-18.04-9.73-25.2-19.19-25.2-8.59,0-17.18,6.3-30.64,22.34v21.53c-2.01-.26-4-.5-5.94-.73-5.06-.61-9.85-1.18-14.19-1.91-1.87-.32-3.48-.64-4.93-.96-1.09-.25-2.09-.51-3.01-.77v-11.71c0-14.89-1.15-28.07-3.15-40.39l27.77-5.72c1.43,8.3,2,16.89,2.29,25.77,17.47-19.47,30.64-26.35,44.67-26.35,18.04,0,31.22,11.17,34.94,38.66l4.51,34.62.98,7.53,8.25,63.25Z"/>
-                <path d="M582.21,134.87v.26c-2.24.28-4.51.54-6.79.79-2.27.26-4.54.51-6.79.77-3,.35-5.96.73-8.82,1.15-1.95.29-3.84.6-5.67.96-10.68,2.06-19.15,5.36-21.71,12.11-3.91-11.42-6.39-13.47-21.15-16.05-.16-.03-.33-.05-.5-.09.17-.03.33-.05.5-.08,1.58-.26,3.15-.66,4.59-1.37,8.59-4.27,13.25-12.99,9.78-22.36-1.2-3.24-2.56-6.52-4.26-9.54-3.23-5.73-6.76-10.49-11.36-15.2-4.87-4.97-5.12-5.21-10.56-9.56-.01-.01-.03-.03-.05-.03-.64-.5-2.6-1.74-3.27-2.04l3.48,1.38c.24.11.49.22.73.33,19.36,8.84,30.61,23.73,36.46,42.39,1.16,3.73,3.4,6.77,6.48,8.4,3.04,1.6,6.73,2.79,10.85,3.73,1.81.41,3.71.77,5.67,1.11,2.82.48,5.78.89,8.82,1.27,2.23.29,4.49.56,6.79.83,2.25.27,4.52.54,6.79.84Z"/>
-                <path d="M482.04,68.23c-11.42,3.91-13.47,6.39-16.05,21.15-.03.16-.05.33-.09.49-.03-.17-.05-.33-.08-.5-.26-1.58-.66-3.15-1.37-4.6-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.11.37-6.23,1.15-3.24,1.2-6.52,2.57-9.54,4.27-5.73,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.5.64-1.74,2.61-2.04,3.28l1.38-3.49c.11-.24.22-.49.33-.73,8.84-19.36,23.73-30.6,42.4-36.44,3.72-1.16,6.76-3.4,8.39-6.48,4.85-9.18,5.86-24.31,7.83-39.33.03-.22.06-.43.09-.65.03.22.05.43.08.66,2.67,21.35,3.57,45.52,15.83,50.18Z"/>
-                <path d="M526.07,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.39,36.44-3.72,1.16-6.77,3.4-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.05.43-.08.66-.03-.22-.05-.43-.09-.66-2.67-21.36-3.56-45.52-15.83-50.18,11.42-3.91,13.48-6.39,16.05-21.15.03-.17.05-.33.08-.5.03.17.05.34.08.5.26,1.58.67,3.15,1.38,4.6,3.3,6.64,9.26,10.93,16.13,10.93,2.02,0,4.1-.37,6.22-1.15,3.25-1.19,6.52-2.56,9.55-4.26,5.73-3.23,10.49-6.76,15.19-11.36,4.98-4.87,5.21-5.12,9.57-10.56.01-.01.02-.03.03-.04.49-.63,1.73-2.61,2.03-3.28Z"/>
-                <path d="M435.62,194.95l-3.48-1.37c-.24-.11-.49-.22-.73-.34-19.36-8.84-30.6-23.73-36.44-42.39-1.17-3.72-3.4-6.77-6.48-8.39-3.43-1.81-7.7-3.09-12.48-4.08-2.48-.52-5.1-.95-7.81-1.34-6.04-.88-12.56-1.55-19.05-2.41-.22-.03-.43-.05-.65-.08.22-.03.43-.05.65-.09,6.3-.78,12.84-1.42,19.05-2.23,2.68-.35,5.29-.73,7.81-1.19,11.43-2.03,20.64-5.31,23.34-12.41,3.91,11.42,6.39,13.48,21.15,16.05.16.03.33.06.49.09-.17.03-.33.06-.5.08-1.58.26-3.16.66-4.6,1.38-8.59,4.26-13.25,12.99-9.78,22.36,1.2,3.25,2.57,6.52,4.27,9.55,3.23,5.73,6.76,10.49,11.36,15.19,4.87,4.98,5.12,5.21,10.55,9.57.01.01.03.03.05.03.64.5,2.61,1.73,3.27,2.03Z"/>
-                <path d="M823.19,137.12c1.28,4.42,1.91,9.09,1.91,14.03,0,33.22-28.92,54.98-64.43,54.98s-58.71-20.62-68.74-49.83l27.5-11.45c7.45,29.78,24.05,48.11,46.11,48.11,18.61,0,33.79-12.6,33.79-32.08,0-14.31-8.31-28.64-34.08-41.23l-26.06-12.6c-27.78-13.46-41.53-32.36-41.53-54.7,0-31.79,27.78-52.12,60.43-52.12s58.13,19.76,72.74,52.41l-28.35,7.74c-9.16-28.07-24.05-47.55-48.4-47.55-18.33,0-31.79,11.17-31.79,29.79,0,14.89,8.59,28.35,34.08,41.23l26.34,12.89c20.04,9.92,32.93,21.41,38.76,35.48.67,1.6,1.24,3.23,1.72,4.9Z"/>
-                <path d="M1148.71,148.33l-1.21.16-.31.04-.37.05c-2.93.36-5.9.69-8.78,1.02-4.83.54-9.39,1.05-13.68,1.69-.54.08-1.07.16-1.58.24-.75.12-1.47.24-2.15.36-.02,30.15-.31,47.22-.85,49.96h29.78c-.56-2.84-.86-21.14-.86-53.51Z"/>
-                <path d="M1279,182.81c-21.75.59-38.52-15.57-45.24-41.45l19.16-5.95.59-.19,67.18-20.86c-6.66-34.2-28.22-57.96-58.28-57.15-32.9.89-57.54,31.42-57.29,73.21,0,.75.01,1.5.03,2.25.09,3.43.34,6.76.74,10,4.72,38.38,30.31,62.79,62.52,61.92,26.05-.71,43.36-17.51,52.89-35.81l-4.24-8.48c-9.94,14.02-23.47,22.12-38.07,22.52ZM1230.56,118.52c-.83-30.63,10.71-48.71,27.6-49.17,17.75-.48,29.18,19.27,33.52,42.06l-60.22,19.11c-.39-4-.79-8-.9-12.01Z"/>
-                <path d="M1202.26,60.94l-5.44,33.22c-8.88-4.58-15.18-7.73-19.47-7.73-5.61,0-10.4,4.38-18.9,18.52-1.59,2.63-3.3,5.6-5.17,8.94-1.35,2.42-2.78,5.04-4.31,7.86l-1.48-.19-.22-.03-.37-.05c-2.71-.35-5.43-.68-8.06-1-5.08-.6-9.88-1.18-14.24-1.92-.5-.09-1.01-.18-1.52-.26-.86-.16-1.67-.31-2.44-.48v-13.34c0-14.31-1.15-27.49-3.43-40.38l27.78-5.73c1.72,14.89,2.57,28.64,2.57,45.82,1.24-2.6,2.42-5.07,3.56-7.41,4.17-8.61,7.72-15.5,11-20.95,8.02-13.33,14.4-18.03,24.39-18.03,5.15,0,10.31,1.15,15.75,3.15Z"/>
-                <path d="M1145.79,135.02c-.22.03-.43.05-.65.08-7.57.94-15.51,1.67-22.8,2.76-.57.09-1.13.18-1.7.26-12.5,2-22.81,5.24-25.68,12.81-3.91-11.42-6.39-13.48-21.16-16.05-.16-.03-.33-.05-.49-.09.17-.03.33-.05.5-.08,1.57-.26,3.15-.66,4.59-1.38,8.59-4.26,13.25-12.98,9.78-22.36-1.2-3.24-2.57-6.52-4.27-9.54-3.23-5.73-6.75-10.49-11.36-15.2-4.87-4.98-5.12-5.21-10.55-9.56-.01-.01-.03-.03-.05-.03-.64-.51-2.61-1.74-3.27-2.04l3.48,1.37c.25.11.5.22.74.34,19.36,8.84,30.59,23.73,36.43,42.4,1.17,3.71,3.41,6.76,6.48,8.39,3.98,2.1,9.09,3.48,14.82,4.53.56.1,1.13.2,1.7.3,7.05,1.19,14.94,1.96,22.8,2.99.22.03.43.06.65.09Z"/>
-                <path d="M998.15,194.95l-3.48-1.37c-.25-.11-.5-.22-.74-.34-19.36-8.84-30.59-23.73-36.43-42.39-1.17-3.72-3.41-6.77-6.48-8.39-5.21-2.76-12.34-4.27-20.28-5.43-6.04-.88-12.55-1.55-19.04-2.4-.22-.03-.43-.06-.65-.09.22-.03.43-.05.65-.08,6.29-.79,12.83-1.42,19.04-2.23,14.87-1.95,27.86-4.94,31.14-13.6,3.91,11.42,6.39,13.48,21.16,16.05.16.03.32.06.49.09-.17.03-.34.05-.5.08-1.58.26-3.15.66-4.59,1.38-8.59,4.26-13.25,12.98-9.78,22.36,1.2,3.25,2.56,6.52,4.26,9.54,3.23,5.74,6.76,10.49,11.36,15.2,4.88,4.98,5.12,5.21,10.56,9.56.01.01.03.03.05.03.64.51,2.61,1.74,3.27,2.04Z"/>
-                <path d="M1044.57,68.24c-11.42,3.9-13.48,6.38-16.05,21.15-.03.16-.05.33-.08.49-.03-.17-.05-.33-.08-.5-.26-1.58-.67-3.15-1.38-4.59-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.1.37-6.22,1.15-3.25,1.2-6.52,2.57-9.54,4.27-5.74,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.51.64-1.74,2.61-2.04,3.27l1.37-3.48c.11-.25.22-.5.34-.74,8.84-19.36,23.73-30.59,42.39-36.43,3.72-1.17,6.77-3.4,8.39-6.48,4.85-9.17,5.86-24.31,7.83-39.32.03-.22.05-.43.09-.65.03.22.05.43.08.65,2.67,21.36,3.56,45.53,15.83,50.19Z"/>
-                <path d="M870.35,117.64c0,2.82.11,5.61.32,8.34.18,2.29.43,4.54.75,6.75.05.39.11.77.17,1.15.07.45.14.89.22,1.33.07.43.15.85.22,1.27.44,2.4.96,4.74,1.57,7.01,6.18,23.21,20.88,39.73,41.14,39.73,13.46,0,25.11-7.2,32.97-19.62,1.49,3.54,3.16,6.9,5.02,10.08-9.08,17.21-25.64,31.02-48.87,31.02-31.81,0-56.51-26.64-59.3-64.88-.18-2.38-.26-4.82-.26-7.29,0-1.07.01-2.14.05-3.21,1.23-39.24,24.93-71.82,59.23-71.82,22.37,0,41.2,13.38,51.14,41.76.24.68.48,1.36.7,2.06l-1.62.38-25.3,5.93c-5.44-22.05-15.47-38.38-30.08-38.38-17.18,0-28.07,20.62-28.07,48.4Z"/>
-                <path d="M1088.6,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.4,36.43-3.71,1.17-6.76,3.41-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.06.43-.09.65-.03-.22-.05-.43-.08-.65-2.67-21.36-3.57-45.53-15.83-50.19,11.42-3.9,13.47-6.38,16.05-21.14.03-.16.06-.33.09-.5.03.17.05.33.08.5.26,1.58.66,3.15,1.38,4.59,3.3,6.64,9.26,10.93,16.13,10.93,2.01,0,4.1-.37,6.22-1.15,3.25-1.2,6.52-2.56,9.54-4.27,5.74-3.22,10.49-6.76,15.2-11.36,4.98-4.87,5.21-5.12,9.56-10.55.01-.01.03-.03.03-.05.5-.64,1.74-2.61,2.04-3.27Z"/>
-              </svg>
-            </div>
+    <div id="panel-welcome" class="panel" style="padding:0;overflow:hidden">
+      <div class="wq-grid">
+
+        <!-- ┌ TL : Scouter ─────────────────────────── -->
+        <div class="wq wq-scout" onclick="setAppMode('agent');setTimeout(()=>switchPanel('scout'),60)">
+          <div class="wq-icon-wrap" style="background:rgba(28,196,122,.1)">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1CC47A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
           </div>
-          <div style="font-size:.68rem;color:rgba(184,196,224,.3);font-family:monospace;letter-spacing:.16em;margin-bottom:1rem;text-transform:uppercase">Scouting Platform &nbsp;·&nbsp; League of Legends</div>
-          <div style="font-size:.9rem;color:var(--sub2);max-width:420px;margin:0 auto;line-height:1.7;font-family:'Helvetica Neue',Arial,sans-serif">
-            La plateforme de référence pour le scouting semi-pro.<br>Choisissez votre mode d'utilisation.
-          </div>
+          <div class="wq-name" style="color:#1CC47A">Scouter</div>
+          <div class="wq-desc">Analyser un joueur</div>
+          <div class="wq-corner-arrow" style="color:#1CC47A">→</div>
         </div>
 
-        <!-- Deux modes -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem">
-          <!-- MODE AGENT -->
-          <div onclick="setAppMode('agent')" class="welcome-mode-card agent">
-            <div style="margin-bottom:1rem;display:flex;justify-content:center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" style="color:var(--lime)"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-            <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Agent</div>
-            <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Trouvez des pépites SoloQ, gérez vos contacts et proposez des joueurs à des structures esport.</div>
-            <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.5rem">
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Top 50 prospects automatique</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> CRM structures esport</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Matching joueur ↔ recruteur</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Export rapport PDF pro</div>
-            </div>
-            <div style="background:var(--lime);color:#060810;border-radius:8px;padding:.55rem 1.25rem;font-size:.8rem;font-weight:700;display:inline-block;letter-spacing:.04em">Entrer en mode Agent →</div>
+        <!-- ┐ TR : Résultats ──────────────────────────── -->
+        <div class="wq wq-results" onclick="setAppMode('agent');setTimeout(()=>switchPanel('results'),60)">
+          <div class="wq-icon-wrap" style="background:rgba(74,158,255,.1)">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4A9EFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
           </div>
-
-          <!-- MODE COACH -->
-          <div onclick="setAppMode('coach')" class="welcome-mode-card coach">
-            <div style="margin-bottom:1rem;display:flex;justify-content:center"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" style="color:#A78BFA"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><rect x="3" y="20" width="18" height="0.01" stroke-width="1.8"/></svg></div>
-            <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.5rem">Mode Coach</div>
-            <div style="font-size:.78rem;color:var(--sub2);line-height:1.6;margin-bottom:1.25rem">Analysez des joueurs, comparez des profils et construisez un roster optimal avec de la data.</div>
-            <div style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:1.5rem">
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Fiche joueur complète SPES</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Comparaison même poste</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Construction de roster</div>
-              <div class="welcome-check-item"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#A78BFA" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Analyse collective équipe</div>
-            </div>
-            <div style="background:rgba(138,127,245,.14);border:1px solid rgba(138,127,245,.28);color:#A78BFA;border-radius:8px;padding:.55rem 1.25rem;font-size:.8rem;font-weight:700;display:inline-block;letter-spacing:.04em">Entrer en mode Coach →</div>
-          </div>
+          <div class="wq-name" style="color:#4A9EFF">Résultats</div>
+          <div class="wq-desc">Rapport & scores SPES</div>
+          <div class="wq-corner-arrow" style="color:#4A9EFF">→</div>
         </div>
 
-        <!-- Stats rapides + accès direct -->
-        <div class="welcome-stats">
-          <div class="welcome-stat">
-            <div class="welcome-stat-val">5</div>
-            <div class="welcome-stat-lbl">Dimensions SPES</div>
+        <!-- └ BL : Comparer ──────────────────────────── -->
+        <div class="wq wq-compare" onclick="setAppMode('agent');setTimeout(()=>switchPanel('analyse'),60)">
+          <div class="wq-icon-wrap" style="background:rgba(45,212,191,.1)">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg>
           </div>
-          <div class="welcome-stat">
-            <div class="welcome-stat-val">50+</div>
-            <div class="welcome-stat-lbl">Métriques API Riot</div>
-          </div>
-          <div class="welcome-stat">
-            <div class="welcome-stat-val">EUW · EUNE · NA</div>
-            <div class="welcome-stat-lbl">Serveurs supportés</div>
-          </div>
-          <div class="welcome-stat">
-            <div class="welcome-stat-val">PDF · CSV</div>
-            <div class="welcome-stat-lbl">Exports disponibles</div>
-          </div>
+          <div class="wq-name" style="color:#2DD4BF">Comparer</div>
+          <div class="wq-desc">Analyse multi-joueurs</div>
+          <div class="wq-corner-arrow" style="color:#2DD4BF">→</div>
         </div>
-        <div style="text-align:center;margin-top:1.25rem">
-          <button onclick="setAppMode('agent')" style="background:none;border:none;color:var(--sub);font-size:.78rem;cursor:pointer;text-decoration:underline;transition:color .15s" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--sub)'">Passer directement sans choisir →</button>
+
+        <!-- ┘ BR : Agent ──────────────────────────────── -->
+        <div class="wq wq-agent" onclick="setAppMode('agent');setTimeout(()=>switchPanel('crm'),60)">
+          <div class="wq-icon-wrap" style="background:rgba(245,166,35,.1)">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F5A623" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="wq-name" style="color:#F5A623">Agent</div>
+          <div class="wq-desc">CRM & structures</div>
+          <div class="wq-corner-arrow" style="color:#F5A623">→</div>
         </div>
+
+        <!-- ◎ Centre : Logo → Top 50 ─────────────────── -->
+        <div class="wq-center-btn" onclick="setAppMode('agent');setTimeout(()=>switchPanel('top50'),60)">
+          <svg width="52" height="52" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg>          <div class="wq-center-lbl">Top 50</div>
+        </div>
+
       </div>
     </div><!-- /panel-welcome -->
 
@@ -2205,7 +2209,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
           <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
           <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
-          <button class="btn btn-ghost btn-sm" onclick="enterPresentationMode()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg> Mode Coach</button>
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
