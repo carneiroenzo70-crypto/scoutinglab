@@ -1001,6 +1001,147 @@ body.welcome-active #panel-welcome.active {
   font-family:monospace;
 }
 
+/* ════════════════════════════════
+   LANDING PAGE MARKETING
+════════════════════════════════ */
+body.landing-active header.hd { display:none !important; }
+body.landing-active .sb { display:none !important; }
+body.landing-active .main { max-width:none !important; padding:0 !important; }
+body.landing-active #panel-landing.active { display:block !important; }
+#panel-landing { display:none; min-height:100vh; overflow-y:auto; overflow-x:hidden; font-family:'Helvetica Neue',Arial,sans-serif; }
+
+.lp-hero {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  text-align:center; position:relative; background-color:#06080E;
+  background-image:
+    radial-gradient(ellipse 90% 55% at 50% -5%, rgba(28,196,122,.14) 0%, transparent 65%),
+    radial-gradient(ellipse at 85% 90%, rgba(232,25,75,.05) 0%, transparent 45%),
+    repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(28,196,122,.022) 60px),
+    repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(28,196,122,.022) 60px);
+  padding:4rem 1.5rem 6rem;
+}
+.lp-hero::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:1.5px;
+  background:linear-gradient(90deg,transparent,rgba(28,196,122,.45) 25%,#1CC47A 50%,rgba(28,196,122,.45) 75%,transparent);
+}
+.lp-hero-inner { max-width:720px; margin:0 auto; position:relative; z-index:1; }
+.lp-eyebrow {
+  display:inline-block; font-size:.63rem; font-weight:700; letter-spacing:.22em;
+  text-transform:uppercase; color:#1CC47A; border:1px solid rgba(28,196,122,.28);
+  border-radius:100px; padding:5px 18px; margin-bottom:2.5rem;
+  background:rgba(28,196,122,.06);
+}
+.lp-title {
+  font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:clamp(2.6rem,6vw,4.2rem); font-weight:900; line-height:1.07;
+  letter-spacing:-.025em; color:#E8EBF5; margin:0 0 1.1rem;
+}
+.lp-accent { color:#1CC47A; }
+.lp-sub {
+  font-size:1rem; color:rgba(184,196,224,.55); line-height:1.75;
+  max-width:520px; margin:0 auto 2.5rem;
+}
+.lp-ctas { display:flex; gap:.875rem; justify-content:center; flex-wrap:wrap; margin-bottom:3rem; }
+.lp-cta-primary {
+  background:#1CC47A; color:#060810;
+  font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:.88rem; font-weight:800; letter-spacing:.04em;
+  border:none; border-radius:8px; cursor:pointer; padding:.75rem 1.75rem;
+  transition:all .18s; white-space:nowrap;
+}
+.lp-cta-primary:hover { background:#22d688; transform:translateY(-2px); box-shadow:0 8px 32px rgba(28,196,122,.32); }
+.lp-cta-ghost {
+  background:none; color:rgba(184,196,224,.5); font-size:.84rem;
+  border:1px solid rgba(100,120,160,.18); border-radius:8px; padding:.75rem 1.4rem;
+  cursor:pointer; text-decoration:none; display:inline-flex; align-items:center;
+  transition:all .18s; white-space:nowrap; font-family:inherit;
+}
+.lp-cta-ghost:hover { color:#E8EBF5; border-color:rgba(100,120,160,.42); }
+.lp-trust {
+  display:flex; gap:.6rem 1.25rem; justify-content:center; flex-wrap:wrap;
+  color:rgba(184,196,224,.3); font-size:.7rem; letter-spacing:.08em;
+}
+.lp-trust-sep { opacity:.25; }
+.lp-section { padding:5rem 1.5rem; background:#080B12; }
+.lp-section-dark { background:#060810; }
+.lp-section-cta {
+  background:radial-gradient(ellipse 70% 60% at 50% 50%, rgba(28,196,122,.08) 0%, transparent 70%), #060810;
+  padding:6rem 1.5rem;
+}
+.lp-section-inner { max-width:900px; margin:0 auto; }
+.lp-section-tag { font-size:.63rem; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:#1CC47A; margin-bottom:1rem; }
+.lp-section-title {
+  font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:clamp(1.8rem,3.5vw,2.75rem); font-weight:900; line-height:1.1;
+  color:#E8EBF5; margin:0 0 1rem; letter-spacing:-.015em;
+}
+.lp-section-sub { font-size:.92rem; color:rgba(184,196,224,.48); line-height:1.72; max-width:560px; margin-bottom:2.75rem; }
+.lp-features-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; }
+.lp-feat-card {
+  background:rgba(12,16,26,.8); border:1px solid rgba(100,120,160,.11);
+  border-radius:14px; padding:1.875rem 1.5rem; position:relative; overflow:hidden; transition:border-color .2s;
+}
+.lp-feat-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background:rgba(100,120,160,.15);
+}
+.lp-feat-card.lp-feat-featured { border-color:rgba(28,196,122,.28); background:rgba(28,196,122,.04); }
+.lp-feat-card.lp-feat-featured::before { background:#1CC47A; }
+.lp-feat-card:hover { border-color:rgba(100,120,160,.28); }
+.lp-feat-card.lp-feat-featured:hover { border-color:rgba(28,196,122,.48); }
+.lp-feat-icon {
+  width:40px; height:40px; border-radius:10px; margin-bottom:1.25rem;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(28,196,122,.1); color:#1CC47A;
+}
+.lp-feat-icon.lp-icon-red { background:rgba(232,25,75,.1); color:#E8194B; }
+.lp-feat-icon.lp-icon-blue { background:rgba(74,158,255,.1); color:#4A9EFF; }
+.lp-feat-card h3 {
+  font-family:'aquavit','Helvetica Neue',sans-serif; font-size:1rem; font-weight:800;
+  color:#E8EBF5; margin:0 0 .6rem;
+}
+.lp-feat-card p { font-size:.83rem; color:rgba(184,196,224,.48); line-height:1.65; margin:0; }
+.lp-feat-tag {
+  display:inline-block; font-size:.6rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; background:rgba(28,196,122,.1); color:#1CC47A;
+  border:1px solid rgba(28,196,122,.22); border-radius:4px; padding:2px 8px; margin-top:.75rem;
+}
+.lp-compare-table {
+  width:100%; border-collapse:separate; border-spacing:0;
+  background:rgba(10,13,22,.7); border:1px solid rgba(100,120,160,.1);
+  border-radius:12px; overflow:hidden; font-size:.83rem; margin-top:2rem;
+}
+.lp-compare-table thead th {
+  padding:1rem 1.25rem; text-align:center; font-weight:700; letter-spacing:.07em; font-size:.68rem;
+  background:rgba(6,9,14,.9); color:rgba(184,196,224,.38); border-bottom:1px solid rgba(100,120,160,.08);
+  text-transform:uppercase;
+}
+.lp-compare-table thead th:first-child { text-align:left; width:40%; }
+.lp-compare-table thead th.lp-us-col { color:#1CC47A; background:rgba(28,196,122,.06); border-left:1px solid rgba(28,196,122,.18); border-right:1px solid rgba(28,196,122,.18); }
+.lp-compare-table tbody tr:hover { background:rgba(100,120,160,.04); }
+.lp-compare-table tbody td { padding:.8rem 1.25rem; text-align:center; color:rgba(184,196,224,.38); border-bottom:1px solid rgba(100,120,160,.06); }
+.lp-compare-table tbody tr:last-child td { border-bottom:none; }
+.lp-compare-table tbody td:first-child { text-align:left; color:rgba(184,196,224,.65); }
+.lp-compare-table tbody td.lp-us-col { background:rgba(28,196,122,.035); border-left:1px solid rgba(28,196,122,.1); border-right:1px solid rgba(28,196,122,.1); }
+.lp-check { color:#1CC47A; font-size:1.1rem; font-weight:700; }
+.lp-cross { color:rgba(100,120,160,.35); font-size:.95rem; }
+.lp-partial { color:rgba(212,113,74,.55); font-size:.75rem; font-weight:600; }
+.lp-cta-large { font-size:1rem; padding:1rem 2.5rem; border-radius:10px; box-shadow:0 0 40px rgba(28,196,122,.18); }
+.lp-contact { margin-top:1.5rem; font-size:.8rem; color:rgba(184,196,224,.3); }
+.lp-link { color:#1CC47A; text-decoration:none; }
+.lp-link:hover { opacity:.75; }
+.lp-footer {
+  background:#04060A; padding:1.5rem; text-align:center; font-size:.7rem;
+  color:rgba(184,196,224,.18); letter-spacing:.07em;
+  display:flex; gap:.75rem; align-items:center; justify-content:center; flex-wrap:wrap;
+}
+.lp-footer-btn {
+  background:none; border:1px solid rgba(28,196,122,.18); color:rgba(28,196,122,.7);
+  border-radius:5px; padding:4px 12px; font-size:.7rem; cursor:pointer;
+  font-family:'Helvetica Neue',sans-serif; transition:all .15s;
+}
+.lp-footer-btn:hover { background:rgba(28,196,122,.07); color:#1CC47A; }
+
 /* ── Radar overlay ── */
 .radar-legend-dot {
   width:9px; height:9px; border-radius:3px; flex-shrink:0;
@@ -1338,7 +1479,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
 </head>
 
-<body class="welcome-active">
+<body class="landing-active">
 
 <!-- ════ HEADER ════ -->
 <header class="hd">
@@ -1460,7 +1601,127 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <!-- ══ PANEL : SCOUT ══ -->
     <!-- ══ PANEL : ACCUEIL ══ -->
-    <div id="panel-welcome" class="panel active" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)">
+    <!-- ════ LANDING PAGE MARKETING ════ -->
+    <div id="panel-landing" class="panel">
+
+      <!-- HERO -->
+      <section class="lp-hero">
+        <div class="lp-hero-inner">
+          <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:2.5rem">
+            <svg style="height:44px;width:44px;flex-shrink:0" viewBox="0 0 391.43 391.43" fill="#1CC47A" xmlns="http://www.w3.org/2000/svg">
+              <path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/>
+              <path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/>
+              <path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/>
+              <path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/>
+              <path d="M199.45,216.97l11-4.58c2.98,11.92,9.62,19.25,18.45,19.25,7.45,0,13.52-5.04,13.52-12.83,0-5.73-3.32-11.46-13.63-16.5l-10.43-5.04c-11.11-5.38-16.61-12.95-16.61-21.88,0-12.72,11.11-20.85,24.18-20.85s23.26,7.91,29.1,20.97l-11.34,3.09c-3.67-11.23-9.62-19.02-19.36-19.02-7.33,0-12.72,4.47-12.72,11.92,0,5.96,3.44,11.34,13.63,16.5l10.54,5.16c11.34,5.61,16.96,12.49,16.96,21.77,0,13.29-11.57,22-25.78,22s-23.49-8.25-27.5-19.94Z"/>
+              <path d="M136.4,155.5h12.83c0,1.95,2.41,9.85,7.33,24.86l14.44,44.23,11.23-33.11c3.09-8.82,4.01-13.86,4.01-18.68,0-6.07-1.6-11.92-4.93-17.3h14.09c.23,1.37.46,3.09.46,5.27,0,9.17-3.32,17.3-8.59,31.97l-14.89,41.94h-9.62l-26.35-79.17Z"/>
+            </svg>
+            <span style="font-family:'aquavit','Helvetica Neue',sans-serif;font-size:1.65rem;font-weight:900;color:#E8EBF5;letter-spacing:-.02em">VisionScore</span>
+          </div>
+          <div class="lp-eyebrow">Scouting Platform &nbsp;·&nbsp; League of Legends</div>
+          <h1 class="lp-title">Dénichez les talents<br><span class="lp-accent">avant tout le monde.</span></h1>
+          <p class="lp-sub">La première plateforme de notation semi-pro sur données Riot Games officielles.<br>Score SPES calibré par rôle — pas relatif au rang.</p>
+          <div class="lp-ctas">
+            <button onclick="goToWelcome()" class="lp-cta-primary">Accéder à l'outil →</button>
+            <a href="#lp-features" class="lp-cta-ghost">Découvrir la méthode ↓</a>
+          </div>
+          <div class="lp-trust">
+            <span>Données API Riot officielles</span>
+            <span class="lp-trust-sep">·</span>
+            <span>EUW · EUNE · NA</span>
+            <span class="lp-trust-sep">·</span>
+            <span>Rapport PDF exportable</span>
+            <span class="lp-trust-sep">·</span>
+            <span>Score par rôle</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURES -->
+      <section id="lp-features" class="lp-section">
+        <div class="lp-section-inner">
+          <div class="lp-section-tag">Pourquoi VisionScore</div>
+          <h2 class="lp-section-title">Pas un site de stats.<br>Un outil de décision.</h2>
+          <p class="lp-section-sub">Les sites comme OP.GG ou DPM affichent des données brutes. VisionScore convertit ces données en un score de recrutement actionnable, par rôle et par dimension.</p>
+          <div class="lp-features-grid">
+            <div class="lp-feat-card">
+              <div class="lp-feat-icon lp-icon-blue">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <h3>Seuils calibrés par rôle</h3>
+              <p>Chaque métrique est évaluée selon des seuils propres à chaque poste. Un toplaner et un ADC n'ont pas les mêmes attentes — notre scoring le reflète.</p>
+            </div>
+            <div class="lp-feat-card lp-feat-featured">
+              <div class="lp-feat-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
+              <h3>Score SPES — 5 dimensions</h3>
+              <p>Stats pures · Objectifs macro · Impact carte · Progression · Entretien. Une vision 360° du joueur pour recruter avec confiance.</p>
+              <span class="lp-feat-tag">Méthode propriétaire</span>
+            </div>
+            <div class="lp-feat-card">
+              <div class="lp-feat-icon lp-icon-red">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+              </div>
+              <h3>Zéro biais MMR</h3>
+              <p>Un Platinum 8.2 SPES vaut plus qu'un Diamond 5.4. L'évaluation ne dépend pas du rang — seulement de la performance brute sur 20 parties.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COMPARISON -->
+      <section class="lp-section lp-section-dark">
+        <div class="lp-section-inner">
+          <div class="lp-section-tag">Comparaison</div>
+          <h2 class="lp-section-title">Ce que les autres<br>ne font pas.</h2>
+          <table class="lp-compare-table">
+            <thead>
+              <tr>
+                <th>Fonctionnalité</th>
+                <th class="lp-us-col">VisionScore</th>
+                <th>OP.GG</th>
+                <th>DPM.lol</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Score de recrutement par rôle</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>Seuils absolus (non relatifs au rang)</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-partial">partiel</span></td></tr>
+              <tr><td>5 dimensions (macro, impact, progression)</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>Rapport PDF professionnel exportable</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>Détection de pépites Top 50 automatique</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>CRM structures &amp; pipeline recrutement</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>Données Riot Games API officielles</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-check" style="color:rgba(184,196,224,.3)">✓</span></td><td><span class="lp-check" style="color:rgba(184,196,224,.3)">✓</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CTA FINAL -->
+      <section class="lp-section lp-section-cta" style="text-align:center">
+        <div class="lp-section-inner" style="text-align:center">
+          <div class="lp-section-tag" style="text-align:center">Pour les structures esport</div>
+          <h2 class="lp-section-title" style="text-align:center">Prêt à scouter<br><span class="lp-accent">autrement ?</span></h2>
+          <p class="lp-section-sub" style="margin:0 auto 2rem;text-align:center">Accédez gratuitement à l'outil. Pour un accompagnement personnalisé ou une démo dédiée à votre structure, contactez-nous.</p>
+          <button onclick="goToWelcome()" class="lp-cta-primary lp-cta-large">Accéder à l'outil →</button>
+          <p class="lp-contact">Vous représentez une structure esport ? <a href="mailto:contact@visionscore.gg" class="lp-link">Demandez une démo →</a></p>
+        </div>
+      </section>
+
+      <!-- FOOTER -->
+      <footer class="lp-footer">
+        <span>© 2025 VisionScore</span>
+        <span>·</span>
+        <span>Données via Riot Games API</span>
+        <span>·</span>
+        <span>Semi-Pro Esport</span>
+        <span>·</span>
+        <button onclick="goToWelcome()" class="lp-footer-btn">Accéder à l'outil</button>
+      </footer>
+
+    </div><!-- /panel-landing -->
+
+    <div id="panel-welcome" class="panel" style="display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 52px)">
       <div style="max-width:760px;width:100%;padding:2rem 1.5rem">
         <!-- Logo centré -->
         <div style="text-align:center;margin-bottom:3rem">
@@ -3970,13 +4231,22 @@ function setAppMode(mode) {
 function resetToWelcome() {
   appMode = 'welcome';
   try { localStorage.removeItem('spes_mode'); } catch(e) {}
+  document.body.classList.remove('landing-active');
   document.body.classList.add('welcome-active');
   const welcome = document.getElementById('panel-welcome');
-  if (welcome) welcome.style.display = 'flex';
-  // Masquer tous les autres panels
+  if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
   document.querySelectorAll('.panel').forEach(p => {
-    if (p.id !== 'panel-welcome') p.classList.remove('active');
+    if (p.id !== 'panel-welcome') { p.classList.remove('active'); p.style.display = ''; }
   });
+}
+
+function goToWelcome() {
+  document.body.classList.remove('landing-active');
+  document.body.classList.add('welcome-active');
+  const landing = document.getElementById('panel-landing');
+  if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
+  const welcome = document.getElementById('panel-welcome');
+  if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
 }
 
 function switchPanel(id) {
@@ -5930,15 +6200,19 @@ crmLoad();
 (function initApp() {
   const savedMode = localStorage.getItem('spes_mode');
   if (savedMode && (savedMode === 'agent' || savedMode === 'coach')) {
-    // Restaurer le mode précédent
+    // Returning user — skip landing and welcome, go directly to tool
+    document.body.classList.remove('landing-active');
     setTimeout(() => setAppMode(savedMode), 50);
   } else {
-    // Afficher l'écran d'accueil — panel-scout ne doit pas être actif
+    // New visitor — show landing page
+    document.body.classList.add('landing-active');
+    document.body.classList.remove('welcome-active');
+    const landing = document.getElementById('panel-landing');
+    if (landing) { landing.classList.add('active'); landing.style.display = 'block'; }
+    const welcome = document.getElementById('panel-welcome');
+    if (welcome) { welcome.classList.remove('active'); welcome.style.display = 'none'; }
     const scout = document.getElementById('panel-scout');
     if (scout) scout.classList.remove('active');
-    const welcome = document.getElementById('panel-welcome');
-    if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
-    // Désactiver nav items
     document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
   }
 })();
