@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -617,20 +617,27 @@ button, .btn, select,
 }
 .map-canvas-wrap {
   position:relative; width:100%;
-  aspect-ratio:1/1; max-height:620px; margin:0 auto;
-  border-radius:6px; overflow:hidden;
-  transform: perspective(1400px) rotateX(22deg) scale(1.05);
-  transform-origin: 50% 38%;
-  transition: transform .5s cubic-bezier(.25,.8,.25,1);
-  box-shadow: 0 22px 60px rgba(0,0,0,.22), 0 8px 20px rgba(0,0,0,.14);
+  aspect-ratio:1/1; max-height:min(80vh,900px); margin:0 auto;
+  border-radius:10px; overflow:hidden;
+  transform: none;
+  transition: box-shadow .3s;
+  box-shadow: 0 0 0 1.5px rgba(28,196,122,.18), 0 24px 64px rgba(0,0,0,.45), 0 0 80px rgba(28,196,122,.06);
 }
 .map-canvas-wrap:hover {
-  transform: perspective(1400px) rotateX(14deg) scale(1.07);
+  box-shadow: 0 0 0 2px rgba(28,196,122,.38), 0 24px 64px rgba(0,0,0,.5), 0 0 100px rgba(28,196,122,.1);
 }
 .map-canvas-wrap-outer {
-  padding-bottom: 2rem;
+  padding-bottom: 0;
   overflow: visible;
 }
+/* Map plein écran */
+body.map-fullscreen .sb { display:none !important; }
+body.map-fullscreen .main { max-width:none !important; padding:0 !important; }
+body.map-fullscreen #hd-nav-main { display:none !important; }
+body.map-fullscreen #panel-map.active { padding:0 !important; }
+body.map-fullscreen .map-container { border-radius:0; border-left:none; border-right:none; }
+body.map-fullscreen .map-canvas-wrap { max-height:calc(100vh - 200px); border-radius:0; }
+body.map-fullscreen .map-import-card { min-height:100vh; justify-content:center; }
 #map-base-canvas, #map-overlay-canvas {
   position:absolute; top:0; left:0; width:100%; height:100%;
 }
@@ -1824,6 +1831,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <div id="panel-scout" class="panel">
 
+      <!-- Player display card (shown after API import) -->
+      <div id="player-card-display" style="display:none" class="player-card">
+        <div class="player-avatar" id="pc-avatar"><svg width="28" height="28" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:.5"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
+        <div>
+          <div class="player-name" id="pc-name">—</div>
+          <div class="player-meta" id="pc-meta">—</div>
+        </div>
+        <div class="player-badges">
+          <div class="rank-badge">
+            <div class="rank-badge-inner" id="pc-rank-badge-inner">
+              <div class="rank-tier" id="pc-rank">—</div>
+            </div>
+            <div class="rank-lp" id="pc-lp">— LP</div>
+          </div>
+          <div class="age-badge"><div class="age-val" id="pc-age">—</div><div class="age-lbl">Âge</div></div>
+        </div>
+      </div>
+
       <!-- Onboarding — visible uniquement si aucun pseudo entré -->
       <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(28,196,122,.05),rgba(21,168,120,.04));border:1px solid rgba(28,196,122,.15);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:block;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--lime),var(--teal))"></div>
@@ -1962,24 +1987,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <button class="btn btn-ghost btn-sm" onclick="toggleDebug()" style="font-size:10px;display:inline-flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Logs techniques</button>
             <div class="debug-log" id="debug-log"></div>
           </div>
-        </div>
-      </div>
-
-      <!-- Player display card (shown after API import) -->
-      <div id="player-card-display" style="display:none" class="player-card">
-        <div class="player-avatar" id="pc-avatar"><svg width="28" height="28" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:.5"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
-        <div>
-          <div class="player-name" id="pc-name">—</div>
-          <div class="player-meta" id="pc-meta">—</div>
-        </div>
-        <div class="player-badges">
-          <div class="rank-badge">
-            <div class="rank-badge-inner" id="pc-rank-badge-inner">
-              <div class="rank-tier" id="pc-rank">—</div>
-            </div>
-            <div class="rank-lp" id="pc-lp">— LP</div>
-          </div>
-          <div class="age-badge"><div class="age-val" id="pc-age">—</div><div class="age-lbl">Âge</div></div>
         </div>
       </div>
 
@@ -4257,7 +4264,8 @@ function switchPanel(id) {
   const idx = ['scout','graphs','map','results','top50','analyse','history'].indexOf(id);
   if (id === 'history') renderHistory();
   if (id === 'graphs') buildGraphs();
-  if (id === 'map') initMapPanel();
+  if (id === 'map') { initMapPanel(); document.body.classList.add('map-fullscreen'); }
+  else document.body.classList.remove('map-fullscreen');
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analyse',
@@ -5231,6 +5239,7 @@ async function exportPDF() {
     gold:   [245,166, 35],
     emerald:[  0,194,122],
     purple: [192,132,252],
+    plat:   [200,202,212],
   };
 
   const scoreColor = (v) => {
@@ -5280,118 +5289,126 @@ async function exportPDF() {
   // ══════════════════════════════════════════════════════════
   // PAGE 1 — COVER PREMIUM
   // ══════════════════════════════════════════════════════════
+  // ── Background
   doc.setFillColor(...C.bg); doc.rect(0, 0, W, H, 'F');
 
-  // Top accent bar
-  doc.setFillColor(...C.lime); doc.rect(0, 0, W, 2.5, 'F');
+  // ── Left accent strip (identité visuelle VisionScore)
+  doc.setFillColor(...C.lime); doc.rect(0, 0, 4, H, 'F');
 
-  // Header band
-  doc.setFillColor(11,16,26); doc.rect(0, 2.5, W, 52, 'F');
-  doc.setFillColor(13,20,18); doc.rect(100, 2.5, W-100, 52, 'F'); // subtle green tint right
+  // ── Top accent bar
+  doc.setFillColor(...C.lime); doc.rect(4, 0, W-4, 2.5, 'F');
 
-  // LOGO
-  doc.setFont('helvetica','bold'); doc.setFontSize(20);
-  doc.setTextColor(...C.lime); doc.text('SPES', M, 22);
-  doc.setTextColor(...C.white); doc.text(' LAB', M+21, 22);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.sub); doc.text('Scouting Platform for Esport Structures', M, 29);
-  doc.setFontSize(6.5); doc.text('Rapport confidentiel · ' + dateStr, M, 36);
+  // ── Header band
+  doc.setFillColor(10,14,22); doc.rect(4, 2.5, W-4, 50, 'F');
+  doc.setFillColor(12,20,18); doc.rect(110, 2.5, W-110, 50, 'F');
 
-  // Profile avatar top-right
+  // ── LOGO VisionScore
+  const LS = 8; // left start (after strip)
+  doc.setFont('helvetica','bold'); doc.setFontSize(22);
+  doc.setTextColor(...C.lime); doc.text('Vision', M+4, 22);
+  const _vw = doc.getTextWidth('Vision');
+  doc.setTextColor(...C.white); doc.text('Score', M+4+_vw, 22);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7);
+  doc.setTextColor(...C.plat); doc.text('Scouting Intelligence · Structures Esport', M+4, 30);
+  doc.setFontSize(6); doc.setTextColor(...C.sub);
+  doc.text('Rapport confidentiel · ' + dateStr, M+4, 37);
+
+  // ── Avatar + rank (top-right)
   if (avatarImg) {
-    try { doc.addImage(avatarImg,'PNG',W-M-20,7,20,20,'','FAST'); } catch(e){}
-    doc.setFillColor(...C.lime); doc.setLineWidth(0.6);
-    doc.setDrawColor(...C.lime); doc.rect(W-M-20,7,20,20,'S');
+    try { doc.addImage(avatarImg,'PNG',W-M-22,5,22,22,'','FAST'); } catch(e){}
+    doc.setDrawColor(...C.lime); doc.setLineWidth(0.7);
+    doc.rect(W-M-22,5,22,22,'S');
   }
-  doc.setFont('helvetica','bold'); doc.setFontSize(8);
-  doc.setTextColor(...C.lime); doc.text(rankName, W-M, 32, {align:'right'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+  doc.setTextColor(...C.lime); doc.text(rankName, W-M, 33, {align:'right'});
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
-  doc.setTextColor(...C.sub); doc.text(currentRole, W-M, 38, {align:'right'});
+  doc.setTextColor(...C.plat); doc.text(currentRole, W-M, 40, {align:'right'});
 
-  // Separator
-  doc.setDrawColor(...C.sub); doc.setLineWidth(0.12); doc.line(M, 56, W-M, 56);
+  // ── Separator
+  doc.setDrawColor(30,40,55); doc.setLineWidth(0.5); doc.line(4, 54, W, 54);
+  doc.setFillColor(...C.lime); doc.rect(4, 54, 32, 0.5, 'F');
 
-  // PLAYER NAME
-  const cx = W/2;
-  doc.setFont('helvetica','bold'); doc.setFontSize(36);
-  doc.setTextColor(...C.white); doc.text(pseudo, cx, 95, {align:'center'});
+  // ── Player name block
+  const cx = W/2 + 2;
+  doc.setFont('helvetica','bold'); doc.setFontSize(34);
+  doc.setTextColor(...C.white); doc.text(pseudo, cx, 92, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(10);
+  doc.setTextColor(...C.plat);
+  doc.text('#'+tag+'  ·  '+currentRole+'  ·  '+rankName+(age?'  ·  '+age+' ans':''), cx, 102, {align:'center'});
 
-  doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(...C.sub2);
-  doc.text('#'+tag+'  ·  '+currentRole+'  ·  '+rankName+(age?'  ·  '+age+' ans':''), cx, 105, {align:'center'});
-
-  // SCORE — hero circle
+  // ── Score hero circle (double ring)
   const gc = scoreColor(globalVal);
-  doc.setFillColor(...C.bg3); doc.circle(cx, 140, 27, 'F');
-  doc.setDrawColor(...gc); doc.setLineWidth(1.4); doc.circle(cx, 140, 27, 'S');
+  doc.setFillColor(...C.bg2); doc.circle(cx, 140, 30, 'F');
+  doc.setDrawColor(...gc); doc.setLineWidth(2); doc.circle(cx, 140, 30, 'S');
+  doc.setDrawColor(gc[0],gc[1],gc[2]); doc.setLineWidth(0.35);
+  doc.circle(cx, 140, 34, 'S');
   if (globalVal !== null) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(34); doc.setTextColor(...gc);
-    doc.text(globalVal.toFixed(1), cx, 147, {align:'center'});
+    doc.setFont('helvetica','bold'); doc.setFontSize(36); doc.setTextColor(...gc);
+    doc.text(globalVal.toFixed(1), cx, 148, {align:'center'});
   }
-  doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.sub); doc.text('SCORE SPES / 10', cx, 156, {align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(7);
+  doc.setTextColor(...C.plat); doc.text('SCORE SPES / 10', cx, 158, {align:'center'});
 
-  // Verdict
-  doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 166, {align:'center'});
+  // ── Verdict
+  doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 169, {align:'center'});
 
-  // Tier badge
+  // ── Tier badge
   if (globalVal !== null) {
     const TIER_DEFS_P1 = [
       {min:9.0,lbl:'S — ÉLITE'},{min:8.0,lbl:'A+ — EXCELLENT'},{min:7.0,lbl:'A — TRÈS BON'},
       {min:6.0,lbl:'B+ — BON'},{min:5.0,lbl:'B — CORRECT'},{min:0,lbl:'C — À DÉVELOPPER'},
     ];
     const td1 = TIER_DEFS_P1.find(t => globalVal >= t.min);
-    const tierW1=58, tierH1=9, tierX1=cx-tierW1/2, tierY1=170;
+    const tierW1=62, tierH1=9, tierX1=cx-tierW1/2, tierY1=174;
     doc.setFillColor(...C.bg3); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'F');
     doc.setDrawColor(...gc); doc.setLineWidth(0.4); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'S');
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...gc);
     doc.text(td1.lbl, cx, tierY1+6.2, {align:'center'});
   }
 
-  // Perf / Potentiel sub-cards
+  // ── Perf / Potentiel sub-cards
   const perf = typeof window._scorePerf!=='undefined' ? window._scorePerf : null;
   const pot  = typeof window._scorePotentiel!=='undefined' ? window._scorePotentiel : null;
-  if (perf!==null || pot!==null) {
-    const cW=40, cH=22, cY=176;
-    if (perf!==null && pot!==null) {
-      const bx1=cx-cW-2, bx2=cx+2;
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx1,cY,cW,cH,2,2,'F');
-      doc.setDrawColor(...scoreColor(perf)); doc.setLineWidth(0.3);
-      doc.roundedRect(bx1,cY,cW,cH,2,2,'S');
-      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...scoreColor(perf));
-      doc.text(perf.toFixed(1),bx1+cW/2,cY+13,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-      doc.text('Performance',bx1+cW/2,cY+19.5,{align:'center'});
+  if (perf!==null && pot!==null) {
+    const cW=42, cH=22, cY=186;
+    const bx1=cx-cW-2, bx2=cx+2;
+    doc.setFillColor(...C.bg3); doc.roundedRect(bx1,cY,cW,cH,2,2,'F');
+    doc.setDrawColor(...scoreColor(perf)); doc.setLineWidth(0.3);
+    doc.roundedRect(bx1,cY,cW,cH,2,2,'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...scoreColor(perf));
+    doc.text(perf.toFixed(1),bx1+cW/2,cY+13,{align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.plat);
+    doc.text('Performance',bx1+cW/2,cY+19.5,{align:'center'});
 
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx2,cY,cW,cH,2,2,'F');
-      doc.setDrawColor(...C.lime); doc.setLineWidth(0.3);
-      doc.roundedRect(bx2,cY,cW,cH,2,2,'S');
-      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.lime);
-      doc.text(pot.toFixed(1),bx2+cW/2,cY+13,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-      doc.text('Potentiel',bx2+cW/2,cY+19.5,{align:'center'});
-    }
+    doc.setFillColor(...C.bg3); doc.roundedRect(bx2,cY,cW,cH,2,2,'F');
+    doc.setDrawColor(...C.lime); doc.setLineWidth(0.3);
+    doc.roundedRect(bx2,cY,cW,cH,2,2,'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.lime);
+    doc.text(pot.toFixed(1),bx2+cW/2,cY+13,{align:'center'});
+    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.plat);
+    doc.text('Potentiel',bx2+cW/2,cY+19.5,{align:'center'});
   }
 
-  // Dimension mini-strip
-  const stripY = 213;
-  doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
+  // ── Dimension mini-strip
+  const stripY = 220;
+  doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...C.sub);
   doc.text('SCORES PAR DIMENSION', cx, stripY, {align:'center'});
-  const stripW = (W-M*2-16)/5;
+  const stripW = (W-M*2-4-16)/5;
   dimKeys.forEach((k,i) => {
-    const bx=M+i*(stripW+4), rgb=DIM_COLORS[i], v=dimScores[i];
+    const bx=M+4+i*(stripW+4), rgb=DIM_COLORS[i], v=dimScores[i];
     doc.setFillColor(...C.bg3); doc.roundedRect(bx,stripY+3,stripW,16,1.5,1.5,'F');
     doc.setFillColor(...rgb); doc.rect(bx,stripY+3,stripW,1.5,'F');
     doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...rgb);
     doc.text(v!==null?v.toFixed(1):'—',bx+stripW/2,stripY+13,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
+    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.plat);
     doc.text(DIM_LABELS[i].replace(/^D\d · /,''),bx+stripW/2,stripY+17.5,{align:'center'});
   });
 
-  // Footer meta
-  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-  doc.text('Document confidentiel · destiné aux structures esport uniquement · ne pas diffuser', cx, 271, {align:'center'});
-  doc.text('VisionScore · Rapport généré le '+dateStr, cx, 277, {align:'center'});
+  // ── Footer
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
+  doc.text('Document confidentiel · destiné aux structures esport uniquement · ne pas diffuser', cx, 272, {align:'center'});
+  doc.text('VisionScore · Rapport généré le '+dateStr, cx, 278, {align:'center'});
   doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
 
   // ══════════════════════════════════════════════════════════
@@ -5400,6 +5417,7 @@ async function exportPDF() {
   doc.addPage();
   doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
   doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
   _hdr(doc,'DASHBOARD ANALYTIQUE');
   let y = 22;
 
@@ -5505,6 +5523,7 @@ async function exportPDF() {
   doc.addPage();
   doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
   doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
   _hdr(doc,'ÉVOLUTION & STATISTIQUES');
   y=22;
 
@@ -5581,6 +5600,7 @@ async function exportPDF() {
   doc.addPage();
   doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
   doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
+  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
   _hdr(doc,'RECOMMANDATION AGENT');
   y=22;
 
@@ -5605,7 +5625,7 @@ async function exportPDF() {
     doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...gc3);
     doc.text(tierDef4.lbl, tx4+tw4/2, ty4+5.2, {align:'center'});
   }
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub2);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.plat);
   doc.text('Score SPES · Méthode propriétaire · Données API Riot Games officielles',M+48,y+30);
   y+=42;
 
@@ -5689,7 +5709,7 @@ async function exportPDF() {
   doc.setDrawColor(...C.teal); doc.setLineWidth(0.18); doc.roundedRect(M,y,W-M*2,30,2,2,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.teal);
   doc.text('MÉTHODOLOGIE SPES',M+4,y+8);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub2);
+  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.plat);
   const method='Ce rapport est généré automatiquement via l\'API officielle Riot Games. Le score SPES est calculé sur seuils absolus par rôle — non relatifs au rang — et couvre 5 dimensions : statistiques individuelles (D1), objectifs collectifs (D2), impact sur la partie (D3), courbe de progression (D4) et données d\'entretien (D5). La dimension D5 intègre des éléments non-API qui nécessitent un entretien complémentaire.';
   const mLines=doc.splitTextToSize(method,W-M*2-8);
   doc.text(mLines,M+4,y+16);
@@ -5708,7 +5728,7 @@ async function exportPDF() {
 
   // ── Save ──────────────────────────────────────────────────
   if (btn) { btn.disabled=false; btn.textContent='Exporter PDF'; }
-  const fname='SPES_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+currentRole+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+  const fname='VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+currentRole+'_'+new Date().toISOString().slice(0,10)+'.pdf';
   doc.save(fname);
   showToast('Rapport PDF pro exporté — '+fname,'success');
 }
