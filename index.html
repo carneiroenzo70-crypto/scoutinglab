@@ -4,7 +4,8 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>VisionScore — Scouting LoL Semi-Pro</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://use.typekit.net/cin3zub.css"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
 <style>
 /* ════════════════════════════════
    DESIGN SYSTEM
@@ -46,7 +47,7 @@
   --purple-dim:rgba(138,127,245,.10);
 
   /* ── Platine accent ── */
-  --platinum:  #B8C4DC;
+  --platinum:  #C8CAD4;
 
   /* ── Rayon ── */
   --r:         10px;
@@ -115,14 +116,14 @@ body {
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
 }
-/* Titres & UI labels → Space Grotesk */
+/* Titres & UI labels → Aquavit */
 h1,h2,h3,h4,h5,h6,
 .hd-nav-item, .role-pill, .view-tab,
 .card-title, .player-name, .welcome-mode-card,
 button, .btn, select,
 .api-title, .hero-name, .hero-verdict,
 .dim-title, .dim-head, .score-lbl, .s-bar-label {
-  font-family:'Outfit', 'Helvetica Neue', Arial, sans-serif;
+  font-family:'aquavit', 'Helvetica Neue', sans-serif;
 }
 
 /* ── HEADER ── */
@@ -371,7 +372,7 @@ button, .btn, select,
 .fi-input {
   background:var(--surf2); border:1px solid var(--border2);
   border-radius:var(--r-sm); padding:8px 12px;
-  font-family:'Syne',sans-serif; font-size:13px; color:var(--text);
+  font-family:'aquavit', 'Helvetica Neue', sans-serif; font-size:13px; color:var(--text);
   outline:none; transition:border .2s ease, box-shadow .2s ease;
 }
 .fi-input:focus {
@@ -388,7 +389,7 @@ button, .btn, select,
 .btn {
   display:inline-flex; align-items:center; gap:6px;
   padding:8px 18px; border-radius:var(--r-sm);
-  font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
+  font-family:'aquavit', 'Helvetica Neue', sans-serif; font-size:13px; font-weight:700;
   cursor:pointer; border:none; transition:all .18s ease;
   letter-spacing:.03em; white-space:nowrap;
 }
@@ -645,7 +646,7 @@ button, .btn, select,
 
 /* ══ PRINT / PDF ════════════════════════════════════ */
 @media print {
-  body { background:#fff !important; color:#000 !important; font-family:'Syne',sans-serif; }
+  body { background:#fff !important; color:#000 !important; font-family:'aquavit', 'Helvetica Neue', sans-serif; }
   .hd, .sb, .hd-nav, .role-pills, .api-card, .file-warn,
   .dim-input-wrap, .dim-slider, .dim-num-input,
   .btn, button:not(.pdf-keep), .debug-log,
@@ -927,7 +928,7 @@ body.welcome-active #panel-welcome.active {
 }
 .welcome-stat-val {
   font-size:1.1rem; font-weight:700; color:var(--text);
-  font-family:'Outfit', 'Helvetica Neue', Arial, sans-serif;
+  font-family:'aquavit', 'Helvetica Neue', sans-serif;
   letter-spacing:-.01em;
 }
 .welcome-stat-lbl {
@@ -2085,7 +2086,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <!-- Header -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
           <div>
-            <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:9px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50 Prospects EUW</div>
+            <div style="font-family:'aquavit', 'Helvetica Neue', sans-serif;font-weight:800;font-size:1.4rem;display:flex;align-items:center;gap:9px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50 Prospects EUW</div>
             <div style="font-size:.8rem;color:var(--sub);margin-top:.25rem">Diamond+ · Score SPES automatique · Bonus âge · Workflow recrutement</div>
           </div>
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center">
