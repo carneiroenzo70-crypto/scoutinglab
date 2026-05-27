@@ -4957,24 +4957,29 @@ async function exportPDF() {
     white: [223,226,239],
     sub:   [72,  82,106],
     sub2:  [138,144,160],
-    blue:  [74, 158,255],
-    purple:[192,132,252],
+    blue:   [74, 158,255],
+    gold:   [245,166, 35],
+    emerald:[  0,194,122],
+    purple: [192,132,252],
   };
 
   const scoreColor = (v) => {
     if (v === null || v === undefined) return C.sub;
-    if (v >= 8)   return C.lime;
-    if (v >= 6.5) return C.teal;
-    if (v >= 5)   return C.amber;
+    if (v >= 9.0) return C.gold;
+    if (v >= 8.0) return C.emerald;
+    if (v >= 7.0) return C.lime;
+    if (v >= 5.5) return C.blue;
+    if (v >= 4.0) return C.amber;
     return C.red;
   };
   const verdictText = (v) =>
-    v === null ? 'Données insuffisantes'
-    : v >= 8.5 ? 'Exceptionnel — Recruter immédiatement'
-    : v >= 7.5 ? 'Très solide — Fort potentiel semi-pro'
-    : v >= 6.5 ? 'Bon profil — Tryout recommandé'
-    : v >= 5.5 ? 'Profil moyen — À surveiller'
-    : 'En développement — Potentiel à confirmer';
+    v === null   ? 'Données insuffisantes'
+    : v >= 9.0  ? 'Recruter maintenant — Talent d\'exception'
+    : v >= 8.0  ? 'Tryout prioritaire — Profil très solide'
+    : v >= 7.0  ? 'Tryout recommandé — Bon profil semi-pro'
+    : v >= 6.0  ? 'À suivre 30 jours — Potentiel identifié'
+    : v >= 5.0  ? 'Pas encore prêt — Profil en construction'
+    : 'Niveau insuffisant — Trop tôt pour le semi-pro';
 
   const DIM_COLORS = [C.blue,[245,166,35],[45,212,191],[192,132,252],[255,122,90]];
   const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Entretien'];
@@ -5057,7 +5062,21 @@ async function exportPDF() {
 
   // Verdict
   doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
-  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 167, {align:'center'});
+  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 166, {align:'center'});
+
+  // Tier badge
+  if (globalVal !== null) {
+    const TIER_DEFS_P1 = [
+      {min:9.0,lbl:'S — ÉLITE'},{min:8.0,lbl:'A+ — EXCELLENT'},{min:7.0,lbl:'A — TRÈS BON'},
+      {min:6.0,lbl:'B+ — BON'},{min:5.0,lbl:'B — CORRECT'},{min:0,lbl:'C — À DÉVELOPPER'},
+    ];
+    const td1 = TIER_DEFS_P1.find(t => globalVal >= t.min);
+    const tierW1=58, tierH1=9, tierX1=cx-tierW1/2, tierY1=170;
+    doc.setFillColor(...C.bg3); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'F');
+    doc.setDrawColor(...gc); doc.setLineWidth(0.4); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...gc);
+    doc.text(td1.lbl, cx, tierY1+6.2, {align:'center'});
+  }
 
   // Perf / Potentiel sub-cards
   const perf = typeof window._scorePerf!=='undefined' ? window._scorePerf : null;
@@ -5151,6 +5170,8 @@ async function exportPDF() {
     {id:'kill_part',lbl:'Kill Part.',dec:1,unit:'%'},
     {id:'dmg_share',lbl:'Dmg Share',dec:1,unit:'%'},
     {id:'vision',lbl:'Vision Score',dec:1},
+    {id:'dpm',lbl:'DPM',dec:0},
+    {id:'chal_wards_killed',lbl:'Wards/g',dec:2},
   ];
   const validStats = apiStats.map(s => {
     const v=rawData[s.id];
@@ -5295,16 +5316,28 @@ async function exportPDF() {
 
   // Hero synthesis block
   const gc3=scoreColor(globalVal);
-  doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,28,3,3,'F');
-  doc.setFillColor(...gc3); doc.rect(M,y,3,28,'F');
+  const TIER_DEFS_P4 = [
+    {min:9.0,lbl:'S — ÉLITE'},{min:8.0,lbl:'A+ — EXCELLENT'},{min:7.0,lbl:'A — TRÈS BON'},
+    {min:6.0,lbl:'B+ — BON'},{min:5.0,lbl:'B — CORRECT'},{min:0,lbl:'C — À DÉVELOPPER'},
+  ];
+  const tierDef4 = globalVal!==null ? TIER_DEFS_P4.find(t => globalVal >= t.min) : null;
+  doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,36,3,3,'F');
+  doc.setFillColor(...gc3); doc.rect(M,y,3,36,'F');
   doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...gc3);
-  doc.text(globalVal!==null?globalVal.toFixed(1)+'/10':'—',M+9,y+14);
+  doc.text(globalVal!==null?globalVal.toFixed(1)+'/10':'—',M+9,y+20);
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...C.white);
-  const synLines=doc.splitTextToSize(verdictText(globalVal),W-M*2-50);
-  doc.text(synLines,M+46,y+10);
+  const synLines=doc.splitTextToSize(verdictText(globalVal),W-M*2-52);
+  doc.text(synLines,M+48,y+10);
+  if (tierDef4) {
+    const tw4=50, th4=7.5, tx4=M+48, ty4=y+16;
+    doc.setFillColor(...C.bg4); doc.roundedRect(tx4,ty4,tw4,th4,1.5,1.5,'F');
+    doc.setDrawColor(...gc3); doc.setLineWidth(0.3); doc.roundedRect(tx4,ty4,tw4,th4,1.5,1.5,'S');
+    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...gc3);
+    doc.text(tierDef4.lbl, tx4+tw4/2, ty4+5.2, {align:'center'});
+  }
   doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub2);
-  doc.text('Score SPES · Méthode propriétaire · Données API Riot Games officielles',M+46,y+22);
-  y+=34;
+  doc.text('Score SPES · Méthode propriétaire · Données API Riot Games officielles',M+48,y+30);
+  y+=42;
 
   // 2-col: strengths / weaknesses
   const colW2=(W-M*2-6)/2, colR=M+colW2+6;
