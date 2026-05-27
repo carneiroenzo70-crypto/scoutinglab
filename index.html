@@ -635,9 +635,27 @@ body.map-fullscreen .sb { display:none !important; }
 body.map-fullscreen .main { max-width:none !important; padding:0 !important; }
 body.map-fullscreen #hd-nav-main { display:none !important; }
 body.map-fullscreen #panel-map.active { padding:0 !important; }
-body.map-fullscreen .map-container { border-radius:0; border-left:none; border-right:none; }
-body.map-fullscreen .map-canvas-wrap { max-height:calc(100vh - 200px); border-radius:0; }
-body.map-fullscreen .map-import-card { min-height:100vh; justify-content:center; }
+body.map-fullscreen .map-container {
+  position:fixed !important; top:0; left:0; right:0; bottom:0; z-index:200;
+  border:none !important; border-radius:0 !important; margin:0 !important;
+  display:flex !important; flex-direction:column;
+}
+body.map-fullscreen .map-canvas-wrap-outer {
+  flex:1; overflow:hidden; padding:0 !important; display:flex;
+}
+body.map-fullscreen .map-canvas-wrap {
+  flex:1; width:100% !important;
+  aspect-ratio:unset !important; max-height:none !important;
+  border-radius:0 !important; box-shadow:none !important;
+}
+body.map-fullscreen .map-controls {
+  flex-shrink:0; background:rgba(8,11,16,.96) !important;
+  border-top:1px solid rgba(28,196,122,.18) !important;
+}
+body.map-fullscreen .map-legend { display:none !important; }
+body.map-fullscreen .map-stats-row { display:none !important; }
+body.map-fullscreen .map-exit-fs-btn { display:inline-flex !important; }
+body.map-fullscreen .map-import-card { position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; flex-direction:column; background:var(--bg); }
 #map-base-canvas, #map-overlay-canvas {
   position:absolute; top:0; left:0; width:100%; height:100%;
 }
@@ -1831,24 +1849,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <div id="panel-scout" class="panel">
 
-      <!-- Player display card (shown after API import) -->
-      <div id="player-card-display" style="display:none" class="player-card">
-        <div class="player-avatar" id="pc-avatar"><svg width="28" height="28" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:.5"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
-        <div>
-          <div class="player-name" id="pc-name">—</div>
-          <div class="player-meta" id="pc-meta">—</div>
-        </div>
-        <div class="player-badges">
-          <div class="rank-badge">
-            <div class="rank-badge-inner" id="pc-rank-badge-inner">
-              <div class="rank-tier" id="pc-rank">—</div>
-            </div>
-            <div class="rank-lp" id="pc-lp">— LP</div>
-          </div>
-          <div class="age-badge"><div class="age-val" id="pc-age">—</div><div class="age-lbl">Âge</div></div>
-        </div>
-      </div>
-
       <!-- Onboarding — visible uniquement si aucun pseudo entré -->
       <div id="onboarding-banner" style="background:linear-gradient(135deg,rgba(28,196,122,.05),rgba(21,168,120,.04));border:1px solid rgba(28,196,122,.15);border-radius:14px;padding:18px 22px;margin-bottom:20px;display:block;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--lime),var(--teal))"></div>
@@ -1987,6 +1987,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <button class="btn btn-ghost btn-sm" onclick="toggleDebug()" style="font-size:10px;display:inline-flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Logs techniques</button>
             <div class="debug-log" id="debug-log"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- Player display card (shown after API import) -->
+      <div id="player-card-display" style="display:none" class="player-card">
+        <div class="player-avatar" id="pc-avatar"><svg width="28" height="28" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg" style="opacity:.5"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg></div>
+        <div>
+          <div class="player-name" id="pc-name">—</div>
+          <div class="player-meta" id="pc-meta">—</div>
+        </div>
+        <div class="player-badges">
+          <div class="rank-badge">
+            <div class="rank-badge-inner" id="pc-rank-badge-inner">
+              <div class="rank-tier" id="pc-rank">—</div>
+            </div>
+            <div class="rank-lp" id="pc-lp">— LP</div>
+          </div>
+          <div class="age-badge"><div class="age-val" id="pc-age">—</div><div class="age-lbl">Âge</div></div>
         </div>
       </div>
 
@@ -2357,9 +2375,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
         <!-- Map card -->
         <div class="map-container">
-          <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-            <div style="font-family:monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)">
-              Carte de la Faille de l'Invocateur — <span id="map-subtitle" style="color:var(--lime)">Heatmap Kills</span>
+          <div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <button onclick="switchPanel('scout');setSbActive(document.querySelector('.sb-item'))" style="display:none;background:none;border:1px solid rgba(28,196,122,.3);color:var(--lime);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer" class="map-exit-fs-btn">← Retour</button>
+              <div style="font-family:monospace;font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--sub)">
+                Carte de la Faille de l'Invocateur — <span id="map-subtitle" style="color:var(--lime)">Heatmap Kills</span>
+              </div>
             </div>
             <div class="map-phase-selector" id="map-phase-selector">
               <span style="font-family:monospace;font-size:10px;color:var(--sub)">Phase :</span>
@@ -5278,12 +5299,24 @@ async function exportPDF() {
   const sparklineImg = _drawSparklinePNG(sparklineData);
 
   // Helper: page header
+  const ML = M + 4; // left margin after the 4mm strip
   function _hdr(doc, title) {
+    // Dark header band
+    doc.setFillColor(...C.bg2); doc.rect(4, 0, W-4, 17, 'F');
+    // VisionScore logo in header
+    doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.setTextColor(...C.lime); doc.text('Vision', ML, 11);
+    const _hw = doc.getTextWidth('Vision');
+    doc.setTextColor(...C.white); doc.text('Score', ML+_hw, 11);
+    // Separator dot
+    doc.setTextColor(...C.sub); doc.setFontSize(7);
+    doc.text('  ·  '+pseudo.toUpperCase()+'  ·  '+currentRole, ML+_hw+doc.getTextWidth('Score'), 11);
+    // Title right-aligned
     doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-    doc.setTextColor(...C.sub);
-    doc.text('VISIONSCORE  ·  '+pseudo.toUpperCase()+'  ·  '+title, M, 12);
-    doc.setDrawColor(...C.bg4); doc.setLineWidth(0.25);
-    doc.line(M, 14, W-M, 14);
+    doc.setTextColor(...C.plat); doc.text(title, W-M, 11, {align:'right'});
+    // Lime accent rule
+    doc.setDrawColor(...C.lime); doc.setLineWidth(0.4);
+    doc.line(4, 17, W, 17);
   }
 
   // ══════════════════════════════════════════════════════════
@@ -5303,7 +5336,6 @@ async function exportPDF() {
   doc.setFillColor(12,20,18); doc.rect(110, 2.5, W-110, 50, 'F');
 
   // ── LOGO VisionScore
-  const LS = 8; // left start (after strip)
   doc.setFont('helvetica','bold'); doc.setFontSize(22);
   doc.setTextColor(...C.lime); doc.text('Vision', M+4, 22);
   const _vw = doc.getTextWidth('Vision');
@@ -6224,13 +6256,13 @@ crmLoad();
     document.body.classList.remove('landing-active');
     setTimeout(() => setAppMode(savedMode), 50);
   } else {
-    // New visitor — show landing page
-    document.body.classList.add('landing-active');
-    document.body.classList.remove('welcome-active');
+    // New visitor — show agent/coach choice directly
+    document.body.classList.remove('landing-active');
+    document.body.classList.add('welcome-active');
     const landing = document.getElementById('panel-landing');
-    if (landing) { landing.classList.add('active'); landing.style.display = 'block'; }
+    if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
     const welcome = document.getElementById('panel-welcome');
-    if (welcome) { welcome.classList.remove('active'); welcome.style.display = 'none'; }
+    if (welcome) { welcome.classList.add('active'); }
     const scout = document.getElementById('panel-scout');
     if (scout) scout.classList.remove('active');
     document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
@@ -8069,6 +8101,7 @@ async function drawMapBase() {
     'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
     'https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
     'https://cdn.communitydragon.org/latest/map/sr/minimap',
+    'https://ddragon.leagueoflegends.com/cdn/img/map/map11.png',
     './map.png',
   ];
 
@@ -8097,8 +8130,8 @@ async function drawMapBase() {
     drawSummonersRift(ctx, size);
   }
 
-  // Dark overlay to enhance data point visibility
-  ctx.fillStyle = 'rgba(0,0,0,0.20)';
+  // Subtle overlay to enhance data point visibility without dulling the map
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
   ctx.fillRect(0, 0, size, size);
 
   mapBaseDrawn = true;
