@@ -504,11 +504,61 @@ button, .btn, select,
 .hero-name { font-size:13px; font-family:monospace; color:var(--sub2); margin-bottom:8px; }
 .hero-score { font-size:72px; font-weight:800; line-height:1; letter-spacing:-.04em; }
 .hero-verdict { font-size:14px; color:var(--sub2); margin-top:10px; }
-.dim-pills { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:16px; }
-.dim-pill { padding:8px 16px; border-radius:var(--r-sm); border:1px solid var(--border); text-align:center; }
-.dim-pill-label { font-family:monospace; font-size:10px; color:var(--sub); }
-.dim-pill-val { font-size:16px; font-weight:700; margin-top:2px; }
-.dim-pill-pct { font-family:monospace; font-size:10px; color:var(--sub); margin-top:1px; }
+.dim-pills { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:16px; }
+@media(max-width:640px){ .dim-pills { grid-template-columns:repeat(3,1fr); } }
+.dim-pill {
+  padding:12px 10px 10px; border-radius:var(--r); border:1.5px solid var(--border);
+  text-align:center; background:var(--surf2);
+  transition:border-color .2s, transform .15s;
+  position:relative; overflow:hidden;
+}
+.dim-pill::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
+  background:var(--dp-color, var(--lime)); opacity:.7; border-radius:0 0 var(--r) var(--r);
+}
+.dim-pill-label { font-family:monospace; font-size:9px; color:var(--sub); text-transform:uppercase; letter-spacing:.06em; }
+.dim-pill-abbr  { font-family:'aquavit','Helvetica Neue',sans-serif; font-size:10px; font-weight:700; color:var(--sub2); letter-spacing:.08em; margin-bottom:4px; }
+.dim-pill-val   { font-size:22px; font-weight:800; margin:4px 0 2px; line-height:1; }
+.dim-pill-bar   { height:3px; background:var(--surf3); border-radius:2px; margin:5px 0 3px; overflow:hidden; }
+.dim-pill-bar-fill { height:100%; border-radius:2px; transition:width .4s; }
+.dim-pill-pct   { font-family:monospace; font-size:9px; color:var(--sub); }
+
+/* Synthèse recruteur */
+.scout-decision {
+  display:flex; align-items:center; gap:14px; padding:16px 18px;
+  border-radius:var(--r-lg); margin-bottom:14px; border:1.5px solid var(--border);
+}
+.scout-decision-badge {
+  font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:.95rem; font-weight:800; letter-spacing:.06em;
+  padding:6px 14px; border-radius:6px; white-space:nowrap; flex-shrink:0;
+  text-transform:uppercase;
+}
+.scout-decision-text { font-size:.82rem; color:var(--sub2); line-height:1.6; }
+.scout-decision.dec-s   { background:rgba(245,166,35,.08); border-color:rgba(245,166,35,.3); }
+.scout-decision.dec-ap  { background:rgba(0,194,122,.08);  border-color:rgba(0,194,122,.3); }
+.scout-decision.dec-a   { background:rgba(28,196,122,.07); border-color:rgba(28,196,122,.3); }
+.scout-decision.dec-bp  { background:rgba(74,158,232,.07); border-color:rgba(74,158,232,.3); }
+.scout-decision.dec-b   { background:rgba(212,113,74,.07); border-color:rgba(212,113,74,.3); }
+.scout-decision.dec-c   { background:var(--surf2); border-color:var(--border2); }
+.dec-badge-s  { background:rgba(245,166,35,.15); color:#F5A623; }
+.dec-badge-ap { background:rgba(0,194,122,.15);  color:#00C27A; }
+.dec-badge-a  { background:rgba(28,196,122,.15); color:#1CC47A; }
+.dec-badge-bp { background:rgba(74,158,232,.15); color:#4A9EFF; }
+.dec-badge-b  { background:rgba(212,113,74,.15); color:#D4714A; }
+.dec-badge-c  { background:var(--surf3);         color:var(--sub2); }
+
+/* Stat top/low badges in verdict */
+.vtag-top { background:rgba(28,196,122,.12); color:var(--lime); border:1px solid rgba(28,196,122,.25); border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; }
+.vtag-low { background:rgba(232,25,75,.08);  color:var(--red);  border:1px solid rgba(232,25,75,.2);  border-radius:4px; padding:2px 7px; font-size:11px; font-weight:600; }
+
+/* Top50 tier badge inline */
+.t50-tier {
+  display:inline-block; font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:.65rem; font-weight:700; letter-spacing:.06em;
+  padding:1px 6px; border-radius:3px; border:1px solid; margin-left:5px;
+  vertical-align:middle; text-transform:uppercase;
+}
 
 
 /* ── GRAPHS MODULE ── */
@@ -3135,11 +3185,13 @@ function calcScorePotentiel(scorePerf, age, rankIdx) {
 }
 
 function scColor(s) {
-  if (s === null) return 'var(--sub)';
-  if (s >= 8) return 'var(--lime)';
-  if (s >= 6.5) return 'var(--teal)';
-  if (s >= 5) return 'var(--amber)';
-  return 'var(--red)';
+  if (s === null || s === undefined) return 'var(--sub)';
+  if (s >= 9.0) return '#F5A623';  // or gold — S tier
+  if (s >= 8.0) return '#00C27A';  // emerald vif — A+
+  if (s >= 7.0) return '#1CC47A';  // lime — A
+  if (s >= 5.5) return '#4A9EFF';  // bleu — B+
+  if (s >= 4.0) return '#D4714A';  // amber — B
+  return 'var(--red)';             // rouge — C
 }
 
 function pctLabel(val, thr) {
@@ -3550,50 +3602,91 @@ function buildResults() {
     rv.style.color = scColor(g);
   }
 
-  // Pills
+  // Pills → Score cards par dimension
   const pills = document.getElementById('res-pills');
-  if (pills) pills.innerHTML = dims.map(d => `
-    <div class="dim-pill">
-      <div class="dim-pill-label">${d.label}</div>
-      <div class="dim-pill-val" style="color:${d.color}">${d.val !== null ? d.val.toFixed(2) : '—'}</div>
-      <div class="dim-pill-pct">${Math.round(d.w*100)}%</div>
-    </div>`).join('');
+  const DIM_ABBRS = { d1:'STATS', d2:'MACRO', d3:'IMPACT', d4:'PROGR.', d5:'MENTAL' };
+  if (pills) pills.innerHTML = dims.map(d => {
+    const barW = d.val !== null ? (d.val / 10 * 100).toFixed(1) : 0;
+    const scoreDisp = d.val !== null ? d.val.toFixed(1) : '—';
+    const tier = d.val === null ? '' : d.val >= 8.5 ? 'S' : d.val >= 7 ? 'A' : d.val >= 5.5 ? 'B' : 'C';
+    return `<div class="dim-pill" style="--dp-color:${d.color}">
+      <div class="dim-pill-abbr">${DIM_ABBRS[d.id] || d.id.toUpperCase()}</div>
+      <div class="dim-pill-val" style="color:${d.color}">${scoreDisp}</div>
+      <div class="dim-pill-bar"><div class="dim-pill-bar-fill" style="width:${barW}%;background:${d.color}"></div></div>
+      <div class="dim-pill-pct">${d.val !== null ? tier + ' · ' : ''}${Math.round(d.w*100)}% poids</div>
+    </div>`;
+  }).join('');
 
-  // Detail bars
+  // Bars de détail améliorées
   const det = document.getElementById('res-detail');
-  if (det) det.innerHTML = dims.map(d => `
-    <div style="margin-bottom:10px">
+  const DIM_LABELS_FULL = {
+    d1:'Stats pures', d2:'Objectifs & macro', d3:'Impact carte', d4:'Progression', d5:'Entretien coach'
+  };
+  if (det) det.innerHTML = dims.map(d => {
+    const barW = d.val !== null ? (d.val / 10 * 100).toFixed(1) : 0;
+    const rankLabel = d.val !== null
+      ? (d.val >= 8.5 ? 'Élite' : d.val >= 7 ? 'Très bon' : d.val >= 5.5 ? 'Dans la norme' : d.val >= 4 ? 'En dessous' : 'Faible')
+      : 'Non renseigné';
+    return `<div style="margin-bottom:13px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-        <span style="font-size:12px;color:${d.color};font-weight:600">${d.label}</span>
-        <span style="font-family:monospace;font-size:12px;color:${scColor(d.val)}">${d.val !== null ? d.val.toFixed(2) : '—'}</span>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${d.color};flex-shrink:0"></span>
+          <span style="font-size:12px;font-weight:700;color:var(--text)">${DIM_LABELS_FULL[d.id]}</span>
+          <span style="font-family:monospace;font-size:9px;color:var(--sub);letter-spacing:.06em">${Math.round(d.w*100)}%</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:10px;color:var(--sub2)">${rankLabel}</span>
+          <span style="font-family:monospace;font-size:13px;font-weight:700;color:${d.val !== null ? d.color : 'var(--sub)'}">${d.val !== null ? d.val.toFixed(1) : '—'}</span>
+        </div>
       </div>
-      <div class="pct-track"><div class="pct-fill" style="width:${d.val !== null ? d.val*10 : 0}%;background:${d.color}"></div></div>
-    </div>`).join('');
+      <div class="pct-track"><div class="pct-fill" style="width:${barW}%;background:${d.color}"></div></div>
+    </div>`;
+  }).join('');
 
-  // Reco
+  // Synthèse recruteur + reco
   const reco = document.getElementById('res-reco');
   if (reco) {
     if (!g) { reco.textContent = 'Complétez la fiche joueur pour générer la recommandation.'; return; }
+
+    // Décision recruteur
+    const decisions = [
+      { min:9.0, cls:'dec-s',  badge:'dec-badge-s',  lbl:'Recruter maintenant',    txt:`Talent d'exception au rang ${rank}. Intégration immédiate recommandée.` },
+      { min:8.0, cls:'dec-ap', badge:'dec-badge-ap', lbl:'Tryout prioritaire',      txt:`Profil très solide, surperforme son rang. Proposer un essai sans délai.` },
+      { min:7.0, cls:'dec-a',  badge:'dec-badge-a',  lbl:'Tryout recommandé',       txt:`Bon profil — présente des qualités au-dessus de la norme. Suivi coaching ciblé conseillé.` },
+      { min:6.0, cls:'dec-bp', badge:'dec-badge-bp', lbl:'À suivre 30 jours',       txt:`Potentiel identifié mais irrégulier. Re-évaluer après montée de rang ou coaching.` },
+      { min:5.0, cls:'dec-b',  badge:'dec-badge-b',  lbl:'Pas encore prêt',         txt:`Profil en construction. Axes prioritaires à travailler avant envisager un tryout.` },
+      { min:0,   cls:'dec-c',  badge:'dec-badge-c',  lbl:'Niveau insuffisant',      txt:`Trop tôt pour le semi-pro. Retour dans 1-2 saisons avec progression visible.` },
+    ];
+    const dec = decisions.find(d => g >= d.min);
+
+    // Points forts / faibles
     const all = [
       ...(f.d1||[]), ...(f.d2||[]), ...(f.d3||[]), ...(f.d4||[]), ...(f.d5||[])
     ].map(field => {
       const sc = computeFieldScore(field);
-      return sc !== null ? { label:field.lbl || field.label, sc } : null;
-    }).filter(Boolean).sort((a,b) => b.sc-a.sc);
-    const top = all.slice(0,2), bot = all.slice(-2);
+      return sc !== null ? { label: field.lbl || field.label, sc } : null;
+    }).filter(Boolean).sort((a,b) => b.sc - a.sc);
+
+    const top3 = all.filter(x => x.sc >= 7).slice(0, 3);
+    const bot3 = all.filter(x => x.sc < 5).slice(-3).reverse();
+
     reco.innerHTML = `
-      <div style="margin-bottom:12px">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--lime);margin-bottom:6px;text-transform:uppercase">POINTS FORTS</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${top.map(x => `<span class="vtag vtag-g">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
-        </div>
+      <div class="scout-decision ${dec.cls}">
+        <span class="scout-decision-badge ${dec.badge}">${dec.lbl}</span>
+        <span class="scout-decision-text">${dec.txt}</span>
       </div>
-      <div style="margin-bottom:12px">
-        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:6px;text-transform:uppercase">AXES À TRAVAILLER</div>
+      ${top3.length ? `<div style="margin-bottom:12px">
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--lime);margin-bottom:7px;text-transform:uppercase">Points forts identifiés</div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          ${bot.map(x => `<span class="vtag vtag-r">${x.label} <strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
+          ${top3.map(x => `<span class="vtag-top">${x.label}&nbsp;<strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
         </div>
-      </div>`;
+      </div>` : ''}
+      ${bot3.length ? `<div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--amber);margin-bottom:7px;text-transform:uppercase">Axes prioritaires à améliorer</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${bot3.map(x => `<span class="vtag-low">${x.label}&nbsp;<strong>${x.sc.toFixed(1)}</strong></span>`).join('')}
+        </div>
+      </div>` : ''}`;
   }
 
   updateRadar();
@@ -8959,6 +9052,13 @@ function top50RenderTable() {
         '</div>'
       : '<span style="font-size:.7rem;color:var(--amber)">' + (p.ageStatus||'—') + '</span>';
 
+    const sf = parseFloat(scoreFinal);
+    const tierInfo = sf >= 9 ? {lbl:'S',  col:'#F5A623', bg:'rgba(245,166,35,.12)'}
+                   : sf >= 8 ? {lbl:'A+', col:'#00C27A', bg:'rgba(0,194,122,.10)'}
+                   : sf >= 7 ? {lbl:'A',  col:'#1CC47A', bg:'rgba(28,196,122,.10)'}
+                   : sf >= 6 ? {lbl:'B+', col:'#4A9EFF', bg:'rgba(74,158,232,.10)'}
+                   : sf >= 5 ? {lbl:'B',  col:'#D4714A', bg:'rgba(212,113,74,.10)'}
+                   :           {lbl:'C',  col:'var(--sub2)', bg:'var(--surf3)'};
     const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(28,196,122,.04),transparent);' : '';
     return `<tr style="border-bottom:.5px solid var(--border);${pepiteBg}" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
       <td style="padding:.5rem .75rem;color:var(--sub);font-family:monospace;font-size:.8rem">${i+1}</td>
@@ -8974,7 +9074,10 @@ function top50RenderTable() {
       </td>
       <td style="padding:.5rem .75rem;font-size:.82rem">${p.role||'?'}</td>
       <td style="padding:.5rem .75rem;text-align:center">
-        <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${scCol}">${scoreFinal}</span>
+        <div style="display:flex;align-items:center;justify-content:center;gap:5px">
+          <span style="font-family:monospace;font-weight:700;font-size:.95rem;color:${scCol}">${scoreFinal}</span>
+          <span class="t50-tier" style="color:${tierInfo.col};border-color:${tierInfo.col};background:${tierInfo.bg}">${tierInfo.lbl}</span>
+        </div>
         ${p.age ? `<div style="font-size:.65rem;color:var(--lime)">×${ageMult.toFixed(2)} (${p.age}ans)</div>` : ''}
       </td>
       <td style="padding:.5rem .75rem;text-align:center;font-family:monospace;color:${wrCol}">${p.wr}%</td>
