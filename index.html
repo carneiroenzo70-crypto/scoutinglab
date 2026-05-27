@@ -487,6 +487,20 @@ button, .btn, select,
 
 /* ── RESULTS ── */
 .global-hero { text-align:center; padding:32px 20px 24px; }
+.spes-tier {
+  display:inline-flex; align-items:center; justify-content:center;
+  font-family:'aquavit','Helvetica Neue',sans-serif;
+  font-size:1.05rem; font-weight:800; letter-spacing:.08em;
+  padding:3px 14px 4px; border-radius:6px;
+  border:2px solid; margin-bottom:10px;
+  text-transform:uppercase; transition:all .25s;
+}
+.spes-tier.tier-s  { color:#F5A623; border-color:#F5A623; background:rgba(245,166,35,.12); box-shadow:0 0 18px rgba(245,166,35,.25); }
+.spes-tier.tier-ap { color:#00C27A; border-color:#00C27A; background:rgba(0,194,122,.10); box-shadow:0 0 14px rgba(0,194,122,.20); }
+.spes-tier.tier-a  { color:#1CC47A; border-color:#1CC47A; background:rgba(28,196,122,.10); }
+.spes-tier.tier-bp { color:#4A9EFF; border-color:#4A9EFF; background:rgba(74,158,255,.10); }
+.spes-tier.tier-b  { color:#D4714A; border-color:#D4714A; background:rgba(212,113,74,.10); }
+.spes-tier.tier-c  { color:var(--sub2); border-color:var(--border2); background:var(--surf2); }
 .hero-name { font-size:13px; font-family:monospace; color:var(--sub2); margin-bottom:8px; }
 .hero-score { font-size:72px; font-weight:800; line-height:1; letter-spacing:-.04em; }
 .hero-verdict { font-size:14px; color:var(--sub2); margin-top:10px; }
@@ -1859,6 +1873,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
+          <!-- Badge tier SPES -->
+          <div id="spes-tier-badge" style="display:none;margin-bottom:8px">
+            <span class="spes-tier" id="spes-tier-label">—</span>
+          </div>
           <!-- Verdict phrase en gros — score en support -->
           <div id="res-verdict-phrase" style="font-size:1.3rem;font-weight:900;color:var(--text);margin-bottom:6px;line-height:1.3">Importez un joueur pour commencer</div>
           <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px">
@@ -2467,6 +2485,29 @@ const SEUILS_ABSOLUS = {
     ADC: [42, 58, 70, 82],
   },
   chal_max_lvl_lead:      { all: [0.0, 0.3,  0.7,  1.3 ] },
+
+  // ── Dégâts par minute (DPM) — par rôle ─────────────────────
+  dpm: {
+    Top: [180, 320, 480, 680],
+    Jgl: [150, 260, 380, 560],
+    Mid: [280, 480, 680, 920],
+    ADC: [380, 620, 840, 1080],
+    Sup: [ 60, 130, 220,  360],
+  },
+
+  // ── Wards killed/game — vision denial ──────────────────────
+  chal_wards_killed: {
+    Top: [0.2, 0.6, 1.2, 2.0],
+    Jgl: [0.3, 0.8, 1.5, 2.5],
+    Mid: [0.2, 0.6, 1.2, 2.0],
+    ADC: [0.2, 0.5, 1.0, 1.8],
+    Sup: [0.5, 1.2, 2.2, 3.5],
+  },
+
+  // ── Camps jungle avant 10 min — clear précoce ──────────────
+  chal_jgl_cs10: {
+    Jgl: [22, 35, 48, 62],
+  },
 };
 
 // ── Score par seuils absolus ──────────────────────────────────
@@ -2620,6 +2661,12 @@ function scoreStatCalibrated(id, val) {
     }
     case 'chal_max_lvl_lead':
       return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_max_lvl_lead.all);
+    case 'dpm':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.dpm[role] || SEUILS_ABSOLUS.dpm.Mid));
+    case 'chal_wards_killed':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.chal_wards_killed[role] || SEUILS_ABSOLUS.chal_wards_killed.Mid));
+    case 'chal_jgl_cs10':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_jgl_cs10.Jgl);
 
     default:
       return null;
@@ -2642,21 +2689,21 @@ const D1_FIELDS = {
     { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
-    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
     { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
   ],
   Jgl: [
     { id:'cs_min',               lbl:'Camps+CS/min',         badge:'api', type:'auto' },
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'chal_jungle_inv',      lbl:'Invasion jungle/g',    badge:'api', type:'auto' },
+    { id:'chal_jgl_cs10',        lbl:'Camps <10 min/g',      badge:'api', type:'auto' },
     { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
-    { id:'winrate',              lbl:'Win Rate',             badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
-    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
     { id:'chal_solo_kills',      lbl:'Solo kills/g',         badge:'api', type:'auto' },
   ],
   ADC: [
@@ -2664,14 +2711,14 @@ const D1_FIELDS = {
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
     { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
-    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
+    { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'vision',               lbl:'Vision Score/g',       badge:'api', type:'auto' },
     { id:'chal_control_wards',   lbl:'Control Wards/g',      badge:'api', type:'auto' },
     { id:'chal_save_ally',       lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
-    { id:'winrate',              lbl:'Win Rate',             badge:'api', type:'auto' },
+    { id:'chal_wards_killed',    lbl:'Wards détruits/g',     badge:'api', type:'auto' },
   ],
 };
 
@@ -2734,7 +2781,7 @@ const D3_FIELDS = {
     { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
     { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
     { id:'chal_control_wards',    lbl:'Control Wards/g',      badge:'api', type:'auto' },
-    { id:'chal_max_lvl_lead',     lbl:'Avance niveau/g',      badge:'api', type:'auto' },
+    { id:'chal_wards_killed',     lbl:'Wards détruits/g',     badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
@@ -2755,7 +2802,7 @@ const D3_FIELDS = {
     { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
     { id:'chal_save_ally',        lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
     { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
-    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api', type:'auto' },
+    { id:'chal_wards_killed',     lbl:'Wards détruits/g',     badge:'api', type:'auto' },
   ],
 };
 
@@ -2814,11 +2861,13 @@ const DIM_COLORS = { d1:'#4A9EFF', d2:'#F5A623', d3:'#2DD4BF', d4:'#C084FC', d5:
 const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'ENTRETIEN' };
 
 const ROLE_WEIGHTS = {
-  Top: { d1:.25, d2:.20, d3:.20, d4:.20, d5:.15 },
-  Jgl: { d1:.20, d2:.30, d3:.20, d4:.15, d5:.15 },
-  Mid: { d1:.25, d2:.15, d3:.25, d4:.20, d5:.15 },
-  ADC: { d1:.35, d2:.15, d3:.15, d4:.20, d5:.15 },
-  Sup: { d1:.15, d2:.15, d3:.35, d4:.20, d5:.15 },
+  // D5 réduit à 10% : entretien optionnel, exclu si non renseigné (null)
+  // Poids redistribués vers les dimensions les plus prédictives par rôle
+  Top: { d1:.25, d2:.20, d3:.20, d4:.25, d5:.10 }, // ↑ progression (rang/âge), ↓ D5
+  Jgl: { d1:.18, d2:.32, d3:.22, d4:.18, d5:.10 }, // ↑ objectifs/macro (cœur du rôle), ↑ impact carte
+  Mid: { d1:.22, d2:.18, d3:.28, d4:.22, d5:.10 }, // ↑ impact carte (roam/kills), ↑ progression
+  ADC: { d1:.32, d2:.18, d3:.18, d4:.22, d5:.10 }, // D1 fort (DPM+CS), ↑ macro pour late game
+  Sup: { d1:.12, d2:.18, d3:.38, d4:.22, d5:.10 }, // ↑ impact carte/vision (mission du sup)
 };
 
 // Helper: get all fields for current role
@@ -3237,6 +3286,26 @@ function updateGlobal() {
   }
   if (potCard) {
     potCard.style.display = pot != null ? 'block' : 'none';
+  }
+
+  // Badge tier SPES
+  const tierBadgeWrap  = document.getElementById('spes-tier-badge');
+  const tierBadgeLabel = document.getElementById('spes-tier-label');
+  if (tierBadgeWrap && tierBadgeLabel && g !== null) {
+    const TIERS = [
+      { min:9.0, cls:'tier-s',  lbl:'S — Élite'   },
+      { min:8.0, cls:'tier-ap', lbl:'A+ — Excellent' },
+      { min:7.0, cls:'tier-a',  lbl:'A — Très bon' },
+      { min:6.0, cls:'tier-bp', lbl:'B+ — Bon'     },
+      { min:5.0, cls:'tier-b',  lbl:'B — Correct'  },
+      { min:0,   cls:'tier-c',  lbl:'C — À développer' },
+    ];
+    const tier = TIERS.find(t => g >= t.min);
+    tierBadgeLabel.className = 'spes-tier ' + tier.cls;
+    tierBadgeLabel.textContent = tier.lbl;
+    tierBadgeWrap.style.display = 'block';
+  } else if (tierBadgeWrap && g === null) {
+    tierBadgeWrap.style.display = 'none';
   }
 
   // Badge pépite — si potentiel dépasse le score de performance de +1.5
@@ -6489,6 +6558,7 @@ async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
 
 function calculateStats(matches, puuid) {
   let wins=0, kills=0, deaths=0, assists=0, cs=0, gameDur=0, vision=0, killPart=0, dmgShare=0, dmgTower=0, objScore=0;
+  let totalDpm=0;
   let gameCount = 0;
   const champMap = {};
   const sessionDays = new Set();
@@ -6499,7 +6569,8 @@ function calculateStats(matches, puuid) {
     controlWardsPlaced:0, enemyJungleKills:0, firstBlood:0, survivedSingleDigitHp:0,
     soloTurretsLate:0, perfectGame:0, takedownsFirst14min:0, epicMonsterSteals:0,
     saveAllyFromDeath:0, immobilizeAndKill:0, teamDmgPct:0, damageTakenOnTeamPct:0,
-    kda:0, laneMinionsFirst10:0, maxLevelLead:0
+    kda:0, laneMinionsFirst10:0, maxLevelLead:0,
+    wardsKilled:0, jungleCsBefore10:0
   };
 
   matches.forEach(m => {
@@ -6553,6 +6624,9 @@ function calculateStats(matches, puuid) {
     chal.kda                  += ch.kda                   || 0;
     chal.laneMinionsFirst10   += ch.laneMinionsFirst10Minutes || 0;
     chal.maxLevelLead         += ch.maxLevelLeadLaneOpponent || 0;
+    chal.wardsKilled          += p.wardsKilled             || 0;
+    chal.jungleCsBefore10     += ch.jungleCsBefore10Minutes || 0;
+    totalDpm                  += dur > 0 ? p.totalDamageDealtToChampions / dur : 0;
   });
 
   if (!gameCount) return {};
@@ -6596,6 +6670,9 @@ function calculateStats(matches, puuid) {
     teamDmgPct:         parseFloat((chal.teamDmgPct/gc*100).toFixed(1)),
     laneMinions10:      parseFloat((chal.laneMinionsFirst10/gc).toFixed(1)),
     maxLevelLead:       parseFloat((chal.maxLevelLead/gc).toFixed(2)),
+    wardsKilled:        parseFloat((chal.wardsKilled/gc).toFixed(2)),
+    jungleCsBefore10:   parseFloat((chal.jungleCsBefore10/gc).toFixed(1)),
+    dpm:                parseFloat((totalDpm/gc).toFixed(0)),
   };
 
   return {
@@ -6732,6 +6809,9 @@ async function fetchRiotData() {
       rawData.chal_stealth_wards     = ch.stealthWards        ?? 0;
       rawData.chal_cs10              = ch.laneMinions10       ?? 0;
       rawData.chal_max_lvl_lead      = ch.maxLevelLead        ?? 0;
+      rawData.chal_wards_killed      = ch.wardsKilled         ?? 0;
+      rawData.chal_jgl_cs10          = ch.jungleCsBefore10    ?? 0;
+      rawData.dpm                    = ch.dpm                 ?? 0;
       buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
     matchHistory = matches;
