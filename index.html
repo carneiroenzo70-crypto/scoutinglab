@@ -2767,109 +2767,101 @@ const C = { s1:'#4A9EFF', p:'#2DD4BF', e:'#F5A623', s2:'#C084FC' };
 
 const SEUILS_ABSOLUS = {
   cs_min: {
-    Top: [4.5, 6.5, 7.8, 9.0],
-    Jgl: [3.5, 5.0, 6.2, 7.5],
-    Mid: [5.5, 7.5, 8.8, 10.0],
-    ADC: [6.0, 8.0, 9.5, 11.0],
-    Sup: null, // Pas de CS pour Support
+    Top: [5.0,  7.5,  8.8,  10.2],
+    Jgl: [4.0,  5.8,  7.0,   8.5],
+    Mid: [6.5,  8.5,  9.8,  11.2],
+    ADC: [7.0,  9.0, 10.5,  12.0],
+    Sup: null,
   },
   kda: {
-    Top: [1.2, 2.0, 3.0, 4.5],
-    Jgl: [1.5, 2.5, 3.5, 5.5],
-    Mid: [1.5, 2.5, 3.5, 5.5],
-    ADC: [2.0, 3.0, 4.2, 6.5],
-    Sup: [2.0, 3.2, 4.5, 7.0],
+    Top: [1.5, 2.8, 4.0, 5.5],
+    Jgl: [2.0, 3.5, 5.0, 7.0],
+    Mid: [2.0, 3.2, 4.8, 6.5],
+    ADC: [2.5, 4.0, 5.5, 8.0],
+    Sup: [2.5, 4.5, 6.5, 9.0],
   },
   winrate: {
-    // Même seuils tous rôles — WR est universelle
-    all: [46, 50, 54, 58],
+    all: [48, 52, 57, 63],
   },
   vision: {
-    Top: [12, 20, 30, 42],
-    Jgl: [20, 32, 45, 60],
-    Mid: [14, 22, 32, 44],
-    ADC: [10, 16, 24, 33],
-    Sup: [35, 55, 72, 92],
+    Top: [15, 28,  40,  54],
+    Jgl: [25, 40,  56,  74],
+    Mid: [18, 28,  40,  56],
+    ADC: [12, 20,  30,  42],
+    Sup: [48, 72,  95, 120],
   },
   kill_part: {
-    Top: [38, 52, 65, 78],
-    Jgl: [48, 62, 74, 86],
-    Mid: [44, 58, 70, 82],
-    ADC: [38, 52, 65, 78],
-    Sup: [55, 68, 80, 92],
+    Top: [45, 58, 70, 82],
+    Jgl: [55, 68, 78, 88],
+    Mid: [50, 62, 74, 86],
+    ADC: [45, 58, 70, 82],
+    Sup: [60, 73, 84, 94],
   },
   dmg_share: {
-    Top: [14, 20, 27, 34],
-    Jgl: [14, 19, 26, 32],
-    Mid: [18, 25, 32, 40],
-    ADC: [20, 28, 36, 44],
-    Sup: [4,  8,  12, 17],
+    Top: [18, 26, 33, 40],
+    Jgl: [16, 22, 29, 36],
+    Mid: [22, 30, 38, 46],
+    ADC: [26, 34, 42, 50],
+    Sup: [ 5,  9, 13, 18],
   },
   dmg_tower: {
-    Top: [1200, 2500, 4000, 6000],
-    Jgl: [800,  1500, 2500, 4000],
-    Mid: [1000, 2000, 3500, 5500],
-    ADC: [1500, 2800, 4200, 6500],
-    Sup: [500,  1000, 2000, 3500],
+    Top: [1500, 3000, 4800, 7000],
+    Jgl: [1000, 2000, 3200, 5000],
+    Mid: [1200, 2500, 4000, 6500],
+    ADC: [2000, 3500, 5500, 8000],
+    Sup: [ 600, 1200, 2200, 3800],
   },
   obj_score: {
-    Top: [0.5, 1.5, 3.0, 5.0],
-    Jgl: [1.5, 3.0, 5.0, 7.5],
-    Mid: [0.8, 2.0, 3.5, 5.5],
-    ADC: [0.8, 2.0, 3.5, 5.5],
-    Sup: [1.0, 2.5, 4.0, 6.0],
+    Top: [0.8, 2.0, 3.8, 6.0],
+    Jgl: [2.0, 4.0, 6.5, 9.5],
+    Mid: [1.0, 2.5, 4.5, 7.0],
+    ADC: [1.0, 2.5, 4.5, 7.0],
+    Sup: [1.2, 3.0, 5.0, 7.5],
   },
-  // ── Challenges API (valeurs moyennes par partie) ─────────────
-  chal_turret_plates:     { all: [0.3, 0.8, 1.5, 2.4] },
-  chal_turret_takedowns:  { all: [0.3, 0.8, 1.4, 2.2] },
-  chal_solo_turrets:      { all: [0.0, 0.05, 0.13, 0.28] },
-  chal_first_blood:       { all: [10,  18,   27,   38  ] },
-  chal_jungle_inv:        { all: [0.1, 0.4,  0.9,  1.6 ] },
-  chal_solo_kills:        { all: [0.1, 0.3,  0.7,  1.2 ] },
+  chal_turret_plates:     { all: [0.5, 1.0,  1.8,  3.0 ] },
+  chal_turret_takedowns:  { all: [0.4, 1.0,  1.8,  3.0 ] },
+  chal_solo_turrets:      { all: [0.0, 0.08, 0.18, 0.35] },
+  chal_first_blood:       { all: [12,  22,   34,   48  ] },
+  chal_jungle_inv:        { all: [0.2, 0.6,  1.2,  2.0 ] },
+  chal_solo_kills:        { all: [0.15,0.45, 0.90, 1.5 ] },
   chal_takedowns_14: {
-    Top: [0.4, 1.0, 2.0, 3.2],
-    Jgl: [0.6, 1.5, 2.8, 4.2],
-    Mid: [0.5, 1.2, 2.2, 3.5],
-    ADC: [0.4, 1.0, 2.0, 3.2],
-    Sup: [0.5, 1.6, 3.0, 5.0],
+    Top: [0.6, 1.4, 2.8, 4.5],
+    Jgl: [0.8, 2.0, 3.5, 5.5],
+    Mid: [0.7, 1.6, 3.0, 4.8],
+    ADC: [0.5, 1.2, 2.5, 4.0],
+    Sup: [0.8, 2.0, 4.0, 6.5],
   },
-  chal_epic_steals:       { all: [0.0, 0.03, 0.08, 0.18] },
-  chal_save_ally:         { Sup: [0.0, 0.10, 0.25, 0.48], all: [0.0, 0.04, 0.12, 0.25] },
-  chal_skillshots_dodged: { all: [3,   6,    11,   17  ] },
-  chal_control_wards:     { Sup: [0.8, 1.5,  2.2,  3.2 ], all: [0.4, 0.9,  1.5, 2.2] },
+  chal_epic_steals:       { all: [0.0, 0.04, 0.10, 0.22] },
+  chal_save_ally:         { Sup: [0.0, 0.15, 0.35, 0.60], all: [0.0, 0.06, 0.16, 0.32] },
+  chal_skillshots_dodged: { all: [4,   8,    14,   22  ] },
+  chal_control_wards:     { Sup: [1.2, 2.0, 3.0, 4.5], all: [0.5, 1.0, 1.8, 2.8] },
   chal_stealth_wards: {
-    Sup: [5,  9,  13, 18],
-    Jgl: [4,  7,  11, 15],
-    all: [2,  5,   8, 12],
+    Sup: [ 7, 12, 17, 24],
+    Jgl: [ 5,  9, 14, 20],
+    all: [ 3,  6, 10, 15],
   },
   chal_cs10: {
-    Top: [32, 48, 60, 73],
-    Mid: [38, 54, 66, 78],
-    ADC: [42, 58, 70, 82],
+    Top: [38, 52, 65, 80],
+    Mid: [44, 58, 72, 86],
+    ADC: [52, 66, 80, 95],
   },
-  chal_max_lvl_lead:      { all: [0.0, 0.3,  0.7,  1.3 ] },
-
-  // ── Dégâts par minute (DPM) — par rôle ─────────────────────
+  chal_max_lvl_lead:      { all: [0.0, 0.4,  0.9,  1.6 ] },
   dpm: {
-    Top: [180, 320, 480, 680],
-    Jgl: [150, 260, 380, 560],
-    Mid: [280, 480, 680, 920],
-    ADC: [380, 620, 840, 1080],
-    Sup: [ 60, 130, 220,  360],
+    Top: [ 250,  420,  620,  860],
+    Jgl: [ 200,  340,  500,  700],
+    Mid: [ 380,  620,  880, 1150],
+    ADC: [ 480,  760, 1050, 1380],
+    Sup: [  80,  160,  280,  440],
   },
-
-  // ── Wards killed/game — vision denial ──────────────────────
   chal_wards_killed: {
-    Top: [0.2, 0.6, 1.2, 2.0],
-    Jgl: [0.3, 0.8, 1.5, 2.5],
-    Mid: [0.2, 0.6, 1.2, 2.0],
-    ADC: [0.2, 0.5, 1.0, 1.8],
-    Sup: [0.5, 1.2, 2.2, 3.5],
+    Top: [0.3, 0.8, 1.6, 2.8],
+    Jgl: [0.4, 1.0, 2.0, 3.2],
+    Mid: [0.3, 0.8, 1.6, 2.8],
+    ADC: [0.2, 0.7, 1.4, 2.2],
+    Sup: [0.8, 1.8, 3.0, 4.5],
   },
-
-  // ── Camps jungle avant 10 min — clear précoce ──────────────
   chal_jgl_cs10: {
-    Jgl: [22, 35, 48, 62],
+    Jgl: [30, 45, 58, 72],
   },
 };
 
@@ -2884,35 +2876,35 @@ function scoreAbsolu(val, bad, avg, good, elite) {
   return Math.max(0, 3.0 * (v / Math.max(bad, 0.1)));
 }
 
-// ── Score rang absolu (D4 uniquement) ────────────────────────
-// Iron=1 → Challenger=10, non relatif
+// -- Score rang absolu D4 -- semi-pro --------------------------------
+// Iron=1 -> Challenger=10
 const RANG_SCORES = {
-  0: 1.0,  // Iron
-  1: 2.2,  // Bronze
-  2: 3.5,  // Silver
-  3: 4.8,  // Gold
-  4: 6.0,  // Platinum
-  5: 7.0,  // Emerald
-  6: 7.8,  // Diamond
-  7: 8.8,  // Master
-  8: 9.4,  // Grandmaster
+  0:  1.0, // Iron
+  1:  2.0, // Bronze
+  2:  3.0, // Silver
+  3:  4.0, // Gold
+  4:  5.5, // Platinum
+  5:  6.5, // Emerald
+  6:  7.8, // Diamond
+  7:  9.0, // Master
+  8:  9.5, // Grandmaster
   9: 10.0, // Challenger
 };
 
-// ── Bonus âge multiplicateur ──────────────────────────────────
-// Appliqué sur le score global final
-// Un Diamond (7.8) à 16 ans → 7.8 × 1.22 = 9.5
-// Un Bronze (2.2) à 14 ans → 2.2 × 1.30 = 2.9 (reste faible)
+// -- Bonus age multiplicateur (applique apres plafond rang) ----------
+// Gold  16ans: 4.5 x1.14 = 5.1  (C+ non-recruitable)
+// Eme   16ans: 6.5 x1.14 = 7.4  (A- prospect)
+// Dia   16ans: 7.8 x1.14 = 8.9  (A+ top prospect)
 function getBonusAge(age) {
   if (!age || isNaN(age)) return 1.0;
   const a = parseInt(age);
-  if (a <= 14) return 1.30;
-  if (a <= 15) return 1.25;
-  if (a <= 16) return 1.20;
-  if (a <= 17) return 1.15;
-  if (a <= 18) return 1.10;
-  if (a <= 19) return 1.06;
-  if (a <= 20) return 1.03;
+  if (a <= 14) return 1.22;
+  if (a <= 15) return 1.18;
+  if (a <= 16) return 1.14;
+  if (a <= 17) return 1.10;
+  if (a <= 18) return 1.06;
+  if (a <= 19) return 1.03;
+  if (a <= 20) return 1.01;
   if (a <= 22) return 1.00;
   if (a <= 25) return 0.97;
   if (a <= 28) return 0.93;
@@ -3112,18 +3104,18 @@ const D2_FIELDS = {
     { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'dmg_tower',             lbl:'Dégâts tours/g',       badge:'api', type:'auto' },
-    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
-    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
+    { id:'dmg_tower',             lbl:'Degats tours/g',           badge:'api', type:'auto' },
+    { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
+    { id:'chal_turret_plates',    lbl:'Plaques turret/g',         badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours detruites/g',        badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
-    { id:'chal_epic_steals',      lbl:'Steals épiques/g',     badge:'api', type:'auto' },
-    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',      badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
+    { id:'chal_turret_takedowns', lbl:'Tours detruites/g',        badge:'api', type:'auto' },
+    { id:'kill_part',             lbl:'Kill Part. objectifs/g',   badge:'api', type:'auto' },
   ],
 };
 
@@ -3331,16 +3323,15 @@ function scoreRankAge(rankIdx, age) {
   if (!age) return null;
   const a = parseInt(age);
   if (isNaN(a)) return null;
-  // Diamond (6) at 18 = 9, at 25 = 6.5
-  const base = [2,3,4,5,6,7,8,9,9.5,10][rankIdx] || 5;
+  const base = [1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.8, 9.0, 9.5, 10.0][rankIdx] || 5;
   let bonus = 0;
-  if (a <= 17) bonus = 2.0;
-  else if (a <= 19) bonus = 1.2;
-  else if (a <= 21) bonus = 0.5;
+  if (a <= 17) bonus = 1.2;
+  else if (a <= 19) bonus = 0.7;
+  else if (a <= 21) bonus = 0.3;
   else if (a <= 23) bonus = 0;
   else if (a <= 26) bonus = -0.5;
   else bonus = -1.2;
-  return Math.min(10, Math.max(1, base + bonus));
+  return Math.min(10, Math.max(0.5, base + bonus));
 }
 
 function scoreRankProg(cur, prev) {
@@ -3355,8 +3346,8 @@ function scoreRankProg(cur, prev) {
 }
 
 function scoreRankAbs(idx) {
-  const scores = [1, 2, 3.5, 5, 6, 7, 8, 9, 9.5, 10];
-  return scores[idx] || 5;
+  const scores = [1.0, 2.0, 3.0, 4.0, 5.5, 6.5, 7.8, 9.0, 9.5, 10.0];
+  return scores[idx] ?? 5.0;
 }
 
 // Score a stat value against role thresholds using percentile logic
@@ -3414,19 +3405,20 @@ function dimAvg(fields) {
   return scores.length ? scores.reduce((a,b) => a+b, 0) / scores.length : null;
 }
 
-// ── Plafond score performance par rang ───────────────────────
-// Un joueur ne peut pas scorer au-delà de son rang réel.
-// Le talent brut peut approcher le plafond, jamais le dépasser (sans bonus âge).
+// -- Plafond score performance par rang -- SEMI-PRO -----------------
+// Gold max 4.5 -> x1.22(age) = 5.5 (C+ non-recruitable)
+// Emerald min 6.5 -> premier prospect serieux
+// Diamond min 7.8 -> vrai semi-pro (A tier)
 const RANG_PLAFOND = {
-  0: 2.5,   // Iron
-  1: 3.8,   // Bronze
-  2: 5.0,   // Silver
-  3: 6.0,   // Gold
-  4: 6.8,   // Platinum
-  5: 7.5,   // Emerald
-  6: 8.2,   // Diamond
-  7: 9.0,   // Master
-  8: 9.5,   // Grandmaster
+  0:  1.5,  // Iron
+  1:  2.5,  // Bronze
+  2:  3.5,  // Silver
+  3:  4.5,  // Gold       <- max avec bonus age ~5.4
+  4:  5.5,  // Platinum   <- max avec bonus age ~6.3
+  5:  6.5,  // Emerald    <- premier prospect possible
+  6:  7.8,  // Diamond    <- vrai semi-pro
+  7:  9.0,  // Master
+  8:  9.5,  // Grandmaster
   9: 10.0,  // Challenger
 };
 
