@@ -5077,11 +5077,11 @@ async function checkBackendStatus() {
   const dot = document.getElementById('backend-dot');
   const txt = document.getElementById('backend-txt');
   if (!dot || !txt) return;
-  const BACKEND = 'https://spes-backend-production.up.railway.app';
+  const BACKEND = '';
   try {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 6000);
-    await fetch(BACKEND, { method:'HEAD', signal: ctrl.signal, mode:'no-cors' });
+    await fetch('/api/riot', { method:'HEAD', signal: ctrl.signal, mode:'no-cors' });
     clearTimeout(timer);
     dot.className = 'online';
     txt.textContent = 'API OK';
@@ -6954,7 +6954,7 @@ function dbgLog(msg) {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function riotFetch(url, apiKey) {
-  const BACKEND = 'https://spes-backend-production.up.railway.app';
+  const BACKEND = '';
 
   // Essaie d'abord le backend Railway
   try {
