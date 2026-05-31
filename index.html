@@ -4125,9 +4125,100 @@ async function searchCompetHistory(playerWikiId) {
 }
 
 // Recherche d'âge principale — appelée à l'import et dans le Top 50
-async function tryFindAge(gameName) {
-  const result = await searchAgeLeaguepedia(gameName);
-  return result;
+// Recherche âge + équipe via lolpros.gg (scène EU semi-pro)
+// Lie les pseudos SoloQ aux profils compétitifs officiels
+async function lookupLolPros(gameName, tag, server) {
+  try {
+    const q = encodeURIComponent(gameName.split('#')[0].trim());
+    if (!q || q.length < 2) return null;
+
+    // Appel direct avec fallback via proxy Vercel si CORS
+    let resp, data;
+    try {
+      resp = await fetch('https://api.lolpros.gg/es/search?query=' + q + '&language=fr_FR', {
+        headers: { 'Accept': 'application/json' }
+      });
+      if (resp.ok) data = await resp.json();
+    } catch(_) {}
+
+    if (!data) {
+      // Fallback via proxy Vercel (évite les blocages CORS)
+      const proxyUrl = '/api/riot?url=' + encodeURIComponent('https://api.lolpros.gg/es/search?query=' + q + '&language=fr_FR');
+      try {
+        const r2 = await fetch(proxyUrl);
+        if (r2.ok) data = await r2.json();
+      } catch(_) {}
+    }
+
+    if (!Array.isArray(data) || !data.length) return null;
+
+    // Tenter de matcher par compte SoloQ lié
+    const nameLow = gameName.toLowerCase().replace(/\s/g,'');
+    let match = null;
+    for (const player of data) {
+      // Match direct sur le pseudo compétitif
+      if ((player.name || '').toLowerCase().replace(/\s/g,'') === nameLow) { match = player; break; }
+      // Match sur les comptes SoloQ liés
+      if (Array.isArray(player.accounts)) {
+        for (const acc of player.accounts) {
+          const accN = (acc.summoner_name || acc.name || '').toLowerCase().replace(/\s/g,'');
+          if (accN === nameLow) { match = player; break; }
+        }
+        if (match) break;
+      }
+    }
+    // Si pas de match exact, prendre le premier résultat proche
+    if (!match) {
+      const first = data[0];
+      const fn = (first.name||'').toLowerCase();
+      if (fn.includes(nameLow.slice(0,4)) || nameLow.includes(fn.slice(0,4))) match = first;
+    }
+    if (!match) return null;
+
+    // Calcul de l'âge à partir de la date de naissance
+    let age = null;
+    if (match.birthday) {
+      const birth = new Date(match.birthday);
+      const computed = Math.floor((new Date() - birth) / (365.25*24*3600*1000));
+      if (computed > 10 && computed < 40) age = computed;
+    }
+
+    const teamName = typeof match.team === 'object'
+      ? (match.team?.name || match.team?.short_name || null)
+      : (match.team || null);
+
+    return {
+      age,
+      source: 'lolpros.gg',
+      name: match.name || gameName,
+      birthdate: match.birthday || null,
+      team: teamName,
+      competRole: match.position || null,
+      country: match.country || null
+    };
+  } catch(e) { return null; }
+}
+
+async function tryFindAge(gameName, tag, server) {
+  // Source 1 — Leaguepedia (la plus complète pour le compétitif)
+  const r1 = await searchAgeLeaguepedia(gameName);
+  if (r1 && r1.age) return r1;
+
+  // Source 2 — lolpros.gg (spécialisé scène EU semi-pro, lie les comptes SoloQ)
+  const r2 = await lookupLolPros(gameName, tag, server);
+  if (r2 && r2.age) { ageCache[gameName.toLowerCase()] = r2; return r2; }
+  // Sans âge mais avec infos compétitives, on garde quand même
+  if (r2 && (r2.team || r2.competRole)) { ageCache[gameName.toLowerCase()] = r2; return r2; }
+
+  // Source 3 — Liquipedia (couverture plus large)
+  const liqAge = await lookupLiquipediaAge(gameName);
+  if (liqAge) {
+    const r3 = { age: liqAge, source: 'Liquipedia', name: gameName };
+    ageCache[gameName.toLowerCase()] = r3;
+    return r3;
+  }
+
+  return null;
 }
 
 // Génère les liens de recherche rapide pour trouver l'âge manuellement
@@ -4137,6 +4228,7 @@ function generateAgeLinks(gameName, tag) {
   const qt = encodeURIComponent(gameName + ' ' + (tag || '') + ' age');
   return [
     { label: 'Leaguepedia', url: 'https://lol.fandom.com/wiki/' + q },
+    { label: 'lolpros.gg', url: 'https://lolpros.gg/player/' + q },
     { label: 'Liquipedia', url: 'https://liquipedia.net/leagueoflegends/index.php?search=' + q },
     { label: 'Google', url: 'https://www.google.com/search?q=' + qt + '+esport+age+birthday' },
     { label: 'Twitter/X', url: 'https://x.com/search?q=' + q + '+age&f=user' },
@@ -4195,7 +4287,7 @@ async function top50FetchAges(prospects) {
   for (const p of prospects) {
     if (p.age && p.ageStatus === '✅') continue; // déjà connu
     try {
-      const result = await tryFindAge(p.name);
+      const result = await tryFindAge(p.name, p.tag, p.server);
       if (result) {
         p.age = result.age;
         p.ageStatus = '✅';
