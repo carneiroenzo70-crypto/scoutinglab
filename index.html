@@ -4286,21 +4286,21 @@ async function top50FetchAges(prospects) {
   let found = 0;
   for (const p of prospects) {
     if (p.age && p.ageStatus === '✅') continue; // déjà connu
+    let result = null;
     try {
-      const result = await tryFindAge(p.name, p.tag, p.server);
+      result = await tryFindAge(p.name, p.tag, p.server);
       if (result) {
-        p.age = result.age;
-        p.ageStatus = '✅';
+        if (result.age) { p.age = result.age; p.ageStatus = '✅'; found++; }
+        else { if (!p.age) p.ageStatus = 'Recherche…'; }
         p.ageSource = result.source;
         if (result.team) { p.competTeam = result.team; p.hasCompetHistory = true; }
         if (result.country) p.competCountry = result.country;
         if (result.competRole) p.competRoleLP = result.competRole;
-        found++;
       } else {
         if (!p.age) p.ageStatus = 'Recherche…';
       }
     } catch(e) {}
-    // Historique compétitif si joueur trouvé sur Leaguepedia
+    // Historique compétitif via Leaguepedia Tenures
     if (!p.competHistory && result && result.name) {
       try {
         const hist = await searchCompetHistory(result.name);
