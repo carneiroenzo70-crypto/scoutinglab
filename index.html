@@ -2552,13 +2552,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                   <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">WR%</th>
                   <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">KDA</th>
                   <th style="padding:.625rem .75rem;text-align:center;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Âge</th>
-                  <th style="padding:.625rem .75rpm;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Statut</th>
+                  <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--teal);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Compétitif</th><th style="padding:.625rem .75rpm;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Statut</th>
                   <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Notes</th>
                   <th style="padding:.625rem .75rem;text-align:left;font-size:.7rem;color:var(--sub);font-weight:500;text-transform:uppercase;letter-spacing:.06em">Actions</th>
                 </tr>
               </thead>
               <tbody id="t50-tbody">
-                <tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Lancez un scan pour générer le Top 50 prospects EUW.</td></tr>
+                <tr><td colspan="12" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Lancez un scan pour générer le Top 50 prospects EUW.</td></tr>
               </tbody>
             </table>
           </div>
@@ -4055,14 +4055,14 @@ async function searchAgeLeaguepedia(gameName) {
         const now = new Date();
         const age = Math.floor((now - birth) / (365.25 * 24 * 3600 * 1000));
         if (age > 10 && age < 40) {
-          ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName, birthdate: p.Birthdate };
+          ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
           return ageCache[gameName.toLowerCase()];
         }
       }
       // Age direct si pas de birthdate
       if (p.Age && parseInt(p.Age) > 10) {
         const age = parseInt(p.Age);
-        ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName };
+        ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
         return ageCache[gameName.toLowerCase()];
       }
     }
@@ -4085,7 +4085,7 @@ async function searchAgeLeaguepedia(gameName) {
           const now = new Date();
           const age = Math.floor((now - birth) / (365.25 * 24 * 3600 * 1000));
           if (age > 10 && age < 40) {
-            ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia ≈', name: p.Name || gameName, birthdate: p.Birthdate };
+            ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia ≈', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
             return ageCache[gameName.toLowerCase()];
           }
         }
@@ -4098,6 +4098,30 @@ async function searchAgeLeaguepedia(gameName) {
     ageCache[gameName.toLowerCase()] = null;
     return null;
   }
+}
+
+// Recherche historique compétitif via Leaguepedia (Tenures table)
+async function searchCompetHistory(playerWikiId) {
+  if (!playerWikiId || playerWikiId.length < 2) return null;
+  try {
+    const q = encodeURIComponent(playerWikiId);
+    const url = 'https://lol.fandom.com/api.php?action=cargoquery' +
+      '&tables=Tenures' +
+      '&fields=Player,Team,Role,DateStart,DateEnd' +
+      '&where=Player%3D%22' + q + '%22' +
+      '&order_by=DateStart+DESC&limit=4&format=json&origin=*';
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const rows = data?.cargoquery || [];
+    if (!rows.length) return null;
+    return rows.map(r => ({
+      team: r.title.Team || '?',
+      role: r.title.Role || '',
+      dateStart: (r.title.DateStart || '').slice(0,4),
+      dateEnd: r.title.DateEnd ? r.title.DateEnd.slice(0,4) : 'présent'
+    }));
+  } catch(e) { return null; }
 }
 
 // Recherche d'âge principale — appelée à l'import et dans le Top 50
@@ -4176,13 +4200,28 @@ async function top50FetchAges(prospects) {
         p.age = result.age;
         p.ageStatus = '✅';
         p.ageSource = result.source;
+        if (result.team) { p.competTeam = result.team; p.hasCompetHistory = true; }
+        if (result.country) p.competCountry = result.country;
+        if (result.competRole) p.competRoleLP = result.competRole;
         found++;
       } else {
         if (!p.age) p.ageStatus = 'Recherche…';
       }
     } catch(e) {}
+    // Historique compétitif si joueur trouvé sur Leaguepedia
+    if (!p.competHistory && result && result.name) {
+      try {
+        const hist = await searchCompetHistory(result.name);
+        if (hist && hist.length) {
+          p.competHistory = hist;
+          p.hasCompetHistory = true;
+          if (!p.competTeam) p.competTeam = hist[0].team;
+          if (!p.competRoleLP) p.competRoleLP = hist[0].role;
+        }
+      } catch(e) {}
+    }
     // Petit délai pour ne pas surcharger l'API Leaguepedia
-    await new Promise(r => setTimeout(r, 300));
+    await new Promise(r => setTimeout(r, 400));
   }
   return found;
 }
@@ -9377,12 +9416,12 @@ function top50RenderTable() {
   });
 
   if (!top50Data.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Aucun prospect — lancez un scan.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Aucun prospect — lancez un scan.</td></tr>';
     return;
   }
 
   if (!filteredData.length) {
-    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--amber);font-size:.85rem">Aucun prospect ne correspond aux filtres sélectionnés.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="padding:2rem;text-align:center;color:var(--amber);font-size:.85rem">Aucun prospect ne correspond aux filtres sélectionnés.</td></tr>';
     return;
   }
 
@@ -9463,6 +9502,13 @@ function top50RenderTable() {
           ${ageHTML}
           <button onclick="top50SetAge(${i})" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--sub)" title="Modifier l\'âge">✏️</button>
         </div>
+      </td>
+      <td style="padding:.5rem .75rem;max-width:140px">
+        ${p.hasCompetHistory ? `
+          <div style="font-size:.72rem;font-weight:600;color:var(--teal)">${p.competTeam||'?'}</div>
+          ${p.competHistory && p.competHistory.length > 1 ? `<div style="font-size:.6rem;color:var(--sub)">${p.competHistory.slice(1,3).map(h=>h.team).join(' · ')}</div>` : ''}
+          ${p.competRoleLP ? `<div style="font-size:.6rem;color:var(--sub2);font-family:monospace">${p.competRoleLP}</div>` : ''}
+        ` : `<span style="font-size:.65rem;color:var(--sub)">—</span>`}
       </td>
       <td style="padding:.5rem .75rem">
         <button onclick="top50NextStatut(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;cursor:pointer;color:${statCol};white-space:nowrap">${p.statut}</button>
