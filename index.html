@@ -2039,6 +2039,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <!-- Score Grid : ring + radar -->
       <!-- Badge pépite (affiché si potentiel >> performance) -->
       <div id="badge-pepite" style="display:none;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(28,196,122,.12),rgba(212,113,74,.08));border:1px solid rgba(28,196,122,.32);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:var(--lime);line-height:1.5"></div>
+      <div id="badge-souscote" style="display:none;align-items:center;gap:8px;background:rgba(74,158,255,.08);border:1px solid rgba(74,158,255,.3);border-radius:10px;padding:10px 16px;margin-bottom:12px;font-size:12px;color:#4A9EFF;line-height:1.5"></div>
 
       <div class="score-grid">
         <div class="card">
@@ -2834,9 +2835,9 @@ const SEUILS_ABSOLUS = {
     ADC: [1.0, 2.5, 4.5, 7.0],
     Sup: [1.2, 3.0, 5.0, 7.5],
   },
-  chal_turret_plates:     { all: [0.5, 1.0,  1.8,  3.0 ] },
-  chal_turret_takedowns:  { all: [0.4, 1.0,  1.8,  3.0 ] },
-  chal_solo_turrets:      { all: [0.0, 0.08, 0.18, 0.35] },
+  chal_turret_plates:     { all: [1.0, 2.0,  3.5,  5.5 ] },  // relevé : élite semi-pro = 5+ plaques/g
+  chal_turret_takedowns:  { all: [0.6, 1.2,  2.2,  3.5 ] },  // relevé : tours détruites Diamond+
+  chal_solo_turrets:      { all: [0.0, 0.06, 0.15, 0.28] },
   chal_first_blood:       { all: [12,  22,   34,   48  ] },
   chal_jungle_inv:        { all: [0.2, 0.6,  1.2,  2.0 ] },
   chal_solo_kills:        { all: [0.15,0.45, 0.90, 1.5 ] },
@@ -2861,7 +2862,7 @@ const SEUILS_ABSOLUS = {
     Mid: [44, 58, 72, 86],
     ADC: [52, 66, 80, 95],
   },
-  chal_max_lvl_lead:      { all: [0.0, 0.4,  0.9,  1.6 ] },
+  chal_max_lvl_lead:      { all: [0.3, 0.7,  1.3,  2.2 ] },  // relevé : avance niveau Diamond+ (jeux courts)
   dpm: {
     Top: [ 250,  420,  620,  860],
     Jgl: [ 200,  340,  500,  700],
@@ -3453,6 +3454,8 @@ function globalScore() {
   const plafond = RANG_PLAFOND[rankIdx] ?? 8.2;
   const scorePlafonné = Math.min(rawScore, plafond);
 
+  // Stocker le score brut (avant plafond) pour affichage "sous-côté"
+  window._scoreRaw = parseFloat(rawScore.toFixed(2));
   // Stocker le score performance sans bonus âge (pour affichage séparé)
   window._scorePerf = parseFloat(scorePlafonné.toFixed(2));
 
@@ -3649,6 +3652,23 @@ function updateGlobal() {
     const perf = window._scorePerf;
     perfEl.textContent = perf != null ? perf.toFixed(1) : '—';
     perfEl.style.color = perf != null ? scColor(perf) : 'var(--sub)';
+  }
+
+  // Indicateur "sous-coté" — joueur qui performe au-dessus de son rang
+  const raw = window._scoreRaw;
+  const perf2 = window._scorePerf;
+  const souscoteEl = document.getElementById('badge-souscote');
+  if (souscoteEl && raw != null && perf2 != null) {
+    const gap = raw - perf2;
+    if (gap >= 1.0) {
+      const RANK_NAMES = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','GM','Challenger'];
+      const rankIdx2 = rankEl ? Math.max(0, Math.min(9, parseInt(rankEl.value) || 6)) : 6;
+      souscoteEl.style.display = 'flex';
+      souscoteEl.innerHTML = '📈 <strong>Sous-coté +' + gap.toFixed(1) + ' pts</strong> — Performe au-dessus de son rang '
+        + RANK_NAMES[rankIdx2] + ' · Score brut : ' + raw.toFixed(1) + '/10';
+    } else {
+      souscoteEl.style.display = 'none';
+    }
   }
 
   // Affichage score potentiel
