@@ -2855,6 +2855,25 @@ const SEUILS_ABSOLUS = {
     ADC: [52, 66, 80, 95],
   },
   chal_max_lvl_lead:      { all: [0.3, 0.7,  1.3,  2.2 ] },  // relevé : avance niveau Diamond+ (jeux courts)
+  // ── D5 Intelligence de combat ──────────────────────────────────
+  chal_survive_hp:   { all: [0.05, 0.15, 0.32, 0.58] }, // survies <10%HP/game — clutch mécanique
+  chal_team_dmg_pct: {                                   // % dégâts d'équipe — rôle de carry
+    Top: [16, 23, 30, 38],
+    Jgl: [13, 18, 25, 33],
+    Mid: [24, 31, 38, 46],
+    ADC: [30, 38, 45, 54],
+    Sup: [ 4,  8, 13, 19],
+  },
+  chal_kills_turret: { all: [0.08, 0.20, 0.38, 0.62] }, // kills défensifs sous tour — lecture de jeu
+  chal_skillshots_hit: {                                 // skillshots touchés/game — précision mécanique
+    Top: [3,  7, 13, 22],
+    Jgl: [2,  5, 10, 17],
+    Mid: [5, 11, 20, 32],
+    ADC: [3,  7, 13, 22],
+    Sup: [2,  6, 12, 20],
+  },
+  chal_immob_kill:   { all: [0.08, 0.25, 0.50, 0.85] }, // CC + kill allié/game — intelligence collective
+  chal_perfect_game: { all: [2.0, 5.0, 10.0, 18.0] },   // % games 0 mort — consistency
   dpm: {
     Top: [ 250,  420,  620,  860],
     Jgl: [ 200,  340,  500,  700],
@@ -3032,6 +3051,24 @@ function scoreStatCalibrated(id, val) {
     case 'chal_jgl_cs10':
       return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_jgl_cs10.Jgl);
 
+    // ── D5 Intelligence de combat ────────────────────────────────
+    case 'chal_survive_hp':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_survive_hp.all);
+    case 'chal_team_dmg_pct': {
+      const st = SEUILS_ABSOLUS.chal_team_dmg_pct[role] || SEUILS_ABSOLUS.chal_team_dmg_pct.Mid;
+      return scoreAbsolu(v, ...st);
+    }
+    case 'chal_kills_turret':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_kills_turret.all);
+    case 'chal_skillshots_hit': {
+      const sh = SEUILS_ABSOLUS.chal_skillshots_hit[role] || SEUILS_ABSOLUS.chal_skillshots_hit.Mid;
+      return scoreAbsolu(v, ...sh);
+    }
+    case 'chal_immob_kill':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_immob_kill.all);
+    case 'chal_perfect_game':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_perfect_game.all);
+
     default:
       return null;
   }
@@ -3181,50 +3218,51 @@ const D4_FIELDS_BASE = [
   { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)',  badge:'api',  type:'auto' },
 ];
 
-// D5 — Entretien (saisie coach, données non-API)
+// D5 — Intelligence de combat (100% API Riot Challenges, zéro saisie manuelle)
+// Mesure la qualité des décisions dans les moments critiques
 const D5_FIELDS = {
   Top: [
-    { id:'clutch_top',  lbl:'Clutch factor (1v1/1v2)',badge:'int',type:'slider' },
-    { id:'tf_iq_top',   lbl:'Teamfight positioning',  badge:'int',type:'slider' },
-    { id:'meta_adapt',  lbl:'Adaptation méta/patch',  badge:'int',type:'slider' },
-    { id:'split_iq',    lbl:'Lecture split push IQ',  badge:'int',type:'slider' },
-    { id:'comm_top',    lbl:'Communication & calls',   badge:'int',type:'slider' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
+    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
+    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
   ],
   Jgl: [
-    { id:'clutch_jgl',  lbl:'Smite timing / clutch',  badge:'int',type:'slider' },
-    { id:'tf_iq_jgl',   lbl:'Teamfight engagement IQ',badge:'int',type:'slider' },
-    { id:'meta_adapt',  lbl:'Adaptation méta/patch',  badge:'int',type:'slider' },
-    { id:'pathing_iq',  lbl:'Lecture pathing/pivot',  badge:'int',type:'slider' },
-    { id:'comm_jgl',    lbl:'Shotcall & communication',badge:'int',type:'slider' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
+    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
+    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
+    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'clutch_mid',  lbl:'Clutch factor (carry)',  badge:'int',type:'slider' },
-    { id:'tf_iq_mid',   lbl:'Teamfight IQ mid/flank', badge:'int',type:'slider' },
-    { id:'meta_adapt',  lbl:'Adaptation méta/patch',  badge:'int',type:'slider' },
-    { id:'roam_iq',     lbl:'Lecture roam & timing',  badge:'int',type:'slider' },
-    { id:'comm_mid',    lbl:'Shotcall & prise décision',badge:'int',type:'slider' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
+    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
+    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
+    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'clutch_adc',  lbl:'Clutch factor (late 1v1)', badge:'int',type:'slider' },
-    { id:'tf_iq_adc',   lbl:'Kiting & dodge en TF',   badge:'int',type:'slider' },
-    { id:'meta_adapt',  lbl:'Adaptation méta/patch',  badge:'int',type:'slider' },
-    { id:'laning_iq',   lbl:'Lecture laning/trade',   badge:'int',type:'slider' },
-    { id:'comm_adc',    lbl:'Synergie ADC/Support',   badge:'int',type:'slider' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
+    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
+    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
+    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'clutch_sup',  lbl:'Clutch save / peel',     badge:'int',type:'slider' },
-    { id:'tf_iq_sup',   lbl:'Engage/disengage timing',badge:'int',type:'slider' },
-    { id:'meta_adapt',  lbl:'Adaptation méta/patch',  badge:'int',type:'slider' },
-    { id:'vision_iq',   lbl:'Intelligence vision ctrl',badge:'int',type:'slider' },
-    { id:'comm_sup',    lbl:'Shotcall & leadership',  badge:'int',type:'slider' },
+    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
+    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
+    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
   ],
 };
 
 // ─ Dimension IDs and weights ─────────────────
 const DIM_IDS = ['d1','d2','d3','d4','d5'];
-const DIM_NAMES  = ['Stats pures','Objectifs & macro','Impact carte','Progression','Entretien'];
+const DIM_NAMES  = ['Stats pures','Objectifs & macro','Impact carte','Rang & progression','Intelligence combat'];
 const DIM_COLORS = { d1:'#4A9EFF', d2:'#F5A623', d3:'#2DD4BF', d4:'#C084FC', d5:'#FF7A5A' };
-const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'ENTRETIEN' };
+const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'COMBAT IQ' };
 
 const ROLE_WEIGHTS = {
   // D4 renforcé (rang = ancre du score global, pas un plafond externe)
@@ -7437,6 +7475,9 @@ function calculateStats(matches, puuid) {
     wardsKilled:        parseFloat((chal.wardsKilled/gc).toFixed(2)),
     jungleCsBefore10:   parseFloat((chal.jungleCsBefore10/gc).toFixed(1)),
     dpm:                parseFloat((totalDpm/gc).toFixed(0)),
+    immobilizeKill:     parseFloat((chal.immobilizeAndKill/gc).toFixed(2)),
+    perfectGame:        parseFloat((chal.perfectGame/gc*100).toFixed(1)),
+    damageTakenPct:     parseFloat((chal.damageTakenOnTeamPct/gc*100).toFixed(1)),
   };
 
   return {
@@ -7576,6 +7617,13 @@ async function fetchRiotData() {
       rawData.chal_wards_killed      = ch.wardsKilled         ?? 0;
       rawData.chal_jgl_cs10          = ch.jungleCsBefore10    ?? 0;
       rawData.dpm                    = ch.dpm                 ?? 0;
+      // D5 — Intelligence de combat (nouvelles métriques avancées)
+      rawData.chal_survive_hp        = ch.survivedLowHp       ?? 0;
+      rawData.chal_team_dmg_pct      = ch.teamDmgPct          ?? 0;
+      rawData.chal_kills_turret      = ch.killsUnderTurret     ?? 0;
+      rawData.chal_skillshots_hit    = ch.skillshotsHit        ?? 0;
+      rawData.chal_immob_kill        = ch.immobilizeKill       ?? 0;
+      rawData.chal_perfect_game      = ch.perfectGame          ?? 0;
       buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
     matchHistory = matches;
