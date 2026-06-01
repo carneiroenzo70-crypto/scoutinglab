@@ -6278,8 +6278,9 @@ function crmRenderPipeline() {
       const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
       return '<div style="background:var(--surf1);border:1px solid ' + (relanceAlert ? 'var(--amber)' : 'var(--border)') + ';border-radius:8px;padding:.75rem;margin-bottom:.5rem">' +
         '<div style="font-weight:700;font-size:.85rem;margin-bottom:.25rem">' + p.playerName + (p.playerTag ? ' <span style="color:var(--sub);font-size:.7rem">#' + p.playerTag + '</span>' : '') + '</div>' +
-        '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.375rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
-        '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + p.structureName + '</div>' +
+        '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.25rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
+        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:.25rem;color:' + (p.rankMatch ? 'var(--lime)' : 'var(--red)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
+        '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + (p.structureName || 'Sans structure') + '</div>' +
         (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? 'Relance : ' : '') + p.dateRelance + '</div>' : '') +
         (p.notes ? '<div style="font-size:.7rem;color:var(--sub);font-style:italic;margin-bottom:.5rem">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
         '<div style="display:flex;gap:.25rem;flex-wrap:wrap">' +
@@ -6330,9 +6331,11 @@ async function crmSyncCandidatures() {
           <div style="font-size:.78rem;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.experience||''}">${c.experience||'—'}</div>
           <div style="font-size:.75rem;color:var(--teal)">${c.contact||'—'}</div>
           <div style="font-size:.7rem;color:var(--sub)">${dateStr}</div>
-          <div style="display:flex;gap:6px">
-            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Ajouter au pipeline</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <button id="vrfy-${c.id}" onclick="crmVerifyRank('${c.pseudo}','${c.tag||'EUW'}','${(c.rank||'').replace(/'/g,'')}','${c.id}')" style="background:var(--surf2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--sub);cursor:pointer">🔍 Vérifier rang</button>
+            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Pipeline</button>
           </div>
+          <div id="vrfy-out-${c.id}" style="width:100%;margin-top:.25rem"></div>
         </div>`;
       }).join('');
       window._crmCandidates = candidates;
@@ -6377,6 +6380,55 @@ function crmImportCandidate(idx) {
   showToast(c.pseudo + ' ajouté au pipeline !', 'success');
   crmRenderPipeline && crmRenderPipeline();
   crmShowTab('pipeline');
+}
+
+async function crmVerifyRank(pseudo, tag, declaredRank, cardId) {
+  const btn = document.getElementById('vrfy-' + cardId);
+  const out = document.getElementById('vrfy-out-' + cardId);
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  if (out) out.innerHTML = '<span style="color:var(--sub);font-size:.72rem">Vérification en cours…</span>';
+
+  try {
+    const acc = await riotFetch(
+      `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(pseudo)}/${encodeURIComponent(tag || 'EUW')}`
+    );
+    if (!acc || !acc.puuid) throw new Error('Compte Riot introuvable');
+
+    const league = await riotFetch(
+      `https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/${acc.puuid}`
+    );
+    const soloQ = (Array.isArray(league) ? league : []).find(e => e.queueType === 'RANKED_SOLO_5x5');
+
+    if (!soloQ) {
+      if (out) out.innerHTML = '<span style="color:var(--amber);font-size:.72rem">⚠️ Non classé en SoloQ cette saison</span>';
+      if (btn) { btn.textContent = '🔍 Vérifier'; btn.disabled = false; }
+      return;
+    }
+
+    const realRank = soloQ.tier + ' ' + soloQ.rank + ' — ' + soloQ.leaguePoints + ' LP (' + soloQ.wins + 'W/' + soloQ.losses + 'L)';
+    const tierOk = declaredRank && soloQ.tier && declaredRank.toUpperCase().includes(soloQ.tier.toUpperCase());
+    const color = tierOk ? 'var(--lime)' : 'var(--red)';
+
+    if (out) out.innerHTML = '<span style="color:' + color + ';font-size:.75rem">' +
+      (tierOk ? '✅ Rang confirmé : ' : '⚠️ Rang réel : ') + '<strong>' + realRank + '</strong>' +
+      (!tierOk ? '<br><span style="color:var(--sub);font-size:.68rem">Déclaré : ' + declaredRank + '</span>' : '') +
+      '</span>';
+    if (btn) btn.style.display = 'none';
+
+    // Mettre à jour l'entrée pipeline si elle existe déjà
+    const pEntry = crmPipeline.find(p => p.playerName === pseudo && p.playerTag === (tag || ''));
+    if (pEntry) {
+      pEntry.verifiedRank = soloQ.tier + ' ' + soloQ.rank + ' — ' + soloQ.leaguePoints + ' LP';
+      pEntry.rankMatch = tierOk;
+      pEntry.wins = soloQ.wins;
+      pEntry.losses = soloQ.losses;
+      crmSave();
+      crmRenderPipeline();
+    }
+  } catch(err) {
+    if (out) out.innerHTML = '<span style="color:var(--red);font-size:.72rem">❌ ' + err.message + '</span>';
+    if (btn) { btn.textContent = '🔍 Vérifier'; btn.disabled = false; }
+  }
 }
 
 function crmRunMatching() {
