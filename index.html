@@ -2687,6 +2687,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div style="display:flex;gap:.5rem;flex-wrap:wrap">
             <button onclick="crmShowTab('structures')" id="crm-tab-structures" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.4rem 1rem;font-size:.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Structures</button>
             <button onclick="crmShowTab('pipeline')" id="crm-tab-pipeline" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg> Pipeline</button>
+            <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" style="background:var(--surf2);border:1px solid rgba(28,196,122,.4);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--lime);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures</button>
+            <button onclick="crmShowTab('candidatures')" id="crm-tab-candidatures" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg> Candidatures</button>
             <button onclick="crmShowTab('matching')" id="crm-tab-matching" style="background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:.4rem 1rem;font-size:.82rem;color:var(--sub2);cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Matching</button>
           </div>
         </div>
@@ -2704,6 +2706,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div id="crm-tab-pipeline-content" style="display:none">
           <div style="font-size:.85rem;color:var(--sub);margin-bottom:1rem">Suivez l'avancement de vos démarches pour chaque joueur.</div>
           <div id="crm-pipeline-board" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem"></div>
+        </div>
+
+        <!-- Tab: Candidatures -->
+        <div id="crm-tab-candidatures-content" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+            <div>
+              <div style="font-size:.85rem;color:var(--sub)">Candidatures reçues via Google Form — joueurs ayant postulé pour être scoutés.</div>
+              <div id="crm-cand-status" style="font-size:.75rem;color:var(--teal);margin-top:4px"></div>
+            </div>
+            <button onclick="crmSyncCandidatures()" style="background:var(--lime);color:#080B10;border:none;border-radius:6px;padding:.375rem .875rem;font-size:.82rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualiser</button>
+          </div>
+          <div id="crm-candidatures-list" style="display:flex;flex-direction:column;gap:.75rem">
+            <div style="text-align:center;padding:2rem;color:var(--sub);font-size:.85rem">Cliquez sur "Sync candidatures" pour charger les candidatures reçues.</div>
+          </div>
         </div>
 
         <!-- Tab: Matching -->
@@ -5951,7 +5967,7 @@ function crmLoad() {
 }
 
 function crmShowTab(tab) {
-  ['structures','pipeline','matching'].forEach(t => {
+  ['structures','pipeline','candidatures','matching'].forEach(t => {
     const el = document.getElementById('crm-tab-' + t + '-content');
     const btn = document.getElementById('crm-tab-' + t);
     if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -6281,6 +6297,82 @@ function crmRenderPipeline() {
 }
 
 // ── MATCHING ────────────────────────────────────────────────
+async function crmSyncCandidatures() {
+  const btn = document.getElementById('btn-sync-candidatures');
+  const statusEl = document.getElementById('crm-cand-status');
+  const listEl = document.getElementById('crm-candidatures-list');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sync…'; }
+
+  try {
+    const res = await fetch('/api/candidates');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const candidates = await res.json();
+
+    if (!Array.isArray(candidates) || !candidates.length) {
+      if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--sub);font-size:.85rem">Aucune candidature reçue pour le moment.</div>';
+      if (statusEl) statusEl.textContent = '0 candidature';
+      return;
+    }
+
+    if (statusEl) statusEl.textContent = candidates.length + ' candidature' + (candidates.length > 1 ? 's' : '') + ' reçue' + (candidates.length > 1 ? 's' : '');
+
+    if (listEl) {
+      listEl.innerHTML = candidates.map((c, i) => {
+        const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '?';
+        const ageStr = c.age ? c.age + ' ans' : '?';
+        const rankColor = (c.rank||'').includes('Diamond')||(c.rank||'').includes('Master')||(c.rank||'').includes('Grandmaster')||(c.rank||'').includes('Challenger') ? 'var(--lime)' : 'var(--sub2)';
+        return \`<div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:700;font-size:.95rem">\${c.pseudo}<span style="color:var(--sub);font-weight:400;font-size:.8rem"> #\${c.tag||'?'}</span></div>
+            <div style="font-size:.75rem;color:var(--sub);margin-top:2px">\${c.role||'?'} · \${ageStr} · \${c.server?.toUpperCase()||'?'}</div>
+          </div>
+          <div style="font-size:.82rem;color:\${rankColor};font-family:monospace;font-weight:600">\${c.rank||'?'}</div>
+          <div style="font-size:.78rem;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${c.experience||''}">\${c.experience||'—'}</div>
+          <div style="font-size:.75rem;color:var(--teal)">\${c.contact||'—'}</div>
+          <div style="font-size:.7rem;color:var(--sub)">\${dateStr}</div>
+          <div style="display:flex;gap:6px">
+            <button onclick="crmImportCandidate(\${i})" data-id="\${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Ajouter au pipeline</button>
+          </div>
+        </div>\`;
+      }).join('');
+      window._crmCandidates = candidates;
+    }
+
+    // Switcher vers l'onglet candidatures
+    crmShowTab('candidatures');
+
+  } catch(e) {
+    if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--red,#F87171);font-size:.85rem">Erreur : ' + e.message + ' — vérifiez la configuration Upstash dans Vercel.</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures'; }
+  }
+}
+
+function crmImportCandidate(idx) {
+  const candidates = window._crmCandidates || [];
+  const c = candidates[idx];
+  if (!c) return;
+  // Créer une entrée pipeline depuis la candidature
+  const entry = {
+    id: 'cand_' + c.id,
+    pseudo: c.pseudo, tag: c.tag, server: c.server,
+    role: c.role, age: c.age, rank: c.rank,
+    contact: c.contact, notes: c.experience || '',
+    source: 'Candidature Google Form',
+    stage: 0, addedAt: c.addedAt || new Date().toISOString(),
+    history: [{ date: new Date().toISOString(), action: 'Candidature importée depuis Google Form' }]
+  };
+  let pipeline = [];
+  try { pipeline = JSON.parse(localStorage.getItem('spes_pipeline') || '[]'); } catch(_) {}
+  if (pipeline.find(p => p.pseudo === c.pseudo && p.tag === c.tag)) {
+    showToast(c.pseudo + ' est déjà dans le pipeline', 'warning'); return;
+  }
+  pipeline.push(entry);
+  localStorage.setItem('spes_pipeline', JSON.stringify(pipeline));
+  showToast(c.pseudo + ' ajouté au pipeline !', 'success');
+  renderCrmPipeline && renderCrmPipeline();
+}
+
 function crmRunMatching() {
   const el = document.getElementById('crm-matching-results');
   if (!el) return;
