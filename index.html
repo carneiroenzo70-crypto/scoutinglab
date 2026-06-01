@@ -6352,25 +6352,31 @@ function crmImportCandidate(idx) {
   const candidates = window._crmCandidates || [];
   const c = candidates[idx];
   if (!c) return;
-  // Créer une entrée pipeline depuis la candidature
-  const entry = {
-    id: 'cand_' + c.id,
-    pseudo: c.pseudo, tag: c.tag, server: c.server,
-    role: c.role, age: c.age, rank: c.rank,
-    contact: c.contact, notes: c.experience || '',
-    source: 'Candidature Google Form',
-    stage: 0, addedAt: c.addedAt || new Date().toISOString(),
-    history: [{ date: new Date().toISOString(), action: 'Candidature importée depuis Google Form' }]
-  };
-  let pipeline = [];
-  try { pipeline = JSON.parse(localStorage.getItem('spes_pipeline') || '[]'); } catch(_) {}
-  if (pipeline.find(p => p.pseudo === c.pseudo && p.tag === c.tag)) {
+  // Vérifier doublon
+  if (crmPipeline.find(p => p.playerName === c.pseudo && p.playerTag === (c.tag || ''))) {
     showToast(c.pseudo + ' est déjà dans le pipeline', 'warning'); return;
   }
-  pipeline.push(entry);
-  localStorage.setItem('spes_pipeline', JSON.stringify(pipeline));
+  // Créer une entrée pipeline au bon format
+  const entry = {
+    id: Date.now(),
+    structureId: null,
+    structureName: 'Sans structure',
+    playerName: c.pseudo,
+    playerTag: c.tag || '',
+    role: c.role || '?',
+    score: '',
+    age: c.age || '',
+    notes: c.experience || '',
+    stage: 'nouveau',
+    dateRelance: '',
+    addedAt: c.addedAt || new Date().toISOString(),
+    history: [{ date: new Date().toISOString(), action: 'Candidature importée depuis Google Form' }]
+  };
+  crmPipeline.push(entry);
+  crmSave();
   showToast(c.pseudo + ' ajouté au pipeline !', 'success');
-  renderCrmPipeline && renderCrmPipeline();
+  crmRenderPipeline && crmRenderPipeline();
+  crmShowTab('pipeline');
 }
 
 function crmRunMatching() {
