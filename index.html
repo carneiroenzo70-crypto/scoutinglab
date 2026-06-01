@@ -2921,10 +2921,10 @@ function getBonusAge(age) {
   if (a <= 18) return 1.06;
   if (a <= 19) return 1.03;
   if (a <= 20) return 1.01;
-  if (a <= 22) return 1.00;
-  if (a <= 25) return 0.97;
-  if (a <= 28) return 0.93;
-  return 0.88;
+  if (a <= 23) return 1.00;  // zone neutre élargie (20→23)
+  if (a <= 26) return 0.98;  // légère pénalité (-2%)
+  if (a <= 29) return 0.96;  // pénalité modérée (-4%)
+  return 0.93;               // pénalité plafonnée (-7%) pour 30+
 }
 
 // ── Fonction principale de scoring des stats ─────────────────
@@ -3061,14 +3061,14 @@ const D1_FIELDS = {
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
     { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
-    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
+    { id:'chal_max_lvl_lead',    lbl:'Avance de niveau/g',   badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'cs_min',               lbl:'Camps+CS/min',         badge:'api', type:'auto' },
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
-    { id:'chal_jungle_inv',      lbl:'Invasion jungle/g',    badge:'api', type:'auto' },
+    { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
     { id:'chal_jgl_cs10',        lbl:'Camps <10 min/g',      badge:'api', type:'auto' },
-    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api',type:'auto' },
+    { id:'chal_max_lvl_lead',    lbl:'Avance de niveau/g',   badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
@@ -3157,7 +3157,7 @@ const D3_FIELDS = {
   Mid: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
     { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
-    { id:'chal_skillshots_dodged',lbl:'Skillshots esquivés/g',badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
@@ -3178,12 +3178,12 @@ const D3_FIELDS = {
 };
 
 // D4 — Progression & régularité (auto + API)
+// rank_abs et rank_age supprimés : déjà comptés via RANG_PLAFOND et getBonusAge
 const D4_FIELDS_BASE = [
-  { id:'rank_abs',    lbl:'Rang actuel',           badge:'auto', type:'auto' },
-  { id:'rank_age',    lbl:'Rang / âge',            badge:'auto', type:'auto' },
-  { id:'rank_prog',   lbl:'Progression rang N-1',  badge:'auto', type:'auto' },
-  { id:'regularite',  lbl:'Régularité sessions',   badge:'api',  type:'auto' },
-  { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)',badge:'api', type:'auto' },
+  { id:'rank_prog',   lbl:'Progression rang N-1',   badge:'auto', type:'auto' },
+  { id:'winrate',     lbl:'Win Rate cette saison',   badge:'api',  type:'auto' },
+  { id:'regularite',  lbl:'Régularité sessions',     badge:'api',  type:'auto' },
+  { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)', badge:'api',  type:'auto' },
 ];
 
 // D5 — Entretien (saisie coach, données non-API)
@@ -3483,7 +3483,9 @@ function calcScorePotentiel(scorePerf, age, rankIdx) {
   else if (a <= 17) bonusPotentiel = 1.0;
   else if (a <= 18) bonusPotentiel = 0.5;
   else if (a <= 19) bonusPotentiel = 0.2;
-  else return null; // Pas de score potentiel au-delà de 19 ans
+  else if (a <= 21) bonusPotentiel = 0.1;  // semi-pro en montée rapide
+  else if (a <= 22) bonusPotentiel = 0.05;
+  else return null; // Pas de score potentiel au-delà de 22 ans
 
   // Bonus si le joueur performe AU-DESSUS de son rang
   const plafond = RANG_PLAFOND[rankIdx] ?? 8.2;
