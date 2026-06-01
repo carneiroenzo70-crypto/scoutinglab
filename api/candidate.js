@@ -15,7 +15,7 @@ module.exports = async function handler(req, res) {
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch(_) {} }
 
-  const { pseudo, tag, server, role, age, rank, experience, contact } = body || {};
+  const { pseudo, tag, pays, role, age, rank, experience, contact } = body || {};
   if (!pseudo) return res.status(400).json({ error: 'Pseudo manquant' });
 
   const candidate = {
@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
     source: 'Google Form',
     pseudo: pseudo.trim(),
     tag: (tag || 'EUW').trim(),
-    server: (server || 'euw1').toLowerCase(),
+    pays: (pays || '').trim(),
     role: role || '?',
     age: age ? parseInt(age) : null,
     rank: rank || '?',
