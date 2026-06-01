@@ -3178,13 +3178,15 @@ const D3_FIELDS = {
   ],
 };
 
-// D4 — Progression & régularité (auto + API)
-// rank_abs et rank_age supprimés : déjà comptés via RANG_PLAFOND et getBonusAge
+// D4 — Rang & progression (ancre objective du score)
+// rank_abs = poids le plus lourd car le rang EST la preuve de niveau sur des centaines de games
+// rank_age supprimé : géré par le multiplicateur âge sur le score final
 const D4_FIELDS_BASE = [
-  { id:'rank_prog',   lbl:'Progression rang N-1',   badge:'auto', type:'auto' },
-  { id:'winrate',     lbl:'Win Rate cette saison',   badge:'api',  type:'auto' },
-  { id:'regularite',  lbl:'Régularité sessions',     badge:'api',  type:'auto' },
-  { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)', badge:'api',  type:'auto' },
+  { id:'rank_abs',    lbl:'Rang actuel (ELO)',        badge:'auto', type:'auto' },
+  { id:'rank_prog',   lbl:'Progression rang N-1',     badge:'auto', type:'auto' },
+  { id:'winrate',     lbl:'Win Rate cette saison',    badge:'api',  type:'auto' },
+  { id:'regularite',  lbl:'Régularité sessions',      badge:'api',  type:'auto' },
+  { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)',  badge:'api',  type:'auto' },
 ];
 
 // D5 — Entretien (saisie coach, données non-API)
@@ -3233,13 +3235,13 @@ const DIM_COLORS = { d1:'#4A9EFF', d2:'#F5A623', d3:'#2DD4BF', d4:'#C084FC', d5:
 const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'ENTRETIEN' };
 
 const ROLE_WEIGHTS = {
-  // D5 réduit à 10% : entretien optionnel, exclu si non renseigné (null)
-  // Poids redistribués vers les dimensions les plus prédictives par rôle
-  Top: { d1:.25, d2:.20, d3:.20, d4:.25, d5:.10 }, // ↑ progression (rang/âge), ↓ D5
-  Jgl: { d1:.18, d2:.32, d3:.22, d4:.18, d5:.10 }, // ↑ objectifs/macro (cœur du rôle), ↑ impact carte
-  Mid: { d1:.22, d2:.18, d3:.28, d4:.22, d5:.10 }, // ↑ impact carte (roam/kills), ↑ progression
-  ADC: { d1:.32, d2:.18, d3:.18, d4:.22, d5:.10 }, // D1 fort (DPM+CS), ↑ macro pour late game
-  Sup: { d1:.12, d2:.18, d3:.38, d4:.22, d5:.10 }, // ↑ impact carte/vision (mission du sup)
+  // D4 renforcé (rang = ancre du score global, pas un plafond externe)
+  // D5 optionnel : exclu du calcul si non renseigné
+  Top: { d1:.22, d2:.18, d3:.18, d4:.32, d5:.10 }, // rang + progression dominent (Top = durée de carry)
+  Jgl: { d1:.15, d2:.28, d3:.20, d4:.27, d5:.10 }, // macro/objectifs + rang équilibrés
+  Mid: { d1:.20, d2:.15, d3:.25, d4:.30, d5:.10 }, // impact + rang forts (Mid = snowball)
+  ADC: { d1:.28, d2:.16, d3:.16, d4:.30, d5:.10 }, // stats + rang (ADC = progression ELO = valeur)
+  Sup: { d1:.10, d2:.16, d3:.34, d4:.30, d5:.10 }, // impact carte + rang (Sup = intangibles + ELO)
 };
 
 // Helper: get all fields for current role
@@ -3448,25 +3450,22 @@ function globalScore() {
   const totalW = parts.reduce((a,[,w]) => a+w, 0);
   const rawScore = parts.reduce((a,[v,w]) => a + v*(w/totalW), 0);
 
-  // Appliquer le plafond par rang (score performance pur)
+  // Pas de plafond externe : le rang agit organiquement via D4 (rank_abs = ancre)
   const rankEl = document.getElementById('d-rank');
   const rankIdx = rankEl ? Math.max(0, Math.min(9, parseInt(rankEl.value) || 6)) : 6;
-  const plafond = RANG_PLAFOND[rankIdx] ?? 8.2;
-  const scorePlafonné = Math.min(rawScore, plafond);
 
-  // Stocker le score brut (avant plafond) pour affichage "sous-côté"
-  window._scoreRaw = parseFloat(rawScore.toFixed(2));
-  // Stocker le score performance sans bonus âge (pour affichage séparé)
-  window._scorePerf = parseFloat(scorePlafonné.toFixed(2));
+  // Stocker le score brut (avant bonus âge)
+  window._scoreRaw  = parseFloat(rawScore.toFixed(2));
+  window._scorePerf = parseFloat(rawScore.toFixed(2));
 
-  // Appliquer le bonus âge multiplicateur sur le score plafonné
+  // Appliquer le bonus âge multiplicateur
   const ageEl = document.getElementById('d-age');
   const age = ageEl ? parseInt(ageEl.value) : 0;
   const ageMult = getBonusAge(age);
-  const scoreFinal = Math.min(10, scorePlafonné * ageMult);
+  const scoreFinal = Math.min(10, rawScore * ageMult);
 
   // Calculer et stocker le score potentiel
-  window._scorePotentiel = calcScorePotentiel(scorePlafonné, age, rankIdx);
+  window._scorePotentiel = calcScorePotentiel(rawScore, age, rankIdx);
 
   return parseFloat(scoreFinal.toFixed(2));
 }
@@ -3654,18 +3653,19 @@ function updateGlobal() {
     perfEl.style.color = perf != null ? scColor(perf) : 'var(--sub)';
   }
 
-  // Indicateur "sous-coté" — joueur qui performe au-dessus de son rang
-  const raw = window._scoreRaw;
-  const perf2 = window._scorePerf;
+  // Indicateur "sous-coté" — stats D1+D2+D3 nettement au-dessus du rang actuel
   const souscoteEl = document.getElementById('badge-souscote');
-  if (souscoteEl && raw != null && perf2 != null) {
-    const gap = raw - perf2;
-    if (gap >= 1.0) {
-      const RANK_NAMES = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','GM','Challenger'];
-      const rankIdx2 = rankEl ? Math.max(0, Math.min(9, parseInt(rankEl.value) || 6)) : 6;
+  if (souscoteEl) {
+    const f2 = getRoleFields();
+    const statsAvg = ['d1','d2','d3'].map(id => dimAvg(f2[id])).filter(v => v !== null);
+    const perfMoy = statsAvg.length ? statsAvg.reduce((a,b) => a+b, 0) / statsAvg.length : null;
+    const rankScore = RANG_SCORES[rankIdx] ?? 5;
+    const RANK_NAMES = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','GM','Challenger'];
+    if (perfMoy != null && (perfMoy - rankScore) >= 1.5) {
+      const gap = (perfMoy - rankScore).toFixed(1);
       souscoteEl.style.display = 'flex';
-      souscoteEl.innerHTML = '📈 <strong>Sous-coté +' + gap.toFixed(1) + ' pts</strong> — Performe au-dessus de son rang '
-        + RANK_NAMES[rankIdx2] + ' · Score brut : ' + raw.toFixed(1) + '/10';
+      souscoteEl.innerHTML = '📈 <strong>Potentiel sous-estimé +' + gap + ' pts</strong> — Stats moyennes ('
+        + perfMoy.toFixed(1) + '/10) nettement au-dessus du rang ' + RANK_NAMES[rankIdx];
     } else {
       souscoteEl.style.display = 'none';
     }
