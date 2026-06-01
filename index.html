@@ -6321,19 +6321,19 @@ async function crmSyncCandidatures() {
         const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '?';
         const ageStr = c.age ? c.age + ' ans' : '?';
         const rankColor = (c.rank||'').includes('Diamond')||(c.rank||'').includes('Master')||(c.rank||'').includes('Grandmaster')||(c.rank||'').includes('Challenger') ? 'var(--lime)' : 'var(--sub2)';
-        return \`<div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+        return `<div style="background:var(--surf2);border:1px solid var(--border);border-radius:10px;padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
           <div style="flex:1;min-width:180px">
-            <div style="font-weight:700;font-size:.95rem">\${c.pseudo}<span style="color:var(--sub);font-weight:400;font-size:.8rem"> #\${c.tag||'?'}</span></div>
-            <div style="font-size:.75rem;color:var(--sub);margin-top:2px">\${c.role||'?'} · \${ageStr} · \${c.server?.toUpperCase()||'?'}</div>
+            <div style="font-weight:700;font-size:.95rem">${c.pseudo}<span style="color:var(--sub);font-weight:400;font-size:.8rem"> #${c.tag||'?'}</span></div>
+            <div style="font-size:.75rem;color:var(--sub);margin-top:2px">${c.role||'?'} · ${ageStr} · ${c.pays||'?'}</div>
           </div>
-          <div style="font-size:.82rem;color:\${rankColor};font-family:monospace;font-weight:600">\${c.rank||'?'}</div>
-          <div style="font-size:.78rem;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${c.experience||''}">\${c.experience||'—'}</div>
-          <div style="font-size:.75rem;color:var(--teal)">\${c.contact||'—'}</div>
-          <div style="font-size:.7rem;color:var(--sub)">\${dateStr}</div>
+          <div style="font-size:.82rem;color:${rankColor};font-family:monospace;font-weight:600">${c.rank||'?'}</div>
+          <div style="font-size:.78rem;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.experience||''}">${c.experience||'—'}</div>
+          <div style="font-size:.75rem;color:var(--teal)">${c.contact||'—'}</div>
+          <div style="font-size:.7rem;color:var(--sub)">${dateStr}</div>
           <div style="display:flex;gap:6px">
-            <button onclick="crmImportCandidate(\${i})" data-id="\${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Ajouter au pipeline</button>
+            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Ajouter au pipeline</button>
           </div>
-        </div>\`;
+        </div>`;
       }).join('');
       window._crmCandidates = candidates;
     }
