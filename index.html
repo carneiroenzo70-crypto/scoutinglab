@@ -2221,7 +2221,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 0;margin-bottom:-8px" class="res-actions">
           <button class="btn btn-ghost btn-sm" onclick="generateOfficialReport()" style="display:inline-flex;align-items:center;gap:5px;border-color:rgba(28,196,122,.5);color:#1CC47A;font-weight:700"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Rapport Officiel</button>
-          <button class="btn btn-ghost btn-sm" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> PDF Détaillé</button>
           <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
           <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
           <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
@@ -6064,9 +6063,12 @@ async function generateOfficialReport() {
       const val=Math.max(0,Math.min(10,v||0));
       return{x:rcx+Math.cos(rAng(i))*rR*val/10, y:rcy+Math.sin(rAng(i))*rR*val/10};
     });
-    if(rPts.length===5) p1.drawPolygon({points:rPts,
-      color:rgb(0.11,0.77,0.48),opacity:0.18,
-      borderColor:rgb(0.11,0.77,0.48),borderWidth:1.8,borderOpacity:0.9});
+    // Dessiner le polygone radar avec drawLine (drawPolygon n'existe pas dans pdf-lib)
+    for(let ri=0;ri<5;ri++){
+      const a=rPts[ri], b=rPts[(ri+1)%5];
+      p1.drawLine({start:{x:a.x,y:a.y},end:{x:b.x,y:b.y},
+        thickness:1.8,color:rgb(0.11,0.77,0.48),opacity:0.9});
+    }
     // Key stats (droite — 2 colonnes × 3 lignes)
     const ks=[
       {lbl:'KDA',      val:rawData.kda!==undefined      ?(+rawData.kda).toFixed(2)         :'—'},
