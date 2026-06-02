@@ -2184,12 +2184,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="dim-body" id="dim-body-d4"></div>
       </div>
 
-      <!-- ── DIMENSION D5 : Entretien coach ── -->
+      <!-- ── DIMENSION D5 : Intelligence combat ── -->
       <div id="dim-d5" class="dim-section">
         <div class="dim-header" onclick="toggleDim('d5')">
           <div class="dim-header-left">
             <span class="dim-tag tag-d5">D5</span>
-            <span class="dim-header-title">Entretien coach</span>
+            <span class="dim-header-title">Intelligence combat</span>
             <span id="dim-w-d5" style="font-size:11px;color:var(--sub);margin-left:4px"></span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -2872,7 +2872,7 @@ const SEUILS_ABSOLUS = {
     ADC: [3,  7, 13, 22],
     Sup: [2,  6, 12, 20],
   },
-  chal_immob_kill:   { all: [0.08, 0.25, 0.50, 0.85] }, // CC + kill allié/game — intelligence collective
+  chal_vision_adv:   { all: [-2, 0, 3, 7] },            // avantage vision vs adversaire direct — contrôle carte
   chal_perfect_game: { all: [2.0, 5.0, 10.0, 18.0] },   // % games 0 mort — consistency
   dpm: {
     Top: [ 250,  420,  620,  860],
@@ -3064,8 +3064,8 @@ function scoreStatCalibrated(id, val) {
       const sh = SEUILS_ABSOLUS.chal_skillshots_hit[role] || SEUILS_ABSOLUS.chal_skillshots_hit.Mid;
       return scoreAbsolu(v, ...sh);
     }
-    case 'chal_immob_kill':
-      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_immob_kill.all);
+    case 'chal_vision_adv':
+      return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_vision_adv.all);
     case 'chal_perfect_game':
       return scoreAbsolu(v, ...SEUILS_ABSOLUS.chal_perfect_game.all);
 
@@ -3224,21 +3224,21 @@ const D5_FIELDS = {
   Top: [
     { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
     { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
     { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
     { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
     { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
     { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
     { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
     { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
     { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
     { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
   ],
@@ -3250,7 +3250,7 @@ const D5_FIELDS = {
     { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'chal_immob_kill',    lbl:'CC + Kill allié/game',      badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
     { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
     { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
     { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
@@ -3995,7 +3995,7 @@ function buildResults() {
   // Bars de détail améliorées
   const det = document.getElementById('res-detail');
   const DIM_LABELS_FULL = {
-    d1:'Stats pures', d2:'Objectifs & macro', d3:'Impact carte', d4:'Progression', d5:'Entretien coach'
+    d1:'Stats pures', d2:'Objectifs & macro', d3:'Impact carte', d4:'Progression', d5:'Intelligence combat'
   };
   if (det) det.innerHTML = dims.map(d => {
     const barW = d.val !== null ? (d.val / 10 * 100).toFixed(1) : 0;
@@ -7622,7 +7622,7 @@ async function fetchRiotData() {
       rawData.chal_team_dmg_pct      = ch.teamDmgPct          ?? 0;
       rawData.chal_kills_turret      = ch.killsUnderTurret     ?? 0;
       rawData.chal_skillshots_hit    = ch.skillshotsHit        ?? 0;
-      rawData.chal_immob_kill        = ch.immobilizeKill       ?? 0;
+      rawData.chal_vision_adv        = ch.visionAdv             ?? 0;
       rawData.chal_perfect_game      = ch.perfectGame          ?? 0;
       buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
