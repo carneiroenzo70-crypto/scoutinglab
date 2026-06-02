@@ -1565,6 +1565,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 
 <body class="landing-active">
@@ -2219,7 +2220,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="pdf-header-date" id="pdf-date"></div>
         </div>
         <div style="display:flex;justify-content:flex-end;gap:8px;padding:12px 20px 0;margin-bottom:-8px" class="res-actions">
-          <button class="btn btn-ghost btn-sm" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Exporter PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="generateOfficialReport()" style="display:inline-flex;align-items:center;gap:5px;border-color:rgba(28,196,122,.5);color:#1CC47A;font-weight:700"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Rapport Officiel</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportPDF()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> PDF Détaillé</button>
           <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
           <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
           <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
@@ -5979,6 +5981,192 @@ async function exportPDF() {
   const fname='VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+currentRole+'_'+new Date().toISOString().slice(0,10)+'.pdf';
   doc.save(fname);
   showToast('Rapport PDF pro exporté — '+fname,'success');
+}
+// ════════════════════════════════════════════════════════════
+// RAPPORT OFFICIEL — Template PDF VisionScore
+// ════════════════════════════════════════════════════════════
+async function generateOfficialReport() {
+  if (!window.PDFLib) { showToast('pdf-lib non chargé — vérifiez la connexion', 'error'); return; }
+  const btn = document.querySelector('[onclick="generateOfficialReport()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
+  showToast('Génération du rapport officiel…', 'info');
+
+  try {
+    const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+    const tplRes = await fetch('/assets/report-template.pdf');
+    if (!tplRes.ok) throw new Error('Template PDF introuvable (/assets/report-template.pdf)');
+    const pdfDoc = await PDFDocument.load(await tplRes.arrayBuffer());
+    const fontB = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const [p1, p2] = pdfDoc.getPages();
+    const { width: W, height: H } = p1.getSize();
+
+    // ── Données ────────────────────────────────────────────
+    const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || '—';
+    const tagVal   = document.getElementById('d-tag')?.value?.trim()   || 'EUW';
+    const ageVal   = document.getElementById('d-age')?.value            || '';
+    const rankIdx  = parseInt(document.getElementById('d-rank')?.value  || 6);
+    const RANKS    = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+    const rankName = RANKS[rankIdx] || 'Diamond';
+    const roleLbl  = { Top:'Top', Jgl:'Jungle', Mid:'Mid', ADC:'ADC', Sup:'Support' }[currentRole] || currentRole;
+    const dateStr  = new Date().toLocaleDateString('fr-FR');
+    const f = typeof getRoleFields === 'function' ? getRoleFields() : {};
+    const dimKeys   = ['d1','d2','d3','d4','d5'];
+    const dimScores = dimKeys.map(k => (typeof dimAvg === 'function' && f[k]) ? dimAvg(f[k]) : null);
+    const gScore    = typeof globalScore === 'function' ? globalScore() : null;
+
+    // Couleurs
+    const BG  = rgb(1,1,1);
+    const BLK = rgb(0.06,0.07,0.10);
+    const SUB = rgb(0.40,0.44,0.54);
+    const sCol = v => {
+      if (v===null) return SUB;
+      if (v>=9)   return rgb(0.96,0.65,0.14);
+      if (v>=7.5) return rgb(0.11,0.77,0.48);
+      if (v>=5.5) return rgb(0.29,0.62,1.00);
+      if (v>=4)   return rgb(0.96,0.65,0.29);
+      return rgb(0.91,0.10,0.29);
+    };
+    const cover = (pg,x,y,w,h) => pg.drawRectangle({x,y,width:w,height:h,color:BG});
+    const txt   = (pg,t,x,y,sz,fn,col) => pg.drawText(String(t),{x,y,size:sz,font:fn,color:col});
+    const ctxt  = (pg,t,cx,y,sz,fn,col) => { const tw=fn.widthOfTextAtSize(String(t),sz); txt(pg,t,cx-tw/2,y,sz,fn,col); };
+
+    // ═══ PAGE 1 ═══════════════════════════════════════════
+    // Structure + date
+    cover(p1,44,H-73,235,30);
+    txt(p1,'VisionScore — Scouting',         44,H-52,8.5,fontB,BLK);
+    txt(p1,'Rapport confidentiel — '+dateStr, 44,H-63,7.5,fontR,SUB);
+    // Badge rang + rôle
+    const badge = rankName.toUpperCase()+' - '+roleLbl.toUpperCase();
+    cover(p1,W-185,H-73,175,22); ctxt(p1,badge,W-97,H-58,10,fontB,BLK);
+    // Nom du joueur
+    cover(p1,50,H-215,W-100,55);
+    const nSz = Math.max(18,Math.min(34,34-Math.max(0,pseudo.length-10)));
+    ctxt(p1,pseudo,W/2,H-188,nSz,fontB,BLK);
+    // Sous-titre
+    const sub = '#'+tagVal+'  ·  '+roleLbl+'  ·  '+rankName+(ageVal?'  ·  '+ageVal+' ans':'');
+    cover(p1,60,H-222,W-120,20); ctxt(p1,sub,W/2,H-214,9,fontR,SUB);
+    // Score global
+    const sTxt = gScore!==null?gScore.toFixed(1):'—';
+    cover(p1,W/2-72,H-358,144,78);
+    ctxt(p1,sTxt, W/2,H-302,58,fontB,sCol(gScore));
+    ctxt(p1,'/10',W/2,H-348,13,fontR,SUB);
+    // 5 scores dimensions
+    const dxs=[88,185,282,378,473], dY=H-450;
+    dxs.forEach((x,i)=>{
+      const v=dimScores[i], vt=v!==null?v.toFixed(1):'—';
+      cover(p1,x-24,dY-10,48,24); ctxt(p1,vt,x,dY,13,fontB,sCol(v));
+    });
+    // Radar polygon
+    const rcx=155, rcy=H-548, rR=74;
+    const rAng=i=>Math.PI*2*i/5-Math.PI/2;
+    const rPts=dimScores.map((v,i)=>{
+      const val=Math.max(0,Math.min(10,v||0));
+      return{x:rcx+Math.cos(rAng(i))*rR*val/10, y:rcy+Math.sin(rAng(i))*rR*val/10};
+    });
+    if(rPts.length===5) p1.drawPolygon({points:rPts,
+      color:rgb(0.11,0.77,0.48),opacity:0.18,
+      borderColor:rgb(0.11,0.77,0.48),borderWidth:1.8,borderOpacity:0.9});
+    // Key stats (droite — 2 colonnes × 3 lignes)
+    const ks=[
+      {lbl:'KDA',      val:rawData.kda!==undefined      ?(+rawData.kda).toFixed(2)         :'—'},
+      {lbl:'CS/min',   val:rawData.cs_min!==undefined   ?(+rawData.cs_min).toFixed(1)       :'—'},
+      {lbl:'Kill Part.',val:rawData.kill_part!==undefined?(+rawData.kill_part).toFixed(0)+'%':'—'},
+    ];
+    const rsMap={
+      Top:[{id:'dmg_tower',lbl:'Dgt Tours/g'},{id:'dmg_share',lbl:'Dmg Share %'},{id:'vision',lbl:'Vision/g'}],
+      Jgl:[{id:'obj_score', lbl:'Obj. Score'},{id:'vision',   lbl:'Vision/g'},   {id:'chal_jgl_cs10',lbl:'Camps<10m'}],
+      Mid:[{id:'dmg_share',lbl:'Dmg Share %'},{id:'dpm',      lbl:'DPM'},        {id:'chal_solo_kills',lbl:'Solo Kills/g'}],
+      ADC:[{id:'dmg_share',lbl:'Dmg Share %'},{id:'dpm',      lbl:'DPM'},        {id:'winrate',lbl:'Win Rate %'}],
+      Sup:[{id:'vision',   lbl:'Vision/g'},   {id:'kill_part',lbl:'Kill Part.%'},{id:'chal_wards_killed',lbl:'Wards kill/g'}],
+    };
+    (rsMap[currentRole]||rsMap.Mid).forEach(s=>{
+      const v=rawData[s.id]; ks.push({lbl:s.lbl,val:v!==undefined?(+v).toFixed(1):'—'});
+    });
+    const ksXs=[380,498], ksYs=[H-443,H-489,H-534];
+    for(let i=0;i<6&&i<ks.length;i++){
+      const x=ksXs[i%2],y=ksYs[Math.floor(i/2)];
+      cover(p1,x-40,y-16,80,36);
+      ctxt(p1,ks[i].val,x,y,    14,fontB,BLK);
+      ctxt(p1,ks[i].lbl,x,y-14,  7,fontR,SUB);
+    }
+
+    // ═══ PAGE 2 ═══════════════════════════════════════════
+    // Pool champions
+    const champs=(typeof champHistory!=='undefined'?champHistory:[]).slice(0,8);
+    let ddVer='14.24.1';
+    try{ const vr=await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+         if(vr.ok){const vs=await vr.json();ddVer=vs[0]||ddVer;} }catch(_){}
+    const cCols=[58,168,278,388], cRows=[H-205,H-342], cSz=82;
+    for(let ci=0;ci<champs.length;ci++){
+      const c=champs[ci], cx=cCols[ci%4], cy=cRows[Math.floor(ci/4)];
+      try{
+        const key=typeof champToDDragon==='function'?champToDDragon(c.name):c.name;
+        const ir=await fetch(`https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${key}.png`);
+        if(ir.ok){
+          const ib=await ir.arrayBuffer();
+          const img=await pdfDoc.embedPng(new Uint8Array(ib));
+          p2.drawImage(img,{x:cx,y:cy,width:cSz,height:cSz});
+        }
+      }catch(_){}
+      cover(p2,cx,cy-20,cSz,20);
+      ctxt(p2,c.games+'G  ·  '+c.wr+'%  ·  '+c.kda, cx+cSz/2, cy-11, 6.5, fontR, SUB);
+    }
+    // Points forts / axes d'amélioration
+    const allItems=[];
+    dimKeys.forEach(k=>{
+      if(!f[k])return;
+      f[k].forEach(field=>{
+        const sc=typeof computeFieldScore==='function'?computeFieldScore(field):null;
+        if(sc!==null) allItems.push({label:(field.lbl||field.label||'').slice(0,28),score:sc});
+      });
+    });
+    allItems.sort((a,b)=>b.score-a.score);
+    const strgs=allItems.slice(0,4);
+    const weaks=[...allItems].sort((a,b)=>a.score-b.score).slice(0,4);
+    const pfX=52, adX=316, swY=H-625, swStep=18;
+    strgs.forEach((it,i)=>{
+      cover(p2,pfX,swY-i*swStep-11,248,swStep+2);
+      txt(p2,it.label,pfX,swY-i*swStep,8.5,fontR,BLK);
+      txt(p2,it.score.toFixed(1),pfX+214,swY-i*swStep,8.5,fontB,sCol(it.score));
+    });
+    weaks.forEach((it,i)=>{
+      cover(p2,adX,swY-i*swStep-11,248,swStep+2);
+      txt(p2,it.label,adX,swY-i*swStep,8.5,fontR,BLK);
+      txt(p2,it.score.toFixed(1),adX+214,swY-i*swStep,8.5,fontB,sCol(it.score));
+    });
+    // Bilan
+    const verdicts=[[9,'Profil d\'exception. Recrutement prioritaire — potentiel semi-pro immédiat.'],
+      [8,'Très solide. Tryout prioritaire — profil prêt pour le circuit semi-pro.'],
+      [7,'Bon profil. Tryout recommandé — à intégrer dans le circuit semi-pro.'],
+      [6,'Profil en développement. À suivre sur 30 jours — potentiel identifié.'],
+      [5,'Pas encore prêt. Niveau insuffisant sur les dimensions clés.'],
+      [0,'Niveau trop faible. Développement individuel requis avant tout recrutement.']];
+    const bilanTxt=(gScore!==null?(verdicts.find(([m])=>gScore>=m)?.[1]||'')
+      :'Importez les données Riot API pour générer le bilan automatiquement.')
+      +' Score SPES : '+(gScore!==null?gScore.toFixed(2):'—')+'/10 ('+roleLbl+' '+rankName+').';
+    const bilanLines=[]; let cur='';
+    bilanTxt.split(' ').forEach(w=>{
+      const t=cur?cur+' '+w:w;
+      if(fontR.widthOfTextAtSize(t,8)>465&&cur){bilanLines.push(cur);cur=w;}else cur=t;
+    }); if(cur)bilanLines.push(cur);
+    const bilanY=H-760;
+    cover(p2,52,bilanY-12,490,bilanLines.length*14+18);
+    bilanLines.forEach((line,i)=>txt(p2,line,65,bilanY-i*13,8,fontR,BLK));
+
+    // ── Sauvegarde ────────────────────────────────────────
+    const outB=await pdfDoc.save();
+    const blob=new Blob([outB],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    const fname='VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+    a.href=url; a.download=fname; a.click(); URL.revokeObjectURL(url);
+    showToast('✅ Rapport officiel généré — '+fname,'success');
+  } catch(err) {
+    showToast('Erreur PDF : '+err.message,'error'); console.error('[PDF]',err);
+  } finally {
+    if(btn){btn.disabled=false; btn.innerHTML='📄 Rapport Officiel';}
+  }
 }
 // ════════════════════════════════════════════════════════════
 // ② HISTORIQUE — Sauvegarde & Restauration
