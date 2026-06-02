@@ -7337,6 +7337,18 @@ async function fetchRiotData() {
       }
     }
 
+    // Détection finale du rôle (après toutes les builds)
+    const finalRole = guessRoleFromMatches(matchHistory, rawData._puuid) || detectRoleFromChampPool(champHistory);
+    if (finalRole) {
+      currentRole = finalRole;
+      document.querySelectorAll('.role-pill').forEach(b => {
+        b.classList.toggle('active', !!b.getAttribute('onclick')?.includes("'" + finalRole + "'"));
+      });
+      buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
+      const pcMeta = document.getElementById('pc-meta');
+      if (pcMeta) pcMeta.textContent = `#${tag} · ${finalRole} · ${server.toUpperCase()} · ${stats.totalGames} parties`;
+    }
+
     setProgress(100, '✓ Import terminé');
     const top3 = stats.champDetails.slice(0,3).map(c => `<strong>${c.name}</strong> (${c.games}G · ${c.wr}% WR)`).join(' · ');
     setStatus('success', `
