@@ -9314,48 +9314,6 @@ async function lookupLiquipediaAge(gameName) {
   }
 }
 
-// Détecte le rôle à partir des données brutes de match (individualPosition + teamPosition)
-// + fallback par champion si positions indisponibles
-function guessRoleFromMatches(matchData, puuid) {
-  const posCount = { TOP:0, JUNGLE:0, MIDDLE:0, BOTTOM:0, UTILITY:0 };
-  matchData.forEach(m => {
-    const p = m?.info?.participants?.find(x => x.puuid === puuid);
-    if (!p) return;
-    // individualPosition est la vraie position détectée par Riot (plus fiable que teamPosition)
-    const pos = (p.individualPosition || p.teamPosition || '').toUpperCase();
-    if (posCount[pos] !== undefined) posCount[pos]++;
-  });
-  const total = Object.values(posCount).reduce((a,b)=>a+b,0);
-  if (total > 0) {
-    const best = Object.entries(posCount).sort((a,b)=>b[1]-a[1])[0][0];
-    const map = { TOP:'Top', JUNGLE:'Jgl', MIDDLE:'Mid', BOTTOM:'ADC', UTILITY:'Sup' };
-    if (posCount[best] > 0) return map[best] || null;
-  }
-  return null;
-}
-
-// Détecte le rôle depuis le pool de champions (fallback si positions Riot indisponibles)
-function detectRoleFromChampPool(champDetails) {
-  if (!champDetails || !champDetails.length) return null;
-  const supChamps = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','velkoz','bard','zilean','lux','heimerdinger','milio','renata','sona','alistar','taric','braum','seraphine'];
-  const jglChamps = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','kha','kindred','nunu','olaf','pantheon','rammus','rek sai','sejuani','taliyah','udyr','viego','volibear','wukong','zac','zed','xin zhao','xinzhao','xin','poppy','belveth','briar','naafiri','ambessa','jarvaniv'];
-  const adcChamps = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kaisa','lucian','ashe','sivir','tristana','vayne','kogmaw','twitch','varus','miss fortune','missfortune','nilah','zeri','smolder'];
-  const topChamps = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce','aatrox','chogath','gangplank','gnar','illaoi','irelia','jax','mordekaiser','nasus','quinn','renekton','riven','teemo','tryndamere','urgot','vladimir','yorick','singed','tahm kench','dr. mundo','ksante','sett'];
-
-  const roleCounts = { Sup:0, Jgl:0, ADC:0, Top:0, Mid:0 };
-  champDetails.forEach(c => {
-    const n = (c.name || '').toLowerCase();
-    const w = c.games || 1;
-    if (supChamps.some(s => n.includes(s)))      roleCounts.Sup += w;
-    else if (jglChamps.some(s => n.includes(s))) roleCounts.Jgl += w;
-    else if (adcChamps.some(s => n.includes(s))) roleCounts.ADC += w;
-    else if (topChamps.some(s => n.includes(s))) roleCounts.Top += w;
-    else                                          roleCounts.Mid += w;
-  });
-  const best = Object.entries(roleCounts).sort((a,b)=>b[1]-a[1])[0];
-  return best[1] > 0 ? best[0] : null;
-}
-
 function guessRole(champs) {
   if (!champs || !champs.length) return '?';
   const top = champs[0]?.name?.toLowerCase() || '';
