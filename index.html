@@ -1567,7 +1567,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
 </head>
 
-<body class="landing-active">
+<body class="welcome-active">
 
 <!-- ════ HEADER ════ -->
 <header class="hd">
@@ -9359,18 +9359,52 @@ function detectRoleFromChampPool(champDetails) {
 function guessRole(champs) {
   if (!champs || !champs.length) return '?';
   const top = champs[0]?.name?.toLowerCase() || '';
-
-  // Listes complètes par rôle (champions fréquents Diamond+ EUW)
   const supChamps = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','velkoz','bard','zilean','lux','heimerdinger','milio','renata','sona','alistar','taric','braum'];
   const jglChamps = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','j4','kha','kindred','nunu','olaf','pantheon','rammus','rek sai','sejuani','taliyah','udyr','viego','volibear','wukong','zac','zed','xin','poppy','belveth','briar','naafiri'];
   const adcChamps = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kaisa','lucian','ashe','sivir','tristana','vayne','kogmaw','twitch','varus','miss fortune','nilah','zeri','smolder'];
   const topChamps = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce','aatrox','chogath','gangplank','gnar','illaoi','irelia','jax','mordekaiser','nasus','quinn','renekton','riven','teemo','tryndamere','urgot','vladimir','volibear','yasuo','yone','yorick','singed','tahm kench','dr. mundo','ksante','sett','zac'];
-
   if (supChamps.some(s => top.includes(s))) return 'Sup';
   if (jglChamps.some(s => top.includes(s))) return 'Jgl';
   if (adcChamps.some(s => top.includes(s))) return 'ADC';
   if (topChamps.some(s => top.includes(s))) return 'Top';
   return 'Mid';
+}
+
+// Détecte le rôle depuis les positions Riot API (individualPosition/teamPosition)
+function guessRoleFromMatches(matchData, puuid) {
+  const posCount = { TOP:0, JUNGLE:0, MIDDLE:0, BOTTOM:0, UTILITY:0 };
+  matchData.forEach(m => {
+    const p = m?.info?.participants?.find(x => x.puuid === puuid);
+    if (!p) return;
+    const pos = (p.individualPosition || p.teamPosition || '').toUpperCase();
+    if (posCount[pos] !== undefined) posCount[pos]++;
+  });
+  const total = Object.values(posCount).reduce((a,b)=>a+b,0);
+  if (total === 0) return null;
+  const best = Object.entries(posCount).sort((a,b)=>b[1]-a[1])[0];
+  if (best[1] === 0) return null;
+  return { TOP:'Top', JUNGLE:'Jgl', MIDDLE:'Mid', BOTTOM:'ADC', UTILITY:'Sup' }[best[0]] || null;
+}
+
+// Détecte le rôle depuis le pool complet de champions (pondéré par parties jouées)
+function detectRoleFromChampPool(champDetails) {
+  if (!champDetails || !champDetails.length) return null;
+  const sup = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','velkoz','bard','zilean','heimerdinger','milio','renata','sona','alistar','taric','braum','seraphine'];
+  const jgl = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','kha','kindred','nunu','olaf','pantheon','rammus','sejuani','taliyah','udyr','viego','wukong','zac','xin zhao','xinzhao','poppy','belveth','briar','naafiri','ambessa','jarvaniv','volibear','zed'];
+  const adc = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kaisa','lucian','ashe','sivir','tristana','vayne','kogmaw','twitch','varus','miss fortune','missfortune','nilah','zeri','smolder'];
+  const top = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce','aatrox','chogath','gangplank','gnar','illaoi','irelia','jax','mordekaiser','nasus','quinn','renekton','riven','teemo','tryndamere','urgot','vladimir','yorick','singed','tahm kench','dr. mundo','ksante','sett'];
+  const counts = { Sup:0, Jgl:0, ADC:0, Top:0, Mid:0 };
+  champDetails.forEach(c => {
+    const n = (c.name || '').toLowerCase();
+    const w = c.games || 1;
+    if (sup.some(s => n.includes(s)))      counts.Sup += w;
+    else if (jgl.some(s => n.includes(s))) counts.Jgl += w;
+    else if (adc.some(s => n.includes(s))) counts.ADC += w;
+    else if (top.some(s => n.includes(s))) counts.Top += w;
+    else                                   counts.Mid += w;
+  });
+  const best = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  return best[1] > 0 ? best[0] : null;
 }
 
 // ════════════════════════════════════════════
@@ -9597,9 +9631,16 @@ function top50Export() {
   showToast(`Export CSV — ${top50Data.length} prospects`, 'success');
 }
 
-// Init
+// Init — toujours démarrer sur l'écran d'accueil
 top50LoadLocal();
 checkBackendStatus();
+(function() {
+  const landing = document.getElementById('panel-landing');
+  if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
+  const welcome = document.getElementById('panel-welcome');
+  if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
+  document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
+})();
 
 
 </script>
