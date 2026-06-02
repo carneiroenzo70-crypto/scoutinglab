@@ -7268,7 +7268,7 @@ function setProgress(pct, txt) {
   }
   _progressLastPct = pct;
 
-  document.getElementById('api-prog-txt').textContent = txt + timeLabel;
+  const progTxt = document.getElementById('api-prog-txt'); if (progTxt) progTxt.textContent = txt + timeLabel;
   const pe = document.getElementById('api-prog-pct');
   if (pe) pe.textContent = Math.round(pct) + '%';
 }
@@ -7543,7 +7543,7 @@ async function fetchRiotData() {
   }
 
   const btn = document.getElementById('btn-fetch');
-  btn.disabled = true; btn.textContent = 'Import…';
+  if (btn) { btn.disabled = true; btn.textContent = 'Import…'; }
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
 
   try {
@@ -7634,11 +7634,11 @@ async function fetchRiotData() {
     const pc = document.getElementById('player-card-display');
     if (pc) {
       pc.style.display = 'grid';
-      document.getElementById('pc-name').textContent = pseudo2;
-      document.getElementById('pc-meta').textContent = `#${tag} · ${currentRole} · ${server.toUpperCase()} · ${stats.totalGames} parties`;
+      const _pcName = document.getElementById('pc-name'); if (_pcName) _pcName.textContent = pseudo2;
+      const _pcMeta = document.getElementById('pc-meta'); if (_pcMeta) _pcMeta.textContent = `#${tag} · ${currentRole} · ${server.toUpperCase()} · ${stats.totalGames} parties`;
       if (soloQ) {
-        document.getElementById('pc-rank').textContent = `${soloQ.tier} ${soloQ.rank}`;
-        document.getElementById('pc-lp').textContent = `${soloQ.leaguePoints} LP`;
+        const _pcRank = document.getElementById('pc-rank'); if (_pcRank) _pcRank.textContent = `${soloQ.tier} ${soloQ.rank}`;
+        const _pcLp   = document.getElementById('pc-lp');   if (_pcLp)   _pcLp.textContent   = `${soloQ.leaguePoints} LP`;
         const badgeInner = document.getElementById('pc-rank-badge-inner');
         if (badgeInner) {
           badgeInner.innerHTML = rankIcon(soloQ.tier, 'rank-icon-md') +
@@ -7661,7 +7661,7 @@ async function fetchRiotData() {
       }
 
       const age = document.getElementById('d-age')?.value;
-      document.getElementById('pc-age').textContent = age ? age+' ans' : '—';
+      const _pcAge = document.getElementById('pc-age'); if (_pcAge) _pcAge.textContent = age ? age+' ans' : '—';
       // Auto-recherche d'âge via Leaguepedia si âge non saisi
       if (!age) {
         const pseudo = document.getElementById('d-pseudo')?.value.trim();
@@ -7695,10 +7695,10 @@ async function fetchRiotData() {
     setTimeout(() => { document.getElementById('api-progress').style.display='none'; }, 5000);
 
   } catch(err) {
-    document.getElementById('api-progress').style.display = 'none';
-    setStatus('error', `<strong>Erreur :</strong> ${err.message}<br><small style="opacity:.7">Cliquez "Logs techniques" pour le détail.</small>`);
+    const _progBar = document.getElementById('api-progress'); if (_progBar) _progBar.style.display = 'none';
+    setStatus('error', `<strong>Erreur :</strong> ${err.message}<br><small style="opacity:.7">${err.stack ? err.stack.split('\n')[1] : ''}</small>`);
   } finally {
-    btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Importer';
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg> Importer'; }
   }
 }
 
