@@ -7629,12 +7629,12 @@ async function fetchRiotData() {
     matchHistory = matches;
     champHistory = stats.champDetails || [];
 
-    // Détection automatique du rôle
-    const detectedRole = guessRoleFromMatches(matchHistory, acc.puuid) || guessRole(champHistory);
-    if (detectedRole && detectedRole !== '?') {
-      currentRole = detectedRole;
+    // Détection automatique du rôle (positions Riot puis fallback pool champions)
+    const _detectedRole = guessRoleFromMatches(matchHistory, acc.puuid) || guessRole(champHistory);
+    if (_detectedRole && _detectedRole !== '?') {
+      currentRole = _detectedRole;
       document.querySelectorAll('.role-pill').forEach(b =>
-        b.classList.toggle('active', !!b.getAttribute('onclick')?.includes("'" + detectedRole + "'"))
+        b.classList.toggle('active', !!b.getAttribute('onclick')?.includes("'" + _detectedRole + "'"))
       );
       buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
@@ -9693,7 +9693,7 @@ function guessRoleFromMatches(matchData, puuid) {
 function guessRole(champs) {
   if (!champs || !champs.length) return 'Mid';
   const sup = ['thresh','lulu','janna','soraka','nami','blitzcrank','leona','nautilus','rakan','pyke','senna','karma','morgana','zyra','brand','velkoz','bard','zilean','heimerdinger','milio','renata','sona','alistar','taric','braum','seraphine'];
-  const jgl = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','kha','kindred','nunu','olaf','pantheon','rammus','sejuani','taliyah','udyr','viego','wukong','zac','xin zhao','xinzhao','xin zhao','poppy','belveth','briar','naafiri','ambessa','jarvaniv','volibear','zed'];
+  const jgl = ['vi','lee sin','hecarim','nocturne','graves','nidalee','lillia','kayn','ekko','master yi','shaco','warwick','amumu','jarvan','diana','elise','evelynn','fiddlesticks','gragas','ivern','kha','kindred','nunu','olaf','pantheon','rammus','sejuani','taliyah','udyr','viego','wukong','zac','xinzhao','xin zhao','poppy','belveth','briar','naafiri','ambessa','jarvaniv','volibear','zed'];
   const adc = ['jinx','jhin','caitlyn','ezreal','draven','aphelios','samira','xayah','kaisa','lucian','ashe','sivir','tristana','vayne','kogmaw','twitch','varus','miss fortune','missfortune','nilah','zeri','smolder'];
   const top = ['darius','garen','fiora','camille','malphite','ornn','shen','kennen','jayce','aatrox','chogath','gangplank','gnar','illaoi','irelia','jax','mordekaiser','nasus','quinn','renekton','riven','teemo','tryndamere','urgot','vladimir','yorick','singed','tahm kench','dr. mundo','ksante','sett'];
   const counts = { Sup:0, Jgl:0, ADC:0, Top:0, Mid:0 };
@@ -9706,7 +9706,7 @@ function guessRole(champs) {
     else if (top.some(s => n.includes(s))) counts.Top += w;
     else                                   counts.Mid += w;
   });
-  return Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+  return Object.entries(counts).sort((a,b) => b[1]-a[1])[0][0];
 }
 
 // ════════════════════════════════════════════
