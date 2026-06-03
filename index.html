@@ -6147,23 +6147,20 @@ async function generateOfficialReport() {
     //    c) Label "MASTER - JUNGLE"     pdfplumber top=124.8 → PDF-lib y≈703
     const badge = rankName.toUpperCase() + ' - ' + roleLbl.toUpperCase();
 
-    // 2a. Couvrir le badge texte du template (pdfplumber top=50-63, PDF-lib y=779-792)
-    cov(p1, 455, 777, 130, 16);
-    mid(p1, badge, 499, 782, 10, fontB, BLK);
+    // 2b. Couvrir TOUTE la zone butterfly du template (large coverage)
+    // butterfly: pdfplumber x=455-595, top=40-230 → PDF-lib x=430-595, y=608-805
+    cov(p1, 430, 608, 163, 197);
 
-    // 2b. Couvrir toute la zone rang (image + labels) de façon agressive
-    cov(p1, 440, 620, 158, 182);
-
-    // 2c. Dessiner l'icône de rang correct (SVG → PNG) centré dans la zone couverte
-    const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 160);
+    // 2c. Dessiner l'icône de rang — rendu sur canvas carré pour éviter déformation
+    const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 200);
     if (rankImgBuf) {
       const rankImg = await pdfDoc.embedPng(new Uint8Array(rankImgBuf)).catch(() => null);
-      // Centré sur l'emblème du template (x≈530-595, centre x≈562 → clamp à droite de page)
-      if (rankImg) p1.drawImage(rankImg, {x:487, y:691, width:106, height:106});
+      // Centre x=512, top at y=797 (pdfplumber top≈55 → PDF-lib 787 → image y=787-112=675)
+      if (rankImg) p1.drawImage(rankImg, {x:456, y:675, width:112, height:112});
     }
 
-    // 2d. Réécrire le label rang (sous l'image, centré sur x=540)
-    mid(p1, badge, 540, 632, 11, fontB, BLK);
+    // 2d. Label rang sous l'icône
+    mid(p1, badge, 512, 660, 11, fontB, BLK);
 
     // 3. Nom du joueur — template "Nom du joueur in game" pdfplumber top=155.9-179.9
     //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓ — largeur réduite à 380 pour ne pas empiéter sur le logo rang
@@ -6243,20 +6240,20 @@ async function generateOfficialReport() {
                   ? Math.round(rawData.kill_part)+'%' : '-';
 
     // Ligne 1 — KDA (centre x=430) + rs[0] remplace "Stat 4" (centre x=535)
-    cov(p1, 413, 214, 56, 36); mid(p1, kdaV, 430, 228, 16, fontB, BLK);
-    cov(p1, 504, 174, 78, 76); // couvre label "Stat 4" (y+h=250 ✓ pour top=594.8) + son label
+    cov(p1, 395, 210, 76, 44); mid(p1, kdaV, 430, 228, 16, fontB, BLK);
+    cov(p1, 485, 170, 105, 86); // couvre crosshair complet Stat 4 (flèches L+R) + label
     put(p1, rs[0].lbl, 508, 192, 9, fontR, SUB);
     mid(p1, rs[0].val, 535, 228, 16, fontB, BLK);
 
     // Ligne 2 — CS/min (centre x=430) + Kill part. (centre x=535)
-    cov(p1, 413, 130, 56, 40); mid(p1, csV, 430, 148, 16, fontB, BLK);
-    cov(p1, 504, 130, 74, 40); mid(p1, kpV, 535, 148, 16, fontB, BLK);
+    cov(p1, 393, 126, 80, 46); mid(p1, csV, 430, 148, 16, fontB, BLK);
+    cov(p1, 484, 126, 108, 46); mid(p1, kpV, 535, 148, 16, fontB, BLK);
 
     // Ligne 3 — rs[1] remplace "Stat 5" + rs[2] remplace "Stat 6"
-    cov(p1, 408, 10, 78, 82);  // y=10-92 → pdfplumber 750-832, couvre top=754.2 ✓
+    cov(p1, 390, 8, 86, 86);  // élargi pour capturer les flèches gauches du template
     put(p1, rs[1].lbl, 411, 32, 9, fontR, SUB);
     mid(p1, rs[1].val, 430, 68, 16, fontB, BLK);
-    cov(p1, 504, 10, 78, 82);
+    cov(p1, 483, 8, 108, 86);
     put(p1, rs[2].lbl, 508, 32, 9, fontR, SUB);
     mid(p1, rs[2].val, 535, 68, 16, fontB, BLK);
 
@@ -6332,7 +6329,7 @@ async function generateOfficialReport() {
           if (img) p2.drawImage(img, {x:imgX, y:cy, width:cSz, height:cSz});
         }
       } catch(_){}
-      const stTxt = c.games+'G · '+c.wr+'% · '+c.kda;
+      const stTxt = c.games+'G - '+c.wr+'% - '+c.kda;
       const stW   = fontR.widthOfTextAtSize(stTxt, 7.5);
       put(p2, stTxt, ccx - stW/2, cy-13, 7.5, fontR, SUB);
     }
@@ -6354,20 +6351,22 @@ async function generateOfficialReport() {
     if (kdaBuf2) {
       const kdaImg2 = await pdfDoc.embedPng(new Uint8Array(kdaBuf2)).catch(()=>null);
       if (kdaImg2) {
-        // Preserve aspect ratio — fit dans la boîte 263×230, aligné en haut (y=507 from bottom)
+        // Boîte chart: pdfplumber top=335-575 → PDF-lib y=267-507 (height=240pt)
+        // Formule empirique page2: y_top = 907 - pdfplumber_top = 907-335=572
+        // Aspect ratio: canvas height≈160px, width≈540px → ar≈0.30
         const ar = kdaImg2.height / kdaImg2.width;
-        const w = 263, h = Math.round(Math.min(230, w * ar));
-        const yPos = 562 - h;
-        p2.drawImage(kdaImg2, {x:11, y:yPos, width:w, height:h});
+        const w = 258, h = Math.round(Math.min(220, w * ar));
+        const yPos = 572 - h; // aligner en haut de la boîte
+        p2.drawImage(kdaImg2, {x:13, y:yPos, width:w, height:h});
       }
     }
     if (champsBuf2) {
       const champsImg2 = await pdfDoc.embedPng(new Uint8Array(champsBuf2)).catch(()=>null);
       if (champsImg2) {
         const ar = champsImg2.height / champsImg2.width;
-        const w = 263, h = Math.round(Math.min(230, w * ar));
-        const yPos = 562 - h;
-        p2.drawImage(champsImg2, {x:300, y:yPos, width:w, height:h});
+        const w = 258, h = Math.round(Math.min(220, w * ar));
+        const yPos = 572 - h;
+        p2.drawImage(champsImg2, {x:302, y:yPos, width:w, height:h});
       }
     }
 
