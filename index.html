@@ -6003,33 +6003,63 @@ async function generateOfficialReport() {
 
     // ── Helper : SVG → PNG ArrayBuffer (pour icônes de rang) ──────────
     const svgToPngBuf = async (url, size) => {
+      const drawImgToBuffer = (imgEl) => new Promise(resolve => {
+        const cv = document.createElement('canvas');
+        cv.width = size; cv.height = size;
+        const ctx = cv.getContext('2d');
+        ctx.clearRect(0, 0, size, size);
+        ctx.drawImage(imgEl, 0, 0, size, size);
+        cv.toBlob(b => { b ? b.arrayBuffer().then(resolve).catch(()=>resolve(null)) : resolve(null); }, 'image/png');
+      });
       try {
+        // Essai 1 : chargement direct (fonctionne pour SVG same-origin)
+        const direct = await new Promise(resolve => {
+          const img = new Image();
+          const t = setTimeout(() => { img.onload = img.onerror = null; resolve(null); }, 4000);
+          img.onload = () => { clearTimeout(t); drawImgToBuffer(img).then(resolve); };
+          img.onerror = () => { clearTimeout(t); resolve(null); };
+          img.src = url;
+        });
+        if (direct) return direct;
+        // Essai 2 : fetch SVG texte + blob URL
         const res = await fetch(url);
         if (!res.ok) return null;
         const svgText = await res.text();
-        const blob = new Blob([svgText], {type:'image/svg+xml'});
-        const objUrl = URL.createObjectURL(blob);
-        return await new Promise(resolve => {
+        const objUrl = URL.createObjectURL(new Blob([svgText], {type:'image/svg+xml'}));
+        const result = await new Promise(resolve => {
           const img = new Image();
-          img.onload = () => {
-            const cv = document.createElement('canvas');
-            cv.width = size; cv.height = size;
-            cv.getContext('2d').drawImage(img, 0, 0, size, size);
-            cv.toBlob(b => { b ? b.arrayBuffer().then(resolve).catch(()=>resolve(null)) : resolve(null); }, 'image/png');
-            URL.revokeObjectURL(objUrl);
-          };
-          img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
+          const t = setTimeout(() => { URL.revokeObjectURL(objUrl); resolve(null); }, 4000);
+          img.onload = () => { clearTimeout(t); drawImgToBuffer(img).then(b => { URL.revokeObjectURL(objUrl); resolve(b); }); };
+          img.onerror = () => { clearTimeout(t); URL.revokeObjectURL(objUrl); resolve(null); };
           img.src = objUrl;
         });
+        return result;
       } catch(e) { return null; }
     };
 
-    // ── Helper : canvas → ArrayBuffer (pour graphiques) ───────────────
+    // ── Helper : canvas → ArrayBuffer avec fond sombre (pour graphiques) ──
     const canvasToBuf = async (id) => {
       try {
-        const c = document.getElementById(id);
-        if (!c || !c.width) return null;
-        const dataUrl = c.toDataURL('image/png');
+        // Priorité : instance Chart.js (fonctionne même si le canvas est caché)
+        const keyMap = {'chart-kda':'kda','chart-wr':'wr','chart-multi':'multi','chart-champs':'champs','chart-lp':'lp'};
+        const inst = typeof chartInstances !== 'undefined' && chartInstances[keyMap[id]];
+        let dataUrl = null;
+        if (inst && typeof inst.toBase64Image === 'function') {
+          try { dataUrl = inst.toBase64Image('image/png', 1); } catch(_) {}
+        }
+        if (!dataUrl) {
+          const c = document.getElementById(id);
+          if (!c) return null;
+          // Composite sur fond sombre pour éviter les carrés blancs
+          const w = c.width || 600, h = c.height || 240;
+          const bg = document.createElement('canvas');
+          bg.width = w; bg.height = h;
+          const bctx = bg.getContext('2d');
+          bctx.fillStyle = '#0B0E18';
+          bctx.fillRect(0, 0, w, h);
+          if (w > 0 && h > 0) { try { bctx.drawImage(c, 0, 0, w, h); } catch(_) {} }
+          dataUrl = bg.toDataURL('image/png');
+        }
         const res = await fetch(dataUrl);
         return res.ok ? await res.arrayBuffer() : null;
       } catch(e) { return null; }
@@ -6038,8 +6068,22 @@ async function generateOfficialReport() {
     const tplRes = await fetch('/assets/report-template.pdf');
     if (!tplRes.ok) throw new Error('Template PDF introuvable (/assets/report-template.pdf)');
     const pdfDoc = await PDFDocument.load(await tplRes.arrayBuffer());
-    const fontB = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    // Tentative d'embed de la police du template (aquavit via Typekit ou Google Font Barlow Condensed)
+    // Pour utiliser aquavit : placer aquavit-bold.ttf et aquavit-regular.ttf dans /assets/fonts/
+    const tryFont = async (url) => {
+      try {
+        const r = await fetch(url);
+        if (!r.ok) return null;
+        return await pdfDoc.embedFont(new Uint8Array(await r.arrayBuffer())).catch(()=>null);
+      } catch(_) { return null; }
+    };
+    const customFontB = await tryFont('/assets/fonts/aquavit-bold.ttf')
+      || await tryFont('https://fonts.gstatic.com/s/barlow/v12/7cHqv4kjgoGqM7E3b8s8yn4.ttf');
+    const customFontR = await tryFont('/assets/fonts/aquavit-regular.ttf')
+      || await tryFont('https://fonts.gstatic.com/s/barlow/v12/7cHpv4kjgoGqM7E3b8s8yn4.ttf');
+    const fontB = customFontB || await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontR = customFontR || await pdfDoc.embedFont(StandardFonts.Helvetica);
     const [p1, p2] = pdfDoc.getPages();
     const pH = p1.getHeight(); // 841.89 pts
 
@@ -6107,24 +6151,23 @@ async function generateOfficialReport() {
     cov(p1, 455, 777, 130, 16);
     mid(p1, badge, 499, 782, 10, fontB, BLK);
 
-    // 2b. Couvrir la portion visible de l'image de rang (x=530-595, PDF-lib y=614-793)
-    cov(p1, 528, 612, 70, 182);
+    // 2b. Couvrir toute la zone rang (image + labels) de façon agressive
+    cov(p1, 440, 596, 160, 206);
 
     // 2c. Dessiner l'icône de rang correct (SVG → PNG) centré dans la zone couverte
-    const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 120);
+    const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 160);
     if (rankImgBuf) {
       const rankImg = await pdfDoc.embedPng(new Uint8Array(rankImgBuf)).catch(() => null);
-      if (rankImg) p1.drawImage(rankImg, {x:534, y:700, width:60, height:60});
+      // Centré sur l'emblème du template (x≈530-595, centre x≈562 → clamp à droite de page)
+      if (rankImg) p1.drawImage(rankImg, {x:490, y:655, width:100, height:100});
     }
 
-    // 2d. Couvrir le label "MASTER - JUNGLE" (pdfplumber top=124.8→138.8, PDF-lib y=703-717)
-    //     et réécrire avec le vrai rang (y+h ≥ 842-124.8=717.2 → h=28 avec y=690)
-    cov(p1, 444, 690, 162, 30);
-    mid(p1, badge, 524, 703, 12, fontB, BLK);
+    // 2d. Réécrire le label rang (sous l'image, centré sur x=540)
+    mid(p1, badge, 540, 648, 11, fontB, BLK);
 
     // 3. Nom du joueur — template "Nom du joueur in game" pdfplumber top=155.9-179.9
-    //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓
-    cov(p1, 100, 648, 400, 40);
+    //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓ — largeur réduite à 380 pour ne pas empiéter sur le logo rang
+    cov(p1, 100, 648, 380, 40);
     const nSz = Math.max(14, Math.min(24, 24 - Math.max(0, pseudo.length-12)));
     const nW = fontB.widthOfTextAtSize(pseudo, nSz);
     put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
@@ -6218,8 +6261,9 @@ async function generateOfficialReport() {
     mid(p1, rs[2].val, 535, 68, 16, fontB, BLK);
 
     // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
-    cov(p1, 244, 8, 78, 14);
-    put(p1, dateStr, 248, 12, 9, fontR, SUB);
+    // Cover précis (x=254-310) pour ne pas empiéter sur le texte RGPD à gauche
+    cov(p1, 254, 7, 52, 14);
+    put(p1, dateStr, 255, 12, 9, fontR, rgb(0.42, 0.46, 0.56));
 
     // ════════════════════════════════════════════════════════
     // PAGE 2
@@ -6234,11 +6278,11 @@ async function generateOfficialReport() {
           if (vr.ok) { const vs=await vr.json(); ddVer=vs[0]||ddVer; } } catch(_){}
 
     const champs = (typeof champHistory!=='undefined' ? champHistory : []).slice(0,8);
-    // Colonnes : centres empiriques → cx=[86,227,368,508], images à cx-41
+    // Colonnes : centres empiriques → cx=[86,227,368,508], images à cx-35
     // Lignes : cy=702 → pdfplumber top=123 (Ligne 1) ; cy=584 → pdfplumber top=260 (Ligne 2)
     const cColCx = [86, 227, 368, 508];
     const cRowY  = [702, 584];
-    const cSz    = 82;
+    const cSz    = 70; // réduit de 82→70 pour rester dans les cellules du template
 
     for (let ci=0; ci<champs.length; ci++) {
       const c    = champs[ci];
@@ -6262,8 +6306,18 @@ async function generateOfficialReport() {
 
     // Graphiques — zone template pdfplumber top≈335-575
     // code_cy = 907 - (pdfplumber_top + height) = 907 - (335+240) = 332
+    // Assurer que les charts sont rendus (panel peut être masqué)
+    const _gPanel = document.getElementById('panel-graphs');
+    const _gWasHidden = _gPanel && !_gPanel.classList.contains('active');
+    if (_gWasHidden) {
+      _gPanel.style.visibility = 'hidden';
+      _gPanel.style.display = 'block';
+      if (typeof buildGraphs === 'function') buildGraphs();
+      await new Promise(r => setTimeout(r, 500));
+    }
     const kdaBuf2    = await canvasToBuf('chart-kda');
-    const champsBuf2 = await canvasToBuf('chart-champs') || await canvasToBuf('chart-multi');
+    const champsBuf2 = await canvasToBuf('chart-multi') || await canvasToBuf('chart-champs');
+    if (_gWasHidden && _gPanel) { _gPanel.style.display = ''; _gPanel.style.visibility = ''; }
     if (kdaBuf2) {
       const kdaImg2 = await pdfDoc.embedPng(new Uint8Array(kdaBuf2)).catch(()=>null);
       if (kdaImg2) p2.drawImage(kdaImg2,    {x:11,  y:332, width:250, height:240});
@@ -6323,9 +6377,9 @@ async function generateOfficialReport() {
     cov(p2, 44, 40, 512, 62);
     bilanLines.slice(0,3).forEach((line,i)=>put(p2,line,47,83-i*14,9.5,fontR,BLK));
 
-    // Footer page 2 — date
-    cov(p2, 244, 8, 78, 14);
-    put(p2, dateStr, 248, 12, 9, fontR, SUB);
+    // Footer page 2 — date (même correction que page 1)
+    cov(p2, 254, 7, 52, 14);
+    put(p2, dateStr, 255, 12, 9, fontR, rgb(0.42, 0.46, 0.56));
 
     // ── Sauvegarde ──────────────────────────────────────────
     const outB = await pdfDoc.save();
