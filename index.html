@@ -5985,189 +5985,362 @@ async function exportPDF() {
 // RAPPORT OFFICIEL — Template PDF VisionScore
 // ════════════════════════════════════════════════════════════
 async function generateOfficialReport() {
-  if (!window.PDFLib) { showToast('pdf-lib non chargé — vérifiez la connexion', 'error'); return; }
+  if (!window.PDFLib) {
+    // Charger pdf-lib dynamiquement si pas encore présent
+    await new Promise((resolve,reject)=>{
+      const s=document.createElement('script');
+      s.src='https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
+    }).catch(()=>{});
+    if (!window.PDFLib) { showToast('pdf-lib non chargé — vérifiez la connexion', 'error'); return; }
+  }
   const btn = document.querySelector('[onclick="generateOfficialReport()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
   showToast('Génération du rapport officiel…', 'info');
 
   try {
     const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+
+    // ── Helper : SVG → PNG ArrayBuffer (pour icônes de rang) ──────────
+    const svgToPngBuf = async (url, size) => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const svgText = await res.text();
+        const blob = new Blob([svgText], {type:'image/svg+xml'});
+        const objUrl = URL.createObjectURL(blob);
+        return await new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const cv = document.createElement('canvas');
+            cv.width = size; cv.height = size;
+            cv.getContext('2d').drawImage(img, 0, 0, size, size);
+            cv.toBlob(b => { b ? b.arrayBuffer().then(resolve).catch(()=>resolve(null)) : resolve(null); }, 'image/png');
+            URL.revokeObjectURL(objUrl);
+          };
+          img.onerror = () => { URL.revokeObjectURL(objUrl); resolve(null); };
+          img.src = objUrl;
+        });
+      } catch(e) { return null; }
+    };
+
+    // ── Helper : canvas → ArrayBuffer (pour graphiques) ───────────────
+    const canvasToBuf = async (id) => {
+      try {
+        const c = document.getElementById(id);
+        if (!c || !c.width) return null;
+        const dataUrl = c.toDataURL('image/png');
+        const res = await fetch(dataUrl);
+        return res.ok ? await res.arrayBuffer() : null;
+      } catch(e) { return null; }
+    };
+
     const tplRes = await fetch('/assets/report-template.pdf');
     if (!tplRes.ok) throw new Error('Template PDF introuvable (/assets/report-template.pdf)');
     const pdfDoc = await PDFDocument.load(await tplRes.arrayBuffer());
     const fontB = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontR = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const [p1, p2] = pdfDoc.getPages();
-    const { width: W, height: H } = p1.getSize();
+    const pH = p1.getHeight(); // 841.89 pts
 
-    // ── Données ────────────────────────────────────────────
-    const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || '—';
-    const tagVal   = document.getElementById('d-tag')?.value?.trim()   || 'EUW';
-    const ageVal   = document.getElementById('d-age')?.value            || '';
-    const rankIdx  = parseInt(document.getElementById('d-rank')?.value  || 6);
+    // ── Données ───────────────────────────────────────────
+    const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || '-';
+    const tagVal   = document.getElementById('d-tag')?.value?.trim()    || 'EUW';
+    const ageVal   = document.getElementById('d-age')?.value             || '';
+    const rankIdx  = parseInt(document.getElementById('d-rank')?.value   || 6);
     const RANKS    = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
     const rankName = RANKS[rankIdx] || 'Diamond';
-    const roleLbl  = { Top:'Top', Jgl:'Jungle', Mid:'Mid', ADC:'ADC', Sup:'Support' }[currentRole] || currentRole;
+    const roleLbl  = {Top:'Top',Jgl:'Jungle',Mid:'Mid',ADC:'ADC',Sup:'Support'}[currentRole] || currentRole;
     const dateStr  = new Date().toLocaleDateString('fr-FR');
-    const f = typeof getRoleFields === 'function' ? getRoleFields() : {};
-    const dimKeys   = ['d1','d2','d3','d4','d5'];
-    const dimScores = dimKeys.map(k => (typeof dimAvg === 'function' && f[k]) ? dimAvg(f[k]) : null);
-    const gScore    = typeof globalScore === 'function' ? globalScore() : null;
+    const f        = typeof getRoleFields === 'function' ? getRoleFields() : {};
+    const dimKeys  = ['d1','d2','d3','d4','d5'];
+    const dimScores = dimKeys.map(k => (typeof dimAvg==='function' && f[k]) ? dimAvg(f[k]) : null);
+    const gScore   = typeof globalScore === 'function' ? globalScore() : null;
 
-    // Couleurs
-    const BG  = rgb(1,1,1);
+    // ── Couleurs ──────────────────────────────────────────
+    const W   = rgb(1,1,1);
     const BLK = rgb(0.06,0.07,0.10);
-    const SUB = rgb(0.40,0.44,0.54);
+    const SUB = rgb(0.42,0.46,0.56);
+    const LIME = rgb(0.11, 0.77, 0.48);
     const sCol = v => {
       if (v===null) return SUB;
-      if (v>=9)   return rgb(0.96,0.65,0.14);
+      if (v>=9)   return rgb(0.93,0.62,0.10);
       if (v>=7.5) return rgb(0.11,0.77,0.48);
       if (v>=5.5) return rgb(0.29,0.62,1.00);
       if (v>=4)   return rgb(0.96,0.65,0.29);
       return rgb(0.91,0.10,0.29);
     };
-    const cover = (pg,x,y,w,h) => pg.drawRectangle({x,y,width:w,height:h,color:BG});
-    const txt   = (pg,t,x,y,sz,fn,col) => pg.drawText(String(t),{x,y,size:sz,font:fn,color:col});
-    const ctxt  = (pg,t,cx,y,sz,fn,col) => { const tw=fn.widthOfTextAtSize(String(t),sz); txt(pg,t,cx-tw/2,y,sz,fn,col); };
 
-    // ═══ PAGE 1 ═══════════════════════════════════════════
-    // Structure + date
-    cover(p1,44,H-73,235,30);
-    txt(p1,'VisionScore — Scouting',         44,H-52,8.5,fontB,BLK);
-    txt(p1,'Rapport confidentiel — '+dateStr, 44,H-63,7.5,fontR,SUB);
-    // Badge rang + rôle
-    const badge = rankName.toUpperCase()+' - '+roleLbl.toUpperCase();
-    cover(p1,W-185,H-73,175,22); ctxt(p1,badge,W-97,H-58,10,fontB,BLK);
-    // Nom du joueur
-    cover(p1,50,H-215,W-100,55);
-    const nSz = Math.max(18,Math.min(34,34-Math.max(0,pseudo.length-10)));
-    ctxt(p1,pseudo,W/2,H-188,nSz,fontB,BLK);
-    // Sous-titre
-    const sub = '#'+tagVal+'  ·  '+roleLbl+'  ·  '+rankName+(ageVal?'  ·  '+ageVal+' ans':'');
-    cover(p1,60,H-222,W-120,20); ctxt(p1,sub,W/2,H-214,9,fontR,SUB);
-    // Score global
-    const sTxt = gScore!==null?gScore.toFixed(1):'—';
-    cover(p1,W/2-72,H-358,144,78);
-    ctxt(p1,sTxt, W/2,H-302,58,fontB,sCol(gScore));
-    ctxt(p1,'/10',W/2,H-348,13,fontR,SUB);
-    // 5 scores dimensions
-    const dxs=[88,185,282,378,473], dY=H-450;
-    dxs.forEach((x,i)=>{
-      const v=dimScores[i], vt=v!==null?v.toFixed(1):'—';
-      cover(p1,x-24,dY-10,48,24); ctxt(p1,vt,x,dY,13,fontB,sCol(v));
-    });
-    // Radar polygon
-    const rcx=155, rcy=H-548, rR=74;
-    const rAng=i=>Math.PI*2*i/5-Math.PI/2;
-    const rPts=dimScores.map((v,i)=>{
-      const val=Math.max(0,Math.min(10,v||0));
-      return{x:rcx+Math.cos(rAng(i))*rR*val/10, y:rcy+Math.sin(rAng(i))*rR*val/10};
-    });
-    // Dessiner le polygone radar avec drawLine (drawPolygon n'existe pas dans pdf-lib)
-    for(let ri=0;ri<5;ri++){
-      const a=rPts[ri], b=rPts[(ri+1)%5];
-      p1.drawLine({start:{x:a.x,y:a.y},end:{x:b.x,y:b.y},
-        thickness:1.8,color:rgb(0.11,0.77,0.48),opacity:0.9});
-    }
-    // Key stats (droite — 2 colonnes × 3 lignes)
-    const ks=[
-      {lbl:'KDA',      val:rawData.kda!==undefined      ?(+rawData.kda).toFixed(2)         :'—'},
-      {lbl:'CS/min',   val:rawData.cs_min!==undefined   ?(+rawData.cs_min).toFixed(1)       :'—'},
-      {lbl:'Kill Part.',val:rawData.kill_part!==undefined?(+rawData.kill_part).toFixed(0)+'%':'—'},
-    ];
-    const rsMap={
-      Top:[{id:'dmg_tower',lbl:'Dgt Tours/g'},{id:'dmg_share',lbl:'Dmg Share %'},{id:'vision',lbl:'Vision/g'}],
-      Jgl:[{id:'obj_score', lbl:'Obj. Score'},{id:'vision',   lbl:'Vision/g'},   {id:'chal_jgl_cs10',lbl:'Camps<10m'}],
-      Mid:[{id:'dmg_share',lbl:'Dmg Share %'},{id:'dpm',      lbl:'DPM'},        {id:'chal_solo_kills',lbl:'Solo Kills/g'}],
-      ADC:[{id:'dmg_share',lbl:'Dmg Share %'},{id:'dpm',      lbl:'DPM'},        {id:'winrate',lbl:'Win Rate %'}],
-      Sup:[{id:'vision',   lbl:'Vision/g'},   {id:'kill_part',lbl:'Kill Part.%'},{id:'chal_wards_killed',lbl:'Wards kill/g'}],
+    // ── Helpers draw ──────────────────────────────────────
+    const cov = (pg,x,y,w,h) => pg.drawRectangle({x,y,width:w,height:h,color:W});
+    const put = (pg,t,x,y,sz,fn,col) => pg.drawText(String(t),{x,y,size:sz,font:fn,color:col});
+    const mid = (pg,t,cx,y,sz,fn,col) => {
+      const tw=fn.widthOfTextAtSize(String(t),sz); put(pg,t,cx-tw/2,y,sz,fn,col);
     };
-    (rsMap[currentRole]||rsMap.Mid).forEach(s=>{
-      const v=rawData[s.id]; ks.push({lbl:s.lbl,val:v!==undefined?(+v).toFixed(1):'—'});
-    });
-    const ksXs=[380,498], ksYs=[H-443,H-489,H-534];
-    for(let i=0;i<6&&i<ks.length;i++){
-      const x=ksXs[i%2],y=ksYs[Math.floor(i/2)];
-      cover(p1,x-40,y-16,80,36);
-      ctxt(p1,ks[i].val,x,y,    14,fontB,BLK);
-      ctxt(p1,ks[i].lbl,x,y-14,  7,fontR,SUB);
+    // Formatage robuste sans tiret cadratin (non rendu en Helvetica intégré)
+    const fmt = (v, dec=1) => (v!==undefined && v!==null && !isNaN(+v)) ? (+v).toFixed(dec) : '-';
+
+    // ════════════════════════════════════════════════════════
+    // PAGE 1
+    // Coordonnées vérifiées avec pdfplumber sur le PDF exporté.
+    // Règle de conversion : pdfplumber mesure "top" depuis le haut de la page.
+    //   PDF-lib y_baseline ≈ page_height - pdfplumber_bottom
+    //   Un rectangle cov(x,y,w,h) couvre [y ; y+h] depuis le bas.
+    //   Pour couvrir un texte à pdfplumber_top : y+h ≥ page_height - pdfplumber_top
+    // ════════════════════════════════════════════════════════
+
+    // 1. En-tête gauche — template: "Scouting - Nom de la Structure ESport" top=85.3
+    //                              "Rapport confidentiel 00/00/0000"       top=108.1
+    //    Covers: pdfplumber top ≥ 85 → y+h ≥ 842-85=757, y=706 → h=51 suffisant
+    cov(p1, 24, 706, 260, 58);
+    put(p1, 'VisionScore — Scouting',         25, 744, 9.5, fontB, BLK);
+    put(p1, 'Rapport confidentiel — '+dateStr, 25, 722,   9, fontR, SUB);
+
+    // 2. Badge rang + rôle (coin supérieur droit)
+    //    Template contient :
+    //    a) Badge texte "BRONZE - ADC"  pdfplumber top=50.1 → PDF-lib y≈782
+    //    b) Image rang (master) visible x=530-595, pdfplumber top=50.9-225.8 → PDF-lib y=616-791
+    //    c) Label "MASTER - JUNGLE"     pdfplumber top=124.8 → PDF-lib y≈703
+    const badge = rankName.toUpperCase() + ' - ' + roleLbl.toUpperCase();
+
+    // 2a. Couvrir le badge texte du template (pdfplumber top=50-63, PDF-lib y=779-792)
+    cov(p1, 455, 777, 130, 16);
+    mid(p1, badge, 499, 782, 10, fontB, BLK);
+
+    // 2b. Couvrir la portion visible de l'image de rang (x=530-595, PDF-lib y=614-793)
+    cov(p1, 528, 612, 70, 182);
+
+    // 2c. Dessiner l'icône de rang correct (SVG → PNG) centré dans la zone couverte
+    const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 120);
+    if (rankImgBuf) {
+      const rankImg = await pdfDoc.embedPng(new Uint8Array(rankImgBuf)).catch(() => null);
+      if (rankImg) p1.drawImage(rankImg, {x:534, y:700, width:60, height:60});
     }
 
-    // ═══ PAGE 2 ═══════════════════════════════════════════
-    // Pool champions
-    const champs=(typeof champHistory!=='undefined'?champHistory:[]).slice(0,8);
-    let ddVer='14.24.1';
-    try{ const vr=await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
-         if(vr.ok){const vs=await vr.json();ddVer=vs[0]||ddVer;} }catch(_){}
-    const cCols=[58,168,278,388], cRows=[H-205,H-342], cSz=82;
-    for(let ci=0;ci<champs.length;ci++){
-      const c=champs[ci], cx=cCols[ci%4], cy=cRows[Math.floor(ci/4)];
-      try{
-        const key=typeof champToDDragon==='function'?champToDDragon(c.name):c.name;
-        const ir=await fetch(`https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${key}.png`);
-        if(ir.ok){
-          const ib=await ir.arrayBuffer();
-          const img=await pdfDoc.embedPng(new Uint8Array(ib));
-          p2.drawImage(img,{x:cx,y:cy,width:cSz,height:cSz});
-        }
-      }catch(_){}
-      cover(p2,cx,cy-20,cSz,20);
-      ctxt(p2,c.games+'G  ·  '+c.wr+'%  ·  '+c.kda, cx+cSz/2, cy-11, 6.5, fontR, SUB);
+    // 2d. Couvrir le label "MASTER - JUNGLE" (pdfplumber top=124.8→138.8, PDF-lib y=703-717)
+    //     et réécrire avec le vrai rang (y+h ≥ 842-124.8=717.2 → h=28 avec y=690)
+    cov(p1, 444, 690, 162, 30);
+    mid(p1, badge, 524, 703, 12, fontB, BLK);
+
+    // 3. Nom du joueur — template "Nom du joueur in game" pdfplumber top=155.9-179.9
+    //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓
+    cov(p1, 100, 648, 400, 40);
+    const nSz = Math.max(14, Math.min(24, 24 - Math.max(0, pseudo.length-12)));
+    const nW = fontB.widthOfTextAtSize(pseudo, nSz);
+    put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
+
+    // 4. Sous-titre — template "#tag - Jungle - Master - Âge" pdfplumber top=191.5-203.5
+    //    y+h ≥ 842-191.5=650.5 → cov y=626 h=26 (652) ✓
+    const sub = '#'+tagVal+' · '+roleLbl+' · '+rankName+(ageVal ? ' · '+ageVal+' ans' : '');
+    cov(p1, 100, 626, 400, 26);
+    const sW = fontR.widthOfTextAtSize(sub, 9.5);
+    put(p1, sub, 297 - sW/2, 638, 9.5, fontR, SUB);
+
+    // 5. Score global — template "0.0" (size=70) pdfplumber top=284.2-354.2
+    //    "/10" (size=28) template gardé intact
+    const sTxt = gScore !== null ? gScore.toFixed(1) : '-';
+    cov(p1, 192, 476, 215, 92);
+    const gW = fontB.widthOfTextAtSize(sTxt, 66);
+    put(p1, sTxt, 297 - gW/2, 487, 66, fontB, sCol(gScore));
+
+    // 6. 5 scores de dimensions — template "0.0" pdfplumber top=492.7-511.7
+    //    PDF-lib baseline y≈330 ; y+h ≥ 842-492.7=349.3 → cov y=317 h=35 (352) ✓
+    const dXs = [63.4, 174.4, 285.4, 396.4, 507.4];
+    dimScores.forEach((v, i) => {
+      const vt = fmt(v, 1);
+      cov(p1, dXs[i]-5, 317, 52, 35);
+      put(p1, vt, dXs[i], 330, 16, fontB, sCol(v));
+    });
+
+    // 7. Radar (pentagone) — polygone plein via SVG path
+    //    Centre PDF-lib : (149, 153), rayon=100
+    const RCX=149, RCY=153, RR=100;
+    const rAng = i => Math.PI/2 - (Math.PI*2*i/5);
+    const rPts = dimScores.map((v,i) => {
+      const val = Math.max(0, Math.min(10, v||0));
+      const d   = RR * val / 10;
+      return { x: RCX + Math.cos(rAng(i))*d, y: RCY + Math.sin(rAng(i))*d };
+    });
+    // drawSvgPath utilise un repère SVG (y vers le bas) centré sur (x:0, y:pH)
+    const svgPts = rPts.map(pt => ({x: pt.x, y: pH - pt.y}));
+    let pathD = `M ${svgPts[0].x.toFixed(2)} ${svgPts[0].y.toFixed(2)}`;
+    for (let i=1; i<5; i++) pathD += ` L ${svgPts[i].x.toFixed(2)} ${svgPts[i].y.toFixed(2)}`;
+    pathD += ' Z';
+    try {
+      p1.drawSvgPath(pathD, { x:0, y:pH, color:LIME, opacity:0.25, borderColor:LIME, borderWidth:2.5, borderOpacity:1 });
+    } catch(_) {
+      // Fallback : lignes simples
+      for (let i=0; i<5; i++) {
+        const a=rPts[i], b=rPts[(i+1)%5];
+        p1.drawLine({start:{x:a.x,y:a.y}, end:{x:b.x,y:b.y}, thickness:2, color:LIME});
+      }
     }
-    // Points forts / axes d'amélioration
-    const allItems=[];
-    dimKeys.forEach(k=>{
-      if(!f[k])return;
-      f[k].forEach(field=>{
-        const sc=typeof computeFieldScore==='function'?computeFieldScore(field):null;
-        if(sc!==null) allItems.push({label:(field.lbl||field.label||'').slice(0,28),score:sc});
+
+    // 8. KEY STATS (étoiles / cibles bas-droite)
+    //    Positions template "0.0" (pdfplumber) :
+    //      Ligne 1 top=594.8  → PDF-lib baseline y≈228 ; y+h ≥ 247.2 → h=36 avec y=214 (250) ✓
+    //      Ligne 2 top=674.5  → PDF-lib baseline y≈148 ; y+h ≥ 167.5 → h=38 avec y=130 (168) ✓
+    //      Ligne 3 top=754.2  → PDF-lib baseline y≈69  ; y+h ≥ 87.8  → h=80 avec y=10  (90)  ✓
+    //    Labels template (pdfplumber) : KDA top=637.8, CS/min top=717.4, Kill part. top=717.4
+    //      Stat4/5/6 à couvrir/remplacer selon rôle
+    const rsMap = {
+      Top:[{id:'dmg_tower',lbl:'Dgt Tours/g'},{id:'dmg_share',lbl:'Dmg Share%'},{id:'vision',lbl:'Vision/g'}],
+      Jgl:[{id:'obj_score', lbl:'Obj.Score'}, {id:'vision',   lbl:'Vision/g'}, {id:'chal_jgl_cs10',lbl:'Camps<10m'}],
+      Mid:[{id:'dmg_share',lbl:'Dmg Share%'}, {id:'dpm',      lbl:'DPM'},      {id:'winrate',lbl:'Win Rate%'}],
+      ADC:[{id:'dmg_share',lbl:'Dmg Share%'}, {id:'dpm',      lbl:'DPM'},      {id:'winrate',lbl:'Win Rate%'}],
+      Sup:[{id:'vision',   lbl:'Vision/g'},   {id:'kill_part',lbl:'Kill Pt.%'},{id:'chal_wards_killed',lbl:'Wards/g'}],
+    };
+    const rs = (rsMap[currentRole]||rsMap.Mid).map(s => ({
+      lbl: s.lbl,
+      val: fmt(rawData[s.id], 1)
+    }));
+    const kdaV = fmt(rawData.kda, 2);
+    const csV  = fmt(rawData.cs_min, 1);
+    const kpV  = (rawData.kill_part!==undefined && !isNaN(+rawData.kill_part))
+                  ? Math.round(rawData.kill_part)+'%' : '-';
+
+    // Ligne 1 — KDA (centre x=430) + rs[0] remplace "Stat 4" (centre x=535)
+    cov(p1, 413, 214, 56, 36); mid(p1, kdaV, 430, 228, 16, fontB, BLK);
+    cov(p1, 504, 174, 78, 76); // couvre label "Stat 4" (y+h=250 ✓ pour top=594.8) + son label
+    put(p1, rs[0].lbl, 508, 192, 9, fontR, SUB);
+    mid(p1, rs[0].val, 535, 228, 16, fontB, BLK);
+
+    // Ligne 2 — CS/min (centre x=430) + Kill part. (centre x=535)
+    cov(p1, 413, 130, 56, 40); mid(p1, csV, 430, 148, 16, fontB, BLK);
+    cov(p1, 504, 130, 74, 40); mid(p1, kpV, 535, 148, 16, fontB, BLK);
+
+    // Ligne 3 — rs[1] remplace "Stat 5" + rs[2] remplace "Stat 6"
+    cov(p1, 408, 10, 78, 82);  // y=10-92 → pdfplumber 750-832, couvre top=754.2 ✓
+    put(p1, rs[1].lbl, 411, 32, 9, fontR, SUB);
+    mid(p1, rs[1].val, 430, 68, 16, fontB, BLK);
+    cov(p1, 504, 10, 78, 82);
+    put(p1, rs[2].lbl, 508, 32, 9, fontR, SUB);
+    mid(p1, rs[2].val, 535, 68, 16, fontB, BLK);
+
+    // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
+    cov(p1, 244, 8, 78, 14);
+    put(p1, dateStr, 248, 12, 9, fontR, SUB);
+
+    // ════════════════════════════════════════════════════════
+    // PAGE 2
+    // Note : les drawImage sur page 2 ont un décalage empirique de +65pt en y
+    // (dû à la transformation de coordonnées du template).
+    // Formule : code_cy = 907 - (pdfplumber_top + image_height)
+    // ════════════════════════════════════════════════════════
+
+    // Images DDragon (champions pool) — positions vérifiées empiriquement
+    let ddVer = '14.24.1';
+    try { const vr=await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+          if (vr.ok) { const vs=await vr.json(); ddVer=vs[0]||ddVer; } } catch(_){}
+
+    const champs = (typeof champHistory!=='undefined' ? champHistory : []).slice(0,8);
+    // Colonnes : centres empiriques → cx=[86,227,368,508], images à cx-41
+    // Lignes : cy=702 → pdfplumber top=123 (Ligne 1) ; cy=584 → pdfplumber top=260 (Ligne 2)
+    const cColCx = [86, 227, 368, 508];
+    const cRowY  = [702, 584];
+    const cSz    = 82;
+
+    for (let ci=0; ci<champs.length; ci++) {
+      const c    = champs[ci];
+      const ccx  = cColCx[ci%4];
+      const cy   = cRowY[Math.floor(ci/4)];
+      const imgX = ccx - cSz/2;
+      cov(p2, imgX-4, cy-20, cSz+8, 24); // couvre "Nb - WR - KDA" sous l'image
+      try {
+        const key = typeof champToDDragon==='function' ? champToDDragon(c.name) : c.name;
+        const ir  = await fetch(`https://ddragon.leagueoflegends.com/cdn/${ddVer}/img/champion/${key}.png`);
+        if (ir.ok) {
+          const ib  = await ir.arrayBuffer();
+          const img = await pdfDoc.embedPng(new Uint8Array(ib));
+          p2.drawImage(img, {x:imgX, y:cy, width:cSz, height:cSz});
+        }
+      } catch(_){}
+      const stTxt = c.games+'G · '+c.wr+'% · '+c.kda;
+      const stW   = fontR.widthOfTextAtSize(stTxt, 7.5);
+      put(p2, stTxt, ccx - stW/2, cy-13, 7.5, fontR, SUB);
+    }
+
+    // Graphiques — zone template pdfplumber top≈335-575
+    // code_cy = 907 - (pdfplumber_top + height) = 907 - (335+240) = 332
+    const kdaBuf2    = await canvasToBuf('chart-kda');
+    const champsBuf2 = await canvasToBuf('chart-champs') || await canvasToBuf('chart-multi');
+    if (kdaBuf2) {
+      const kdaImg2 = await pdfDoc.embedPng(new Uint8Array(kdaBuf2)).catch(()=>null);
+      if (kdaImg2) p2.drawImage(kdaImg2,    {x:11,  y:332, width:250, height:240});
+    }
+    if (champsBuf2) {
+      const champsImg2 = await pdfDoc.embedPng(new Uint8Array(champsBuf2)).catch(()=>null);
+      if (champsImg2) p2.drawImage(champsImg2, {x:297, y:332, width:256, height:240});
+    }
+
+    // Points forts / Axes d'amélioration
+    // Template "Point fort numéro N" pdfplumber top=612.9 → PDF-lib y≈217
+    // Cover : y+h ≥ 842-612.9=229.1 → h=20 avec y=209 (229) ✓
+    const allItems = [];
+    dimKeys.forEach(k => {
+      if (!f[k]) return;
+      f[k].forEach(field => {
+        const sc = typeof computeFieldScore==='function' ? computeFieldScore(field) : null;
+        if (sc !== null) allItems.push({label:(field.lbl||field.label||'').slice(0,30), score:sc});
       });
     });
-    allItems.sort((a,b)=>b.score-a.score);
-    const strgs=allItems.slice(0,4);
-    const weaks=[...allItems].sort((a,b)=>a.score-b.score).slice(0,4);
-    const pfX=52, adX=316, swY=H-625, swStep=18;
-    strgs.forEach((it,i)=>{
-      cover(p2,pfX,swY-i*swStep-11,248,swStep+2);
-      txt(p2,it.label,pfX,swY-i*swStep,8.5,fontR,BLK);
-      txt(p2,it.score.toFixed(1),pfX+214,swY-i*swStep,8.5,fontB,sCol(it.score));
-    });
-    weaks.forEach((it,i)=>{
-      cover(p2,adX,swY-i*swStep-11,248,swStep+2);
-      txt(p2,it.label,adX,swY-i*swStep,8.5,fontR,BLK);
-      txt(p2,it.score.toFixed(1),adX+214,swY-i*swStep,8.5,fontB,sCol(it.score));
-    });
-    // Bilan
-    const verdicts=[[9,'Profil d\'exception. Recrutement prioritaire — potentiel semi-pro immédiat.'],
-      [8,'Très solide. Tryout prioritaire — profil prêt pour le circuit semi-pro.'],
-      [7,'Bon profil. Tryout recommandé — à intégrer dans le circuit semi-pro.'],
-      [6,'Profil en développement. À suivre sur 30 jours — potentiel identifié.'],
-      [5,'Pas encore prêt. Niveau insuffisant sur les dimensions clés.'],
-      [0,'Niveau trop faible. Développement individuel requis avant tout recrutement.']];
-    const bilanTxt=(gScore!==null?(verdicts.find(([m])=>gScore>=m)?.[1]||'')
-      :'Importez les données Riot API pour générer le bilan automatiquement.')
-      +' Score SPES : '+(gScore!==null?gScore.toFixed(2):'—')+'/10 ('+roleLbl+' '+rankName+').';
-    const bilanLines=[]; let cur='';
-    bilanTxt.split(' ').forEach(w=>{
-      const t=cur?cur+' '+w:w;
-      if(fontR.widthOfTextAtSize(t,8)>465&&cur){bilanLines.push(cur);cur=w;}else cur=t;
-    }); if(cur)bilanLines.push(cur);
-    const bilanY=H-760;
-    cover(p2,52,bilanY-12,490,bilanLines.length*14+18);
-    bilanLines.forEach((line,i)=>txt(p2,line,65,bilanY-i*13,8,fontR,BLK));
+    allItems.sort((a,b) => b.score - a.score);
+    const strgs = allItems.slice(0,4);
+    const weaks = [...allItems].sort((a,b)=>a.score-b.score).slice(0,4);
+    const pfRows = [217.0, 198.1, 179.3, 160.4];
 
-    // ── Sauvegarde ────────────────────────────────────────
-    const outB=await pdfDoc.save();
-    const blob=new Blob([outB],{type:'application/pdf'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    const fname='VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+    strgs.forEach((it,i) => {
+      cov(p2, 24, pfRows[i]-8, 260, 22);
+      put(p2, it.label, 24, pfRows[i], 10, fontR, BLK);
+      const vW = fontB.widthOfTextAtSize(it.score.toFixed(1), 11);
+      put(p2, it.score.toFixed(1), 264-vW, pfRows[i], 11, fontB, sCol(it.score));
+    });
+    weaks.forEach((it,i) => {
+      cov(p2, 320, pfRows[i]-8, 260, 22);
+      put(p2, it.label, 320, pfRows[i], 10, fontR, BLK);
+      const vW = fontB.widthOfTextAtSize(it.score.toFixed(1), 11);
+      put(p2, it.score.toFixed(1), 560-vW, pfRows[i], 11, fontB, sCol(it.score));
+    });
+
+    // Bilan — template "Lorem ipsum" pdfplumber top=746.8-789 → PDF-lib y≈53-83
+    const VERDICTS = [
+      [9,"Profil d'exception. Recrutement prioritaire - potentiel semi-pro immediat."],
+      [8,"Tres solide. Tryout prioritaire - profil pret pour le circuit semi-pro."],
+      [7,"Bon profil. Tryout recommande - a integrer dans le circuit semi-pro."],
+      [6,"Profil en developpement. A suivre 30 jours - potentiel identifie."],
+      [5,"Pas encore pret. Niveau insuffisant sur les dimensions cles."],
+      [0,"Niveau trop faible. Developpement individuel requis avant tout recrutement."],
+    ];
+    const bilanVerdict = gScore!==null
+      ? (VERDICTS.find(([m])=>gScore>=m)?.[1]||'')
+      : 'Importez les donnees Riot API pour generer le bilan.';
+    const bilanFull = bilanVerdict + ' Score SPES : '+(gScore!==null?gScore.toFixed(2)+'/10':'-')+' ('+roleLbl+' '+rankName+').';
+    const bilanLines=[]; let cur='';
+    bilanFull.split(' ').forEach(w=>{
+      const t=cur?cur+' '+w:w;
+      if(fontR.widthOfTextAtSize(t,9.5)>470&&cur){bilanLines.push(cur);cur=w;}else cur=t;
+    }); if(cur)bilanLines.push(cur);
+    cov(p2, 44, 40, 512, 62);
+    bilanLines.slice(0,3).forEach((line,i)=>put(p2,line,47,83-i*14,9.5,fontR,BLK));
+
+    // Footer page 2 — date
+    cov(p2, 244, 8, 78, 14);
+    put(p2, dateStr, 248, 12, 9, fontR, SUB);
+
+    // ── Sauvegarde ──────────────────────────────────────────
+    const outB = await pdfDoc.save();
+    const blob = new Blob([outB], {type:'application/pdf'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const fname = 'VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
     a.href=url; a.download=fname; a.click(); URL.revokeObjectURL(url);
-    showToast('✅ Rapport officiel généré — '+fname,'success');
+    showToast('Rapport officiel — '+fname, 'success');
+
   } catch(err) {
-    showToast('Erreur PDF : '+err.message,'error'); console.error('[PDF]',err);
+    showToast('Erreur PDF : '+err.message, 'error');
+    console.error('[PDF]', err);
   } finally {
-    if(btn){btn.disabled=false; btn.innerHTML='📄 Rapport Officiel';}
+    if (btn) { btn.disabled=false; btn.innerHTML='📄 Rapport Officiel'; }
   }
 }
 // ════════════════════════════════════════════════════════════
