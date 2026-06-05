@@ -6002,26 +6002,27 @@ async function generateOfficialReport() {
     const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
 
     // ── Helper : SVG → PNG ArrayBuffer (pour icônes de rang) ──────────
-    const svgToPngBuf = async (url, size) => {
+    const svgToPngBuf = async (url, maxSize) => {
+      // Lit le viewBox pour préserver le ratio — ex: gold.svg 171.53×142.54
+      const getAR = async () => {
+        try {
+          const r = await fetch(url); if (!r.ok) return 1;
+          const t = await r.text();
+          const m = t.match(/viewBox=["']\s*[\d.]+\s+[\d.]+\s+([\d.]+)\s+([\d.]+)/);
+          return m ? parseFloat(m[2]) / parseFloat(m[1]) : 1;
+        } catch { return 1; }
+      };
+      const ar = await getAR();
+      const cw = maxSize, ch = Math.round(maxSize * ar);
       const drawImgToBuffer = (imgEl) => new Promise(resolve => {
         const cv = document.createElement('canvas');
-        cv.width = size; cv.height = size;
+        cv.width = cw; cv.height = ch;
         const ctx = cv.getContext('2d');
-        ctx.clearRect(0, 0, size, size);
-        ctx.drawImage(imgEl, 0, 0, size, size);
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(imgEl, 0, 0, cw, ch);
         cv.toBlob(b => { b ? b.arrayBuffer().then(resolve).catch(()=>resolve(null)) : resolve(null); }, 'image/png');
       });
       try {
-        // Essai 1 : chargement direct (fonctionne pour SVG same-origin)
-        const direct = await new Promise(resolve => {
-          const img = new Image();
-          const t = setTimeout(() => { img.onload = img.onerror = null; resolve(null); }, 4000);
-          img.onload = () => { clearTimeout(t); drawImgToBuffer(img).then(resolve); };
-          img.onerror = () => { clearTimeout(t); resolve(null); };
-          img.src = url;
-        });
-        if (direct) return direct;
-        // Essai 2 : fetch SVG texte + blob URL
         const res = await fetch(url);
         if (!res.ok) return null;
         const svgText = await res.text();
@@ -6108,11 +6109,7 @@ async function generateOfficialReport() {
     const LIME = rgb(0.11, 0.77, 0.48);
     const sCol = v => {
       if (v===null) return SUB;
-      if (v>=9)   return rgb(0.93,0.62,0.10);
-      if (v>=7.5) return rgb(0.11,0.77,0.48);
-      if (v>=5.5) return rgb(0.29,0.62,1.00);
-      if (v>=4)   return rgb(0.96,0.65,0.29);
-      return rgb(0.91,0.10,0.29);
+      return v >= 5.5 ? LIME : BLK;  // 2 couleurs max
     };
 
     // ── Helpers draw ──────────────────────────────────────
@@ -6149,14 +6146,20 @@ async function generateOfficialReport() {
 
     // 2b. Coverage exacte (pdfplumber):
     //   image x=532.5-595.3 y_PDFlib=616-791 + texte x=455.5-567.7 top=124.8
-    cov(p1, 453, 612, 143, 218);  // étendue à y=830 pour couvrir lignes diagonales
+    cov(p1, 443, 612, 153, 218);  // élargi à gauche pour inclure le label badge
 
     // 2c. Icône rang — centrée sur x=512, y=703 (centre zone image PDF-lib)
     const rankImgBuf = await svgToPngBuf(`/assets/ranks/${rankName.toLowerCase()}.svg`, 240);
     if (rankImgBuf) {
       const rankImg = await pdfDoc.embedPng(new Uint8Array(rankImgBuf)).catch(() => null);
       // Carré 80×80 centré x=512 (centre label template), y_bottom=683 → top=763 (top≈79pt)
-      if (rankImg) p1.drawImage(rankImg, {x:460, y:661, width:130, height:130});
+      if (rankImg) {
+        // AR préservé — eagle gold.svg est 171.53×142.54, non carré
+        const rAR = rankImg.height / rankImg.width;
+        const rW = 130, rH = Math.round(rW * rAR);
+        // Aligné sur le bord droit (conforme template Canva, bords off-page)
+        p1.drawImage(rankImg, {x: 533, y: 679, width: rW, height: rH});
+      }
     }
 
 
@@ -6167,7 +6170,7 @@ async function generateOfficialReport() {
     const nW = fontB.widthOfTextAtSize(pseudo, nSz);
     put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
     // Badge rang — dessiné APRÈS coverage player name pour ne pas être masqué
-    mid(p1, badge, 524, 703, 13, fontB, BLK);
+    mid(p1, badge, 492, 714, 11.5, fontB, BLK);
 
     // 4. Sous-titre — template "#tag - Jungle - Master - Âge" pdfplumber top=191.5-203.5
     //    y+h ≥ 842-191.5=650.5 → cov y=626 h=26 (652) ✓
@@ -6181,7 +6184,7 @@ async function generateOfficialReport() {
     const sTxt = gScore !== null ? gScore.toFixed(1) : '-';
     cov(p1, 192, 476, 215, 92);
     const gW = fontB.widthOfTextAtSize(sTxt, 66);
-    put(p1, sTxt, 297 - gW/2, 487, 66, fontB, sCol(gScore));
+    put(p1, sTxt, 297 - gW/2, 487, 66, fontB, LIME);
 
     // 6. 5 scores de dimensions — template "0.0" pdfplumber top=492.7-511.7
     //    PDF-lib baseline y≈330 ; y+h ≥ 842-492.7=349.3 → cov y=317 h=35 (352) ✓
@@ -6250,12 +6253,21 @@ async function generateOfficialReport() {
     cov(p1, 511, 145, 30, 23); mid(p1, kpV, 526, 148, 16, fontB, BLK);
 
     // Ligne 3 — rs[1] remplace "Stat 5" + rs[2] remplace "Stat 6"
-    cov(p1, 417, 66, 26, 25);  // couvre "0.0" Stat5 précisément
-    
+    cov(p1, 417, 66, 26, 25);  // couvre "0.0" Stat5
     mid(p1, rs[1].val, 430, 68, 16, fontB, BLK);
-    cov(p1, 511, 66, 26, 25);
-    
+    cov(p1, 511, 66, 26, 25);  // couvre "0.0" Stat6
     mid(p1, rs[2].val, 524, 68, 16, fontB, BLK);
+
+    // Labels Stat 4 / 5 / 6 — couvrir les labels template + écrire le vrai nom
+    // Stat 4 label: pdfplumber top=637.8 → PDF-lib y=204.1 baseline 192.1
+    cov(p1, 507, 189, 72, 16);
+    mid(p1, rs[0].lbl, 543, 195, 8, fontR, SUB);
+    // Stat 5 label: pdfplumber top=797.1 → PDF-lib y=44.8 baseline 32.8
+    cov(p1, 413, 29, 70, 16);
+    mid(p1, rs[1].lbl, 430, 36, 8, fontR, SUB);
+    // Stat 6 label: même y que Stat 5
+    cov(p1, 508, 29, 72, 16);
+    mid(p1, rs[2].lbl, 524, 36, 8, fontR, SUB);
 
     // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
     // Cover précis (x=254-310) pour ne pas empiéter sur le texte RGPD à gauche
