@@ -6055,7 +6055,7 @@ async function generateOfficialReport() {
           const bg = document.createElement('canvas');
           bg.width = w; bg.height = h;
           const bctx = bg.getContext('2d');
-          bctx.fillStyle = '#0B0E18';
+          bctx.fillStyle = '#FFFFFF';  // fond blanc pour lisibilité PDF
           bctx.fillRect(0, 0, w, h);
           if (w > 0 && h > 0) { try { bctx.drawImage(c, 0, 0, w, h); } catch(_) {} }
           dataUrl = bg.toDataURL('image/png');
@@ -6156,7 +6156,7 @@ async function generateOfficialReport() {
     if (rankImgBuf) {
       const rankImg = await pdfDoc.embedPng(new Uint8Array(rankImgBuf)).catch(() => null);
       // Carré 80×80 centré x=512 (centre label template), y_bottom=683 → top=763 (top≈79pt)
-      if (rankImg) p1.drawImage(rankImg, {x:472, y:683, width:80, height:80});
+      if (rankImg) p1.drawImage(rankImg, {x:460, y:661, width:130, height:130});
     }
 
 
@@ -6167,7 +6167,7 @@ async function generateOfficialReport() {
     const nW = fontB.widthOfTextAtSize(pseudo, nSz);
     put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
     // Badge rang — dessiné APRÈS coverage player name pour ne pas être masqué
-    mid(p1, badge, 523, 665, 10, fontB, BLK);
+    mid(p1, badge, 524, 703, 13, fontB, BLK);
 
     // 4. Sous-titre — template "#tag - Jungle - Master - Âge" pdfplumber top=191.5-203.5
     //    y+h ≥ 842-191.5=650.5 → cov y=626 h=26 (652) ✓
@@ -6188,7 +6188,7 @@ async function generateOfficialReport() {
     const dXs = [63.4, 174.4, 285.4, 396.4, 507.4];
     dimScores.forEach((v, i) => {
       const vt = fmt(v, 1);
-      cov(p1, dXs[i]-5, 317, 52, 35);
+      cov(p1, dXs[i]-2, 326, 28, 26);  // couverture réduite pour préserver les cibles
       put(p1, vt, dXs[i], 330, 16, fontB, sCol(v));
     });
 
@@ -6240,8 +6240,8 @@ async function generateOfficialReport() {
                   ? Math.round(rawData.kill_part)+'%' : '-';
 
     // Ligne 1 — KDA (centre x=430) + rs[0] remplace "Stat 4" (centre x=535)
-    cov(p1, 416, 192, 30, 38); mid(p1, kdaV, 431, 228, 16, fontB, BLK); // couvre "0.0"+label KDA
-    cov(p1, 511, 192, 30, 38); // couvre "0.0"+label Stat4 minimal
+    cov(p1, 414, 225, 32, 26); mid(p1, kdaV, 431, 228, 16, fontB, BLK); // couvre "0.0"+label KDA
+    cov(p1, 509, 225, 32, 26); // couvre "0.0"+label Stat4
     // label Stat4 remplacé — cov couvre déjà le template label
     mid(p1, rs[0].val, 526, 228, 16, fontB, BLK);
 
@@ -6250,12 +6250,12 @@ async function generateOfficialReport() {
     cov(p1, 511, 145, 30, 23); mid(p1, kpV, 526, 148, 16, fontB, BLK);
 
     // Ligne 3 — rs[1] remplace "Stat 5" + rs[2] remplace "Stat 6"
-    cov(p1, 416, 32, 30, 51);  // couvre "0.0"+label Stat5 minimal
+    cov(p1, 417, 66, 26, 25);  // couvre "0.0" Stat5 précisément
     
     mid(p1, rs[1].val, 430, 68, 16, fontB, BLK);
-    cov(p1, 487, 30, 82, 68);
+    cov(p1, 511, 66, 26, 25);
     
-    mid(p1, rs[2].val, 526, 68, 16, fontB, BLK);
+    mid(p1, rs[2].val, 524, 68, 16, fontB, BLK);
 
     // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
     // Cover précis (x=254-310) pour ne pas empiéter sur le texte RGPD à gauche
