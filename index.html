@@ -6041,22 +6041,36 @@ async function generateOfficialReport() {
     // ── Helper : canvas → ArrayBuffer avec fond sombre (pour graphiques) ──
     const canvasToBuf = async (id) => {
       try {
-        // Priorité : instance Chart.js (fonctionne même si le canvas est caché)
         const keyMap = {'chart-kda':'kda','chart-wr':'wr','chart-multi':'multi','chart-champs':'champs','chart-lp':'lp'};
         const inst = typeof chartInstances !== 'undefined' && chartInstances[keyMap[id]];
         let dataUrl = null;
-        if (inst && typeof inst.toBase64Image === 'function') {
-          try { dataUrl = inst.toBase64Image('image/png', 1); } catch(_) {}
+        if (inst) {
+          try {
+            const canvas = inst.canvas;
+            const origW = canvas.width, origH = canvas.height;
+            // Rendu 3× la zone PDF (258×240pt → 774×720px) : résolution parfaite, même AR
+            inst.resize(774, 720);
+            await new Promise(r => setTimeout(r, 120));
+            const bg = document.createElement('canvas');
+            bg.width = 774; bg.height = 720;
+            const bctx = bg.getContext('2d');
+            bctx.fillStyle = '#FFFFFF';
+            bctx.fillRect(0, 0, 774, 720);
+            bctx.drawImage(canvas, 0, 0, 774, 720);
+            dataUrl = bg.toDataURL('image/png');
+            inst.resize(origW || 600, origH || 200);
+          } catch(_) {
+            try { dataUrl = inst.toBase64Image('image/png', 1); } catch(__) {}
+          }
         }
         if (!dataUrl) {
           const c = document.getElementById(id);
           if (!c) return null;
-          // Composite sur fond sombre pour éviter les carrés blancs
           const w = c.width || 600, h = c.height || 240;
           const bg = document.createElement('canvas');
           bg.width = w; bg.height = h;
           const bctx = bg.getContext('2d');
-          bctx.fillStyle = '#FFFFFF';  // fond blanc pour lisibilité PDF
+          bctx.fillStyle = '#FFFFFF';
           bctx.fillRect(0, 0, w, h);
           if (w > 0 && h > 0) { try { bctx.drawImage(c, 0, 0, w, h); } catch(_) {} }
           dataUrl = bg.toDataURL('image/png');
@@ -6158,19 +6172,19 @@ async function generateOfficialReport() {
         const rAR = rankImg.height / rankImg.width;
         const rW = 130, rH = Math.round(rW * rAR);
         // Aligné sur le bord droit (conforme template Canva, bords off-page)
-        p1.drawImage(rankImg, {x: 533, y: 679, width: rW, height: rH});
+        p1.drawImage(rankImg, {x: 466, y: 679, width: rW, height: rH});
       }
     }
 
 
     // 3. Nom du joueur — template "Nom du joueur in game" pdfplumber top=155.9-179.9
     //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓ — largeur réduite à 380 pour ne pas empiéter sur le logo rang
-    cov(p1, 100, 648, 380, 40);
+    cov(p1, 100, 648, 360, 40);
     const nSz = Math.max(14, Math.min(24, 24 - Math.max(0, pseudo.length-12)));
     const nW = fontB.widthOfTextAtSize(pseudo, nSz);
     put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
     // Badge rang — dessiné APRÈS coverage player name pour ne pas être masqué
-    mid(p1, badge, 492, 714, 11.5, fontB, BLK);
+    mid(p1, badge, 527, 703, 11.5, fontB, BLK);
 
     // 4. Sous-titre — template "#tag - Jungle - Master - Âge" pdfplumber top=191.5-203.5
     //    y+h ≥ 842-191.5=650.5 → cov y=626 h=26 (652) ✓
@@ -6261,13 +6275,13 @@ async function generateOfficialReport() {
     // Labels Stat 4 / 5 / 6 — couvrir les labels template + écrire le vrai nom
     // Stat 4 label: pdfplumber top=637.8 → PDF-lib y=204.1 baseline 192.1
     cov(p1, 507, 189, 72, 16);
-    mid(p1, rs[0].lbl, 543, 195, 8, fontR, SUB);
+    mid(p1, rs[0].lbl, 543, 193, 8.5, fontB, BLK);
     // Stat 5 label: pdfplumber top=797.1 → PDF-lib y=44.8 baseline 32.8
     cov(p1, 413, 29, 70, 16);
-    mid(p1, rs[1].lbl, 430, 36, 8, fontR, SUB);
+    mid(p1, rs[1].lbl, 430, 36, 8.5, fontB, BLK);
     // Stat 6 label: même y que Stat 5
     cov(p1, 508, 29, 72, 16);
-    mid(p1, rs[2].lbl, 524, 36, 8, fontR, SUB);
+    mid(p1, rs[2].lbl, 524, 36, 8.5, fontB, BLK);
 
     // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
     // Cover précis (x=254-310) pour ne pas empiéter sur le texte RGPD à gauche
@@ -6321,7 +6335,7 @@ async function generateOfficialReport() {
     // Lignes : cy=702 → pdfplumber top=123 (Ligne 1) ; cy=584 → pdfplumber top=260 (Ligne 2)
     const cColCx = [81, 222, 362, 503]; // centres exacts pdfplumber
     const cRowY  = [710, 595]; // image_bottom au-dessus du texte stats
-    const cSz    = 70; // réduit de 82→70 pour rester dans les cellules du template
+    const cSz    = 58; // réduit de 70→58 pour un rendu plus aéré
 
     for (let ci=0; ci<champs.length; ci++) {
       const c    = champs[ci];
