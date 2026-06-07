@@ -6048,15 +6048,15 @@ async function generateOfficialReport() {
           try {
             const canvas = inst.canvas;
             const origW = canvas.width, origH = canvas.height;
-            // Rendu 3× la zone PDF (258×240pt → 774×720px) : résolution parfaite, même AR
-            inst.resize(774, 720);
+            // Rendu 900×350 (AR 2.57:1 naturel pour charts) → pas d'étirement
+            inst.resize(900, 350);
             await new Promise(r => setTimeout(r, 120));
             const bg = document.createElement('canvas');
-            bg.width = 774; bg.height = 720;
+            bg.width = 900; bg.height = 350;
             const bctx = bg.getContext('2d');
             bctx.fillStyle = '#FFFFFF';
-            bctx.fillRect(0, 0, 774, 720);
-            bctx.drawImage(canvas, 0, 0, 774, 720);
+            bctx.fillRect(0, 0, 900, 350);
+            bctx.drawImage(canvas, 0, 0, 900, 350);
             dataUrl = bg.toDataURL('image/png');
             inst.resize(origW || 600, origH || 200);
           } catch(_) {
@@ -6123,7 +6123,7 @@ async function generateOfficialReport() {
     const LIME = rgb(0.11, 0.77, 0.48);
     const sCol = v => {
       if (v===null) return SUB;
-      return v >= 5.5 ? LIME : BLK;  // 2 couleurs max
+      return BLK;  // noir uniforme, professionnel
     };
 
     // ── Helpers draw ──────────────────────────────────────
@@ -6184,7 +6184,18 @@ async function generateOfficialReport() {
     const nW = fontB.widthOfTextAtSize(pseudo, nSz);
     put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
     // Badge rang — dessiné APRÈS coverage player name pour ne pas être masqué
-    mid(p1, badge, 527, 703, 11.5, fontB, BLK);
+    mid(p1, badge, 527, 655, 11.5, fontB, BLK);
+
+    // Label "KDA" template — pdfplumber top=637.8 → y_baseline=192.1
+    // Couvrir + redessiner pour uniformiser police avec Stat4/5/6
+    cov(p1, 415, 188, 26, 17);
+    mid(p1, 'KDA', 430, 193, 8.5, fontB, BLK);
+    // Label "CS/min" template — pdfplumber top=717.4 → y_baseline=112.5
+    cov(p1, 409, 108, 50, 19);
+    mid(p1, 'CS/min', 431, 115, 8.5, fontB, BLK);
+    // Label "Kill part." template — pdfplumber top=717.4 → même ligne
+    cov(p1, 500, 108, 60, 19);
+    mid(p1, 'Kill part.', 526, 115, 8.5, fontB, BLK);
 
     // 4. Sous-titre — template "#tag - Jungle - Master - Âge" pdfplumber top=191.5-203.5
     //    y+h ≥ 842-191.5=650.5 → cov y=626 h=26 (652) ✓
@@ -6198,7 +6209,7 @@ async function generateOfficialReport() {
     const sTxt = gScore !== null ? gScore.toFixed(1) : '-';
     cov(p1, 192, 476, 215, 92);
     const gW = fontB.widthOfTextAtSize(sTxt, 66);
-    put(p1, sTxt, 297 - gW/2, 487, 66, fontB, LIME);
+    put(p1, sTxt, 297 - gW/2, 487, 66, fontB, BLK);
 
     // 6. 5 scores de dimensions — template "0.0" pdfplumber top=492.7-511.7
     //    PDF-lib baseline y≈330 ; y+h ≥ 842-492.7=349.3 → cov y=317 h=35 (352) ✓
@@ -6335,7 +6346,7 @@ async function generateOfficialReport() {
     // Lignes : cy=702 → pdfplumber top=123 (Ligne 1) ; cy=584 → pdfplumber top=260 (Ligne 2)
     const cColCx = [81, 222, 362, 503]; // centres exacts pdfplumber
     const cRowY  = [710, 595]; // image_bottom au-dessus du texte stats
-    const cSz    = 58; // réduit de 70→58 pour un rendu plus aéré
+    const cSz    = 70; // taille d'origine
 
     for (let ci=0; ci<champs.length; ci++) {
       const c    = champs[ci];
@@ -6382,7 +6393,10 @@ async function generateOfficialReport() {
         // On aligne le chart en BAS de boîte (y=332) et on remonte selon ar
         const ar = kdaImg2.height / kdaImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
-        p2.drawImage(kdaImg2, {x:13, y:332, width:258, height:240});
+        // Hauteur proportionnelle au rendu (900×350 → AR=0.389 → h=100pt)
+        const kdaH = Math.round(258 * kdaImg2.height / kdaImg2.width);
+        const kdaY = 332 + Math.round((240 - kdaH) / 2);
+        p2.drawImage(kdaImg2, {x:13, y:kdaY, width:258, height:kdaH});
       }
     }
     if (champsBuf2) {
@@ -6390,7 +6404,9 @@ async function generateOfficialReport() {
       if (champsImg2) {
         const ar = champsImg2.height / champsImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
-        p2.drawImage(champsImg2, {x:302, y:332, width:258, height:240});
+        const csH = Math.round(258 * champsImg2.height / champsImg2.width);
+        const csY = 332 + Math.round((240 - csH) / 2);
+        p2.drawImage(champsImg2, {x:302, y:csY, width:258, height:csH});
       }
     }
 
