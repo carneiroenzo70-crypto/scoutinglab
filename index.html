@@ -6049,14 +6049,14 @@ async function generateOfficialReport() {
             const canvas = inst.canvas;
             const origW = canvas.width, origH = canvas.height;
             // Rendu 900×350 (AR 2.57:1 naturel pour charts) → pas d'étirement
-            inst.resize(900, 350);
+            inst.resize(900, 600);  // AR 1.5:1 remplit mieux le cadre
             await new Promise(r => setTimeout(r, 120));
             const bg = document.createElement('canvas');
-            bg.width = 900; bg.height = 350;
+            bg.width = 900; bg.height = 600;
             const bctx = bg.getContext('2d');
             bctx.fillStyle = '#FFFFFF';
             bctx.fillRect(0, 0, 900, 350);
-            bctx.drawImage(canvas, 0, 0, 900, 350);
+            bctx.drawImage(canvas, 0, 0, 900, 600);
             dataUrl = bg.toDataURL('image/png');
             inst.resize(origW || 600, origH || 200);
           } catch(_) {
@@ -6268,20 +6268,20 @@ async function generateOfficialReport() {
                   ? Math.round(rawData.kill_part)+'%' : '-';
 
     // Ligne 1 — KDA (centre x=430) + rs[0] remplace "Stat 4" (centre x=535)
-    cov(p1, 414, 225, 32, 26); mid(p1, kdaV, 431, 228, 16, fontB, BLK); // couvre "0.0"+label KDA
+    cov(p1, 414, 225, 32, 26); mid(p1, kdaV, 431, 231, 16, fontB, BLK); // centré dans cible
     cov(p1, 509, 225, 32, 26); // couvre "0.0"+label Stat4
     // label Stat4 remplacé — cov couvre déjà le template label
-    mid(p1, rs[0].val, 526, 228, 16, fontB, BLK);
+    mid(p1, rs[0].val, 526, 231, 16, fontB, BLK);
 
     // Ligne 2 — CS/min (centre x=430) + Kill part. (centre x=535)
-    cov(p1, 416, 145, 30, 23); mid(p1, csV, 431, 148, 16, fontB, BLK);
-    cov(p1, 511, 145, 30, 23); mid(p1, kpV, 526, 148, 16, fontB, BLK);
+    cov(p1, 416, 145, 30, 23); mid(p1, csV, 431, 151, 16, fontB, BLK);
+    cov(p1, 511, 145, 30, 23); mid(p1, kpV, 526, 151, 16, fontB, BLK);
 
     // Ligne 3 — rs[1] remplace "Stat 5" + rs[2] remplace "Stat 6"
     cov(p1, 417, 66, 26, 25);  // couvre "0.0" Stat5
-    mid(p1, rs[1].val, 430, 68, 16, fontB, BLK);
+    mid(p1, rs[1].val, 430, 71, 16, fontB, BLK);
     cov(p1, 511, 66, 26, 25);  // couvre "0.0" Stat6
-    mid(p1, rs[2].val, 524, 68, 16, fontB, BLK);
+    mid(p1, rs[2].val, 524, 71, 16, fontB, BLK);
 
     // Labels Stat 4 / 5 / 6 — couvrir les labels template + écrire le vrai nom
     // Stat 4 label: pdfplumber top=637.8 → PDF-lib y=204.1 baseline 192.1
@@ -6393,9 +6393,9 @@ async function generateOfficialReport() {
         // On aligne le chart en BAS de boîte (y=332) et on remonte selon ar
         const ar = kdaImg2.height / kdaImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
-        // Hauteur proportionnelle au rendu (900×350 → AR=0.389 → h=100pt)
+        // Aligné sous le label "RATIO KDA" (PDF-lib y=507), hauteur proportionnelle
         const kdaH = Math.round(258 * kdaImg2.height / kdaImg2.width);
-        const kdaY = 332 + Math.round((240 - kdaH) / 2);
+        const kdaY = Math.max(260, 507 - kdaH);
         p2.drawImage(kdaImg2, {x:13, y:kdaY, width:258, height:kdaH});
       }
     }
@@ -6405,7 +6405,7 @@ async function generateOfficialReport() {
         const ar = champsImg2.height / champsImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
         const csH = Math.round(258 * champsImg2.height / champsImg2.width);
-        const csY = 332 + Math.round((240 - csH) / 2);
+        const csY = Math.max(260, 507 - csH);
         p2.drawImage(champsImg2, {x:302, y:csY, width:258, height:csH});
       }
     }
@@ -6441,24 +6441,33 @@ async function generateOfficialReport() {
 
     // Bilan — template "Lorem ipsum" pdfplumber top=746.8-789 → PDF-lib y≈53-83
     const VERDICTS = [
-      [9,"Profil d'exception. Recrutement prioritaire - potentiel semi-pro immediat."],
-      [8,"Tres solide. Tryout prioritaire - profil pret pour le circuit semi-pro."],
-      [7,"Bon profil. Tryout recommande - a integrer dans le circuit semi-pro."],
-      [6,"Profil en developpement. A suivre 30 jours - potentiel identifie."],
-      [5,"Pas encore pret. Niveau insuffisant sur les dimensions cles."],
-      [0,"Niveau trop faible. Developpement individuel requis avant tout recrutement."],
+      [9.5,"Profil elite. Recrutement immediat : niveau pro confirme, impact direct sur le circuit."],
+      [8.5,"Profil d'exception. Recrutement prioritaire : potentiel semi-pro immediat, tryout urgent."],
+      [7.5,"Profil tres solide. Tryout prioritaire : architecture de jeu adaptee au circuit semi-pro."],
+      [6.5,"Bon profil competitif. Tryout recommande : base technique suffisante, progression visible."],
+      [5.5,"Profil en developpement. Potentiel identifie : a monitorer 30 jours avant decision."],
+      [4.5,"Profil limite. Travail specifique requis sur les dimensions cles avant tout tryout."],
+      [0,"Niveau insuffisant. Developpement individuel necessaire avant toute integration en circuit."],
     ];
-    const bilanVerdict = gScore!==null
+    const dimNames = ['Stats','Objectifs','Impact','Progression','Entretien'];
+    const bestDimIdx = dimScores.reduce((bi,v,i)=>v!==null&&(bi<0||v>(dimScores[bi]??0))?i:bi,-1);
+    const worstDimIdx = dimScores.reduce((bi,v,i)=>v!==null&&(bi<0||v<(dimScores[bi]??10))?i:bi,-1);
+    const verdict = gScore!==null
       ? (VERDICTS.find(([m])=>gScore>=m)?.[1]||'')
       : 'Importez les donnees Riot API pour generer le bilan.';
-    const bilanFull = bilanVerdict + ' Score SPES : '+(gScore!==null?gScore.toFixed(2)+'/10':'-')+' ('+roleLbl+' '+rankName+').';
+    const statsLine = 'Stats cles : KDA '+kdaV+', CS/min '+csV+', Kill Part. '+kpV+'.';
+    const dimLine = (bestDimIdx>=0&&worstDimIdx>=0&&bestDimIdx!==worstDimIdx)
+      ? 'Point fort : '+dimNames[bestDimIdx]+' '+fmt(dimScores[bestDimIdx],1)+'/10. Axe critique : '+dimNames[worstDimIdx]+' '+fmt(dimScores[worstDimIdx],1)+'/10.'
+      : '';
+    const scoreLine = 'Score SPES : '+(gScore!==null?gScore.toFixed(2)+'/10':'-')+' ('+roleLbl+' '+rankName+').';
+    const bilanFull = [verdict, statsLine, dimLine, scoreLine].filter(Boolean).join(' ');
     const bilanLines=[]; let cur='';
     bilanFull.split(' ').forEach(w=>{
       const t=cur?cur+' '+w:w;
-      if(fontR.widthOfTextAtSize(t,9.5)>470&&cur){bilanLines.push(cur);cur=w;}else cur=t;
+      if(fontR.widthOfTextAtSize(t,8.5)>468&&cur){bilanLines.push(cur);cur=w;}else cur=t;
     }); if(cur)bilanLines.push(cur);
-    cov(p2, 44, 40, 512, 62);
-    bilanLines.slice(0,3).forEach((line,i)=>put(p2,line,47,83-i*14,9.5,fontR,BLK));
+    cov(p2, 44, 38, 512, 68);
+    bilanLines.slice(0,4).forEach((line,i)=>put(p2,line,47,85-i*12,8.5,fontR,BLK));
 
     // Footer page 2 — date (même correction que page 1)
     cov(p2, 254, 7, 52, 14);
