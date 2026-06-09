@@ -2185,12 +2185,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="dim-body" id="dim-body-d4"></div>
       </div>
 
-      <!-- ── DIMENSION D5 : Intelligence combat ── -->
+      <!-- ── DIMENSION D5 : Discipline & constance ── -->
       <div id="dim-d5" class="dim-section">
         <div class="dim-header" onclick="toggleDim('d5')">
           <div class="dim-header-left">
             <span class="dim-tag tag-d5">D5</span>
-            <span class="dim-header-title">Intelligence combat</span>
+            <span class="dim-header-title">Discipline &amp; constance</span>
             <span id="dim-w-d5" style="font-size:11px;color:var(--sub);margin-left:4px"></span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -2800,6 +2800,14 @@ const SEUILS_ABSOLUS = {
     ADC: [12, 20,  30,  42],
     Sup: [48, 72,  95, 120],
   },
+  // Vision/min — normalisée par durée (corrige le biais des parties longues en bas elo)
+  vision_min: {
+    Top: [0.40, 0.60, 0.85, 1.15],
+    Jgl: [0.55, 0.85, 1.15, 1.55],
+    Mid: [0.40, 0.60, 0.85, 1.15],
+    ADC: [0.40, 0.60, 0.80, 1.10],
+    Sup: [1.00, 1.50, 2.05, 2.70],
+  },
   kill_part: {
     Top: [45, 58, 70, 82],
     Jgl: [55, 68, 78, 88],
@@ -2959,6 +2967,8 @@ function scoreStatCalibrated(id, val) {
       return scoreAbsolu(v, ...SEUILS_ABSOLUS.winrate.all);
     case 'vision':
       return scoreAbsolu(v, ...(SEUILS_ABSOLUS.vision[role] || SEUILS_ABSOLUS.vision.Mid));
+    case 'vision_min':
+      return scoreAbsolu(v, ...(SEUILS_ABSOLUS.vision_min[role] || SEUILS_ABSOLUS.vision_min.Mid));
     case 'kill_part':
       return scoreAbsolu(v, ...(SEUILS_ABSOLUS.kill_part[role] || SEUILS_ABSOLUS.kill_part.Mid));
     case 'dmg_share':
@@ -3092,7 +3102,7 @@ const D1_FIELDS = {
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
     { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
-    { id:'chal_max_lvl_lead',    lbl:'Avance de niveau/g',   badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min',          badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'cs_min',               lbl:'Camps+CS/min',         badge:'api', type:'auto' },
@@ -3106,20 +3116,20 @@ const D1_FIELDS = {
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
     { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
-    { id:'chal_solo_kills',      lbl:'Solo kills/g',         badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min',          badge:'api', type:'auto' },
   ],
   ADC: [
     { id:'cs_min',               lbl:'CS/min',               badge:'api', type:'auto' },
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
     { id:'dmg_share',            lbl:'Dmg Share %',          badge:'api', type:'auto' },
-    { id:'chal_cs10',            lbl:'CS à 10 min/g',        badge:'api', type:'auto' },
+    { id:'chal_cs10',            lbl:'CS à 10 min',          badge:'api', type:'auto' },
     { id:'dpm',                  lbl:'Dégâts/min',           badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'kda',                  lbl:'KDA',                  badge:'api', type:'auto' },
-    { id:'vision',               lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'vision_min',           lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_control_wards',   lbl:'Control Wards/g',      badge:'api', type:'auto' },
-    { id:'chal_save_ally',       lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
+    { id:'kill_part',            lbl:'Kill Participation',   badge:'api', type:'auto' },
     { id:'chal_wards_killed',    lbl:'Wards détruits/g',     badge:'api', type:'auto' },
   ],
 };
@@ -3130,39 +3140,34 @@ const D1_FIELDS = {
 // ════════════════════════════════════════════════════════════
 const D2_FIELDS = {
   Top: [
-    { id:'dmg_tower',             lbl:'Dégâts tours/g',      badge:'api', type:'auto' },
-    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
-    { id:'chal_solo_turrets',     lbl:'Tours solo tardif/g',  badge:'api', type:'auto' },
     { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'obj_score',             lbl:'Obj Score drag+baron', badge:'api', type:'auto' },
     { id:'chal_epic_steals',      lbl:'Steals épiques/g',     badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
     { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'dmg_tower',             lbl:'Dégâts tours/g',       badge:'api', type:'auto' },
     { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours détruites/g',    badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
-    { id:'chal_turret_plates',    lbl:'Plaques turret/g',     badge:'api', type:'auto' },
+    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'dmg_tower',             lbl:'Degats tours/g',           badge:'api', type:'auto' },
     { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
-    { id:'chal_turret_plates',    lbl:'Plaques turret/g',         badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours detruites/g',        badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',      badge:'api', type:'auto' },
+    { id:'kill_part',             lbl:'Kill Participation',       badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
     { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',      badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
-    { id:'chal_turret_takedowns', lbl:'Tours detruites/g',        badge:'api', type:'auto' },
-    { id:'kill_part',             lbl:'Kill Part. objectifs/g',   badge:'api', type:'auto' },
+    { id:'kill_part',             lbl:'Kill Part. objectifs',     badge:'api', type:'auto' },
   ],
 };
 
@@ -3173,35 +3178,32 @@ const D2_FIELDS = {
 const D3_FIELDS = {
   Top: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
-    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
-    { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
-    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
     { id:'chal_control_wards',    lbl:'Control Wards/g',      badge:'api', type:'auto' },
     { id:'chal_wards_killed',     lbl:'Wards détruits/g',     badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
-    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
-    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
+    { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   ADC: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
-    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
-    { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
+    { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
-    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
+    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
-    { id:'vision',                lbl:'Vision Score/g',       badge:'api', type:'auto' },
+    { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_save_ally',        lbl:'Alliés sauvés/g',      badge:'api', type:'auto' },
     { id:'chal_stealth_wards',    lbl:'Wards posés/g',        badge:'api', type:'auto' },
     { id:'chal_wards_killed',     lbl:'Wards détruits/g',     badge:'api', type:'auto' },
@@ -3219,51 +3221,43 @@ const D4_FIELDS_BASE = [
   { id:'champ_pool',  lbl:'Pool qualifié (≥55% WR)',  badge:'api',  type:'auto' },
 ];
 
-// D5 — Intelligence de combat (100% API Riot Challenges, zéro saisie manuelle)
-// Mesure la qualité des décisions dans les moments critiques
+// D5 — Discipline & constance (100% API Riot Challenges, zéro saisie manuelle)
+// Métriques DIFFÉRENTIELLES (vs adversaire direct) ou de CONSTANCE — robustes au rang,
+// au champion et à la durée de partie. Remplace l'ancienne "Intelligence combat"
+// dont les métriques (skillshots, kills sous tour, survies <10%) étaient biaisées.
 const D5_FIELDS = {
   Top: [
-    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
-    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
-    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
-    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',          badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision lane',     badge:'api', type:'auto' },
   ],
   Jgl: [
-    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
-    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
-    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
-    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',          badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision lane',     badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
-    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
-    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
-    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',          badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision lane',     badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',    badge:'api', type:'auto' },
-    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
-    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
-    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',          badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision lane',     badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'chal_vision_adv',    lbl:'Avantage vision vs adverse', badge:'api', type:'auto' },
-    { id:'chal_survive_hp',    lbl:'Survies <10% HP/game',     badge:'api', type:'auto' },
-    { id:'chal_kills_turret',  lbl:'Kills défensifs/game',      badge:'api', type:'auto' },
-    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',           badge:'api', type:'auto' },
-    { id:'chal_skillshots_hit',lbl:'Skillshots touchés/game',  badge:'api', type:'auto' },
+    { id:'chal_vision_adv',    lbl:'Avantage vision lane',     badge:'api', type:'auto' },
+    { id:'chal_perfect_game',  lbl:'Taux 0-mort (%)',          badge:'api', type:'auto' },
+    { id:'chal_team_dmg_pct',  lbl:'Part dégâts équipe %',     badge:'api', type:'auto' },
   ],
 };
 
 // ─ Dimension IDs and weights ─────────────────
 const DIM_IDS = ['d1','d2','d3','d4','d5'];
-const DIM_NAMES  = ['Stats pures','Objectifs & macro','Impact carte','Rang & progression','Intelligence combat'];
+const DIM_NAMES  = ['Stats pures','Objectifs & macro','Impact carte','Rang & progression','Discipline & constance'];
 const DIM_COLORS = { d1:'#4A9EFF', d2:'#F5A623', d3:'#2DD4BF', d4:'#C084FC', d5:'#FF7A5A' };
-const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'COMBAT IQ' };
+const DIM_ABBR   = { d1:'STATS', d2:'OBJECTIFS', d3:'IMPACT', d4:'PROGRESSION', d5:'DISCIPLINE' };
 
 const ROLE_WEIGHTS = {
   // D4 renforcé (rang = ancre du score global, pas un plafond externe)
@@ -3767,7 +3761,7 @@ function buildRadar(svgId, w, h) {
     { label:'Objectifs',  val:dimAvg(f.d2), color:DIM_COLORS.d2 },
     { label:'Impact',     val:dimAvg(f.d3), color:DIM_COLORS.d3 },
     { label:'Progression',val:dimAvg(f.d4), color:DIM_COLORS.d4 },
-    { label:'Entretien',  val:dimAvg(f.d5), color:DIM_COLORS.d5 },
+    { label:'Discipline', val:dimAvg(f.d5), color:DIM_COLORS.d5 },
   ];
   const cx = w/2, cy = h/2 + h*0.04;
   const r  = Math.min(w,h) * 0.34;
@@ -3932,7 +3926,7 @@ function buildResults() {
     { id:'d2', label:'D2 — Objectifs',        val:dimAvg(f.d2), color:DIM_COLORS.d2, w:RW.d2 },
     { id:'d3', label:'D3 — Impact carte',     val:dimAvg(f.d3), color:DIM_COLORS.d3, w:RW.d3 },
     { id:'d4', label:'D4 — Progression',      val:dimAvg(f.d4), color:DIM_COLORS.d4, w:RW.d4 },
-    { id:'d5', label:'D5 — Entretien',        val:dimAvg(f.d5), color:DIM_COLORS.d5, w:RW.d5 },
+    { id:'d5', label:'D5 — Discipline',       val:dimAvg(f.d5), color:DIM_COLORS.d5, w:RW.d5 },
   ];
   const g = globalScore();
   const pseudo = document.getElementById('d-pseudo')?.value || '—';
@@ -3996,7 +3990,7 @@ function buildResults() {
   // Bars de détail améliorées
   const det = document.getElementById('res-detail');
   const DIM_LABELS_FULL = {
-    d1:'Stats pures', d2:'Objectifs & macro', d3:'Impact carte', d4:'Progression', d5:'Intelligence combat'
+    d1:'Stats pures', d2:'Objectifs & macro', d3:'Impact carte', d4:'Progression', d5:'Discipline & constance'
   };
   if (det) det.innerHTML = dims.map(d => {
     const barW = d.val !== null ? (d.val / 10 * 100).toFixed(1) : 0;
@@ -4766,7 +4760,7 @@ function buildRecruitVerdict(cols) {
   const roleLabel = sameRole ? cols[0].role : 'ce poste';
 
   const reasons = [];
-  const dimLabels = { d1:'Stats pures', d2:'Objectifs', d3:'Impact carte', d4:'Progression', d5:'Entretien' };
+  const dimLabels = { d1:'Stats pures', d2:'Objectifs', d3:'Impact carte', d4:'Progression', d5:'Discipline' };
   // Trouver la dimension la plus forte du meilleur joueur
   const bestDims = Object.entries(best.dimScores||{})
     .filter(([,v]) => v !== null)
@@ -4844,7 +4838,7 @@ function buildScoutView(container) {
     { lbl:'D2 Objectifs',    vals:cols.map(s=>fmtVal(s.dimScores?.d2)) },
     { lbl:'D3 Impact',       vals:cols.map(s=>fmtVal(s.dimScores?.d3)) },
     { lbl:'D4 Progression',  vals:cols.map(s=>fmtVal(s.dimScores?.d4)) },
-    { lbl:'D5 Entretien',    vals:cols.map(s=>fmtVal(s.dimScores?.d5)) },
+    { lbl:'D5 Discipline',   vals:cols.map(s=>fmtVal(s.dimScores?.d5)) },
     { lbl:'KDA',             vals:cols.map(s=>fmtVal(s.stats?.kda,2)) },
     { lbl:'Win Rate',        vals:cols.map(s=>s.stats?.winrate!=null?fmtVal(s.stats.winrate)+'%':'—') },
     { lbl:'CS/min',          vals:cols.map(s=>fmtVal(s.stats?.cs_min,2)) },
@@ -4907,7 +4901,7 @@ function buildRosterView(container) {
   // Radar superposé
   const RS = 260, cx=RS/2, cy=RS/2, r=90;
   const dimIds = ['d1','d2','d3','d4','d5'];
-  const dimLbls = ['Stats','Objectifs','Impact','Progression','Entretien'];
+  const dimLbls = ['Stats','Objectifs','Impact','Progression','Discipline'];
   const ND = dimIds.length;
 
   function rpt(val, idx, radius) {
@@ -5362,7 +5356,7 @@ async function exportPDF() {
     cv.width = size; cv.height = size;
     const ctx = cv.getContext('2d');
     const cx = size/2, cy = size/2, r = size*0.36, N = 5;
-    const labels  = ['Stats','Objectifs','Impact','Progression','Entretien'];
+    const labels  = ['Stats','Objectifs','Impact','Progression','Discipline'];
     const dotClrs = ['#4A9EFF','#F5A623','#2DD4BF','#C084FC','#FF7A5A'];
     const ang = i => Math.PI*2*i/N - Math.PI/2;
     // bg
@@ -5499,7 +5493,7 @@ async function exportPDF() {
     : 'Niveau insuffisant — Trop tôt pour le semi-pro';
 
   const DIM_COLORS = [C.blue,[245,166,35],[45,212,191],[192,132,252],[255,122,90]];
-  const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Entretien'];
+  const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Discipline'];
   const f = (typeof getRoleFields==='function') ? getRoleFields() : {};
   const dimKeys  = ['d1','d2','d3','d4','d5'];
   const dimScores = dimKeys.map(k => (typeof dimAvg==='function'&&f[k]) ? dimAvg(f[k]) : null);
@@ -7499,7 +7493,7 @@ function enterPresentationMode() {
     { lbl:'D2 — Objectifs',      val:(typeof dimAvg==='function'?dimAvg(f.d2):null), color:DC.d2, w:RW.d2 },
     { lbl:'D3 — Impact carte',   val:(typeof dimAvg==='function'?dimAvg(f.d3):null), color:DC.d3, w:RW.d3 },
     { lbl:'D4 — Progression',    val:(typeof dimAvg==='function'?dimAvg(f.d4):null), color:DC.d4, w:RW.d4 },
-    { lbl:'D5 — Entretien',      val:(typeof dimAvg==='function'?dimAvg(f.d5):null), color:DC.d5, w:RW.d5 },
+    { lbl:'D5 — Discipline',     val:(typeof dimAvg==='function'?dimAvg(f.d5):null), color:DC.d5, w:RW.d5 },
   ];
   const presDims = document.getElementById('pres-dims');
   if (presDims) {
@@ -7995,6 +7989,7 @@ function calculateStats(matches, puuid) {
     winrate: parseFloat((wins/gameCount*100).toFixed(1)),
     cs_min: parseFloat((cs/gameDur).toFixed(2)),
     vision: parseFloat((vision/gameCount).toFixed(1)),
+    vision_min: parseFloat((vision/gameDur).toFixed(2)),
     kill_part: parseFloat((killPart/gameCount*100).toFixed(1)),
     dmg_share: parseFloat((dmgShare/gameCount*100).toFixed(1)),
     dmg_tower: parseFloat((dmgTower/gameCount).toFixed(0)),
@@ -8100,7 +8095,7 @@ async function fetchRiotData() {
 
     // Apply all stats
     // Apply all computed stats to rawData
-    const statKeys = ['kda','winrate','cs_min','vision','kill_part','dmg_share','dmg_tower','obj_score','champ_pool','regularite'];
+    const statKeys = ['kda','winrate','cs_min','vision','vision_min','kill_part','dmg_share','dmg_tower','obj_score','champ_pool','regularite'];
     statKeys.forEach(id => { if (stats[id] !== undefined) rawData[id] = stats[id]; });
     buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); buildStatsGrid();
     buildChampTable(stats.champDetails, count);
@@ -9937,7 +9932,7 @@ async function top50Scan() {
         const wr    = Math.round(wins/gc*100);
         const kda   = d===0 ? k+a : (k+a)/d;
         const csMin = dur>0 ? cs/dur : 0;
-        const visAvg = vis/gc;
+        const visAvg = dur>0 ? vis/dur : 0;  // vision/min — normalisée par durée (cohérent avec la fiche joueur)
         const kpAvg  = kp/gc;
         const dmgAvg = dmg/gc;
         const role   = Object.entries(roleCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || 'unknown';
@@ -9954,7 +9949,7 @@ async function top50Scan() {
           puuid, name: displayName, tag: tagLine, server,
           tier: entry.tier || tier, rank: entry.rank || 'I', lp,
           wr, kda: parseFloat(kda.toFixed(2)), csMin: parseFloat(csMin.toFixed(2)),
-          visAvg: Math.round(visAvg), kpAvg: parseFloat(kpAvg.toFixed(1)),
+          visAvg: parseFloat(visAvg.toFixed(2)), kpAvg: parseFloat(kpAvg.toFixed(1)),
           dmgAvg: parseFloat(dmgAvg.toFixed(1)), role, champs,
           score: parseFloat(parseFloat(score).toFixed(2)),
           age:       existing?.age       ?? null,
@@ -10069,7 +10064,7 @@ const ABS_THR = {
   wr:        { all:[46,51,55,62] },  // universel — même seuil tous rôles
   dmg_share: { Top:[15,22,28,35], Jgl:[12,18,24,30], Mid:[20,27,33,40], ADC:[22,30,36,43], Sup:[5,10,15,20] },
   kill_part: { Top:[35,52,65,78], Jgl:[45,60,72,84], Mid:[45,60,72,84], ADC:[40,55,68,80], Sup:[50,65,76,88] },
-  vision:    { Top:[10,18,26,36], Jgl:[20,30,42,55], Mid:[12,20,28,38], ADC:[10,18,26,35], Sup:[35,50,65,82] },
+  vision:    { Top:[0.40,0.60,0.85,1.15], Jgl:[0.55,0.85,1.15,1.55], Mid:[0.40,0.60,0.85,1.15], ADC:[0.40,0.60,0.80,1.10], Sup:[1.00,1.50,2.05,2.70] },  // vision/min
 };
 
 function getThr(stat, role) {
