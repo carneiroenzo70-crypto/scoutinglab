@@ -2800,13 +2800,13 @@ const SEUILS_ABSOLUS = {
     ADC: [12, 20,  30,  42],
     Sup: [48, 72,  95, 120],
   },
-  // Vision/min — normalisée par durée (corrige le biais des parties longues en bas elo)
+  // Vision/min — normalisée par durée + calibrée niveau PRO (élite = top 1-2%, pas Diamond)
   vision_min: {
-    Top: [0.40, 0.60, 0.85, 1.15],
-    Jgl: [0.55, 0.85, 1.15, 1.55],
-    Mid: [0.40, 0.60, 0.85, 1.15],
-    ADC: [0.40, 0.60, 0.80, 1.10],
-    Sup: [1.00, 1.50, 2.05, 2.70],
+    Top: [0.45, 0.75, 1.10, 1.55],
+    Jgl: [0.65, 1.00, 1.45, 2.00],
+    Mid: [0.45, 0.75, 1.10, 1.55],
+    ADC: [0.55, 0.90, 1.30, 1.80],
+    Sup: [1.10, 1.75, 2.40, 3.20],
   },
   kill_part: {
     Top: [45, 58, 70, 82],
@@ -3141,7 +3141,6 @@ const D1_FIELDS = {
 const D2_FIELDS = {
   Top: [
     { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
@@ -3149,23 +3148,19 @@ const D2_FIELDS = {
     { id:'obj_score',             lbl:'Obj Score drag+baron', badge:'api', type:'auto' },
     { id:'chal_epic_steals',      lbl:'Steals épiques/g',     badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
   ],
   Mid: [
     { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',  badge:'api', type:'auto' },
-    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
+    { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
   ADC: [
     { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',      badge:'api', type:'auto' },
     { id:'kill_part',             lbl:'Kill Participation',       badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Takedowns <14 min/g',      badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
     { id:'kill_part',             lbl:'Kill Part. objectifs',     badge:'api', type:'auto' },
   ],
@@ -3180,7 +3175,6 @@ const D3_FIELDS = {
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
     { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   Jgl: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
@@ -3193,13 +3187,12 @@ const D3_FIELDS = {
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
     { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
   ],
   ADC: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
     { id:'vision_min',            lbl:'Vision/min',           badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
-    { id:'chal_takedowns_14',     lbl:'Impact early/g',       badge:'api', type:'auto' },
+    { id:'chal_solo_kills',       lbl:'Solo kills/g',         badge:'api', type:'auto' },
   ],
   Sup: [
     { id:'kill_part',             lbl:'Kill Participation',   badge:'api', type:'auto' },
@@ -10064,7 +10057,7 @@ const ABS_THR = {
   wr:        { all:[46,51,55,62] },  // universel — même seuil tous rôles
   dmg_share: { Top:[15,22,28,35], Jgl:[12,18,24,30], Mid:[20,27,33,40], ADC:[22,30,36,43], Sup:[5,10,15,20] },
   kill_part: { Top:[35,52,65,78], Jgl:[45,60,72,84], Mid:[45,60,72,84], ADC:[40,55,68,80], Sup:[50,65,76,88] },
-  vision:    { Top:[0.40,0.60,0.85,1.15], Jgl:[0.55,0.85,1.15,1.55], Mid:[0.40,0.60,0.85,1.15], ADC:[0.40,0.60,0.80,1.10], Sup:[1.00,1.50,2.05,2.70] },  // vision/min
+  vision:    { Top:[0.45,0.75,1.10,1.55], Jgl:[0.65,1.00,1.45,2.00], Mid:[0.45,0.75,1.10,1.55], ADC:[0.55,0.90,1.30,1.80], Sup:[1.10,1.75,2.40,3.20] },  // vision/min (calibré pro)
 };
 
 function getThr(stat, role) {
