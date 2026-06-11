@@ -16,6 +16,26 @@
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
 function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/login'); }
+/* ── Verrouillage par pack (plan) ── */
+function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
+window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
+window.VS_PANEL_MINRANK = { top50:2, map:2 };   /* Top 50 et Carte : Pro+ */
+function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
+function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
+function applyPlanGating(){
+  document.querySelectorAll('[onclick]').forEach(function(el){
+    var m=(el.getAttribute('onclick')||'').match(/switchPanel\('([a-z0-9]+)'\)/);
+    if(m && !vsCanAccess(m[1])) el.style.display='none';
+  });
+  var lg=document.getElementById('btn-logout');
+  if(lg && !document.getElementById('vs-plan-badge')){
+    var b=document.createElement('span'); b.id='vs-plan-badge';
+    var pl=vsPlan(); b.textContent=pl.charAt(0).toUpperCase()+pl.slice(1);
+    b.style.cssText='display:inline-flex;align-items:center;padding:4px 9px;margin-right:6px;border-radius:8px;font-family:monospace;font-size:10px;letter-spacing:.04em;background:var(--lime-dim,rgba(28,196,122,.10));color:var(--lime,#1CC47A);border:1px solid var(--lime-bd,rgba(28,196,122,.30))';
+    lg.parentNode.insertBefore(b,lg);
+  }
+}
+document.addEventListener('DOMContentLoaded', applyPlanGating);
 </script>
 <link rel="stylesheet" href="https://use.typekit.net/cin3zub.css"/>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
@@ -4503,6 +4523,7 @@ function goToWelcome() {
 }
 
 function switchPanel(id) {
+  if (typeof vsCanAccess === 'function' && !vsCanAccess(id)) { vsUpsell(id); return; }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
   const panel = document.getElementById(`panel-${id}`);

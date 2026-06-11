@@ -29,14 +29,16 @@ module.exports = async function handler(req, res) {
       const username = ((body && body.username) || '').trim().toLowerCase();
       const password = (body && body.password) || '';
       const label = ((body && body.label) || '').trim();
+      let plan = ((body && body.plan) || 'starter').trim().toLowerCase();
       if (!username || !password) return res.status(400).json({ error: 'username et password requis' });
       if (password.length < 8) return res.status(400).json({ error: 'Mot de passe trop court (min. 8 caractères)' });
+      if (!['starter', 'pro', 'elite'].includes(plan)) return res.status(400).json({ error: "plan invalide (starter, pro ou elite)" });
 
       const { salt, hash } = hashPassword(password);
-      const user = { username, label: label || username, salt, hash, createdAt: new Date().toISOString() };
+      const user = { username, label: label || username, plan, salt, hash, createdAt: new Date().toISOString() };
       await upstash(['SET', 'vs_user:' + username, JSON.stringify(user)]);
       await upstash(['SADD', 'vs_users', username]);
-      return res.status(200).json({ success: true, username, label: user.label });
+      return res.status(200).json({ success: true, username, label: user.label, plan: user.plan });
     }
 
     if (req.method === 'DELETE') {

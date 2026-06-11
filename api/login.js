@@ -31,6 +31,7 @@ module.exports = async function handler(req, res) {
   if (!ok) return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect' });
 
   const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 jours ou 1 jour
-  const token = signToken({ u: username, label: user.label || username }, maxAge);
-  return res.status(200).json({ token, username, label: user.label || username, expiresIn: maxAge });
+  const plan = user.plan || 'elite';
+  const token = signToken({ u: username, label: user.label || username, plan }, maxAge);
+  return res.status(200).json({ token, username, label: user.label || username, plan, expiresIn: maxAge });
 };
