@@ -19,7 +19,7 @@ function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.re
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2 };   /* Top 50 et Carte : Pro+ */
+window.VS_PANEL_MINRANK = { top50:2, map:2, analytics:2 };   /* Top 50, Carte, Analytics : Pro+ */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
 function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
@@ -1641,6 +1641,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg> Comparer</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM</button>
+    <button class="hd-nav-item" id="nav-analytics" onclick="switchPanel('analytics')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> Analytics</button>
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
@@ -2767,11 +2768,173 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
     </div><!-- /panel-crm -->
 
+    <!-- ══ PANEL : ANALYTICS ══ -->
+    <div id="panel-analytics" class="panel">
+      <div style="max-width:1100px;margin:0 auto;padding:8px 4px 40px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="font-family:'aquavit','Helvetica Neue',sans-serif;font-weight:800;font-size:1.4rem;color:var(--text)">Analytics</div>
+          <span style="font-family:monospace;font-size:10px;letter-spacing:.06em;background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-bd);border-radius:6px;padding:3px 8px">REPLAYS .ROFL</span>
+        </div>
+        <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
+          Déposez les fichiers <code style="color:var(--lime)">.rofl</code> de vos scrims (dossier <em>Documents/League of Legends/Replays</em>). Tout est analysé localement, dans votre navigateur — rien n'est envoyé.
+        </div>
+
+        <div id="an-drop" style="border:2px dashed var(--border2);border-radius:var(--r-lg);background:var(--surf1);
+             padding:34px 20px;text-align:center;cursor:pointer;transition:all .18s;margin-bottom:18px">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <div style="color:var(--text);font-size:.95rem;font-weight:600">Glissez vos fichiers .rofl ici</div>
+          <div style="color:var(--sub);font-size:.8rem;margin-top:4px">ou cliquez pour parcourir — plusieurs fichiers acceptés</div>
+          <input type="file" id="an-input" accept=".rofl" multiple style="display:none"/>
+        </div>
+
+        <div id="an-status" style="display:none;color:var(--sub2);font-size:.82rem;margin-bottom:14px"></div>
+        <div id="an-dashboard"></div>
+      </div>
+    </div><!-- /panel-analytics -->
+
   </main>
 </div><!-- /shell -->
 
 <script>
 'use strict';
+/* ════════════════════════════════════════════
+   ANALYTICS — ingestion .rofl + dashboard (100% local)
+════════════════════════════════════════════ */
+let AN_GAMES = [];
+let AN_WIRED = false;
+const anN = (v) => parseInt(v || 0, 10) || 0;
+const anId = (p) => (p.RIOT_ID_GAME_NAME ? (p.RIOT_ID_GAME_NAME + (p.RIOT_ID_TAG_LINE ? '#' + p.RIOT_ID_TAG_LINE : '')) : (p.NAME || p.PUUID || ('?' + p.SKIN)));
+
+function anParseRofl(arrayBuffer) {
+  const text = new TextDecoder('utf-8', { fatal: false }).decode(new Uint8Array(arrayBuffer));
+  let start = text.indexOf('{"gameLength"');
+  if (start < 0) { const sj = text.indexOf('"statsJson"'); start = text.lastIndexOf('{', sj); }
+  if (start < 0) throw new Error('metadata introuvable');
+  let depth = 0, inStr = false, esc = false, end = -1;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (esc) { esc = false; continue; }
+    if (c === '\\') { esc = true; continue; }
+    if (c === '"') { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (c === '{') depth++;
+    else if (c === '}') { depth--; if (depth === 0) { end = i + 1; break; } }
+  }
+  const meta = JSON.parse(text.slice(start, end));
+  const players = JSON.parse(meta.statsJson);
+  const gameMin = +(anN(meta.gameLength) / 60000).toFixed(1);
+  return { gameMin, players: players.map(p => anPlayerLine(p, gameMin)) };
+}
+function anPlayerLine(p, gameMin) {
+  const cs = anN(p.MINIONS_KILLED) + anN(p.NEUTRAL_MINIONS_KILLED);
+  return {
+    id: anId(p), champ: p.SKIN, role: p.INDIVIDUAL_POSITION || p.TEAM_POSITION || '?',
+    k: anN(p.CHAMPIONS_KILLED), d: anN(p.NUM_DEATHS), a: anN(p.ASSISTS),
+    cs, csPerMin: gameMin ? +(cs / gameMin).toFixed(1) : 0,
+    vision: anN(p.VISION_SCORE), towers: anN(p.TURRETS_KILLED),
+    dragons: anN(p.DRAGON_KILLS), barons: anN(p.BARON_KILLS),
+    gold: anN(p.GOLD_EARNED), dmg: anN(p.TOTAL_DAMAGE_DEALT_TO_CHAMPIONS),
+    win: anN(p.WIN) === 1 || p.WIN === 'Win',
+  };
+}
+function initAnalytics() {
+  if (AN_WIRED) return; AN_WIRED = true;
+  const drop = document.getElementById('an-drop');
+  const input = document.getElementById('an-input');
+  if (!drop || !input) return;
+  drop.addEventListener('click', () => input.click());
+  input.addEventListener('change', e => anHandleFiles(e.target.files));
+  ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.borderColor = 'var(--lime)'; drop.style.background = 'var(--lime-dim)'; }));
+  ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.style.borderColor = 'var(--border2)'; drop.style.background = 'var(--surf1)'; }));
+  drop.addEventListener('drop', e => anHandleFiles(e.dataTransfer.files));
+}
+async function anHandleFiles(fileList) {
+  const files = [...fileList].filter(f => f.name.toLowerCase().endsWith('.rofl'))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (!files.length) { showToast('Aucun fichier .rofl détecté', 'error'); return; }
+  const status = document.getElementById('an-status');
+  status.style.display = 'block'; status.textContent = 'Analyse de ' + files.length + ' partie(s)…';
+  AN_GAMES = [];
+  for (const f of files) {
+    try { AN_GAMES.push(anParseRofl(await f.arrayBuffer())); }
+    catch (err) { console.warn('échec', f.name, err); }
+  }
+  status.textContent = AN_GAMES.length + ' partie(s) analysée(s) · ' + (files.length - AN_GAMES.length) + ' échec(s)';
+  anRenderDashboard();
+}
+function anRenderDashboard() {
+  const dash = document.getElementById('an-dashboard');
+  if (!AN_GAMES.length) { dash.innerHTML = ''; return; }
+  // joueurs récurrents (≥2 parties)
+  const byId = {};
+  AN_GAMES.forEach((g, gi) => g.players.forEach(p => { (byId[p.id] = byId[p.id] || []).push({ ...p, gi }); }));
+  const recurring = Object.entries(byId).filter(([, arr]) => arr.length >= 2)
+    .sort((a, b) => b[1].length - a[1].length);
+  const avg = (arr, k) => arr.reduce((s, p) => s + p[k], 0) / arr.length;
+  const C = { lime: '#1CC47A', red: '#E8194B', sub: getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880' };
+
+  let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px">';
+  const totGames = AN_GAMES.length;
+  const allMin = AN_GAMES.reduce((s, g) => s + g.gameMin, 0) / totGames;
+  html += anStat('Parties', totGames) + anStat('Durée moy.', allMin.toFixed(0) + ' min') + anStat('Joueurs suivis', recurring.length);
+  html += '</div>';
+
+  // tableau joueurs récurrents
+  html += '<div style="font-weight:700;color:var(--text);margin:6px 0 10px">Joueurs suivis</div>';
+  html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.82rem">';
+  html += '<tr style="color:var(--sub);text-align:left">' + ['Joueur', 'Parties', 'KDA moy.', 'Ratio', 'CS/min', 'Vision', 'Win%'].map(h => '<th style="padding:8px 10px;border-bottom:1px solid var(--border2)">' + h + '</th>').join('') + '</tr>';
+  recurring.forEach(([id, arr]) => {
+    const wr = Math.round(arr.filter(p => p.win).length / arr.length * 100);
+    const ratio = ((avg(arr, 'k') + avg(arr, 'a')) / Math.max(1, avg(arr, 'd'))).toFixed(2);
+    html += '<tr style="color:var(--text)">' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border);font-weight:600">' + anEsc(id) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">' + arr.length + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">' + avg(arr, 'k').toFixed(1) + '/' + avg(arr, 'd').toFixed(1) + '/' + avg(arr, 'a').toFixed(1) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:var(--lime)">' + ratio + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">' + avg(arr, 'csPerMin').toFixed(1) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border)">' + avg(arr, 'vision').toFixed(0) + '</td>' +
+      '<td style="padding:8px 10px;border-bottom:1px solid var(--border);color:' + (wr >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + wr + '%</td></tr>';
+  });
+  html += '</table></div>';
+
+  // graphique de forme du joueur le plus récurrent
+  if (recurring.length) {
+    html += '<div style="font-weight:700;color:var(--text);margin:22px 0 10px">Forme — ' + anEsc(recurring[0][0]) + '</div>';
+    html += '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;height:260px"><canvas id="an-form-chart"></canvas></div>';
+  }
+  dash.innerHTML = html;
+
+  if (recurring.length && window.Chart) {
+    const arr = recurring[0][1].slice().sort((a, b) => a.gi - b.gi);
+    destroyChart('an-form');
+    chartInstances['an-form'] = new Chart(document.getElementById('an-form-chart'), {
+      type: 'line',
+      data: {
+        labels: arr.map((p, i) => 'P' + (i + 1)),
+        datasets: [
+          { label: 'CS/min', data: arr.map(p => p.csPerMin), borderColor: C.lime, backgroundColor: 'rgba(28,196,122,.12)', tension: .3, fill: true, yAxisID: 'y' },
+          { label: 'Vision', data: arr.map(p => p.vision), borderColor: C.red, backgroundColor: 'transparent', tension: .3, yAxisID: 'y1' },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: C.sub, boxWidth: 12 } } },
+        scales: {
+          x: { ticks: { color: C.sub }, grid: { display: false } },
+          y: { position: 'left', ticks: { color: C.lime }, grid: { color: 'rgba(120,140,170,.12)' }, title: { display: true, text: 'CS/min', color: C.lime } },
+          y1: { position: 'right', ticks: { color: C.red }, grid: { display: false }, title: { display: true, text: 'Vision', color: C.red } },
+        },
+      },
+    });
+  }
+}
+function anStat(label, val) {
+  return '<div style="background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">' +
+    '<div style="font-size:.7rem;letter-spacing:.05em;text-transform:uppercase;color:var(--sub)">' + label + '</div>' +
+    '<div style="font-size:1.5rem;font-weight:700;color:var(--text);margin-top:2px">' + val + '</div></div>';
+}
+function anEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
 // ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
@@ -4536,11 +4699,12 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analyse',
-                    top50:'nav-top50', graphs:'nav-more', map:'nav-more', history:'nav-more' };
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') buildAnalysePanel();
+  if (id === 'analytics') initAnalytics();
 }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
