@@ -2775,20 +2775,32 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div style="font-family:'aquavit','Helvetica Neue',sans-serif;font-weight:800;font-size:1.4rem;color:var(--text)">Analytics</div>
           <span style="font-family:monospace;font-size:10px;letter-spacing:.06em;background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-bd);border-radius:6px;padding:3px 8px">REPLAYS .ROFL</span>
         </div>
-        <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
-          Déposez les fichiers <code style="color:var(--lime)">.rofl</code> de vos scrims (dossier <em>Documents/League of Legends/Replays</em>). Tout est analysé localement, dans votre navigateur — rien n'est envoyé.
+        <div style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:18px">
+          <button id="an-tab-perf" class="an-tab" onclick="anShowView('perf')" style="border:none;background:var(--lime-dim);color:var(--lime);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
+          <button id="an-tab-upgrade" class="an-tab" onclick="anShowView('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
         </div>
 
-        <div id="an-drop" style="border:2px dashed var(--border2);border-radius:var(--r-lg);background:var(--surf1);
-             padding:34px 20px;text-align:center;cursor:pointer;transition:all .18s;margin-bottom:18px">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <div style="color:var(--text);font-size:.95rem;font-weight:600">Glissez vos fichiers .rofl ici</div>
-          <div style="color:var(--sub);font-size:.8rem;margin-top:4px">ou cliquez pour parcourir — plusieurs fichiers acceptés</div>
-          <input type="file" id="an-input" accept=".rofl" multiple style="display:none"/>
+        <div id="an-view-perf">
+          <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
+            Déposez les fichiers <code style="color:var(--lime)">.rofl</code> de vos scrims (dossier <em>Documents/League of Legends/Replays</em>). Tout est analysé localement, dans votre navigateur — rien n'est envoyé.
+          </div>
+          <div id="an-drop" style="border:2px dashed var(--border2);border-radius:var(--r-lg);background:var(--surf1);
+               padding:34px 20px;text-align:center;cursor:pointer;transition:all .18s;margin-bottom:18px">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <div style="color:var(--text);font-size:.95rem;font-weight:600">Glissez vos fichiers .rofl ici</div>
+            <div style="color:var(--sub);font-size:.8rem;margin-top:4px">ou cliquez pour parcourir — plusieurs fichiers acceptés</div>
+            <input type="file" id="an-input" accept=".rofl" multiple style="display:none"/>
+          </div>
+          <div id="an-status" style="display:none;color:var(--sub2);font-size:.82rem;margin-bottom:14px"></div>
+          <div id="an-dashboard"></div>
         </div>
 
-        <div id="an-status" style="display:none;color:var(--sub2);font-size:.82rem;margin-bottom:14px"></div>
-        <div id="an-dashboard"></div>
+        <div id="an-view-upgrade" style="display:none">
+          <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
+            Comparez vos joueurs aux profils scoutés, rôle par rôle. Désignez votre titulaire : les fiches mieux notées que lui apparaissent comme des <strong style="color:var(--lime)">upgrades potentiels</strong>. Basé sur vos fiches sauvegardées (onglet Historique).
+          </div>
+          <div id="an-upgrade"></div>
+        </div>
       </div>
     </div><!-- /panel-analytics -->
 
@@ -2934,6 +2946,60 @@ function anStat(label, val) {
     '<div style="font-size:1.5rem;font-weight:700;color:var(--text);margin-top:2px">' + val + '</div></div>';
 }
 function anEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+
+/* ─── Upgrade Finder : relie Analytics ↔ Scouting (spes_history) ─── */
+const AN_ROLES = [['Top', 'Top Lane'], ['Jgl', 'Jungle'], ['Mid', 'Mid Lane'], ['ADC', 'ADC'], ['Sup', 'Support']];
+function anRoster() { try { return JSON.parse(localStorage.getItem('vs_roster') || '{}'); } catch (_) { return {}; } }
+function anSetStarter(role, id) { const r = anRoster(); if (id) r[role] = +id; else delete r[role]; localStorage.setItem('vs_roster', JSON.stringify(r)); renderUpgradeFinder(); }
+function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
+function anShowView(v) {
+  document.getElementById('an-view-perf').style.display = v === 'perf' ? '' : 'none';
+  document.getElementById('an-view-upgrade').style.display = v === 'upgrade' ? '' : 'none';
+  const tp = document.getElementById('an-tab-perf'), tu = document.getElementById('an-tab-upgrade');
+  tp.style.background = v === 'perf' ? 'var(--lime-dim)' : 'transparent'; tp.style.color = v === 'perf' ? 'var(--lime)' : 'var(--sub2)';
+  tu.style.background = v === 'upgrade' ? 'var(--lime-dim)' : 'transparent'; tu.style.color = v === 'upgrade' ? 'var(--lime)' : 'var(--sub2)';
+  if (v === 'upgrade') renderUpgradeFinder();
+}
+function renderUpgradeFinder() {
+  const box = document.getElementById('an-upgrade'); if (!box) return;
+  let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+  if (!hist.length) {
+    box.innerHTML = '<div style="text-align:center;padding:42px;color:var(--sub);font-size:13px">Aucune fiche sauvegardée.<br><span style="font-size:11px;opacity:.7">Scoutez des joueurs (onglet Scouter) puis cliquez « Sauvegarder » — ils alimenteront l\'Upgrade Finder.</span></div>';
+    return;
+  }
+  const roster = anRoster();
+  const ranks = ['Iron', 'Bronze', 'Silver', 'Gold', 'Platinum', 'Emerald', 'Diamond', 'Master', 'Grandmaster', 'Challenger'];
+  let html = '';
+  AN_ROLES.forEach(([rk, rlabel]) => {
+    const list = hist.filter(h => h.role === rk && h.score != null).sort((a, b) => b.score - a.score);
+    if (!list.length) return;
+    const starterId = roster[rk];
+    const starter = list.find(h => h.id === starterId);
+    html += '<div style="margin-bottom:22px">';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">';
+    html += '<div style="font-weight:700;color:var(--text);font-size:.95rem">' + rlabel + ' <span style="color:var(--sub);font-weight:400;font-size:.8rem">· ' + list.length + ' fiche(s)</span></div>';
+    let sel = '<select onchange="anSetStarter(\'' + rk + '\',this.value)" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 8px;font-size:.78rem;max-width:200px">';
+    sel += '<option value="">— désigner mon titulaire —</option>';
+    list.forEach(h => { sel += '<option value="' + h.id + '"' + (h.id === starterId ? ' selected' : '') + '>' + anEsc(h.pseudo) + ' (' + h.score.toFixed(1) + ')</option>'; });
+    sel += '</select>';
+    html += sel + '</div>';
+    list.forEach(h => {
+      const isStarter = h.id === starterId;
+      const delta = starter ? +(h.score - starter.score).toFixed(2) : null;
+      const isUpgrade = starter && !isStarter && delta > 0.05;
+      const isLower = starter && !isStarter && delta < -0.05;
+      const rankName = ranks[parseInt(h.rank)] || '';
+      html += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid ' + (isStarter ? 'var(--lime-bd)' : isUpgrade ? 'rgba(28,196,122,.25)' : 'var(--border)') + ';border-radius:var(--r);padding:10px 14px;margin-bottom:6px;' + (isLower ? 'opacity:.45' : '') + '">';
+      html += '<div style="width:32px;height:32px;border-radius:50%;background:' + anScoreColor(h.score) + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:.82rem;flex-shrink:0">' + h.score.toFixed(1) + '</div>';
+      html += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.88rem">' + anEsc(h.pseudo) + (isStarter ? ' <span style="font-size:.64rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">TITULAIRE</span>' : '') + '</div><div style="color:var(--sub);font-size:.74rem">' + rankName + (h.age ? ' · ' + h.age + ' ans' : '') + (h.potentiel != null ? ' · potentiel ' + (+h.potentiel).toFixed(1) : '') + '</div></div>';
+      if (isUpgrade) html += '<div style="color:var(--lime);font-weight:800;font-size:.82rem;flex-shrink:0;white-space:nowrap">▲ +' + delta.toFixed(1) + '</div>';
+      else if (isLower) html += '<div style="color:var(--sub2);font-size:.78rem;flex-shrink:0">' + delta.toFixed(1) + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  box.innerHTML = html || '<div style="text-align:center;padding:42px;color:var(--sub);font-size:13px">Aucune fiche exploitable (rôle/score manquant).</div>';
+}
 
 // ════════════════════════════════════════════
 // STATE
@@ -7339,6 +7405,7 @@ function saveToHistory() {
     rankPrev:  document.getElementById('d-rank-prev')?.value || '-1',
     rawData:   { ...rawData },
     score:     (typeof globalScore === 'function') ? globalScore() : null,
+    potentiel: (window._scorePotentiel != null) ? window._scorePotentiel : null,
   };
 
   let history = [];
