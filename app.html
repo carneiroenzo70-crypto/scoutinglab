@@ -3184,34 +3184,89 @@ async function pmGenerate() {
   const results = [];
   for (let k = 0; k < entries.length; k++) {
     const e = entries[k], m = e.raw.match(/^(.*?)#(.+)$/);
-    if (!m) { results.push({ role: e.role, pseudo: e.raw, found: false, error: 'Format attendu : Pseudo#TAG' }); continue; }
     status.textContent = 'Analyse ' + (k + 1) + '/' + entries.length + ' — ' + e.raw + '…';
-    try { const d = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); d.role = e.role; results.push(d); }
-    catch (err) { results.push({ role: e.role, pseudo: e.raw, found: false, error: (err && err.message) || 'Erreur' }); }
+    const d = { role: e.role, pseudo: m ? m[1].trim() : e.raw, tag: m ? m[2].trim() : '' };
+    if (m) { try { d.soloq = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); } catch (err) { d.soloqError = (err && err.message) || 'Erreur'; } }
+    else { d.soloqError = 'Format attendu : Pseudo#TAG'; }
+    try {
+      let c = await pmFetchCompet(d.pseudo), pn = d.pseudo;
+      if (!c) { const r = await pmResolveProName(d.pseudo); if (r && r !== d.pseudo) { c = await pmFetchCompet(r); pn = r; } }
+      if (c) { d.compet = c; d.proName = pn; }
+    } catch (_) {}
+    results.push(d);
   }
   status.style.display = 'none'; btn.disabled = false;
   out.innerHTML = results.map(pmCard).join('');
 }
+function pmChampPills(pool) {
+  return pool.map(c => '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surf3);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.74rem;margin:0 4px 4px 0;color:var(--text)">' + anEsc(c.name) + ' <span style="color:var(--sub)">' + c.games + 'g·' + c.wr + '%</span></span>').join('');
+}
+function pmSubhead(txt, tag) {
+  return '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 8px"><span style="font-weight:700;color:var(--text);font-size:.85rem">' + txt + '</span><span style="font-size:.6rem;color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 6px">' + tag + '</span></div>';
+}
 function pmCard(d) {
-  if (!d.found) {
-    return '<div style="background:var(--surf2);border:1px solid rgba(255,90,74,.3);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px">' +
-      '<div style="font-weight:700;color:var(--text)">' + anEsc(d.pseudo) + ' <span style="font-size:.7rem;color:var(--sub)">· ' + d.role + '</span></div>' +
-      '<div style="color:var(--red);font-size:.8rem;margin-top:4px">' + anEsc(d.error || 'Introuvable') + '</div></div>';
+  const s = d.soloq;
+  let html = '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:12px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:2px">' +
+    '<div><span style="font-weight:700;color:var(--text);font-size:1.05rem">' + anEsc(d.pseudo) + '</span> <span style="font-size:.7rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">' + d.role + '</span>' + (d.proName ? ' <span style="font-size:.72rem;color:var(--blue);margin-left:6px">★ ' + anEsc(d.proName) + '</span>' : '') + '</div>' +
+    (s ? '<div style="font-size:.8rem;color:var(--sub2)">' + anEsc(s.rank) + '</div>' : '') + '</div>';
+  // ── Solo Q ──
+  html += pmSubhead('Solo Q', 'API Riot');
+  if (s) {
+    const formDots = s.form.map(w => '<span style="display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:3px;font-size:.6rem;line-height:16px;text-align:center;font-weight:700;color:#0B0E18;background:' + (w ? 'var(--lime)' : 'var(--red)') + '">' + (w ? 'V' : 'D') + '</span>').join('');
+    html += '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:8px">' +
+      '<span>Rôle : <strong style="color:var(--text)">' + s.mainRole + '</strong></span>' +
+      '<span>WR : <strong style="color:' + (s.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + s.winrate + '%</strong> (' + s.games + 'g)</span>' +
+      '<span>KDA : <strong style="color:var(--text)">' + s.kda + '</strong></span></div>' +
+      '<div style="margin-bottom:6px">' + (pmChampPills(s.champPool) || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div>' +
+      '<div>' + formDots + '</div>';
+  } else {
+    html += '<div style="color:var(--sub);font-size:.78rem">' + anEsc(d.soloqError || 'Aucune donnée soloq') + '</div>';
   }
-  const formDots = d.form.map(w => '<span style="display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:3px;font-size:.6rem;line-height:16px;text-align:center;font-weight:700;color:#0B0E18;background:' + (w ? 'var(--lime)' : 'var(--red)') + '">' + (w ? 'V' : 'D') + '</span>').join('');
-  const champs = d.champPool.map(c => '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surf3);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.74rem;margin:0 4px 4px 0;color:var(--text)">' + anEsc(c.name) + ' <span style="color:var(--sub)">' + c.games + 'g·' + c.wr + '%</span></span>').join('');
-  return '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:10px">' +
-    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
-    '<div><span style="font-weight:700;color:var(--text);font-size:1rem">' + anEsc(d.pseudo) + '</span> <span style="font-size:.7rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">' + d.role + '</span></div>' +
-    '<div style="font-size:.8rem;color:var(--sub2)">' + anEsc(d.rank) + '</div></div>' +
-    '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:10px">' +
-    '<span>Rôle principal : <strong style="color:var(--text)">' + d.mainRole + '</strong></span>' +
-    '<span>Win rate : <strong style="color:' + (d.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + d.winrate + '%</strong> (' + d.games + 'g)</span>' +
-    '<span>KDA : <strong style="color:var(--text)">' + d.kda + '</strong></span></div>' +
-    '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Pool de champions (20 dernières)</div>' +
-    '<div style="margin-bottom:10px">' + (champs || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div>' +
-    '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Forme récente</div>' +
-    '<div>' + (formDots || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div></div>';
+  // ── Compétition ──
+  html += pmSubhead('Compétition', 'Leaguepedia');
+  if (d.compet) {
+    const c = d.compet;
+    const rows = c.games.map(g => '<div style="display:flex;align-items:center;gap:8px;font-size:.76rem;padding:4px 0;border-bottom:1px solid var(--border)">' +
+      '<span style="width:14px;height:14px;border-radius:3px;flex-shrink:0;background:' + (g.win ? 'var(--lime)' : 'var(--red)') + '"></span>' +
+      '<span style="flex:1;color:var(--text)">' + anEsc(g.champ) + '</span>' +
+      '<span style="color:var(--sub);width:64px">' + g.k + '/' + g.d + '/' + g.a + '</span>' +
+      '<span style="color:var(--sub);flex:1;text-align:right">vs ' + anEsc(g.vs || '?') + '</span>' +
+      '<span style="color:var(--sub2);width:60px;text-align:right;font-size:.7rem">' + anEsc(g.event || '') + '</span></div>').join('');
+    html += '<div style="font-size:.8rem;color:var(--sub);margin-bottom:8px">WR compétition : <strong style="color:' + (c.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + c.winrate + '%</strong> (' + c.count + 'g)</div>' +
+      '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Picks en compétition</div>' +
+      '<div style="margin-bottom:8px">' + (pmChampPills(c.champPool) || '—') + '</div>' +
+      '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:3px">Parties récentes</div>' + rows;
+  } else {
+    html += '<div style="color:var(--sub);font-size:.78rem">Aucune donnée de compétition trouvée (joueur non identifié comme pro, ou pseudo soloq différent de son nom pro).</div>';
+  }
+  html += '</div>';
+  return html;
+}
+async function pmCargo(url) {   // fetch Cargo avec 1 retry (anti-throttling Fandom)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try { const r = await fetch(url); if (r.ok) { const j = await r.json(); return j.cargoquery || []; } } catch (_) {}
+    await new Promise(res => setTimeout(res, 450));
+  }
+  return null;
+}
+async function pmResolveProName(gameName) {
+  const q = encodeURIComponent(gameName);
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,OverviewPage&where=ID%3D%22' + q + '%22&format=json&origin=*&limit=1';
+  const rows = await pmCargo(url); if (!rows || !rows.length) return null;
+  return rows[0].title.OverviewPage || rows[0].title.ID || null;
+}
+async function pmFetchCompet(proName) {
+  const q = encodeURIComponent(proName);
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
+  const rows = await pmCargo(url); if (!rows || !rows.length) return null;
+  {
+    const games = rows.map(x => { const t = x.title; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, team: t.Team || '', vs: t.TeamVs || '', win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0] }; });
+    const champs = {}; let w = 0;
+    games.forEach(g => { champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) { champs[g.champ].wins++; w++; } });
+    const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+    return { count: games.length, winrate: Math.round(w / games.length * 100), champPool: pool.slice(0, 6), games: games.slice(0, 8) };
+  }
 }
 
 // ════════════════════════════════════════════
