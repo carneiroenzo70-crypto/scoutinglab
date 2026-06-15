@@ -2816,6 +2816,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 ════════════════════════════════════════════ */
 let AN_GAMES = [];
 let AN_WIRED = false;
+let AN_METRIC = 'csPerMin';
+let AN_ROSTER = null;
 const anN = (v) => parseInt(v || 0, 10) || 0;
 const anId = (p) => (p.RIOT_ID_GAME_NAME ? (p.RIOT_ID_GAME_NAME + (p.RIOT_ID_TAG_LINE ? '#' + p.RIOT_ID_TAG_LINE : '')) : (p.NAME || p.PUUID || ('?' + p.SKIN)));
 
@@ -2940,39 +2942,49 @@ function anRenderDashboard() {
   });
   html += '</table></div>';
 
-  // graphique de forme du joueur le plus récurrent (≥ 2 parties)
-  const showChart = recurring.length && recurring[0][1].length >= 2;
+  // graphique de forme du ROSTER (une courbe par joueur, ≥ 2 parties)
+  const showChart = isMulti && recurring.length;
   if (showChart) {
-    html += '<div style="font-weight:700;color:var(--text);margin:22px 0 10px">Forme — ' + anEsc(recurring[0][0]) + '</div>';
-    html += '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;height:260px"><canvas id="an-form-chart"></canvas></div>';
+    AN_ROSTER = recurring;
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:22px 0 10px">';
+    html += '<div style="font-weight:700;color:var(--text)">Forme du roster</div>';
+    html += '<div style="display:inline-flex;gap:3px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:3px">' +
+      [['csPerMin', 'CS/min'], ['vision', 'Vision'], ['kda', 'KDA'], ['dmg', 'Dégâts']].map(([k, l]) =>
+        '<button onclick="anSetMetric(\'' + k + '\')" data-metric="' + k + '" class="an-metric" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.74rem;padding:4px 10px;border-radius:6px;cursor:pointer">' + l + '</button>').join('') +
+      '</div></div>';
+    html += '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;height:300px"><canvas id="an-form-chart"></canvas></div>';
   } else if (!isMulti) {
     html += '<div style="color:var(--sub);font-size:.78rem;margin-top:14px;line-height:1.6">Une seule partie analysée. Déposez plusieurs replays (ou tout le dossier Replays) pour voir les <strong>tendances de forme</strong> et la détection automatique du roster.</div>';
   }
   dash.innerHTML = html;
-
-  if (showChart && window.Chart) {
-    const arr = recurring[0][1].slice().sort((a, b) => a.gi - b.gi);
-    destroyChart('an-form');
-    chartInstances['an-form'] = new Chart(document.getElementById('an-form-chart'), {
-      type: 'line',
-      data: {
-        labels: arr.map((p, i) => 'P' + (i + 1)),
-        datasets: [
-          { label: 'CS/min', data: arr.map(p => p.csPerMin), borderColor: C.lime, backgroundColor: 'rgba(28,196,122,.12)', tension: .3, fill: true, yAxisID: 'y' },
-          { label: 'Vision', data: arr.map(p => p.vision), borderColor: C.red, backgroundColor: 'transparent', tension: .3, yAxisID: 'y1' },
-        ],
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: C.sub, boxWidth: 12 } } },
-        scales: {
-          x: { ticks: { color: C.sub }, grid: { display: false } },
-          y: { position: 'left', ticks: { color: C.lime }, grid: { color: 'rgba(120,140,170,.12)' }, title: { display: true, text: 'CS/min', color: C.lime } },
-          y1: { position: 'right', ticks: { color: C.red }, grid: { display: false }, title: { display: true, text: 'Vision', color: C.red } },
-        },
-      },
-    });
-  }
+  if (showChart && window.Chart) anDrawFormChart();
+}
+function anMetricVal(p, m) { return m === 'kda' ? +(((p.k + p.a) / Math.max(1, p.d)).toFixed(2)) : p[m]; }
+function anSetMetric(m) { AN_METRIC = m; anDrawFormChart(); }
+function anDrawFormChart() {
+  if (!window.Chart || !AN_ROSTER) return;
+  const sub = getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880';
+  const palette = ['#1CC47A', '#E8194B', '#4A8FE8', '#D4714A', '#8A7FF5', '#15A878'];
+  const labels = AN_GAMES.map((g, i) => 'P' + (i + 1));
+  const datasets = AN_ROSTER.slice(0, 6).map(([id, arr], idx) => {
+    const byGi = {}; arr.forEach(p => byGi[p.gi] = p);
+    return {
+      label: String(id).split('#')[0],
+      data: AN_GAMES.map((g, gi) => byGi[gi] ? anMetricVal(byGi[gi], AN_METRIC) : null),
+      borderColor: palette[idx % palette.length], backgroundColor: 'transparent',
+      tension: .3, spanGaps: true, pointRadius: 3,
+    };
+  });
+  destroyChart('an-form');
+  chartInstances['an-form'] = new Chart(document.getElementById('an-form-chart'), {
+    type: 'line', data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: sub, boxWidth: 12, font: { size: 11 } } } },
+      scales: { x: { ticks: { color: sub }, grid: { display: false } }, y: { ticks: { color: sub }, grid: { color: 'rgba(120,140,170,.12)' } } },
+    },
+  });
+  document.querySelectorAll('.an-metric').forEach(b => { const on = b.getAttribute('data-metric') === AN_METRIC; b.style.background = on ? 'var(--lime-dim)' : 'transparent'; b.style.color = on ? 'var(--lime)' : 'var(--sub2)'; });
 }
 function anStat(label, val) {
   return '<div style="background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px">' +
