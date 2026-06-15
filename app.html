@@ -19,7 +19,7 @@ function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.re
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2 };   /* Top 50, Carte : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
+window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2 };   /* Top 50, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
 function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
@@ -1675,6 +1675,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Graphiques</button>
   <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Carte</button>
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
+  <button class="more-menu-item" onclick="switchPanel('prematch');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
 </div>
 
 <!-- ════ SHELL ════ -->
@@ -2806,6 +2807,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
     </div><!-- /panel-analytics -->
 
+    <!-- ══ PANEL : AVANT-MATCH (dossier adversaire) ══ -->
+    <div id="panel-prematch" class="panel">
+      <div style="max-width:1100px;margin:0 auto;padding:8px 4px 40px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <div style="font-family:'aquavit','Helvetica Neue',sans-serif;font-weight:800;font-size:1.4rem;color:var(--text)">Dossier d'avant-match</div>
+          <span style="font-family:monospace;font-size:10px;letter-spacing:.06em;background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-bd);border-radius:6px;padding:3px 8px">API RIOT</span>
+        </div>
+        <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
+          Saisissez le roster adverse (1 à 5 joueurs, format <code style="color:var(--lime)">Pseudo#TAG</code>). VisionScore analyse leurs 20 dernières parties classées : rang, pool de champions, rôle principal et forme récente.
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+          <label style="font-size:.78rem;color:var(--sub)">Serveur</label>
+          <select id="pm-server" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 8px;font-size:.8rem">
+            <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
+          </select>
+        </div>
+        <div id="pm-inputs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+        <button id="pm-go" onclick="pmGenerate()" class="btn btn-lime" style="font-size:.85rem;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Générer le dossier</button>
+        <div id="pm-status" style="display:none;color:var(--sub2);font-size:.82rem;margin:14px 0"></div>
+        <div id="pm-dossier" style="margin-top:18px"></div>
+      </div>
+    </div><!-- /panel-prematch -->
+
   </main>
 </div><!-- /shell -->
 
@@ -3104,6 +3128,90 @@ function renderUpgradeFinder() {
     html += '</div>';
   });
   box.innerHTML = html || '<div style="text-align:center;padding:42px;color:var(--sub);font-size:13px">Aucun joueur exploitable.</div>';
+}
+
+/* ════════════════════════════════════════════
+   AVANT-MATCH — dossier adversaire via API Riot
+════════════════════════════════════════════ */
+const PM_ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
+let PM_WIRED = false;
+function initPrematch() {
+  const box = document.getElementById('pm-inputs');
+  if (box && !PM_WIRED) {
+    PM_WIRED = true;
+    box.innerHTML = PM_ROLES.map((r, i) =>
+      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="width:64px;font-size:.72rem;color:var(--sub);text-transform:uppercase">' + r + '</span>' +
+      '<input id="pm-in-' + i + '" placeholder="Pseudo#TAG" style="flex:1;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>' +
+      '</div>').join('');
+  }
+}
+async function pmFetchPlayer(pseudo, tag, server) {
+  const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
+  const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag));
+  if (!acc || !acc.puuid) throw new Error('Riot ID introuvable');
+  const leagueRaw = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
+  const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw && leagueRaw.entries) || [];
+  const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
+  const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=20&type=ranked');
+  const matches = (ids && ids.length) ? await fetchMatchesInBatches(regional, ids, undefined, () => {}) : [];
+  const champs = {}, roles = {}; let w = 0, n = 0, kS = 0, dS = 0, aS = 0; const form = [];
+  matches.forEach(m => {
+    const p = ((m && m.info && m.info.participants) || []).find(x => x.puuid === acc.puuid);
+    if (!p) return;
+    n++; if (p.win) w++; kS += p.kills || 0; dS += p.deaths || 0; aS += p.assists || 0;
+    const c = p.championName || '?'; champs[c] = champs[c] || { games: 0, wins: 0 }; champs[c].games++; if (p.win) champs[c].wins++;
+    const r = p.teamPosition || p.individualPosition || ''; if (r && r !== 'Invalid') roles[r] = (roles[r] || 0) + 1;
+    form.push(p.win);
+  });
+  const champPool = Object.entries(champs).map(([name, v]) => ({ name, games: v.games, wr: Math.round(v.wins / v.games * 100) })).sort((a, b) => b.games - a.games);
+  const mainRole = (Object.entries(roles).sort((a, b) => b[1] - a[1])[0] || [])[0] || '?';
+  return {
+    pseudo, tag, found: true,
+    rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank + ' · ' + soloQ.leaguePoints + ' LP') : 'Non classé',
+    games: n, winrate: n ? Math.round(w / n * 100) : 0,
+    kda: dS ? ((kS + aS) / dS).toFixed(2) : (kS + aS).toFixed(2),
+    mainRole, champPool: champPool.slice(0, 5), form: form.slice(0, 7).reverse(),
+  };
+}
+async function pmGenerate() {
+  const server = document.getElementById('pm-server').value;
+  const entries = [];
+  PM_ROLES.forEach((r, i) => { const v = (document.getElementById('pm-in-' + i) || {}).value; if (v && v.trim()) entries.push({ role: r, raw: v.trim() }); });
+  if (!entries.length) { showToast('Saisissez au moins un joueur (Pseudo#TAG)', 'warning'); return; }
+  const btn = document.getElementById('pm-go'), status = document.getElementById('pm-status'), out = document.getElementById('pm-dossier');
+  btn.disabled = true; status.style.display = 'block'; out.innerHTML = '';
+  const results = [];
+  for (let k = 0; k < entries.length; k++) {
+    const e = entries[k], m = e.raw.match(/^(.*?)#(.+)$/);
+    if (!m) { results.push({ role: e.role, pseudo: e.raw, found: false, error: 'Format attendu : Pseudo#TAG' }); continue; }
+    status.textContent = 'Analyse ' + (k + 1) + '/' + entries.length + ' — ' + e.raw + '…';
+    try { const d = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); d.role = e.role; results.push(d); }
+    catch (err) { results.push({ role: e.role, pseudo: e.raw, found: false, error: (err && err.message) || 'Erreur' }); }
+  }
+  status.style.display = 'none'; btn.disabled = false;
+  out.innerHTML = results.map(pmCard).join('');
+}
+function pmCard(d) {
+  if (!d.found) {
+    return '<div style="background:var(--surf2);border:1px solid rgba(255,90,74,.3);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:10px">' +
+      '<div style="font-weight:700;color:var(--text)">' + anEsc(d.pseudo) + ' <span style="font-size:.7rem;color:var(--sub)">· ' + d.role + '</span></div>' +
+      '<div style="color:var(--red);font-size:.8rem;margin-top:4px">' + anEsc(d.error || 'Introuvable') + '</div></div>';
+  }
+  const formDots = d.form.map(w => '<span style="display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:3px;font-size:.6rem;line-height:16px;text-align:center;font-weight:700;color:#0B0E18;background:' + (w ? 'var(--lime)' : 'var(--red)') + '">' + (w ? 'V' : 'D') + '</span>').join('');
+  const champs = d.champPool.map(c => '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surf3);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.74rem;margin:0 4px 4px 0;color:var(--text)">' + anEsc(c.name) + ' <span style="color:var(--sub)">' + c.games + 'g·' + c.wr + '%</span></span>').join('');
+  return '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:10px">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
+    '<div><span style="font-weight:700;color:var(--text);font-size:1rem">' + anEsc(d.pseudo) + '</span> <span style="font-size:.7rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">' + d.role + '</span></div>' +
+    '<div style="font-size:.8rem;color:var(--sub2)">' + anEsc(d.rank) + '</div></div>' +
+    '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:10px">' +
+    '<span>Rôle principal : <strong style="color:var(--text)">' + d.mainRole + '</strong></span>' +
+    '<span>Win rate : <strong style="color:' + (d.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + d.winrate + '%</strong> (' + d.games + 'g)</span>' +
+    '<span>KDA : <strong style="color:var(--text)">' + d.kda + '</strong></span></div>' +
+    '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Pool de champions (20 dernières)</div>' +
+    '<div style="margin-bottom:10px">' + (champs || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div>' +
+    '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Forme récente</div>' +
+    '<div>' + (formDots || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div></div>';
 }
 
 // ════════════════════════════════════════════
@@ -4870,12 +4978,13 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', graphs:'nav-more', map:'nav-more', history:'nav-more' };
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-more', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
+  if (id === 'prematch') initPrematch();
 }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
