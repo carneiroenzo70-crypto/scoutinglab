@@ -2887,13 +2887,22 @@ async function anHandleFiles(fileList) {
   if (!files.length) { showToast('Aucun fichier .rofl détecté', 'error'); return; }
   const status = document.getElementById('an-status');
   status.style.display = 'block'; status.textContent = 'Analyse de ' + files.length + ' partie(s)…';
-  AN_GAMES = [];
+  let added = 0, fail = 0;
   for (const f of files) {
-    try { AN_GAMES.push(anParseRofl(await f.arrayBuffer())); }
-    catch (err) { console.warn('échec', f.name, err); }
+    if (AN_GAMES.some(g => g.file === f.name)) continue;   // déjà chargée — on accumule sans doublon
+    try { const g = anParseRofl(await f.arrayBuffer()); g.file = f.name; AN_GAMES.push(g); added++; }
+    catch (err) { console.warn('échec', f.name, err); fail++; }
   }
-  status.textContent = AN_GAMES.length + ' partie(s) analysée(s) · ' + (files.length - AN_GAMES.length) + ' échec(s)';
+  AN_GAMES.sort((a, b) => (a.file || '').localeCompare(b.file || ''));
+  status.innerHTML = AN_GAMES.length + ' partie(s) chargée(s)' + (added ? ' · +' + added + ' ajoutée(s)' : ' · aucune nouvelle') + (fail ? ' · ' + fail + ' échec(s)' : '') +
+    ' &nbsp;<a href="#" onclick="anReset();return false" style="color:var(--red);font-size:.78rem;text-decoration:none">↻ Réinitialiser</a>';
   anRenderDashboard();
+}
+function anReset() {
+  AN_GAMES = [];
+  if (typeof destroyChart === 'function') destroyChart('an-form');
+  const s = document.getElementById('an-status'); if (s) { s.style.display = 'none'; s.innerHTML = ''; }
+  const d = document.getElementById('an-dashboard'); if (d) d.innerHTML = '';
 }
 function anRenderDashboard() {
   const dash = document.getElementById('an-dashboard');
