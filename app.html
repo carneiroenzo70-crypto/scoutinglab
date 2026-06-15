@@ -19,7 +19,7 @@ function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.re
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2, analytics:2 };   /* Top 50, Carte, Analytics : Pro+ */
+window.VS_PANEL_MINRANK = { top50:2, map:2 };   /* Top 50, Carte : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
 function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
@@ -34,6 +34,7 @@ function applyPlanGating(){
     b.style.cssText='display:inline-flex;align-items:center;padding:4px 9px;margin-right:6px;border-radius:8px;font-family:monospace;font-size:10px;letter-spacing:.04em;background:var(--lime-dim,rgba(28,196,122,.10));color:var(--lime,#1CC47A);border:1px solid var(--lime-bd,rgba(28,196,122,.30))';
     lg.parentNode.insertBefore(b,lg);
   }
+  if (typeof anDecorateTabs === 'function') anDecorateTabs();
 }
 document.addEventListener('DOMContentLoaded', applyPlanGating);
 </script>
@@ -1638,7 +1639,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <div style="width:1px;height:14px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouter</button>
     <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Résultats</button>
-    <button class="hd-nav-item" id="nav-analyse" onclick="switchPanel('analyse')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg> Comparer</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM</button>
     <button class="hd-nav-item" id="nav-analytics" onclick="switchPanel('analytics')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> Analytics</button>
@@ -2608,9 +2608,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
     </div><!-- /panel-top50 -->
 
-    <!-- ══ PANEL : ANALYSE MULTI-JOUEURS ══ -->
+    <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — onglet du hub Analytics) ══ -->
     <div id="panel-analyse" class="panel">
       <div style="max-width:1200px;margin:0 auto;padding:0 8px">
+
+        <div class="an-tabbar" style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:16px">
+          <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
+          <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
+          <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+        </div>
 
         <!-- Header dynamique -->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
@@ -2775,15 +2781,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div style="font-family:'aquavit','Helvetica Neue',sans-serif;font-weight:800;font-size:1.4rem;color:var(--text)">Analytics</div>
           <span style="font-family:monospace;font-size:10px;letter-spacing:.06em;background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-bd);border-radius:6px;padding:3px 8px">REPLAYS .ROFL</span>
         </div>
-        <div style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:18px">
-          <button id="an-tab-perf" class="an-tab" onclick="anShowView('perf')" style="border:none;background:var(--lime-dim);color:var(--lime);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
-          <button id="an-tab-upgrade" class="an-tab" onclick="anShowView('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+        <div class="an-tabbar" style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:12px">
+          <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
+          <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
+          <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
         </div>
+        <div id="an-desc" style="color:var(--sub2);font-size:.82rem;margin-bottom:18px;line-height:1.6"></div>
 
         <div id="an-view-perf">
-          <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
-            Déposez les fichiers <code style="color:var(--lime)">.rofl</code> de vos scrims (dossier <em>Documents/League of Legends/Replays</em>). Tout est analysé localement, dans votre navigateur — rien n'est envoyé.
-          </div>
           <div id="an-drop" style="border:2px dashed var(--border2);border-radius:var(--r-lg);background:var(--surf1);
                padding:34px 20px;text-align:center;cursor:pointer;transition:all .18s;margin-bottom:18px">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -2796,9 +2801,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
 
         <div id="an-view-upgrade" style="display:none">
-          <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
-            Comparez vos joueurs aux profils scoutés, rôle par rôle. Désignez votre titulaire : les fiches mieux notées que lui apparaissent comme des <strong style="color:var(--lime)">upgrades potentiels</strong>. Basé sur vos fiches sauvegardées (onglet Historique).
-          </div>
           <div id="an-upgrade"></div>
         </div>
       </div>
@@ -2952,13 +2954,52 @@ const AN_ROLES = [['Top', 'Top Lane'], ['Jgl', 'Jungle'], ['Mid', 'Mid Lane'], [
 function anRoster() { try { return JSON.parse(localStorage.getItem('vs_roster') || '{}'); } catch (_) { return {}; } }
 function anSetStarter(role, id) { const r = anRoster(); if (id) r[role] = +id; else delete r[role]; localStorage.setItem('vs_roster', JSON.stringify(r)); renderUpgradeFinder(); }
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
-function anShowView(v) {
-  document.getElementById('an-view-perf').style.display = v === 'perf' ? '' : 'none';
-  document.getElementById('an-view-upgrade').style.display = v === 'upgrade' ? '' : 'none';
-  const tp = document.getElementById('an-tab-perf'), tu = document.getElementById('an-tab-upgrade');
-  tp.style.background = v === 'perf' ? 'var(--lime-dim)' : 'transparent'; tp.style.color = v === 'perf' ? 'var(--lime)' : 'var(--sub2)';
-  tu.style.background = v === 'upgrade' ? 'var(--lime-dim)' : 'transparent'; tu.style.color = v === 'upgrade' ? 'var(--lime)' : 'var(--sub2)';
-  if (v === 'upgrade') renderUpgradeFinder();
+/* Hub Analytics : 3 outils. perf/upgrade = Pro+ (rang 2), comparer = tous (rang 1) */
+const AN_DESC = {
+  perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
+  comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
+  upgrade: 'Qui peut améliorer votre roster, rôle par rôle. Dépend du Scouting (fiches sauvegardées).',
+};
+function anTabRank(tab) { return (tab === 'perf' || tab === 'upgrade') ? 2 : 1; }
+function anSyncTabs(active) {
+  document.querySelectorAll('.an-tab').forEach(b => {
+    const on = b.getAttribute('data-tab') === active;
+    b.style.background = on ? 'var(--lime-dim)' : 'transparent';
+    b.style.color = on ? 'var(--lime)' : 'var(--sub2)';
+  });
+  const d = document.getElementById('an-desc');
+  if (d) d.textContent = AN_DESC[active] || '';
+}
+function anDecorateTabs() {
+  const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
+  document.querySelectorAll('.an-tab').forEach(b => {
+    const t = b.getAttribute('data-tab');
+    if ((t === 'perf' || t === 'upgrade') && rank < 2 && !b.querySelector('.an-lock')) {
+      const s = document.createElement('span');
+      s.className = 'an-lock'; s.textContent = 'Pro';
+      s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
+      b.appendChild(s);
+    }
+  });
+}
+function anGoTab(tab) {
+  const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
+  if (anTabRank(tab) > rank) { vsUpsell('analytics'); return; }
+  if (tab === 'comparer') { switchPanel('analyse'); return; }   // le handler de 'analyse' resynchronise les onglets
+  switchPanel('analytics');
+  anShowView(tab);
+}
+function anShowView(view) {   // 'perf' | 'upgrade' (vues internes au panel-analytics)
+  const perf = document.getElementById('an-view-perf'), up = document.getElementById('an-view-upgrade');
+  if (perf) perf.style.display = view === 'perf' ? '' : 'none';
+  if (up) up.style.display = view === 'upgrade' ? '' : 'none';
+  anSyncTabs(view);
+  if (view === 'upgrade') renderUpgradeFinder();
+}
+function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
+  const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
+  if (rank < 2) { switchPanel('analyse'); return; }   // Starter : seul Comparer est accessible → on y va directement
+  anShowView('perf');
 }
 function renderUpgradeFinder() {
   const box = document.getElementById('an-upgrade'); if (!box) return;
@@ -4764,13 +4805,13 @@ function switchPanel(id) {
   else document.body.classList.remove('map-fullscreen');
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
-  const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analyse',
+  const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analytics',
                     top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
-  if (id === 'analyse') buildAnalysePanel();
-  if (id === 'analytics') initAnalytics();
+  if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
+  if (id === 'analytics') { initAnalytics(); anEnterHub(); }
 }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
