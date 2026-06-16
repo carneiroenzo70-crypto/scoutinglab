@@ -1642,6 +1642,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM</button>
     <button class="hd-nav-item" id="nav-analytics" onclick="switchPanel('analytics')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> Analytics</button>
+    <button class="hd-nav-item" id="nav-prematch" onclick="switchPanel('prematch')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
@@ -1675,7 +1676,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Graphiques</button>
   <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Carte</button>
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
-  <button class="more-menu-item" onclick="switchPanel('prematch');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
 </div>
 
 <!-- ════ SHELL ════ -->
@@ -2617,6 +2617,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
           <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
           <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+          <button class="an-tab" data-tab="timeline" onclick="anGoTab('timeline')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Timeline</button>
         </div>
 
         <!-- Header dynamique -->
@@ -2786,6 +2787,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
           <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
           <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+          <button class="an-tab" data-tab="timeline" onclick="anGoTab('timeline')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Timeline</button>
         </div>
         <div id="an-desc" style="color:var(--sub2);font-size:.82rem;margin-bottom:18px;line-height:1.6"></div>
 
@@ -2803,6 +2805,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
         <div id="an-view-upgrade" style="display:none">
           <div id="an-upgrade"></div>
+        </div>
+
+        <div id="an-view-timeline" style="display:none">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+            <input id="tl-id" placeholder="Pseudo#TAG" style="flex:1;min-width:160px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>
+            <select id="tl-server" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px;font-size:.8rem">
+              <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
+            </select>
+            <button id="tl-go" onclick="tlGenerate()" class="btn btn-lime" style="font-size:.85rem">Analyser la dernière partie</button>
+          </div>
+          <div id="tl-status" style="display:none;color:var(--sub2);font-size:.82rem;margin-bottom:12px"></div>
+          <div id="tl-result"></div>
         </div>
       </div>
     </div><!-- /panel-analytics -->
@@ -3040,8 +3054,9 @@ const AN_DESC = {
   perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
   upgrade: 'Qui peut améliorer votre roster, rôle par rôle. Dépend du Scouting (fiches sauvegardées).',
+  timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
 };
-function anTabRank(tab) { return (tab === 'perf' || tab === 'upgrade') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'perf' || tab === 'upgrade' || tab === 'timeline') ? 2 : 1; }
 function anSyncTabs(active) {
   document.querySelectorAll('.an-tab').forEach(b => {
     const on = b.getAttribute('data-tab') === active;
@@ -3070,10 +3085,11 @@ function anGoTab(tab) {
   switchPanel('analytics');
   anShowView(tab);
 }
-function anShowView(view) {   // 'perf' | 'upgrade' (vues internes au panel-analytics)
-  const perf = document.getElementById('an-view-perf'), up = document.getElementById('an-view-upgrade');
-  if (perf) perf.style.display = view === 'perf' ? '' : 'none';
-  if (up) up.style.display = view === 'upgrade' ? '' : 'none';
+function anShowView(view) {   // 'perf' | 'upgrade' | 'timeline' (vues internes au panel-analytics)
+  ['perf', 'upgrade', 'timeline'].forEach(v => {
+    const el = document.getElementById('an-view-' + v);
+    if (el) el.style.display = (v === view) ? '' : 'none';
+  });
   anSyncTabs(view);
   if (view === 'upgrade') renderUpgradeFinder();
 }
@@ -3266,6 +3282,81 @@ async function pmFetchCompet(proName) {
     games.forEach(g => { champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) { champs[g.champ].wins++; w++; } });
     const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
     return { count: games.length, winrate: Math.round(w / games.length * 100), champPool: pool.slice(0, 6), games: games.slice(0, 8) };
+  }
+}
+
+/* ════════════════════════════════════════════
+   TIMELINE — analyse d'une partie classée (match-v5 timeline)
+════════════════════════════════════════════ */
+function tlMMSS(ms) { const s = Math.floor((ms || 0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+async function tlGenerate() {
+  const raw = (document.getElementById('tl-id').value || '').trim();
+  const m = raw.match(/^(.*?)#(.+)$/);
+  if (!m) { showToast('Format attendu : Pseudo#TAG', 'warning'); return; }
+  const server = document.getElementById('tl-server').value;
+  const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
+  const btn = document.getElementById('tl-go'), status = document.getElementById('tl-status'), out = document.getElementById('tl-result');
+  btn.disabled = true; status.style.display = 'block'; status.textContent = 'Recherche de la dernière partie classée…'; out.innerHTML = '';
+  try {
+    const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(m[1].trim()) + '/' + encodeURIComponent(m[2].trim()));
+    if (!acc || !acc.puuid) throw new Error('Riot ID introuvable');
+    const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=1&type=ranked');
+    if (!ids || !ids.length) throw new Error('Aucune partie classée récente');
+    status.textContent = 'Chargement de la partie…';
+    const match = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + ids[0]);
+    status.textContent = 'Chargement de la timeline…';
+    const tl = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + ids[0] + '/timeline');
+    tlRender(match, tl, acc.puuid);
+  } catch (err) {
+    out.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + anEsc((err && err.message) || 'Erreur') + '</div>';
+  }
+  status.style.display = 'none'; btn.disabled = false;
+}
+function tlRender(match, tl, puuid) {
+  const out = document.getElementById('tl-result');
+  const parts = (match.info && match.info.participants) || [];
+  const me = parts.find(p => p.puuid === puuid);
+  const myTeam = me ? me.teamId : 100;
+  const pidTeam = {}; parts.forEach(p => pidTeam[p.participantId] = p.teamId);
+  const frames = (tl.info && tl.info.frames) || [];
+  const objs = [];
+  frames.forEach(f => (f.events || []).forEach(e => {
+    if (e.type === 'BUILDING_KILL' && e.buildingType === 'TOWER_BUILDING') {
+      const destroyer = e.teamId === 100 ? 200 : 100;
+      objs.push({ t: e.timestamp, label: 'Tour ' + (e.laneType || '').replace('_LANE', '').toLowerCase(), team: destroyer });
+    } else if (e.type === 'ELITE_MONSTER_KILL') {
+      const mt = e.monsterType;
+      const label = mt === 'DRAGON' ? ('Dragon' + (e.monsterSubType ? ' ' + e.monsterSubType.replace('_DRAGON', '').toLowerCase() : ''))
+        : mt === 'BARON_NASHOR' ? 'Baron' : mt === 'RIFTHERALD' ? 'Herald' : mt === 'HORDE' ? 'Voidgrub' : (mt || '?').toLowerCase();
+      objs.push({ t: e.timestamp, label, team: e.killerTeamId });
+    }
+  }));
+  objs.sort((a, b) => a.t - b.t);
+  const myWin = me ? me.win : null;
+  const colT = t => t === myTeam ? 'var(--lime)' : 'var(--red)';
+  const sideLbl = t => t === myTeam ? 'Nous' : 'Adversaire';
+  let html = '<div style="font-size:.85rem;color:var(--sub2);margin-bottom:10px">Dernière partie classée · ' +
+    (myWin === true ? '<strong style="color:var(--lime)">Victoire</strong>' : myWin === false ? '<strong style="color:var(--red)">Défaite</strong>' : '—') +
+    ' · ' + Math.floor((match.info.gameDuration || 0) / 60) + ' min' + (me ? ' · ' + anEsc(me.championName) : '') + '</div>';
+  html += '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;height:220px;margin-bottom:16px"><canvas id="tl-gold-chart"></canvas></div>';
+  html += '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Objectifs (' + objs.length + ')</div>';
+  html += objs.map(o => '<div style="display:flex;align-items:center;gap:10px;font-size:.82rem;padding:5px 0;border-bottom:1px solid var(--border)">' +
+    '<span style="font-family:monospace;color:var(--sub2);width:48px">' + tlMMSS(o.t) + '</span>' +
+    '<span style="width:9px;height:9px;border-radius:50%;background:' + colT(o.team) + ';flex-shrink:0"></span>' +
+    '<span style="flex:1;color:var(--text)">' + anEsc(o.label) + '</span>' +
+    '<span style="font-size:.72rem;color:' + colT(o.team) + '">' + sideLbl(o.team) + '</span></div>').join('') ||
+    '<div style="color:var(--sub);font-size:.8rem">Aucun objectif détecté.</div>';
+  out.innerHTML = html;
+  // courbe d'avance d'or (notre équipe - adverse)
+  if (window.Chart) {
+    const gold = frames.map(f => { let mine = 0, en = 0; Object.values(f.participantFrames || {}).forEach(pf => { (pidTeam[pf.participantId] === myTeam ? (mine += pf.totalGold) : (en += pf.totalGold)); }); return mine - en; });
+    const labels = frames.map((f, i) => i + '′');
+    destroyChart('tl-gold');
+    chartInstances['tl-gold'] = new Chart(document.getElementById('tl-gold-chart'), {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Avance d\'or (nous − adversaire)', data: gold, borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.10)', fill: true, tension: .3, pointRadius: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8A9BB8', maxTicksLimit: 12 }, grid: { display: false } }, y: { ticks: { color: '#8A9BB8' }, grid: { color: 'rgba(120,140,170,.12)' } } } },
+    });
   }
 }
 
@@ -5033,7 +5124,7 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-more', graphs:'nav-more', map:'nav-more', history:'nav-more' };
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-prematch', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
