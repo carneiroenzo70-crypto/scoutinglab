@@ -2829,7 +2829,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <span style="font-family:monospace;font-size:10px;letter-spacing:.06em;background:var(--lime-dim);color:var(--lime);border:1px solid var(--lime-bd);border-radius:6px;padding:3px 8px">API RIOT</span>
         </div>
         <div style="color:var(--sub2);font-size:.85rem;margin-bottom:18px;line-height:1.6">
-          Saisissez le roster adverse (1 à 5 joueurs, format <code style="color:var(--lime)">Pseudo#TAG</code>). VisionScore analyse leurs 20 dernières parties classées : rang, pool de champions, rôle principal et forme récente.
+          Saisissez le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition (Leaguepedia) — indispensable quand le pseudo soloq diffère du nom pro (ex. un smurf « KC NEXT ADKING » → tapez « Caliste »). Les deux champs sont indépendants : remplissez l'un, l'autre, ou les deux.
         </div>
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
           <label style="font-size:.78rem;color:var(--sub)">Serveur</label>
@@ -3155,10 +3155,12 @@ function initPrematch() {
   const box = document.getElementById('pm-inputs');
   if (box && !PM_WIRED) {
     PM_WIRED = true;
+    const inp = 'background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none';
     box.innerHTML = PM_ROLES.map((r, i) =>
-      '<div style="display:flex;align-items:center;gap:8px">' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
       '<span style="width:64px;font-size:.72rem;color:var(--sub);text-transform:uppercase">' + r + '</span>' +
-      '<input id="pm-in-' + i + '" placeholder="Pseudo#TAG" style="flex:1;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>' +
+      '<input id="pm-in-' + i + '" placeholder="Pseudo#TAG (soloq)" style="flex:2;min-width:150px;' + inp + '"/>' +
+      '<input id="pm-pro-' + i + '" placeholder="Nom pro (compétition)" style="flex:1;min-width:120px;' + inp + '"/>' +
       '</div>').join('');
   }
 }
@@ -3193,23 +3195,33 @@ async function pmFetchPlayer(pseudo, tag, server) {
 async function pmGenerate() {
   const server = document.getElementById('pm-server').value;
   const entries = [];
-  PM_ROLES.forEach((r, i) => { const v = (document.getElementById('pm-in-' + i) || {}).value; if (v && v.trim()) entries.push({ role: r, raw: v.trim() }); });
-  if (!entries.length) { showToast('Saisissez au moins un joueur (Pseudo#TAG)', 'warning'); return; }
+  PM_ROLES.forEach((r, i) => {
+    const v = ((document.getElementById('pm-in-' + i) || {}).value || '').trim();
+    const pro = ((document.getElementById('pm-pro-' + i) || {}).value || '').trim();
+    if (v || pro) entries.push({ role: r, raw: v, pro: pro });
+  });
+  if (!entries.length) { showToast('Saisissez au moins un joueur (Pseudo#TAG ou nom pro)', 'warning'); return; }
   const btn = document.getElementById('pm-go'), status = document.getElementById('pm-status'), out = document.getElementById('pm-dossier');
   btn.disabled = true; status.style.display = 'block'; out.innerHTML = '';
   const results = [];
   for (let k = 0; k < entries.length; k++) {
-    const e = entries[k], m = e.raw.match(/^(.*?)#(.+)$/);
-    status.textContent = 'Analyse ' + (k + 1) + '/' + entries.length + ' — ' + e.raw + '…';
-    const d = { role: e.role, pseudo: m ? m[1].trim() : e.raw, tag: m ? m[2].trim() : '' };
-    if (m) { try { d.soloq = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); } catch (err) { d.soloqError = (err && err.message) || 'Erreur'; } }
-    else { d.soloqError = 'Format attendu : Pseudo#TAG'; }
+    const e = entries[k], m = e.raw ? e.raw.match(/^(.*?)#(.+)$/) : null;
+    status.textContent = 'Analyse ' + (k + 1) + '/' + entries.length + ' — ' + (e.raw || e.pro) + '…';
+    const d = { role: e.role, pseudo: m ? m[1].trim() : (e.raw || e.pro), tag: m ? m[2].trim() : '' };
+    // Solo Q (si un Riot ID est fourni)
+    if (e.raw) {
+      if (m) { try { d.soloq = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); } catch (err) { d.soloqError = (err && err.message) || 'Erreur'; } }
+      else { d.soloqError = 'Format attendu : Pseudo#TAG'; }
+    }
+    // Compétition : priorité au nom pro saisi, sinon tentative auto depuis le pseudo
     try {
-      let c = await pmFetchCompet(d.pseudo), pn = d.pseudo;
-      if (!c) { const r = await pmResolveProName(d.pseudo); if (r && r !== d.pseudo) { c = await pmFetchCompet(r); pn = r; } }
+      let pn = e.pro || (m ? m[1].trim() : e.raw);
+      let c = pn ? await pmFetchCompet(pn) : null;
+      if (!c && !e.pro && pn) { const rr = await pmResolveProName(pn); if (rr && rr !== pn) { c = await pmFetchCompet(rr); pn = rr; } }
       if (c) { d.compet = c; d.proName = pn; }
     } catch (_) {}
     results.push(d);
+    if (k < entries.length - 1) await new Promise(res => setTimeout(res, 350));   // anti rate-limit Fandom
   }
   status.style.display = 'none'; btn.disabled = false;
   out.innerHTML = results.map(pmCard).join('');
