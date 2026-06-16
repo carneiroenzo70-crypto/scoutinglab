@@ -2837,6 +2837,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
           </select>
         </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+          <input id="pm-team" placeholder="Nom de l'équipe Leaguepedia (ex. Karmine Corp, Karmine Corp Blue)" style="flex:1;min-width:240px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>
+          <button onclick="tmLoadRoster()" class="btn" style="font-size:.82rem;background:var(--surf3);border:1px solid var(--border2);color:var(--text);display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Charger le roster</button>
+        </div>
+        <div id="pm-team-status" style="display:none;color:var(--sub2);font-size:.8rem;margin-bottom:12px"></div>
         <div id="pm-inputs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
         <button id="pm-go" onclick="pmGenerate()" class="btn btn-lime" style="font-size:.85rem;display:inline-flex;align-items:center;gap:6px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Générer le dossier</button>
         <div id="pm-status" style="display:none;color:var(--sub2);font-size:.82rem;margin:14px 0"></div>
@@ -3163,6 +3168,21 @@ function initPrematch() {
       '<input id="pm-pro-' + i + '" placeholder="Nom pro (compétition)" style="flex:1;min-width:120px;' + inp + '"/>' +
       '</div>').join('');
   }
+}
+async function tmLoadRoster() {
+  const team = (document.getElementById('pm-team').value || '').trim();
+  if (!team) { showToast('Entrez le nom de l\'équipe', 'warning'); return; }
+  const st = document.getElementById('pm-team-status'); st.style.display = 'block'; st.textContent = 'Chargement du roster de ' + team + '…';
+  const roleIdx = { Top: 0, Jungle: 1, Mid: 2, Bot: 3, ADC: 3, 'AD Carry': 3, Support: 4 };
+  try {
+    const q = encodeURIComponent(team);
+    const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role,Team&where=Team%3D%22' + q + '%22&format=json&origin=*&limit=30';
+    const rows = await pmCargo(url);
+    if (!rows || !rows.length) { st.textContent = 'Équipe introuvable — vérifiez le nom exact (ex. « Karmine Corp Blue » pour l\'académie).'; return; }
+    let filled = 0; const names = [];
+    rows.forEach(r => { const t = r.title; const idx = roleIdx[t.Role]; if (idx !== undefined && t.ID) { const el = document.getElementById('pm-pro-' + idx); if (el) { el.value = t.ID; filled++; names.push(t.ID + ' (' + PM_ROLES[idx] + ')'); } } });
+    st.innerHTML = filled ? ('<span style="color:var(--lime)">Roster chargé :</span> ' + anEsc(names.join(', ')) + ' — cliquez « Générer le dossier ».') : 'Aucun joueur (rôle de jeu) trouvé pour cette équipe.';
+  } catch (e) { st.textContent = 'Erreur de chargement du roster.'; }
 }
 async function pmFetchPlayer(pseudo, tag, server) {
   const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
