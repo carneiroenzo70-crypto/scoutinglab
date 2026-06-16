@@ -2837,9 +2837,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
           </select>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
-          <input id="pm-team" placeholder="Nom de l'équipe Leaguepedia (ex. Karmine Corp, Karmine Corp Blue)" style="flex:1;min-width:240px;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>
-          <button onclick="tmLoadRoster()" class="btn" style="font-size:.82rem;background:var(--surf3);border:1px solid var(--border2);color:var(--text);display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Charger le roster</button>
+        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;flex-wrap:wrap">
+          <div style="position:relative;flex:1;min-width:240px">
+            <input id="pm-team" autocomplete="off" placeholder="Tapez le nom de l'équipe (ex. Karmine)…" style="width:100%;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:8px 10px;font-size:.84rem;outline:none"/>
+            <div id="pm-team-sugg" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surf1);border:1px solid var(--border2);border-radius:8px;z-index:60;max-height:260px;overflow-y:auto;box-shadow:var(--shadow)"></div>
+          </div>
+          <button onclick="tmLoadRoster()" class="btn" style="font-size:.82rem;background:var(--surf3);border:1px solid var(--border2);color:var(--text);display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Charger</button>
         </div>
         <div id="pm-team-status" style="display:none;color:var(--sub2);font-size:.8rem;margin-bottom:12px"></div>
         <div id="pm-inputs" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
@@ -3168,6 +3171,35 @@ function initPrematch() {
       '<input id="pm-pro-' + i + '" placeholder="Nom pro (compétition)" style="flex:1;min-width:120px;' + inp + '"/>' +
       '</div>').join('');
   }
+  tmInitAutocomplete();
+}
+let tmTimer = null;
+function tmInitAutocomplete() {
+  const inp = document.getElementById('pm-team');
+  if (!inp || inp._ac) return; inp._ac = true;
+  inp.addEventListener('input', () => {
+    clearTimeout(tmTimer);
+    const q = inp.value.trim();
+    if (q.length < 2) { tmHideSugg(); return; }
+    tmTimer = setTimeout(() => tmSuggest(q), 300);
+  });
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { tmHideSugg(); tmLoadRoster(); } });
+  document.addEventListener('click', e => { if (!e.target.closest('#pm-team-sugg') && e.target !== inp) tmHideSugg(); });
+}
+function tmHideSugg() { const s = document.getElementById('pm-team-sugg'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
+async function tmSuggest(q) {
+  const box = document.getElementById('pm-team-sugg'); if (!box) return;
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region&where=Name%20LIKE%20%22' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=8&format=json&origin=*';
+  const rows = await pmCargo(url);
+  if (!rows || !rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
+  window._tmSugg = rows.map(r => r.title.Name || '');
+  box.innerHTML = rows.map((r, i) => '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(r.title.Name || '') + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(r.title.Region || '') + '</span></div>').join('');
+  box.style.display = 'block';
+}
+function tmPick(i) {
+  const name = (window._tmSugg || [])[i]; if (!name) return;
+  const inp = document.getElementById('pm-team'); if (inp) inp.value = name;
+  tmHideSugg(); tmLoadRoster();
 }
 async function tmLoadRoster() {
   const team = (document.getElementById('pm-team').value || '').trim();
