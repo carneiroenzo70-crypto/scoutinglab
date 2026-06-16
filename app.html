@@ -3212,6 +3212,25 @@ async function pmFetchPlayer(pseudo, tag, server) {
     mainRole, champPool: champPool.slice(0, 5), form: form.slice(0, 7).reverse(),
   };
 }
+async function pmFetchCompetBatch(names) {   // 1 requête pour plusieurs joueurs (anti rate-limit)
+  const uniq = [...new Set(names.filter(Boolean))];
+  if (!uniq.length) return {};
+  const inList = uniq.map(n => '"' + n.replace(/"/g, '') + '"').join(',');
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%20IN%20(' + encodeURIComponent(inList) + ')&order_by=DateTime_UTC%20DESC&limit=200&format=json&origin=*';
+  const rows = await pmCargo(url);
+  if (!rows) return {};
+  const byLink = {};
+  rows.forEach(x => { const t = x.title; const lk = (t.Link || '').toLowerCase(); (byLink[lk] = byLink[lk] || []).push(t); });
+  const result = {};
+  Object.keys(byLink).forEach(lk => {
+    const games = byLink[lk].slice(0, 20).map(t => ({ champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', event: (t.OverviewPage || '').split('/')[0] }));
+    const champs = {}; let w = 0;
+    games.forEach(g => { champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) { champs[g.champ].wins++; w++; } });
+    const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+    result[lk] = { count: games.length, winrate: Math.round(w / games.length * 100), champPool: pool.slice(0, 6), games: games.slice(0, 8) };
+  });
+  return result;
+}
 async function pmGenerate() {
   const server = document.getElementById('pm-server').value;
   const entries = [];
@@ -3223,6 +3242,9 @@ async function pmGenerate() {
   if (!entries.length) { showToast('Saisissez au moins un joueur (Pseudo#TAG ou nom pro)', 'warning'); return; }
   const btn = document.getElementById('pm-go'), status = document.getElementById('pm-status'), out = document.getElementById('pm-dossier');
   btn.disabled = true; status.style.display = 'block'; out.innerHTML = '';
+  // Pré-chargement groupé des stats compétition (1 requête pour tous les noms pro connus)
+  status.textContent = 'Chargement des données de compétition…';
+  const batch = await pmFetchCompetBatch(entries.map(e => e.pro || (e.raw && e.raw.indexOf('#') < 0 ? e.raw : '')).filter(Boolean));
   const results = [];
   for (let k = 0; k < entries.length; k++) {
     const e = entries[k], m = e.raw ? e.raw.match(/^(.*?)#(.+)$/) : null;
@@ -3233,15 +3255,17 @@ async function pmGenerate() {
       if (m) { try { d.soloq = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); } catch (err) { d.soloqError = (err && err.message) || 'Erreur'; } }
       else { d.soloqError = 'Format attendu : Pseudo#TAG'; }
     }
-    // Compétition : priorité au nom pro saisi, sinon tentative auto depuis le pseudo
+    // Compétition : d'abord le lot groupé, sinon résolution individuelle (repli)
     try {
       let pn = e.pro || (m ? m[1].trim() : e.raw);
-      let c = pn ? await pmFetchCompet(pn) : null;
-      if (!c && !e.pro && pn) { const rr = await pmResolveProName(pn); if (rr && rr !== pn) { c = await pmFetchCompet(rr); pn = rr; } }
+      let c = pn ? (batch[pn.toLowerCase()] || null) : null;
+      if (!c && pn) {
+        c = await pmFetchCompet(pn);
+        if (!c && !e.pro) { const rr = await pmResolveProName(pn); if (rr && rr !== pn) { c = await pmFetchCompet(rr); pn = rr; } }
+      }
       if (c) { d.compet = c; d.proName = pn; }
     } catch (_) {}
     results.push(d);
-    if (k < entries.length - 1) await new Promise(res => setTimeout(res, 350));   // anti rate-limit Fandom
   }
   status.style.display = 'none'; btn.disabled = false;
   out.innerHTML = results.map(pmCard).join('');
@@ -3291,10 +3315,13 @@ function pmCard(d) {
   html += '</div>';
   return html;
 }
-async function pmCargo(url) {   // fetch Cargo avec 1 retry (anti-throttling Fandom)
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try { const r = await fetch(url); if (r.ok) { const j = await r.json(); return j.cargoquery || []; } } catch (_) {}
-    await new Promise(res => setTimeout(res, 450));
+async function pmCargo(url) {   // fetch Cargo avec retry + backoff (Fandom renvoie 200 + {error:ratelimited})
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) { const j = await r.json(); if (!j.error) return j.cargoquery || []; }
+    } catch (_) {}
+    await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
   }
   return null;
 }
