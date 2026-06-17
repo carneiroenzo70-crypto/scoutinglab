@@ -3152,6 +3152,19 @@ async function rsResolveScore(slot, role) {
     return res;
   } catch (_) { return null; }
 }
+async function rsTeamScore(roster) {
+  if (!roster) return { team: null, perRole: {}, weakest: null };
+  const perRole = {};
+  for (const role of RS_ROLES) {
+    const slot = roster.slots[role];
+    perRole[role] = slot ? await rsResolveScore(slot, role) : null;
+  }
+  const vals = RS_ROLES.map(r => perRole[r] && perRole[r].score).filter(v => typeof v === 'number');
+  const team = vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : null;
+  let weakest = null, min = Infinity;
+  RS_ROLES.forEach(r => { const s = perRole[r] && perRole[r].score; if (typeof s === 'number' && s < min) { min = s; weakest = r; } });
+  return { team, perRole, weakest };
+}
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/upgrade = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
