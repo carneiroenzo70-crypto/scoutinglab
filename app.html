@@ -3071,6 +3071,36 @@ function anGatherCandidates() {
   });
   return Object.values(map);
 }
+/* ─── Store des rosters nommés (Phase 1 Roster) ─── */
+const RS_ROLES = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
+function rsAll() { try { return JSON.parse(localStorage.getItem('vs_rosters') || '[]'); } catch (_) { return []; } }
+function rsSaveAll(list) { localStorage.setItem('vs_rosters', JSON.stringify(list)); }
+function rsActiveId() { return parseInt(localStorage.getItem('vs_active_roster') || '0') || null; }
+function rsSetActive(id) { localStorage.setItem('vs_active_roster', String(id)); }
+function rsGet(id) { return rsAll().find(r => r.id === id) || null; }
+function rsActive() { return rsGet(rsActiveId()) || rsAll()[0] || null; }
+function rsCreate(name) {
+  const list = rsAll();
+  const r = { id: Date.now(), name: name || ('Roster ' + (list.length + 1)), slots: { Top: null, Jgl: null, Mid: null, ADC: null, Sup: null } };
+  list.unshift(r); rsSaveAll(list); rsSetActive(r.id); return r;
+}
+function rsRename(id, name) { const list = rsAll(); const r = list.find(x => x.id === id); if (r) { r.name = name; rsSaveAll(list); } }
+function rsDelete(id) { const list = rsAll().filter(x => x.id !== id); rsSaveAll(list); if (rsActiveId() === id) rsSetActive(list[0] ? list[0].id : 0); }
+function rsSetSlot(id, role, slot) { const list = rsAll(); const r = list.find(x => x.id === id); if (r) { r.slots[role] = slot; rsSaveAll(list); } }
+/* Migration unique de l'ancien vs_roster (map role→key) vers vs_rosters */
+function rsMigrate() {
+  if (rsAll().length) return;
+  let old; try { old = JSON.parse(localStorage.getItem('vs_roster') || '{}'); } catch (_) { old = {}; }
+  if (!old || !Object.keys(old).length) return;
+  const cands = anGatherCandidates();
+  const slots = { Top: null, Jgl: null, Mid: null, ADC: null, Sup: null };
+  Object.keys(old).forEach(role => {
+    const c = cands.find(x => x.key === old[role]);
+    if (c) { const [pseudo, tag] = (c.pseudo || '').split('#'); slots[role] = { pseudo, tag: tag || 'EUW', server: 'euw1', proName: '', ficheId: (c.key.startsWith('scout:') ? +c.key.split(':')[1] : null) }; }
+  });
+  const r = { id: Date.now(), name: 'Mon équipe', slots };
+  rsSaveAll([r]); rsSetActive(r.id);
+}
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/upgrade = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
