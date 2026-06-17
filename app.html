@@ -3889,9 +3889,11 @@ const D1_FIELDS = {
 // D2 — Objectifs & macro (100% API/auto, aucun slider)
 // Mesure l'impact collectif : tours, objectifs, early game
 // ════════════════════════════════════════════════════════════
+// NB : obj_score (dragons+barons+steals personnels) = métrique JUNGLE uniquement.
+// Sur les autres rôles, c'est toujours le jungler qui smite → score ~0 trompeur.
+// → retirée des rôles non-jungle (2026-06-17).
 const D2_FIELDS = {
   Top: [
-    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
@@ -3901,17 +3903,14 @@ const D2_FIELDS = {
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
   Mid: [
-    { id:'obj_score',             lbl:'Obj. Score/g',         badge:'api', type:'auto' },
     { id:'chal_max_lvl_lead',     lbl:'Avance niveau moy./g', badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',   badge:'api', type:'auto' },
   ],
   ADC: [
-    { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
     { id:'kill_part',             lbl:'Kill Participation',       badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
   ],
   Sup: [
-    { id:'obj_score',             lbl:'Obj. Score/g',             badge:'api', type:'auto' },
     { id:'chal_first_blood',      lbl:'First Blood rate %',       badge:'api', type:'auto' },
     { id:'kill_part',             lbl:'Kill Part. objectifs',     badge:'api', type:'auto' },
   ],
