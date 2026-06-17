@@ -2616,7 +2616,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="an-tabbar" style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:16px">
           <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
           <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
-          <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+          <button class="an-tab" data-tab="roster" onclick="anGoTab('roster')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Roster</button>
           <button class="an-tab" data-tab="timeline" onclick="anGoTab('timeline')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Timeline</button>
         </div>
 
@@ -2786,7 +2786,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="an-tabbar" style="display:inline-flex;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:12px">
           <button class="an-tab" data-tab="perf" onclick="anGoTab('perf')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Performance</button>
           <button class="an-tab" data-tab="comparer" onclick="anGoTab('comparer')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Comparer</button>
-          <button class="an-tab" data-tab="upgrade" onclick="anGoTab('upgrade')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Upgrade Finder</button>
+          <button class="an-tab" data-tab="roster" onclick="anGoTab('roster')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Roster</button>
           <button class="an-tab" data-tab="timeline" onclick="anGoTab('timeline')" style="border:none;background:transparent;color:var(--sub2);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:7px;cursor:pointer">Timeline</button>
         </div>
         <div id="an-desc" style="color:var(--sub2);font-size:.82rem;margin-bottom:18px;line-height:1.6"></div>
@@ -2803,8 +2803,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div id="an-dashboard"></div>
         </div>
 
-        <div id="an-view-upgrade" style="display:none">
-          <div id="an-upgrade"></div>
+        <div id="an-view-roster" style="display:none">
+          <div id="an-roster"></div>
         </div>
 
         <div id="an-view-timeline" style="display:none">
@@ -3166,14 +3166,14 @@ async function rsTeamScore(roster) {
   return { team, perRole, weakest };
 }
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
-/* Hub Analytics : 3 outils. perf/upgrade = Pro+ (rang 2), comparer = tous (rang 1) */
+/* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
   perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
-  upgrade: 'Qui peut améliorer votre roster, rôle par rôle. Dépend du Scouting (fiches sauvegardées).',
+  roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 50) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
 };
-function anTabRank(tab) { return (tab === 'perf' || tab === 'upgrade' || tab === 'timeline') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'perf' || tab === 'roster' || tab === 'timeline') ? 2 : 1; }
 function anSyncTabs(active) {
   document.querySelectorAll('.an-tab').forEach(b => {
     const on = b.getAttribute('data-tab') === active;
@@ -3187,7 +3187,7 @@ function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
     const t = b.getAttribute('data-tab');
-    if ((t === 'perf' || t === 'upgrade') && rank < 2 && !b.querySelector('.an-lock')) {
+    if ((t === 'perf' || t === 'roster') && rank < 2 && !b.querySelector('.an-lock')) {
       const s = document.createElement('span');
       s.className = 'an-lock'; s.textContent = 'Pro';
       s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
@@ -3202,13 +3202,13 @@ function anGoTab(tab) {
   switchPanel('analytics');
   anShowView(tab);
 }
-function anShowView(view) {   // 'perf' | 'upgrade' | 'timeline' (vues internes au panel-analytics)
-  ['perf', 'upgrade', 'timeline'].forEach(v => {
+function anShowView(view) {   // 'perf' | 'roster' | 'timeline' (vues internes au panel-analytics)
+  ['perf', 'roster', 'timeline'].forEach(v => {
     const el = document.getElementById('an-view-' + v);
     if (el) el.style.display = (v === view) ? '' : 'none';
   });
   anSyncTabs(view);
-  if (view === 'upgrade') renderUpgradeFinder();
+  if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
 }
 function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
@@ -8033,7 +8033,7 @@ function recomputeAllScores() {
   if (elPrev && savedPrev != null) elPrev.value = savedPrev;
   localStorage.setItem('spes_history', JSON.stringify(hist));
   showToast(n + ' fiche(s) recalculée(s) avec le nouveau barème', 'success');
-  if (typeof renderUpgradeFinder === 'function') renderUpgradeFinder();
+  if (typeof renderRoster === 'function') renderRoster();
 }
 
 function saveToHistory() {
