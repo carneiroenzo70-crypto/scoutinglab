@@ -3109,7 +3109,7 @@ async function rsResolveScore(slot, role) {
   if (slot.ficheId != null) {
     let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
     const f = hist.find(h => h.id === slot.ficheId);
-    if (f && f.score != null) return { score: +f.score, source: 'Scout', rank: '', wr: null };
+    if (f && f.score != null) return { score: +f.score, source: 'Scout', rank: '', lp: null, wr: null };
   }
   const ck = (slot.pseudo + '|' + (slot.tag || '') + '|' + role).toLowerCase();
   if (_rsScoreCache[ck]) return _rsScoreCache[ck];
@@ -3147,7 +3147,7 @@ async function rsResolveScore(slot, role) {
     const dmgShare = dmgT / n;
     const killPart = kp / n;
     const score = parseFloat(calcProspectScore(tierIdx, lp, wr, kda, csMin, visMin, role, killPart, dmgShare, 0));
-    const res = { score, source: 'SoloQ', rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank) : 'Unranked', wr };
+    const res = { score, source: 'SoloQ', rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank) : 'Unranked', lp, wr };
     _rsScoreCache[ck] = res;
     return res;
   } catch (_) { return null; }
