@@ -3348,13 +3348,16 @@ function pmCard(d) {
   html += '</div>';
   return html;
 }
-async function pmCargo(url) {   // fetch Cargo avec retry + backoff (Fandom renvoie 200 + {error:ratelimited})
-  for (let attempt = 0; attempt < 4; attempt++) {
+const _pmCargoCache = {};   // cache mémoire (session) pour dédoublonner les requêtes identiques
+async function pmCargo(url) {   // via proxy /api/lp : cache Redis 6 h + retry rate-limit côté serveur
+  if (_pmCargoCache[url] !== undefined) return _pmCargoCache[url];
+  const proxied = '/api/lp?url=' + encodeURIComponent(url);
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const r = await fetch(url);
-      if (r.ok) { const j = await r.json(); if (!j.error) return j.cargoquery || []; }
+      const r = await fetch(proxied, { headers: vsAuthHeaders() });
+      if (r.ok) { const j = await r.json(); if (!j.error) { const out = j.cargoquery || []; _pmCargoCache[url] = out; return out; } }
     } catch (_) {}
-    await new Promise(res => setTimeout(res, 700 * (attempt + 1)));
+    await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
   }
   return null;
 }
