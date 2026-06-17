@@ -3052,8 +3052,23 @@ function anGatherCandidates() {
   const out = [];
   hist.forEach(h => { if (!h.role) return; out.push({ key: 'scout:' + h.id, pseudo: h.pseudo, role: h.role, score: (h.score != null ? +h.score : null), potentiel: (h.potentiel != null ? +h.potentiel : null), age: h.age || '', source: 'Scout', meta: (ranks[parseInt(h.rank)] || '') }); });
   pipe.forEach(p => { if (!p.role || p.stage === 'ecarte') return; const sc = parseFloat(p.score); out.push({ key: 'crm:' + p.id, pseudo: p.playerName + (p.playerTag ? '#' + p.playerTag : ''), role: p.role, score: (isNaN(sc) ? null : sc), potentiel: null, age: p.age || '', source: 'CRM', meta: (p.structureName && p.structureName !== 'Sans structure') ? p.structureName : (p.stage || '') }); });
+  // Source Top 50 (scan des meilleurs joueurs classés)
+  let top = [];
+  try { top = (typeof top50Data !== 'undefined' && Array.isArray(top50Data)) ? top50Data : []; } catch (_) {}
+  top.forEach(p => {
+    if (!p || !p.role || !p.name) return;
+    const sc = parseFloat(p.score);
+    out.push({ key: 'top50:' + (p.puuid || p.name) + '|' + p.role, pseudo: p.name + (p.tag ? '#' + p.tag : ''), role: p.role, score: (isNaN(sc) ? null : sc), potentiel: null, age: p.age || '', source: 'Top50', meta: 'Top 50' });
+  });
+  const srcRank = { Scout: 3, CRM: 2, Top50: 1 };
   const map = {};
-  out.forEach(c => { const k = (c.pseudo || '').toLowerCase() + '|' + c.role; const ex = map[k]; if (!ex) { map[k] = c; return; } const better = (c.score != null && ex.score == null) || (c.score != null && ex.score != null && c.source === 'Scout' && ex.source !== 'Scout'); if (better) map[k] = c; });
+  out.forEach(c => {
+    const k = (c.pseudo || '').toLowerCase().split('#')[0] + '|' + c.role;
+    const ex = map[k];
+    if (!ex) { map[k] = c; return; }
+    const better = (c.score != null && ex.score == null) || (c.score != null && ex.score != null && (srcRank[c.source] || 0) > (srcRank[ex.source] || 0));
+    if (better) map[k] = c;
+  });
   return Object.values(map);
 }
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
