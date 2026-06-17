@@ -3192,6 +3192,56 @@ async function rsUiSnapshot() {
   if (typeof showToast === 'function') showToast('Instantané enregistré', 'success');
   renderRoster();
 }
+/* ─── Évolution (graphes des snapshots) ─── */
+let _rsShowEvolution = false;
+let _rsEvoMetric = 'score';
+function rsToggleEvolution() { _rsShowEvolution = !_rsShowEvolution; renderRoster(); }
+function rsSetEvoMetric(m) { _rsEvoMetric = m; const r = rsActive(); if (r) rsDrawEvolutionCharts(r); }
+function rsSyncEvoMetricBtns() { document.querySelectorAll('.rs-evo-metric').forEach(b => { const on = b.getAttribute('data-m') === _rsEvoMetric; b.style.background = on ? 'var(--lime-dim)' : 'transparent'; b.style.color = on ? 'var(--lime)' : 'var(--sub2)'; }); }
+function rsEvoLabel(iso) { const d = new Date(iso); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+function rsEvoHtml(roster) {
+  const snaps = rsSnapsGet(roster.id);
+  if (!snaps.length) return '<div style="margin-top:18px;padding:18px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);color:var(--sub);font-size:.82rem">Aucun instantané pour ce roster. Cliquez « 📸 Instantané » pour démarrer le suivi.</div>';
+  const metrics = [['score', 'Score SPES'], ['wr', 'Win Rate'], ['lp', 'LP']];
+  let h = '<div style="margin-top:20px"><div style="font-weight:700;color:var(--text);margin-bottom:10px">Évolution <span style="color:var(--sub);font-weight:400;font-size:.78rem">· ' + snaps.length + ' instantané(s)</span></div>';
+  h += '<div style="color:var(--sub);font-size:.74rem;margin-bottom:4px">Score d\'équipe</div>';
+  h += '<div style="height:180px;margin-bottom:18px"><canvas id="rs-evo-team"></canvas></div>';
+  h += '<div style="color:var(--sub);font-size:.74rem;margin-bottom:6px">Par joueur</div>';
+  h += '<div style="display:flex;gap:6px;margin-bottom:6px">';
+  metrics.forEach(([m, l]) => { h += '<button class="rs-evo-metric" data-m="' + m + '" onclick="rsSetEvoMetric(\'' + m + '\')" style="border:1px solid var(--border2);background:transparent;color:var(--sub2);border-radius:6px;padding:4px 9px;font-size:.72rem;cursor:pointer">' + l + '</button>'; });
+  h += '</div>';
+  h += '<div style="height:200px"><canvas id="rs-evo-players"></canvas></div></div>';
+  return h;
+}
+function rsDrawEvolutionCharts(roster) {
+  if (!window.Chart) return;
+  const snaps = rsSnapsGet(roster.id); if (!snaps.length) return;
+  const sub = getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880';
+  const labels = snaps.map(s => rsEvoLabel(s.date));
+  const teamCanvas = document.getElementById('rs-evo-team');
+  if (teamCanvas) {
+    destroyChart('rs-evo-team');
+    chartInstances['rs-evo-team'] = new Chart(teamCanvas, {
+      type: 'line', data: { labels, datasets: [{ label: 'Score d\'équipe', data: snaps.map(s => s.teamScore), borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.12)', fill: true, tension: .3, spanGaps: true, pointRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: sub }, grid: { display: false } }, y: { min: 0, max: 10, ticks: { color: sub }, grid: { color: 'rgba(120,140,170,.12)' } } } }
+    });
+  }
+  const pCanvas = document.getElementById('rs-evo-players');
+  if (pCanvas) {
+    const palette = ['#1CC47A', '#E8194B', '#4A8FE8', '#D4714A', '#8A7FF5'];
+    const datasets = RS_ROLES.map((role, idx) => {
+      const data = snaps.map(s => { const pl = s.players.find(p => p.role === role); if (!pl) return null; const v = _rsEvoMetric === 'score' ? pl.score : _rsEvoMetric === 'wr' ? pl.wr : pl.lp; return (v == null ? null : v); });
+      const name = (snaps.slice().reverse().map(s => s.players.find(p => p.role === role)).find(Boolean) || {}).pseudo || role;
+      return { label: role + ' · ' + name, data, borderColor: palette[idx], backgroundColor: 'transparent', tension: .3, spanGaps: true, pointRadius: 2 };
+    }).filter(ds => ds.data.some(v => v != null));
+    destroyChart('rs-evo-players');
+    chartInstances['rs-evo-players'] = new Chart(pCanvas, {
+      type: 'line', data: { labels, datasets },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: sub, boxWidth: 12, font: { size: 10 } } } }, scales: { x: { ticks: { color: sub }, grid: { display: false } }, y: { ticks: { color: sub }, grid: { color: 'rgba(120,140,170,.12)' } } } }
+    });
+  }
+  rsSyncEvoMetricBtns();
+}
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
@@ -3257,6 +3307,8 @@ async function renderRoster() {
   html += '<button onclick="rsUiNew()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">+ Nouveau</button>';
   html += '<button onclick="rsUiRename()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">Renommer</button>';
   html += '<button onclick="rsUiDelete()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--red,#E8194B);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">Supprimer</button>';
+  html += '<button onclick="rsUiSnapshot()" title="Enregistre les stats du moment pour le suivi" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">📸 Instantané</button>';
+  html += '<button onclick="rsToggleEvolution()" style="background:' + (_rsShowEvolution ? 'var(--lime-dim)' : 'var(--surf2)') + ';border:1px solid var(--border2);color:' + (_rsShowEvolution ? 'var(--lime)' : 'var(--text)') + ';border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">📈 Évolution</button>';
   html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" style="margin-left:auto;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">↻ Recalculer</button>';
   html += '</div>';
 
@@ -3275,8 +3327,11 @@ async function renderRoster() {
     body += rsRenderRoleRow(roster, role, roster.slots[role], ts.perRole[role], cands);
   }
 
+  if (_rsShowEvolution) body += rsEvoHtml(roster);
+
   const bodyEl = document.getElementById('rs-body');
   if (bodyEl) bodyEl.innerHTML = body;
+  if (_rsShowEvolution) rsDrawEvolutionCharts(roster);
 }
 
 function rsRenderRoleRow(roster, role, slot, pr, cands) {
