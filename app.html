@@ -3081,7 +3081,8 @@ function rsGet(id) { return rsAll().find(r => r.id === id) || null; }
 function rsActive() { return rsGet(rsActiveId()) || rsAll()[0] || null; }
 function rsCreate(name) {
   const list = rsAll();
-  const r = { id: Date.now(), name: name || ('Roster ' + (list.length + 1)), slots: { Top: null, Jgl: null, Mid: null, ADC: null, Sup: null } };
+  let id = Date.now(); const used = list.map(x => x.id); while (used.includes(id)) id++;   // id unique (évite collision Date.now sur créations rapprochées)
+  const r = { id, name: name || ('Roster ' + (list.length + 1)), slots: { Top: null, Jgl: null, Mid: null, ADC: null, Sup: null } };
   list.unshift(r); rsSaveAll(list); rsSetActive(r.id); return r;
 }
 function rsRename(id, name) { const list = rsAll(); const r = list.find(x => x.id === id); if (r) { r.name = name; rsSaveAll(list); } }
@@ -3219,7 +3220,7 @@ function rsDrawEvolutionCharts(roster) {
   const sub = getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880';
   const labels = snaps.map(s => rsEvoLabel(s.date));
   const teamCanvas = document.getElementById('rs-evo-team');
-  if (teamCanvas) {
+  if (teamCanvas && teamCanvas.isConnected) {
     destroyChart('rs-evo-team');
     chartInstances['rs-evo-team'] = new Chart(teamCanvas, {
       type: 'line', data: { labels, datasets: [{ label: 'Score d\'équipe', data: snaps.map(s => s.teamScore), borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.12)', fill: true, tension: .3, spanGaps: true, pointRadius: 3 }] },
@@ -3227,7 +3228,7 @@ function rsDrawEvolutionCharts(roster) {
     });
   }
   const pCanvas = document.getElementById('rs-evo-players');
-  if (pCanvas) {
+  if (pCanvas && pCanvas.isConnected) {
     const palette = ['#1CC47A', '#E8194B', '#4A8FE8', '#D4714A', '#8A7FF5'];
     const datasets = RS_ROLES.map((role, idx) => {
       const data = snaps.map(s => { const pl = s.players.find(p => p.role === role); if (!pl) return null; const v = _rsEvoMetric === 'score' ? pl.score : _rsEvoMetric === 'wr' ? pl.wr : pl.lp; return (v == null ? null : v); });
@@ -3241,6 +3242,62 @@ function rsDrawEvolutionCharts(roster) {
     });
   }
   rsSyncEvoMetricBtns();
+}
+/* ─── Comparaison roster-vs-roster ─── */
+let _rsCompare = { on: false, a: null, b: null };
+function rsToggleCompare() {
+  _rsCompare.on = !_rsCompare.on;
+  if (_rsCompare.on) {
+    const list = rsAll();
+    _rsCompare.a = _rsCompare.a || (rsActive() && rsActive().id) || (list[0] && list[0].id) || null;
+    _rsCompare.b = _rsCompare.b || ((list.find(r => r.id !== _rsCompare.a) || {}).id) || null;
+  }
+  renderRoster();
+}
+function rsSetCompare(side, id) { _rsCompare[side] = +id; rsRenderCompare(); }
+function rsCompareHtml() {
+  const list = rsAll();
+  if (list.length < 2) return '<div style="margin-top:18px;padding:18px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);color:var(--sub);font-size:.82rem">Créez au moins 2 rosters pour les comparer.</div>';
+  function sel(side) { let s = '<select onchange="rsSetCompare(\'' + side + '\',this.value)" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 9px;font-size:.8rem">'; list.forEach(r => { s += '<option value="' + r.id + '"' + (r.id === _rsCompare[side] ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; }); return s + '</select>'; }
+  let h = '<div style="margin-top:20px"><div style="font-weight:700;color:var(--text);margin-bottom:10px">Comparaison de rosters</div>';
+  h += '<div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap">' + sel('a') + '<span style="color:var(--sub)">vs</span>' + sel('b') + '</div>';
+  h += '<div id="rs-cmp-body" style="color:var(--sub);font-size:.85rem">Calcul…</div></div>';
+  return h;
+}
+async function rsRenderCompare() {
+  const bodyEl = document.getElementById('rs-cmp-body'); if (!bodyEl) return;
+  const ra = rsGet(_rsCompare.a), rb = rsGet(_rsCompare.b);
+  if (!ra || !rb) { bodyEl.innerHTML = 'Sélectionnez deux rosters.'; return; }
+  const [ta, tb] = await Promise.all([rsTeamScore(ra), rsTeamScore(rb)]);
+  let h = '<div style="display:flex;gap:14px;margin-bottom:14px">';
+  [[ra, ta], [rb, tb]].forEach(([r, t]) => { h += '<div style="flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center"><div style="color:var(--text);font-weight:700;font-size:.85rem">' + anEsc(r.name) + '</div><div style="font-size:1.4rem;font-weight:800;color:' + (t.team != null ? anScoreColor(t.team) : 'var(--sub)') + '">' + (t.team != null ? t.team.toFixed(1) : '—') + '</div></div>'; });
+  h += '</div>';
+  RS_ROLES.forEach(role => {
+    const sa = ta.perRole[role] && ta.perRole[role].score;
+    const sb = tb.perRole[role] && tb.perRole[role].score;
+    const aLead = (typeof sa === 'number' && (sb == null || sa > sb));
+    const bLead = (typeof sb === 'number' && (sa == null || sb > sa));
+    h += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:5px">';
+    h += '<div style="flex:1;text-align:right;color:' + (aLead ? 'var(--lime)' : 'var(--sub)') + ';font-weight:' + (aLead ? '700' : '400') + ';font-size:.82rem">' + (typeof sa === 'number' ? sa.toFixed(1) : '—') + '</div>';
+    h += '<div style="width:54px;text-align:center;color:var(--sub2);font-size:.74rem">' + role + '</div>';
+    h += '<div style="flex:1;color:' + (bLead ? 'var(--lime)' : 'var(--sub)') + ';font-weight:' + (bLead ? '700' : '400') + ';font-size:.82rem">' + (typeof sb === 'number' ? sb.toFixed(1) : '—') + '</div>';
+    h += '</div>';
+  });
+  h += '<div style="height:280px;margin-top:14px"><canvas id="rs-cmp-radar"></canvas></div>';
+  bodyEl.innerHTML = h;
+  const radarCanvas = document.getElementById('rs-cmp-radar');
+  if (window.Chart && radarCanvas && radarCanvas.isConnected) {
+    const sub = getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880';
+    destroyChart('rs-cmp-radar');
+    chartInstances['rs-cmp-radar'] = new Chart(radarCanvas, {
+      type: 'radar',
+      data: { labels: RS_ROLES, datasets: [
+        { label: ra.name, data: RS_ROLES.map(r => (ta.perRole[r] && ta.perRole[r].score) || 0), borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.15)', pointRadius: 3 },
+        { label: rb.name, data: RS_ROLES.map(r => (tb.perRole[r] && tb.perRole[r].score) || 0), borderColor: '#E8194B', backgroundColor: 'rgba(232,25,75,.15)', pointRadius: 3 }
+      ] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: sub, boxWidth: 12, font: { size: 11 } } } }, scales: { r: { min: 0, max: 10, ticks: { color: sub, backdropColor: 'transparent', stepSize: 2 }, grid: { color: 'rgba(120,140,170,.18)' }, angleLines: { color: 'rgba(120,140,170,.18)' }, pointLabels: { color: sub, font: { size: 11 } } } } }
+    });
+  }
 }
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
@@ -3309,6 +3366,7 @@ async function renderRoster() {
   html += '<button onclick="rsUiDelete()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--red,#E8194B);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">Supprimer</button>';
   html += '<button onclick="rsUiSnapshot()" title="Enregistre les stats du moment pour le suivi" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">📸 Instantané</button>';
   html += '<button onclick="rsToggleEvolution()" style="background:' + (_rsShowEvolution ? 'var(--lime-dim)' : 'var(--surf2)') + ';border:1px solid var(--border2);color:' + (_rsShowEvolution ? 'var(--lime)' : 'var(--text)') + ';border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">📈 Évolution</button>';
+  html += '<button onclick="rsToggleCompare()" style="background:' + (_rsCompare.on ? 'var(--lime-dim)' : 'var(--surf2)') + ';border:1px solid var(--border2);color:' + (_rsCompare.on ? 'var(--lime)' : 'var(--text)') + ';border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">⚔️ Comparer</button>';
   html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" style="margin-left:auto;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">↻ Recalculer</button>';
   html += '</div>';
 
@@ -3328,10 +3386,12 @@ async function renderRoster() {
   }
 
   if (_rsShowEvolution) body += rsEvoHtml(roster);
+  if (_rsCompare.on) body += rsCompareHtml();
 
   const bodyEl = document.getElementById('rs-body');
   if (bodyEl) bodyEl.innerHTML = body;
   if (_rsShowEvolution) rsDrawEvolutionCharts(roster);
+  if (_rsCompare.on) rsRenderCompare();
 }
 
 function rsRenderRoleRow(roster, role, slot, pr, cands) {
