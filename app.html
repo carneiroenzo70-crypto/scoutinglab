@@ -3189,9 +3189,10 @@ function tmInitAutocomplete() {
 function tmHideSugg() { const s = document.getElementById('pm-team-sugg'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
 async function tmSuggest(q) {
   const box = document.getElementById('pm-team-sugg'); if (!box) return;
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region&where=Name%20LIKE%20%22' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=8&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=8&format=json&origin=*';
   const rows = await pmCargo(url);
-  if (!rows || !rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
+  if (rows === null) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Leaguepedia surchargé, réessayez dans un instant…</div>'; box.style.display = 'block'; return; }
+  if (!rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
   window._tmSugg = rows.map(r => r.title.Name || '');
   box.innerHTML = rows.map((r, i) => '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(r.title.Name || '') + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(r.title.Region || '') + '</span></div>').join('');
   box.style.display = 'block';
