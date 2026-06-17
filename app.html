@@ -4210,6 +4210,23 @@ const RANG_PLAFOND = {
   9: 10.0,  // Challenger
 };
 
+// ── ANCRE DE NIVEAU PAR RANG (note SPES = niveau réel) ──────────────
+// Le rang est le pilier du score. Les stats modulent ±~1.5 autour.
+// Cible : Challenger ≈ 9, GM ≈ 8.5, Master ≈ 8, Diamant ≈ 7.
+// Un Challenger excellent monte vers 10, un Challenger faible reste ~7.5.
+const RANK_ANCHOR = {
+  0: 2.0,  // Iron
+  1: 3.0,  // Bronze
+  2: 4.0,  // Silver
+  3: 5.0,  // Gold
+  4: 5.8,  // Platinum
+  5: 6.4,  // Emerald
+  6: 7.0,  // Diamond
+  7: 8.0,  // Master
+  8: 8.5,  // Grandmaster
+  9: 9.0,  // Challenger
+};
+
 function globalScore() {
   const f = getRoleFields();
   const W = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
@@ -4219,19 +4236,25 @@ function globalScore() {
   const totalW = parts.reduce((a,[,w]) => a+w, 0);
   const rawScore = parts.reduce((a,[v,w]) => a + v*(w/totalW), 0);
 
-  // Pas de plafond externe : le rang agit organiquement via D4 (rank_abs = ancre)
   const rankEl = document.getElementById('d-rank');
   const rankIdx = rankEl ? Math.max(0, Math.min(9, parseInt(rankEl.value) || 6)) : 6;
 
+  // ── Niveau réel : le RANG est l'ancre, les stats modulent autour (±~1.5) ──
+  // rawScore = synthèse des dimensions (0-10, neutre ≈5.5). On l'utilise pour
+  // ajuster l'ancre du rang, pas comme score en soi → un Challenger score haut.
+  const rankAnchor = RANK_ANCHOR[rankIdx] ?? 6.5;
+  const statMod = (rawScore - 5.5) * 0.30;            // ≈ -1.65 … +1.35
+  const scoreNiveau = rankAnchor + statMod;
+
   // Stocker le score brut (avant bonus âge)
   window._scoreRaw  = parseFloat(rawScore.toFixed(2));
-  window._scorePerf = parseFloat(rawScore.toFixed(2));
+  window._scorePerf = parseFloat(scoreNiveau.toFixed(2));
 
-  // Appliquer le bonus âge multiplicateur
+  // Bonus âge (doux, multiplicateur)
   const ageEl = document.getElementById('d-age');
   const age = ageEl ? parseInt(ageEl.value) : 0;
   const ageMult = getBonusAge(age);
-  const scoreFinal = Math.min(10, rawScore * ageMult);
+  const scoreFinal = Math.min(10, Math.max(0.5, scoreNiveau * ageMult));
 
   // Calculer et stocker le score potentiel
   window._scorePotentiel = calcScorePotentiel(rawScore, age, rankIdx);
@@ -10852,27 +10875,30 @@ function calcProspectScore(tierIdx, lp, wr, kda, csMin, visionAvg, role, killPar
   if (!parts.length) return '5.00';
 
   const totalW = weights.reduce((a,b)=>a+b,0);
-  const raw = parts.reduce((a,b)=>a+b,0) / totalW;
-  return Math.min(10, Math.max(0, raw)).toFixed(2);
+  const statScore = parts.reduce((a,b)=>a+b,0) / totalW;   // synthèse stats 0-10
+
+  // ── Niveau réel : rang = ancre, stats modulent ±~1.5 ──
+  const anchor = RANK_ANCHOR[tierIdx] ?? 6.5;
+  const lpBonus = (tierIdx >= 7 && lp) ? Math.min(0.7, lp / 1500) : 0;  // affine Master+ via LP
+  const level = anchor + lpBonus + (statScore - 5.5) * 0.30;
+  return Math.min(10, Math.max(0, level)).toFixed(2);
 }
 
 // Multiplicateur âge — appliqué APRÈS le score brut
 // 7 CS/min Mid → brut 6.8 → ×1.20 (17 ans) = 8.16 "pépite"
 // 7 CS/min Mid → brut 6.8 → ×1.00 (22 ans) = 6.80 "bon joueur"
+// Multiplicateur âge — DOUX (note = niveau réel, l'âge n'est qu'un léger ajustement)
 function ageBonus(age) {
   if (!age || age <= 0) return 1.0;
-  if (age <= 14) return 1.50;
-  if (age <= 15) return 1.38;
-  if (age <= 16) return 1.28;
-  if (age <= 17) return 1.20;
-  if (age <= 18) return 1.14;
-  if (age <= 19) return 1.08;
-  if (age <= 20) return 1.04;
-  if (age <= 21) return 1.02;
-  if (age <= 22) return 1.00;
-  if (age <= 24) return 0.97;
-  if (age <= 26) return 0.93;
-  return 0.88;
+  if (age <= 15) return 1.10;
+  if (age <= 16) return 1.08;
+  if (age <= 17) return 1.06;
+  if (age <= 18) return 1.04;
+  if (age <= 19) return 1.02;
+  if (age <= 23) return 1.00;
+  if (age <= 26) return 0.98;
+  if (age <= 29) return 0.96;
+  return 0.94;
 }
 
 
