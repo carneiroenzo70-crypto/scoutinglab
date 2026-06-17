@@ -3180,8 +3180,8 @@ function tmInitAutocomplete() {
   inp.addEventListener('input', () => {
     clearTimeout(tmTimer);
     const q = inp.value.trim();
-    if (q.length < 2) { tmHideSugg(); return; }
-    tmTimer = setTimeout(() => tmSuggest(q), 300);
+    if (q.length < 3) { tmHideSugg(); return; }
+    tmTimer = setTimeout(() => tmSuggest(q), 450);
   });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { tmHideSugg(); tmLoadRoster(); } });
   document.addEventListener('click', e => { if (!e.target.closest('#pm-team-sugg') && e.target !== inp) tmHideSugg(); });
@@ -3193,9 +3193,36 @@ async function tmSuggest(q) {
   const rows = await pmCargo(url);
   if (rows === null) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Leaguepedia surchargé, réessayez dans un instant…</div>'; box.style.display = 'block'; return; }
   if (!rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
-  window._tmSugg = rows.map(r => r.title.Name || '');
-  box.innerHTML = rows.map((r, i) => '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(r.title.Name || '') + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(r.title.Region || '') + '</span></div>').join('');
+  const names = rows.map(r => r.title.Name || '').filter(Boolean);
+  window._tmSugg = names;
+  const leagues = await tmLeagues(names);   // niveau réel (ligue) par équipe
+  box.innerHTML = rows.map((r, i) => {
+    const nm = r.title.Name || '';
+    const lvl = leagues[nm] || r.title.Region || '';
+    return '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(nm) + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(lvl) + '</span></div>';
+  }).join('');
   box.style.display = 'block';
+}
+// Événements internationaux/exhibition : ce n'est pas un niveau de championnat
+const TM_INTL = ['EMEA Masters', 'Esports World Cup', 'Worlds', 'World Championship', 'MSI', 'Mid-Season', 'First Stand', 'Red Bull'];
+function tmLeagueOf(pages) {   // pages triées du + récent au + ancien → retourne la ligue domestique la + récente
+  for (const p of pages) { const lg = (p || '').split('/')[0]; if (lg && p.indexOf('/') > 0 && !TM_INTL.some(x => lg.indexOf(x) === 0)) return lg; }
+  return (pages[0] || '').split('/')[0] || '';
+}
+async function tmLeagues(names) {   // 1 requête groupée → {team: ligue}
+  const out = {};
+  if (!names.length) return out;
+  try {
+    const inClause = names.map(n => '"' + n.replace(/"/g, '') + '"').join(',');
+    const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=TournamentResults&fields=Team,OverviewPage,Date&where=Team%20IN%20(' + encodeURIComponent(inClause) + ')&order_by=Date%20DESC&limit=80&format=json&origin=*';
+    const rows = await pmCargo(url);
+    if (rows && rows.length) {
+      const byTeam = {};
+      rows.forEach(r => { const t = r.title.Team; (byTeam[t] = byTeam[t] || []).push(r.title.OverviewPage); });
+      names.forEach(n => { out[n] = tmLeagueOf(byTeam[n] || []); });
+    }
+  } catch (_) {}
+  return out;
 }
 function tmPick(i) {
   const name = (window._tmSugg || [])[i]; if (!name) return;
@@ -3211,7 +3238,8 @@ async function tmLoadRoster() {
     const q = encodeURIComponent(team);
     const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role,Team&where=Team%3D%22' + q + '%22&format=json&origin=*&limit=30';
     const rows = await pmCargo(url);
-    if (!rows || !rows.length) { st.textContent = 'Équipe introuvable — vérifiez le nom exact (ex. « Karmine Corp Blue » pour l\'académie).'; return; }
+    if (rows === null) { st.innerHTML = '<span style="color:var(--amber,#E8A317)">Leaguepedia momentanément surchargé</span> — recliquez sur « Charger » dans quelques secondes.'; return; }
+    if (!rows.length) { st.textContent = 'Équipe introuvable — vérifiez le nom exact (ex. « Karmine Corp Blue » pour l\'académie).'; return; }
     let filled = 0; const names = [];
     rows.forEach(r => { const t = r.title; const idx = roleIdx[t.Role]; if (idx !== undefined && t.ID) { const el = document.getElementById('pm-pro-' + idx); if (el) { el.value = t.ID; filled++; names.push(t.ID + ' (' + PM_ROLES[idx] + ')'); } } });
     st.innerHTML = filled ? ('<span style="color:var(--lime)">Roster chargé :</span> ' + anEsc(names.join(', ')) + ' — cliquez « Générer le dossier ».') : 'Aucun joueur (rôle de jeu) trouvé pour cette équipe.';
