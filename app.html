@@ -3165,6 +3165,33 @@ async function rsTeamScore(roster) {
   RS_ROLES.forEach(r => { const s = perRole[r] && perRole[r].score; if (typeof s === 'number' && s < min) { min = s; weakest = r; } });
   return { team, perRole, weakest };
 }
+/* ─── Snapshots de roster (suivi manuel dans le temps) ─── */
+function rsSnapsAll() { try { return JSON.parse(localStorage.getItem('vs_roster_snapshots') || '{}'); } catch (_) { return {}; } }
+function rsSnapsGet(rosterId) { return rsSnapsAll()[rosterId] || []; }
+async function rsSnapCapture(rosterId) {
+  const r = rsGet(rosterId); if (!r) return null;
+  const ts = await rsTeamScore(r);
+  const players = RS_ROLES.map(role => {
+    const slot = r.slots[role]; const pr = ts.perRole[role];
+    if (!slot || !pr) return null;
+    return { role, pseudo: slot.pseudo, score: (pr.score != null ? pr.score : null), rank: pr.rank || '', lp: (pr.lp != null ? pr.lp : null), wr: (pr.wr != null ? pr.wr : null) };
+  }).filter(Boolean);
+  const snap = { date: new Date().toISOString(), teamScore: ts.team, players };
+  const all = rsSnapsAll();
+  const list = all[rosterId] || [];
+  list.push(snap);
+  if (list.length > 60) list.splice(0, list.length - 60);
+  all[rosterId] = list;
+  localStorage.setItem('vs_roster_snapshots', JSON.stringify(all));
+  return snap;
+}
+async function rsUiSnapshot() {
+  const r = rsActive(); if (!r) return;
+  if (typeof showToast === 'function') showToast('Enregistrement de l\'instantané…', 'info');
+  await rsSnapCapture(r.id);
+  if (typeof showToast === 'function') showToast('Instantané enregistré', 'success');
+  renderRoster();
+}
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
