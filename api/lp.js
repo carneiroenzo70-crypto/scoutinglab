@@ -1,12 +1,15 @@
 // GET /api/lp?url=<URL Leaguepedia encodée> — proxy + cache Redis pour l'API Cargo
 // Évite le rate-limit côté navigateur : une requête identique est servie depuis le cache (6 h).
 const { verifyToken, getBearer } = require('./_auth');
+const crypto = require('crypto');
 
 const CACHE_TTL = 21600; // 6 h — les rosters/équipes changent rarement
 const ALLOWED_HOST = 'lol.fandom.com';
 
+// SHA1 de l'URL complète : aucune collision, aucune troncature (le nom d'équipe
+// est en fin d'URL — l'ancienne clé base64 tronquée confondait les sous-équipes).
 function cacheKey(url) {
-  return 'lp:' + Buffer.from(url).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 120);
+  return 'lp:' + crypto.createHash('sha1').update(url).digest('hex');
 }
 
 async function redisGet(base, token, key) {
@@ -43,8 +46,11 @@ module.exports = async function handler(req, res) {
   const { url } = req.query;
   if (!url) return res.status(400).json({ error: 'Paramètre url manquant' });
 
+  // req.query.url est déjà décodé une fois par Vercel → ne PAS re-décoder
+  // (le 2e decode transformait les %XX internes de la requête Cargo en caractères
+  //  littéraux et corrompait l'URL). On l'utilise tel quel.
   let target;
-  try { target = new URL(decodeURIComponent(url)); }
+  try { target = new URL(url); }
   catch (_) { return res.status(400).json({ error: 'URL invalide' }); }
   if (target.hostname !== ALLOWED_HOST) {
     return res.status(400).json({ error: 'Hôte non autorisé' });
@@ -71,8 +77,11 @@ module.exports = async function handler(req, res) {
       if (lpRes.ok) {
         const data = await lpRes.json();
         if (!data.error) {
-          if (hasCache) await redisSet(UPSTASH_URL, UPSTASH_TOKEN, key, data);
-          res.setHeader('X-VS-Cache', 'MISS');
+          // On ne met en cache que les résultats NON vides : un cargoquery vide
+          // (souvent dû à un throttle partiel) ne doit pas empoisonner le cache 6 h.
+          const nonEmpty = Array.isArray(data.cargoquery) && data.cargoquery.length > 0;
+          if (hasCache && nonEmpty) await redisSet(UPSTASH_URL, UPSTASH_TOKEN, key, data);
+          res.setHeader('X-VS-Cache', nonEmpty ? 'MISS' : 'MISS-EMPTY');
           return res.status(200).json(data);
         }
       }
