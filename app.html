@@ -3114,7 +3114,7 @@ function renderUpgradeFinder() {
     return;
   }
   const roster = anRoster();
-  let html = '';
+  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button onclick="recomputeAllScores()" title="Recalcule toutes les fiches sauvegardées avec le barème actuel" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 12px;font-size:.78rem;cursor:pointer">↻ Recalculer les scores</button></div>';
   AN_ROLES.forEach(([rk, rlabel]) => {
     const list = all.filter(c => c.role === rk);
     if (!list.length) return;
@@ -3137,7 +3137,7 @@ function renderUpgradeFinder() {
       const isLower = starter && !isStarter && delta < -0.05;
       html += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid ' + (isStarter ? 'var(--lime-bd)' : isUpgrade ? 'rgba(28,196,122,.25)' : 'var(--border)') + ';border-radius:var(--r);padding:10px 14px;margin-bottom:6px;' + (isLower ? 'opacity:.45' : '') + '">';
       html += '<div style="width:32px;height:32px;border-radius:50%;background:' + anScoreColor(c.score) + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:.82rem;flex-shrink:0">' + c.score.toFixed(1) + '</div>';
-      html += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.88rem">' + anEsc(c.pseudo) + anSourceBadge(c.source) + (isStarter ? ' <span style="font-size:.64rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">TITULAIRE</span>' : '') + '</div><div style="color:var(--sub);font-size:.74rem">' + (c.meta || '') + (c.age ? ' · ' + c.age + ' ans' : '') + (c.potentiel != null ? ' · potentiel ' + c.potentiel.toFixed(1) : '') + '</div></div>';
+      html += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.88rem">' + anEsc(c.pseudo) + anSourceBadge(c.source) + (isStarter ? ' <span style="font-size:.64rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">TITULAIRE</span>' : '') + '</div><div style="color:var(--sub);font-size:.74rem">' + (c.meta || '') + (c.age ? ' · ' + c.age + ' ans' : '') + '</div></div>';
       if (isUpgrade) html += '<div style="color:var(--lime);font-weight:800;font-size:.82rem;flex-shrink:0;white-space:nowrap">▲ +' + delta.toFixed(1) + '</div>';
       else if (isLower) html += '<div style="color:var(--sub2);font-size:.78rem;flex-shrink:0">' + delta.toFixed(1) + '</div>';
       html += '</div>';
@@ -7893,6 +7893,40 @@ crmLoad();
     document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
   }
 })();
+
+// Recalcule toutes les fiches sauvegardées avec le barème actuel.
+// Les fiches stockent rawData + rang + âge → on rejoue globalScore() pour chacune.
+function recomputeAllScores() {
+  let hist; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) { hist = []; }
+  if (!hist.length) { showToast('Aucune fiche à recalculer', 'warning'); return; }
+  const elRank = document.getElementById('d-rank'), elAge = document.getElementById('d-age'), elPrev = document.getElementById('d-rank-prev');
+  // Sauvegarde de l'état courant (pour le restaurer ensuite)
+  const savedRole = currentRole, savedRank = elRank && elRank.value, savedAge = elAge && elAge.value, savedPrev = elPrev && elPrev.value;
+  const savedRaw = { ...rawData };
+  let n = 0;
+  hist = hist.map(h => {
+    if (!h.rawData) return h;
+    currentRole = h.role || 'Mid';
+    Object.keys(rawData).forEach(k => delete rawData[k]);
+    Object.assign(rawData, h.rawData);
+    if (elRank) elRank.value = (h.rank != null ? h.rank : '6');
+    if (elAge)  elAge.value  = (h.age != null ? h.age : '');
+    if (elPrev) elPrev.value = (h.rankPrev != null ? h.rankPrev : '-1');
+    const sc = (typeof globalScore === 'function') ? globalScore() : h.score;
+    n++;
+    return Object.assign({}, h, { score: sc, potentiel: (window._scorePotentiel != null ? window._scorePotentiel : null) });
+  });
+  // Restauration de l'état courant
+  currentRole = savedRole;
+  Object.keys(rawData).forEach(k => delete rawData[k]);
+  Object.assign(rawData, savedRaw);
+  if (elRank && savedRank != null) elRank.value = savedRank;
+  if (elAge && savedAge != null) elAge.value = savedAge;
+  if (elPrev && savedPrev != null) elPrev.value = savedPrev;
+  localStorage.setItem('spes_history', JSON.stringify(hist));
+  showToast(n + ' fiche(s) recalculée(s) avec le nouveau barème', 'success');
+  if (typeof renderUpgradeFinder === 'function') renderUpgradeFinder();
+}
 
 function saveToHistory() {
   const pseudo = document.getElementById('d-pseudo')?.value?.trim();
