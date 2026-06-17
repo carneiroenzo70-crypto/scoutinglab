@@ -3101,6 +3101,57 @@ function rsMigrate() {
   const r = { id: Date.now(), name: 'Mon équipe', slots };
   rsSaveAll([r]); rsSetActive(r.id);
 }
+/* ─── Résolution du score d'un joueur : fiche SPES complète sinon auto Solo Q ─── */
+/* TIER_IDX est déclaré plus bas (scan Top 50) — réutilisé ici, pas redéclaré. */
+const _rsScoreCache = {};
+async function rsResolveScore(slot, role) {
+  if (!slot || !slot.pseudo) return null;
+  if (slot.ficheId != null) {
+    let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+    const f = hist.find(h => h.id === slot.ficheId);
+    if (f && f.score != null) return { score: +f.score, source: 'Scout', rank: '', wr: null };
+  }
+  const ck = (slot.pseudo + '|' + (slot.tag || '') + '|' + role).toLowerCase();
+  if (_rsScoreCache[ck]) return _rsScoreCache[ck];
+  try {
+    const server = slot.server || 'euw1';
+    const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
+    const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(slot.pseudo) + '/' + encodeURIComponent(slot.tag || 'EUW'));
+    if (!acc || !acc.puuid) return null;
+    const leagueRaw = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
+    const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw && leagueRaw.entries) || [];
+    const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
+    const tierIdx = soloQ ? (TIER_IDX[soloQ.tier] ?? 6) : 6;
+    const lp = soloQ ? (soloQ.leaguePoints || 0) : 0;
+    const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=15&type=ranked');
+    const matches = (ids && ids.length) ? await fetchMatchesInBatches(regional, ids, undefined, () => {}) : [];
+    let n = 0, w = 0, kS = 0, dS = 0, aS = 0, csT = 0, durT = 0, visT = 0, dmgT = 0, kp = 0;
+    matches.forEach(m => {
+      const info = m && m.info; if (!info) return;
+      const p = (info.participants || []).find(x => x.puuid === acc.puuid); if (!p) return;
+      const dur = (info.gameDuration || 0) / 60; if (dur < 5) return;
+      const team = (info.participants || []).filter(x => x.teamId === p.teamId);
+      const tk = team.reduce((s, x) => s + (x.kills || 0), 0);
+      const td = team.reduce((s, x) => s + (x.totalDamageDealtToChampions || 0), 0);
+      n++; if (p.win) w++; kS += p.kills || 0; dS += p.deaths || 0; aS += p.assists || 0;
+      csT += (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0); durT += dur;
+      visT += (p.visionScore || 0) / dur;
+      dmgT += td ? (p.totalDamageDealtToChampions || 0) / td * 100 : 0;
+      kp += tk ? ((p.kills || 0) + (p.assists || 0)) / tk * 100 : 0;
+    });
+    if (!n) return null;
+    const wr = Math.round(w / n * 100);
+    const kda = dS ? (kS + aS) / dS : (kS + aS);
+    const csMin = durT ? csT / durT : 0;
+    const visMin = visT / n;
+    const dmgShare = dmgT / n;
+    const killPart = kp / n;
+    const score = parseFloat(calcProspectScore(tierIdx, lp, wr, kda, csMin, visMin, role, killPart, dmgShare, 0));
+    const res = { score, source: 'SoloQ', rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank) : 'Unranked', wr };
+    _rsScoreCache[ck] = res;
+    return res;
+  } catch (_) { return null; }
+}
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/upgrade = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
