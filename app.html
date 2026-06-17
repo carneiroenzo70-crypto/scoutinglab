@@ -3042,7 +3042,7 @@ function anEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<
 /* ─── Upgrade Finder : relie Analytics ↔ Scouting (spes_history) ─── */
 const AN_ROLES = [['Top', 'Top Lane'], ['Jgl', 'Jungle'], ['Mid', 'Mid Lane'], ['ADC', 'ADC'], ['Sup', 'Support']];
 function anRoster() { try { return JSON.parse(localStorage.getItem('vs_roster') || '{}'); } catch (_) { return {}; } }
-function anSetStarter(role, key) { const r = anRoster(); if (key) r[role] = key; else delete r[role]; localStorage.setItem('vs_roster', JSON.stringify(r)); renderUpgradeFinder(); }
+function anSetStarter(role, key) { const r = anRoster(); if (key) r[role] = key; else delete r[role]; localStorage.setItem('vs_roster', JSON.stringify(r)); if (typeof renderRoster === 'function') renderRoster(); }
 function anSourceBadge(src) { const col = src === 'CRM' ? 'var(--blue)' : 'var(--lime)'; return '<span style="font-size:.6rem;color:' + col + ';border:1px solid ' + col + ';border-radius:4px;padding:1px 5px;margin-left:6px;opacity:.85">' + src + '</span>'; }
 function anGatherCandidates() {
   let hist = [], pipe = [];
@@ -3215,52 +3215,96 @@ function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   if (rank < 2) { switchPanel('analyse'); return; }   // Starter : seul Comparer est accessible → on y va directement
   anShowView('perf');
 }
-function renderUpgradeFinder() {
-  const box = document.getElementById('an-upgrade'); if (!box) return;
-  const all = anGatherCandidates();
-  if (!all.length) {
-    box.innerHTML = '<div style="text-align:center;padding:42px;color:var(--sub);font-size:13px">Aucun joueur disponible.<br><span style="font-size:11px;opacity:.7">Scoutez des joueurs (onglet Scouter → Sauvegarder) ou ajoutez-les au CRM — ils alimenteront l\'Upgrade Finder.</span></div>';
-    return;
+let _rsWhatIf = null; // réservé (prévisualisation what-if)
+async function renderRoster() {
+  const box = document.getElementById('an-roster'); if (!box) return;
+  rsMigrate();
+  let roster = rsActive();
+  if (!roster) roster = rsCreate('Mon équipe');
+  const list = rsAll();
+
+  let html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">';
+  html += '<select onchange="rsSetActive(+this.value);renderRoster()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem">';
+  list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
+  html += '</select>';
+  html += '<button onclick="rsUiNew()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">+ Nouveau</button>';
+  html += '<button onclick="rsUiRename()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">Renommer</button>';
+  html += '<button onclick="rsUiDelete()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--red,#E8194B);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">Supprimer</button>';
+  html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" style="margin-left:auto;background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.78rem;cursor:pointer">↻ Recalculer</button>';
+  html += '</div>';
+
+  box.innerHTML = html + '<div id="rs-body" style="color:var(--sub);font-size:.85rem">Calcul du roster…</div>';
+
+  const ts = await rsTeamScore(roster);
+  const cands = anGatherCandidates();
+
+  let body = '';
+  body += '<div style="display:flex;align-items:center;gap:14px;background:var(--surf2);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:16px">';
+  body += '<div style="width:54px;height:54px;border-radius:50%;background:' + (ts.team != null ? anScoreColor(ts.team) : 'var(--surf3)') + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:1.1rem">' + (ts.team != null ? ts.team.toFixed(1) : '—') + '</div>';
+  body += '<div><div style="color:var(--text);font-weight:700">Score d\'équipe</div><div style="color:var(--sub);font-size:.78rem">' + (ts.weakest ? 'Maillon faible : <span style="color:var(--amber,#E8A317)">' + ts.weakest + '</span>' : 'Roster incomplet') + '</div></div>';
+  body += '</div>';
+
+  for (const role of RS_ROLES) {
+    body += rsRenderRoleRow(roster, role, roster.slots[role], ts.perRole[role], cands);
   }
-  const roster = anRoster();
-  let html = '<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button onclick="recomputeAllScores()" title="Recalcule toutes les fiches sauvegardées avec le barème actuel" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 12px;font-size:.78rem;cursor:pointer">↻ Recalculer les scores</button></div>';
-  AN_ROLES.forEach(([rk, rlabel]) => {
-    const list = all.filter(c => c.role === rk);
-    if (!list.length) return;
-    const scored = list.filter(c => c.score != null).sort((a, b) => b.score - a.score);
-    const unscored = list.filter(c => c.score == null);
-    const starterKey = roster[rk];
-    const starter = scored.find(c => c.key === starterKey);
-    html += '<div style="margin-bottom:22px">';
-    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap">';
-    html += '<div style="font-weight:700;color:var(--text);font-size:.95rem">' + rlabel + ' <span style="color:var(--sub);font-weight:400;font-size:.8rem">· ' + list.length + ' joueur(s)</span></div>';
-    let sel = '<select onchange="anSetStarter(\'' + rk + '\',this.value)" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:5px 8px;font-size:.78rem;max-width:220px">';
-    sel += '<option value="">— désigner mon titulaire —</option>';
-    scored.forEach(c => { sel += '<option value="' + c.key + '"' + (c.key === starterKey ? ' selected' : '') + '>' + anEsc(c.pseudo) + ' (' + c.score.toFixed(1) + ')</option>'; });
-    sel += '</select>';
-    html += sel + '</div>';
-    scored.forEach(c => {
-      const isStarter = c.key === starterKey;
-      const delta = starter ? +(c.score - starter.score).toFixed(2) : null;
-      const isUpgrade = starter && !isStarter && delta > 0.05;
-      const isLower = starter && !isStarter && delta < -0.05;
-      html += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid ' + (isStarter ? 'var(--lime-bd)' : isUpgrade ? 'rgba(28,196,122,.25)' : 'var(--border)') + ';border-radius:var(--r);padding:10px 14px;margin-bottom:6px;' + (isLower ? 'opacity:.45' : '') + '">';
-      html += '<div style="width:32px;height:32px;border-radius:50%;background:' + anScoreColor(c.score) + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:.82rem;flex-shrink:0">' + c.score.toFixed(1) + '</div>';
-      html += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.88rem">' + anEsc(c.pseudo) + anSourceBadge(c.source) + (isStarter ? ' <span style="font-size:.64rem;color:var(--lime);border:1px solid var(--lime-bd);border-radius:5px;padding:1px 6px;margin-left:4px">TITULAIRE</span>' : '') + '</div><div style="color:var(--sub);font-size:.74rem">' + (c.meta || '') + (c.age ? ' · ' + c.age + ' ans' : '') + '</div></div>';
-      if (isUpgrade) html += '<div style="color:var(--lime);font-weight:800;font-size:.82rem;flex-shrink:0;white-space:nowrap">▲ +' + delta.toFixed(1) + '</div>';
-      else if (isLower) html += '<div style="color:var(--sub2);font-size:.78rem;flex-shrink:0">' + delta.toFixed(1) + '</div>';
-      html += '</div>';
-    });
-    unscored.forEach(c => {
-      html += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px dashed var(--border2);border-radius:var(--r);padding:10px 14px;margin-bottom:6px;opacity:.85">';
-      html += '<div style="width:32px;height:32px;border-radius:50%;background:var(--surf3);display:flex;align-items:center;justify-content:center;color:var(--sub);font-weight:700;font-size:.7rem;flex-shrink:0">—</div>';
-      html += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.88rem">' + anEsc(c.pseudo) + anSourceBadge(c.source) + '</div><div style="color:var(--sub);font-size:.74rem">' + (c.meta || '') + (c.age ? ' · ' + c.age + ' ans' : '') + ' · à évaluer (scoutez-le pour comparer)</div></div>';
-      html += '<div style="color:var(--amber);font-size:.72rem;flex-shrink:0">non noté</div>';
-      html += '</div>';
-    });
-    html += '</div>';
+
+  const bodyEl = document.getElementById('rs-body');
+  if (bodyEl) bodyEl.innerHTML = body;
+}
+
+function rsRenderRoleRow(roster, role, slot, pr, cands) {
+  const score = pr && pr.score;
+  let h = '<div style="margin-bottom:18px">';
+  h += '<div style="font-weight:700;color:var(--text);font-size:.9rem;margin-bottom:6px">' + role + '</div>';
+  h += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid var(--lime-bd,rgba(28,196,122,.3));border-radius:var(--r);padding:10px 14px;margin-bottom:6px">';
+  h += '<div style="width:32px;height:32px;border-radius:50%;background:' + (typeof score === 'number' ? anScoreColor(score) : 'var(--surf3)') + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:.8rem">' + (typeof score === 'number' ? score.toFixed(1) : '—') + '</div>';
+  h += '<div style="flex:1;min-width:0"><div style="color:var(--text);font-weight:600;font-size:.86rem">' + (slot ? anEsc(slot.pseudo) + (slot.tag ? '<span style="color:var(--sub2);font-size:.7rem">#' + anEsc(slot.tag) + '</span>' : '') : '<span style="color:var(--sub2)">— aucun titulaire —</span>') + (pr && pr.source ? anSourceBadge(pr.source) : '') + '</div><div style="color:var(--sub);font-size:.72rem">' + (pr && pr.rank ? anEsc(pr.rank) : '') + (pr && pr.wr != null ? ' · ' + pr.wr + '% WR' : '') + '</div></div>';
+  h += '<button onclick="rsUiPick(\'' + role + '\')" style="background:var(--surf3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:5px 9px;font-size:.74rem;cursor:pointer">Changer</button>';
+  h += '</div>';
+  const better = cands.filter(c => c.role === role && c.score != null && (score == null || c.score > score + 0.05))
+    .filter(c => !slot || c.pseudo.toLowerCase().split('#')[0] !== (slot.pseudo || '').toLowerCase())
+    .sort((a, b) => b.score - a.score).slice(0, 4);
+  better.forEach(c => {
+    const delta = (typeof score === 'number') ? (c.score - score) : null;
+    h += '<div style="display:flex;align-items:center;gap:12px;background:var(--surf2);border:1px solid rgba(28,196,122,.18);border-radius:var(--r);padding:8px 14px;margin-bottom:4px;margin-left:18px">';
+    h += '<div style="width:26px;height:26px;border-radius:50%;background:' + anScoreColor(c.score) + ';display:flex;align-items:center;justify-content:center;color:#0B0E18;font-weight:800;font-size:.7rem">' + c.score.toFixed(1) + '</div>';
+    h += '<div style="flex:1;min-width:0"><span style="color:var(--text);font-size:.82rem">' + anEsc(c.pseudo) + '</span>' + anSourceBadge(c.source) + '</div>';
+    if (delta != null) h += '<div style="color:var(--lime);font-weight:800;font-size:.78rem">▲ +' + delta.toFixed(1) + '</div>';
+    h += '<button onclick="rsSimSwap(\'' + role + '\',\'' + encodeURIComponent(c.pseudo) + '\')" style="background:var(--surf3);border:1px solid var(--border2);color:var(--text);border-radius:6px;padding:4px 8px;font-size:.72rem;cursor:pointer">Simuler</button>';
+    h += '</div>';
   });
-  box.innerHTML = html || '<div style="text-align:center;padding:42px;color:var(--sub);font-size:13px">Aucun joueur exploitable.</div>';
+  h += '</div>';
+  return h;
+}
+
+function rsUiNew() { const n = prompt('Nom du nouveau roster :', 'Nouveau roster'); if (n) { rsCreate(n.trim()); renderRoster(); } }
+function rsUiRename() { const r = rsActive(); if (!r) return; const n = prompt('Renommer le roster :', r.name); if (n) { rsRename(r.id, n.trim()); renderRoster(); } }
+function rsUiDelete() { const r = rsActive(); if (!r) return; if (confirm('Supprimer le roster « ' + r.name + ' » ?')) { rsDelete(r.id); renderRoster(); } }
+function rsUiPick(role) {
+  const pseudo = prompt('Pseudo Solo Q pour le poste ' + role + ' (format Pseudo#TAG) :', '');
+  if (!pseudo) return;
+  const [p, tag] = pseudo.split('#');
+  const r = rsActive(); if (!r) return;
+  let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+  const f = hist.find(h => (h.pseudo || '').toLowerCase() === (p || '').toLowerCase() && h.role === role);
+  rsSetSlot(r.id, role, { pseudo: p.trim(), tag: (tag || 'EUW').trim(), server: 'euw1', proName: '', ficheId: f ? f.id : null });
+  renderRoster();
+}
+async function rsSimSwap(role, pseudoEnc) {
+  const pseudo = decodeURIComponent(pseudoEnc);
+  const [p, tag] = pseudo.split('#');
+  const r = rsActive(); if (!r) return;
+  const clone = JSON.parse(JSON.stringify(r));
+  let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+  const f = hist.find(h => (h.pseudo || '').toLowerCase() === (p || '').toLowerCase() && h.role === role);
+  clone.slots[role] = { pseudo: p.trim(), tag: (tag || 'EUW').trim(), server: 'euw1', proName: '', ficheId: f ? f.id : null };
+  const before = await rsTeamScore(r);
+  const after = await rsTeamScore(clone);
+  const d = (before.team != null && after.team != null) ? (after.team - before.team) : null;
+  const msg = 'Avec ' + p + ' au poste ' + role + ' :\n'
+    + 'Score d\'équipe ' + (before.team != null ? before.team.toFixed(1) : '—') + ' → ' + (after.team != null ? after.team.toFixed(1) : '—')
+    + (d != null ? ' (' + (d >= 0 ? '+' : '') + d.toFixed(2) + ')' : '') + '\n\nAppliquer ce changement ?';
+  if (confirm(msg)) { rsSetSlot(r.id, role, clone.slots[role]); renderRoster(); }
 }
 
 /* ════════════════════════════════════════════
