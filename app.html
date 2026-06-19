@@ -3074,7 +3074,17 @@ function anGatherCandidates() {
 /* ─── Store des rosters nommés (Phase 1 Roster) ─── */
 const RS_ROLES = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
 function rsAll() { try { return JSON.parse(localStorage.getItem('vs_rosters') || '[]'); } catch (_) { return []; } }
-function rsSaveAll(list) { localStorage.setItem('vs_rosters', JSON.stringify(list)); }
+function rsSaveAll(list) { localStorage.setItem('vs_rosters', JSON.stringify(list)); if (typeof rsSyncTrack === 'function') rsSyncTrack(); }
+let _rsTrackTimer = null;
+function rsSyncTrack() {   // pousse les rosters suivis au serveur (pour le cron) — débouncé, best-effort
+  clearTimeout(_rsTrackTimer);
+  _rsTrackTimer = setTimeout(function () {
+    try {
+      const rosters = rsAll().map(r => ({ rosterId: r.id, name: r.name, players: RS_ROLES.map(role => { const s = r.slots[role]; return (s && s.pseudo) ? { pseudo: s.pseudo, tag: s.tag || 'EUW', server: s.server || 'euw1', role } : null; }).filter(Boolean) }));
+      fetch('/api/roster-track', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()), body: JSON.stringify({ rosters }) }).catch(() => {});
+    } catch (_) {}
+  }, 800);
+}
 function rsActiveId() { return parseInt(localStorage.getItem('vs_active_roster') || '0') || null; }
 function rsSetActive(id) { localStorage.setItem('vs_active_roster', String(id)); }
 function rsGet(id) { return rsAll().find(r => r.id === id) || null; }
@@ -3104,25 +3114,26 @@ function rsMigrate() {
 }
 /* ─── Résolution du score d'un joueur : fiche SPES complète sinon auto Solo Q ─── */
 /* TIER_IDX est déclaré plus bas (scan Top 50) — réutilisé ici, pas redéclaré. */
-const _rsScoreCache = {};
-async function rsResolveScore(slot, role) {
+const _rsRawCache = {};
+// Score SPES (prospect) recomposé à partir des stats brutes — source unique du scoring.
+function rsScoreFromRaw(raw, role) {
+  if (!raw) return null;
+  const tierIdx = (typeof TIER_IDX !== 'undefined' && TIER_IDX[raw.tier] != null) ? TIER_IDX[raw.tier] : 6;
+  return parseFloat(calcProspectScore(tierIdx, raw.lp || 0, raw.wr, raw.kda, raw.csMin, raw.visMin, role, raw.killPart, raw.dmgShare, 0));
+}
+// Stats Solo Q brutes d'un joueur (entrées de calcProspectScore) — toujours en direct via Riot.
+async function rsFetchSoloqRaw(slot) {
   if (!slot || !slot.pseudo) return null;
-  if (slot.ficheId != null) {
-    let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
-    const f = hist.find(h => h.id === slot.ficheId);
-    if (f && f.score != null) return { score: +f.score, source: 'Scout', rank: '', lp: null, wr: null };
-  }
-  const ck = (slot.pseudo + '|' + (slot.tag || '') + '|' + role).toLowerCase();
-  if (_rsScoreCache[ck]) return _rsScoreCache[ck];
+  const ck = (slot.pseudo + '|' + (slot.tag || '') + '|' + (slot.server || 'euw1')).toLowerCase();
+  if (_rsRawCache[ck] !== undefined) return _rsRawCache[ck];
   try {
     const server = slot.server || 'euw1';
     const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
     const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(slot.pseudo) + '/' + encodeURIComponent(slot.tag || 'EUW'));
-    if (!acc || !acc.puuid) return null;
+    if (!acc || !acc.puuid) { _rsRawCache[ck] = null; return null; }
     const leagueRaw = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
     const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw && leagueRaw.entries) || [];
     const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
-    const tierIdx = soloQ ? (TIER_IDX[soloQ.tier] ?? 6) : 6;
     const lp = soloQ ? (soloQ.leaguePoints || 0) : 0;
     const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=15&type=ranked');
     const matches = (ids && ids.length) ? await fetchMatchesInBatches(regional, ids, undefined, () => {}) : [];
@@ -3140,18 +3151,34 @@ async function rsResolveScore(slot, role) {
       dmgT += td ? (p.totalDamageDealtToChampions || 0) / td * 100 : 0;
       kp += tk ? ((p.kills || 0) + (p.assists || 0)) / tk * 100 : 0;
     });
-    if (!n) return null;
-    const wr = Math.round(w / n * 100);
-    const kda = dS ? (kS + aS) / dS : (kS + aS);
-    const csMin = durT ? csT / durT : 0;
-    const visMin = visT / n;
-    const dmgShare = dmgT / n;
-    const killPart = kp / n;
-    const score = parseFloat(calcProspectScore(tierIdx, lp, wr, kda, csMin, visMin, role, killPart, dmgShare, 0));
-    const res = { score, source: 'SoloQ', rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank) : 'Unranked', lp, wr };
-    _rsScoreCache[ck] = res;
-    return res;
-  } catch (_) { return null; }
+    if (!n && !soloQ) { _rsRawCache[ck] = null; return null; }
+    let wr = null;
+    if (soloQ && soloQ.wins != null && soloQ.losses != null && (soloQ.wins + soloQ.losses) > 0) wr = Math.round(soloQ.wins / (soloQ.wins + soloQ.losses) * 100);
+    else if (n) wr = Math.round(w / n * 100);
+    const raw = {
+      tier: soloQ ? soloQ.tier : null,
+      rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank) : 'Unranked',
+      lp, wr,
+      kda: n ? +((kS + aS) / Math.max(1, dS)).toFixed(2) : null,
+      csMin: durT ? +(csT / durT).toFixed(2) : null,
+      visMin: n ? +(visT / n).toFixed(2) : null,
+      killPart: n ? +(kp / n).toFixed(1) : null,
+      dmgShare: n ? +(dmgT / n).toFixed(1) : null
+    };
+    _rsRawCache[ck] = raw;
+    return raw;
+  } catch (_) { _rsRawCache[ck] = null; return null; }
+}
+async function rsResolveScore(slot, role) {
+  if (!slot || !slot.pseudo) return null;
+  if (slot.ficheId != null) {
+    let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+    const f = hist.find(h => h.id === slot.ficheId);
+    if (f && f.score != null) return { score: +f.score, source: 'Scout', rank: '', lp: null, wr: null, raw: null };
+  }
+  const raw = await rsFetchSoloqRaw(slot);
+  if (!raw) return null;
+  return { score: rsScoreFromRaw(raw, role), source: 'SoloQ', rank: raw.rank, lp: raw.lp, wr: raw.wr, raw };
 }
 async function rsTeamScore(roster) {
   if (!roster) return { team: null, perRole: {}, weakest: null };
@@ -3168,35 +3195,53 @@ async function rsTeamScore(roster) {
 }
 /* ─── Snapshots de roster (suivi manuel dans le temps) ─── */
 function rsSnapsAll() { try { return JSON.parse(localStorage.getItem('vs_roster_snapshots') || '{}'); } catch (_) { return {}; } }
-function rsSnapsGet(rosterId) { return rsSnapsAll()[rosterId] || []; }
+const _rsServerSnaps = {};   // cache des snapshots fusionnés (serveur + local) par roster
+function rsSnapsGet(rosterId) { return _rsServerSnaps[rosterId] || rsSnapsAll()[rosterId] || []; }
+// Score d'un joueur dans un snapshot : score figé (ancien format) sinon recalculé depuis le brut.
+function rsSnapPlayerScore(p) { return (p && p.score != null) ? p.score : rsScoreFromRaw(p, p && p.role); }
+function rsSnapTeamScore(s) {
+  if (s && s.teamScore != null) return s.teamScore;
+  const v = ((s && s.players) || []).map(p => rsSnapPlayerScore(p)).filter(x => typeof x === 'number');
+  return v.length ? +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(2) : null;
+}
+async function rsLoadSnaps(rosterId) {   // fusionne serveur + local (par jour, serveur prioritaire)
+  let server = [];
+  try { const r = await fetch('/api/snapshots?roster=' + encodeURIComponent(rosterId), { headers: vsAuthHeaders() }); if (r.ok) { const j = await r.json(); if (Array.isArray(j)) server = j; } } catch (_) {}
+  const local = rsSnapsAll()[rosterId] || [];
+  const byDay = {};
+  local.forEach(s => { byDay[(s.date || '').slice(0, 10)] = s; });
+  server.forEach(s => { byDay[(s.date || '').slice(0, 10)] = s; });
+  const merged = Object.values(byDay).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  _rsServerSnaps[rosterId] = merged;
+  return merged;
+}
 async function rsSnapCapture(rosterId) {
   const r = rsGet(rosterId); if (!r) return null;
-  const ts = await rsTeamScore(r);
-  const players = RS_ROLES.map(role => {
-    const slot = r.slots[role]; const pr = ts.perRole[role];
-    if (!slot || !pr) return null;
-    return { role, pseudo: slot.pseudo, score: (pr.score != null ? pr.score : null), rank: pr.rank || '', lp: (pr.lp != null ? pr.lp : null), wr: (pr.wr != null ? pr.wr : null) };
-  }).filter(Boolean);
-  const snap = { date: new Date().toISOString(), teamScore: ts.team, players };
-  const all = rsSnapsAll();
-  const list = all[rosterId] || [];
-  list.push(snap);
-  if (list.length > 60) list.splice(0, list.length - 60);
-  all[rosterId] = list;
-  localStorage.setItem('vs_roster_snapshots', JSON.stringify(all));
+  const players = [];
+  for (const role of RS_ROLES) {
+    const slot = r.slots[role]; if (!slot || !slot.pseudo) continue;
+    const raw = await rsFetchSoloqRaw(slot);
+    if (raw) players.push({ role, pseudo: slot.pseudo, tier: raw.tier, lp: raw.lp, wr: raw.wr, kda: raw.kda, csMin: raw.csMin, visMin: raw.visMin, killPart: raw.killPart, dmgShare: raw.dmgShare });
+  }
+  if (!players.length) { if (typeof showToast === 'function') showToast('Aucune stat Solo Q à enregistrer (joueurs sans Riot ID ?)', 'warning'); return null; }
+  const snap = { date: new Date().toISOString(), players };
+  const all = rsSnapsAll(); const list = all[rosterId] || []; list.push(snap);
+  if (list.length > 90) list.splice(0, list.length - 90);
+  all[rosterId] = list; localStorage.setItem('vs_roster_snapshots', JSON.stringify(all));
+  try { await fetch('/api/snapshots', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()), body: JSON.stringify({ rosterId, snapshot: snap }) }); } catch (_) {}
   return snap;
 }
 async function rsUiSnapshot() {
   const r = rsActive(); if (!r) return;
   if (typeof showToast === 'function') showToast('Enregistrement de l\'instantané…', 'info');
-  await rsSnapCapture(r.id);
-  if (typeof showToast === 'function') showToast('Instantané enregistré', 'success');
+  const snap = await rsSnapCapture(r.id);
+  if (snap) { await rsLoadSnaps(r.id); if (typeof showToast === 'function') showToast('Instantané enregistré', 'success'); }
   renderRoster();
 }
 /* ─── Évolution (graphes des snapshots) ─── */
 let _rsShowEvolution = false;
 let _rsEvoMetric = 'score';
-function rsToggleEvolution() { _rsShowEvolution = !_rsShowEvolution; renderRoster(); }
+async function rsToggleEvolution() { _rsShowEvolution = !_rsShowEvolution; if (_rsShowEvolution) { const r = rsActive(); if (r) await rsLoadSnaps(r.id); } renderRoster(); }
 function rsSetEvoMetric(m) { _rsEvoMetric = m; const r = rsActive(); if (r) rsDrawEvolutionCharts(r); }
 function rsSyncEvoMetricBtns() { document.querySelectorAll('.rs-evo-metric').forEach(b => { const on = b.getAttribute('data-m') === _rsEvoMetric; b.style.background = on ? 'var(--lime-dim)' : 'transparent'; b.style.color = on ? 'var(--lime)' : 'var(--sub2)'; }); }
 function rsEvoLabel(iso) { const d = new Date(iso); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
@@ -3223,7 +3268,7 @@ function rsDrawEvolutionCharts(roster) {
   if (teamCanvas && teamCanvas.isConnected) {
     destroyChart('rs-evo-team');
     chartInstances['rs-evo-team'] = new Chart(teamCanvas, {
-      type: 'line', data: { labels, datasets: [{ label: 'Score d\'équipe', data: snaps.map(s => s.teamScore), borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.12)', fill: true, tension: .3, spanGaps: true, pointRadius: 3 }] },
+      type: 'line', data: { labels, datasets: [{ label: 'Score d\'équipe', data: snaps.map(s => rsSnapTeamScore(s)), borderColor: '#1CC47A', backgroundColor: 'rgba(28,196,122,.12)', fill: true, tension: .3, spanGaps: true, pointRadius: 3 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: sub }, grid: { display: false } }, y: { min: 0, max: 10, ticks: { color: sub }, grid: { color: 'rgba(120,140,170,.12)' } } } }
     });
   }
@@ -3231,7 +3276,7 @@ function rsDrawEvolutionCharts(roster) {
   if (pCanvas && pCanvas.isConnected) {
     const palette = ['#1CC47A', '#E8194B', '#4A8FE8', '#D4714A', '#8A7FF5'];
     const datasets = RS_ROLES.map((role, idx) => {
-      const data = snaps.map(s => { const pl = s.players.find(p => p.role === role); if (!pl) return null; const v = _rsEvoMetric === 'score' ? pl.score : _rsEvoMetric === 'wr' ? pl.wr : pl.lp; return (v == null ? null : v); });
+      const data = snaps.map(s => { const pl = s.players.find(p => p.role === role); if (!pl) return null; const v = _rsEvoMetric === 'score' ? rsSnapPlayerScore(pl) : _rsEvoMetric === 'wr' ? pl.wr : pl.lp; return (v == null ? null : v); });
       const name = (snaps.slice().reverse().map(s => s.players.find(p => p.role === role)).find(Boolean) || {}).pseudo || role;
       return { label: role + ' · ' + name, data, borderColor: palette[idx], backgroundColor: 'transparent', tension: .3, spanGaps: true, pointRadius: 2 };
     }).filter(ds => ds.data.some(v => v != null));
