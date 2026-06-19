@@ -3568,22 +3568,39 @@ async function pmFetchPlayer(pseudo, tag, server) {
     mainRole, champPool: champPool.slice(0, 5), form: form.slice(0, 7).reverse(),
   };
 }
+function pmAggCompet(games) {   // agrégats compétition (partagé batch + individuel)
+  if (!games || !games.length) return null;
+  let w = 0, kS = 0, dS = 0, aS = 0, csS = 0, visS = 0, dmgS = 0, goldS = 0;
+  const champs = {}, events = {};
+  games.forEach(g => {
+    if (g.win) w++; kS += g.k; dS += g.d; aS += g.a; csS += g.cs || 0; visS += g.vision || 0; dmgS += g.dmg || 0; goldS += g.gold || 0;
+    champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) champs[g.champ].wins++;
+    const ev = g.event || '?'; events[ev] = events[ev] || { games: 0, wins: 0 }; events[ev].games++; if (g.win) events[ev].wins++;
+  });
+  const n = games.length;
+  const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+  const byEvent = Object.entries(events).map(e => ({ event: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+  return {
+    count: n, winrate: Math.round(w / n * 100),
+    kda: dS ? ((kS + aS) / dS).toFixed(2) : (kS + aS).toFixed(2),
+    csAvg: Math.round(csS / n), visionAvg: Math.round(visS / n),
+    dmgAvg: Math.round(dmgS / n), goldAvg: Math.round(goldS / n),
+    champPool: pool.slice(0, 6), byEvent: byEvent.slice(0, 6), games: games.slice(0, 8)
+  };
+}
 async function pmFetchCompetBatch(names) {   // 1 requête pour plusieurs joueurs (anti rate-limit)
   const uniq = [...new Set(names.filter(Boolean))];
   if (!uniq.length) return {};
   const inList = uniq.map(n => '"' + n.replace(/"/g, '') + '"').join(',');
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%20IN%20(' + encodeURIComponent(inList) + ')&order_by=DateTime_UTC%20DESC&limit=200&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%20IN%20(' + encodeURIComponent(inList) + ')&order_by=DateTime_UTC%20DESC&limit=200&format=json&origin=*';
   const rows = await pmCargo(url);
   if (!rows) return {};
   const byLink = {};
   rows.forEach(x => { const t = x.title; const lk = (t.Link || '').toLowerCase(); (byLink[lk] = byLink[lk] || []).push(t); });
   const result = {};
   Object.keys(byLink).forEach(lk => {
-    const games = byLink[lk].slice(0, 20).map(t => ({ champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', event: (t.OverviewPage || '').split('/')[0] }));
-    const champs = {}; let w = 0;
-    games.forEach(g => { champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) { champs[g.champ].wins++; w++; } });
-    const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
-    result[lk] = { count: games.length, winrate: Math.round(w / games.length * 100), champPool: pool.slice(0, 6), games: games.slice(0, 8) };
+    const games = byLink[lk].slice(0, 20).map(t => ({ champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', event: (t.OverviewPage || '').split('/')[0] }));
+    result[lk] = pmAggCompet(games);
   });
   return result;
 }
@@ -3661,8 +3678,15 @@ function pmCard(d) {
       '<span style="color:var(--sub);width:64px">' + g.k + '/' + g.d + '/' + g.a + '</span>' +
       '<span style="color:var(--sub);flex:1;text-align:right">vs ' + anEsc(g.vs || '?') + '</span>' +
       '<span style="color:var(--sub2);width:60px;text-align:right;font-size:.7rem">' + anEsc(g.event || '') + '</span></div>').join('');
-    html += '<div style="font-size:.8rem;color:var(--sub);margin-bottom:8px">WR compétition : <strong style="color:' + (c.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + c.winrate + '%</strong> (' + c.count + 'g)</div>' +
-      '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Picks en compétition</div>' +
+    const stat = (lbl, val) => '<span>' + lbl + ' : <strong style="color:var(--text)">' + val + '</strong></span>';
+    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:8px">' +
+      '<span>WR : <strong style="color:' + (c.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + c.winrate + '%</strong> (' + c.count + 'g)</span>' +
+      stat('KDA', c.kda) + stat('CS/g', c.csAvg) + stat('Vision/g', c.visionAvg) + stat('Dégâts/g', (c.dmgAvg || 0).toLocaleString('fr-FR')) + '</div>';
+    if (c.byEvent && c.byEvent.length) {
+      html += '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:4px">Par compétition</div>' +
+        '<div style="margin-bottom:8px">' + c.byEvent.map(e => '<div style="display:flex;gap:8px;font-size:.76rem;padding:2px 0"><span style="flex:1;color:var(--text)">' + anEsc(e.event) + '</span><span style="color:var(--sub);width:40px;text-align:right">' + e.games + 'g</span><span style="color:' + (e.wr >= 50 ? 'var(--lime)' : 'var(--red)') + ';width:48px;text-align:right">' + e.wr + '%</span></div>').join('') + '</div>';
+    }
+    html += '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Picks en compétition</div>' +
       '<div style="margin-bottom:8px">' + (pmChampPills(c.champPool) || '—') + '</div>' +
       '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:3px">Parties récentes</div>' + rows;
   } else {
@@ -3692,15 +3716,10 @@ async function pmResolveProName(gameName) {
 }
 async function pmFetchCompet(proName) {
   const q = encodeURIComponent(proName);
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
   const rows = await pmCargo(url); if (!rows || !rows.length) return null;
-  {
-    const games = rows.map(x => { const t = x.title; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, team: t.Team || '', vs: t.TeamVs || '', win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0] }; });
-    const champs = {}; let w = 0;
-    games.forEach(g => { champs[g.champ] = champs[g.champ] || { games: 0, wins: 0 }; champs[g.champ].games++; if (g.win) { champs[g.champ].wins++; w++; } });
-    const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
-    return { count: games.length, winrate: Math.round(w / games.length * 100), champPool: pool.slice(0, 6), games: games.slice(0, 8) };
-  }
+  const games = rows.map(x => { const t = x.title; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, team: t.Team || '', vs: t.TeamVs || '', win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0] }; });
+  return pmAggCompet(games);
 }
 
 /* ════════════════════════════════════════════
