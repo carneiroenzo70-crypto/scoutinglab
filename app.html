@@ -3401,6 +3401,7 @@ async function renderRoster() {
   let roster = rsActive();
   if (!roster) roster = rsCreate('Mon équipe');
   const list = rsAll();
+  rsSyncTrack();   // enregistre les rosters suivis côté serveur (pour le cron) à chaque ouverture
 
   let html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">';
   html += '<select onchange="rsSetActive(+this.value);renderRoster()" style="background:var(--surf2);border:1px solid var(--border2);color:var(--text);border-radius:7px;padding:6px 10px;font-size:.82rem">';
