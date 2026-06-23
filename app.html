@@ -2267,6 +2267,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="btn btn-ghost btn-sm" onclick="shareByURL()" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
           <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
           <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
+          <button class="btn btn-ghost btn-sm" onclick="addCurrentToRoster()" title="Sauvegarde et ajoute ce joueur à ton roster, au bon poste, en un clic" style="border-color:rgba(28,196,122,.5);color:#1CC47A;font-weight:700;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + Roster</button>
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
@@ -8285,6 +8286,25 @@ function recomputeAllScores() {
   localStorage.setItem('spes_history', JSON.stringify(hist));
   showToast(n + ' fiche(s) recalculée(s) avec le nouveau barème', 'success');
   if (typeof renderRoster === 'function') renderRoster();
+}
+
+// Raccourci : sauvegarde la fiche courante ET l'ajoute au roster actif au bon poste (chantier 3)
+function addCurrentToRoster() {
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (!pseudo) { showToast('Importez un joueur d\'abord', 'warning'); return; }
+  saveToHistory();   // crée/MAJ la fiche dans spes_history
+  let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
+  const f = hist.find(h => h.pseudo === pseudo && h.role === currentRole);
+  if (typeof rsMigrate === 'function') rsMigrate();
+  let r = (typeof rsActive === 'function') ? rsActive() : null;
+  if (!r && typeof rsCreate === 'function') r = rsCreate('Mon équipe');
+  if (!r) { showToast('Roster indisponible', 'error'); return; }
+  const role = currentRole;
+  if (!RS_ROLES.includes(role)) { showToast('Poste « ' + role + ' » non reconnu pour le roster', 'warning'); return; }
+  const tag = document.getElementById('d-tag')?.value?.trim() || 'EUW';
+  const server = document.getElementById('d-server')?.value || 'euw1';
+  rsSetSlot(r.id, role, { pseudo, tag, server, proName: '', ficheId: f ? f.id : null });
+  showToast('Ajouté au roster « ' + r.name + ' » · poste ' + role, 'success');
 }
 
 function saveToHistory() {
