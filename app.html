@@ -2268,6 +2268,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()" style="border-color:rgba(44,212,175,.4);color:#2DD4BF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
           <button class="btn btn-ghost btn-sm" onclick="saveToHistory()" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
           <button class="btn btn-ghost btn-sm" onclick="addCurrentToRoster()" title="Sauvegarde et ajoute ce joueur à ton roster, au bon poste, en un clic" style="border-color:rgba(28,196,122,.5);color:#1CC47A;font-weight:700;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + Roster</button>
+          <button class="btn btn-ghost btn-sm" onclick="addCurrentToCrm()" title="Ajoute ce joueur à la pipeline CRM en un clic" style="border-color:rgba(74,158,255,.4);color:#4A9EFF;display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + CRM</button>
         </div>
         <div class="global-hero">
           <div class="hero-name" id="res-name">— · — · —</div>
@@ -8307,6 +8308,29 @@ function addCurrentToRoster() {
   showToast('Ajouté au roster « ' + r.name + ' » · poste ' + role, 'success');
 }
 
+// Raccourci : ajoute la fiche courante au CRM (pipeline) en 1 clic (chantier 3)
+function addCurrentToCrm() {
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (!pseudo) { showToast('Importez un joueur d\'abord', 'warning'); return; }
+  if (typeof crmLoad === 'function') crmLoad();
+  if (typeof crmPipeline === 'undefined') { showToast('CRM indisponible', 'error'); return; }
+  const role = currentRole;
+  const exists = crmPipeline.find(p => (p.playerName || '').toLowerCase() === pseudo.toLowerCase() && p.role === role && p.stage !== 'ecarte');
+  if (exists) { showToast(pseudo + ' est déjà dans le CRM', 'info'); return; }
+  const tag = document.getElementById('d-tag')?.value?.trim() || '';
+  const age = document.getElementById('d-age')?.value || '';
+  const score = (typeof globalScore === 'function') ? globalScore() : '';
+  crmPipeline.push({
+    id: Date.now(), structureId: null, structureName: 'Sans structure',
+    playerName: pseudo, playerTag: tag, role, score: (score != null ? String(score) : ''), age,
+    stage: 'nouveau', notes: '', dateRelance: '',
+    addedAt: new Date().toISOString(),
+    history: [{ date: new Date().toISOString(), action: 'Ajouté depuis la fiche' }]
+  });
+  if (typeof crmSave === 'function') crmSave();
+  showToast('Ajouté au CRM (pipeline) · ' + role, 'success');
+}
+
 function saveToHistory() {
   const pseudo = document.getElementById('d-pseudo')?.value?.trim();
   if (!pseudo) { showToast('Entrez un pseudo avant de sauvegarder', 'warning'); return; }
@@ -11413,6 +11437,34 @@ const TIER_COLOR = {
   MASTER:'#9D4EDD', GRANDMASTER:'#E15554', CHALLENGER:'#F59E0B'
 };
 
+// Actions rapides Top 50 → roster / CRM (chantier 3)
+const T50_ROLE = { TOP: 'Top', JUNGLE: 'Jgl', JUNGLER: 'Jgl', MIDDLE: 'Mid', MID: 'Mid', BOTTOM: 'ADC', BOT: 'ADC', ADC: 'ADC', UTILITY: 'Sup', SUPPORT: 'Sup', Top: 'Top', Jgl: 'Jgl', Mid: 'Mid', Sup: 'Sup' };
+function top50AddRoster(name, tag, server, role) {
+  const rk = T50_ROLE[role] || role;
+  if (!RS_ROLES.includes(rk)) { showToast('Poste « ' + role + ' » non géré pour le roster', 'warning'); return; }
+  if (typeof rsMigrate === 'function') rsMigrate();
+  let r = (typeof rsActive === 'function') ? rsActive() : null;
+  if (!r && typeof rsCreate === 'function') r = rsCreate('Mon équipe');
+  if (!r) { showToast('Roster indisponible', 'error'); return; }
+  rsSetSlot(r.id, rk, { pseudo: name, tag: tag || 'EUW', server: server || 'euw1', proName: '', ficheId: null });
+  showToast(name + ' ajouté au roster « ' + r.name + ' » · ' + rk, 'success');
+}
+function top50AddCrm(name, tag, role, score, age) {
+  const rk = T50_ROLE[role] || role || 'Mid';
+  if (typeof crmLoad === 'function') crmLoad();
+  if (typeof crmPipeline === 'undefined') { showToast('CRM indisponible', 'error'); return; }
+  const exists = crmPipeline.find(p => (p.playerName || '').toLowerCase() === String(name).toLowerCase() && p.role === rk && p.stage !== 'ecarte');
+  if (exists) { showToast(name + ' est déjà dans le CRM', 'info'); return; }
+  crmPipeline.push({
+    id: Date.now(), structureId: null, structureName: 'Sans structure',
+    playerName: name, playerTag: tag || '', role: rk, score: (score != null ? String(score) : ''), age: age || '',
+    stage: 'nouveau', notes: '', dateRelance: '',
+    addedAt: new Date().toISOString(),
+    history: [{ date: new Date().toISOString(), action: 'Ajouté depuis le Top 50' }]
+  });
+  if (typeof crmSave === 'function') crmSave();
+  showToast(name + ' ajouté au CRM · ' + rk, 'success');
+}
 function top50RenderTable() {
   const tbody = document.getElementById('t50-tbody');
   if (!tbody) return;
@@ -11532,6 +11584,8 @@ function top50RenderTable() {
       <td style="padding:.5rem .75rem">
         <div style="display:flex;gap:4px">
           <button onclick="top50OpenSPES('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${(p.tier||'DIAMOND').replace(/'/g,"\'")}','${(p.rank||'I')}',${p.lp})" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--lime);cursor:pointer">SPES →</button>
+          <button onclick="top50AddRoster('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}')" title="Ajouter au roster" style="background:none;border:1px solid var(--lime-bd);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--lime);cursor:pointer">+Ros</button>
+          <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}')" title="Ajouter au CRM" style="background:none;border:1px solid rgba(74,158,255,.4);border-radius:4px;padding:2px 6px;font-size:.72rem;color:#4A9EFF;cursor:pointer">+CRM</button>
           <button onclick="top50Remove(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sub);cursor:pointer">✕</button>
         </div>
       </td>
