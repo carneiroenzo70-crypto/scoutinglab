@@ -3100,6 +3100,18 @@ function rsCreate(name) {
 function rsRename(id, name) { const list = rsAll(); const r = list.find(x => x.id === id); if (r) { r.name = name; rsSaveAll(list); } }
 function rsDelete(id) { const list = rsAll().filter(x => x.id !== id); rsSaveAll(list); if (rsActiveId() === id) rsSetActive(list[0] ? list[0].id : 0); }
 function rsSetSlot(id, role, slot) { const list = rsAll(); const r = list.find(x => x.id === id); if (r) { r.slots[role] = slot; rsSaveAll(list); } }
+function rsPickTarget() {   // id du roster cible : actif si 1 seul, sinon demande lequel
+  if (typeof rsMigrate === 'function') rsMigrate();
+  const list = rsAll();
+  if (!list.length) { const r = rsCreate('Mon équipe'); return r.id; }
+  if (list.length === 1) return list[0].id;
+  const active = rsActive();
+  const def = active ? String(list.findIndex(r => r.id === active.id) + 1) : '1';
+  const ans = prompt('Dans quel roster ajouter ce joueur ?\n' + list.map((r, i) => (i + 1) + ') ' + r.name + (active && r.id === active.id ? ' (actif)' : '')).join('\n') + '\n\nNuméro :', def);
+  if (ans === null) return null;
+  const idx = parseInt(ans) - 1;
+  return (idx >= 0 && idx < list.length) ? list[idx].id : (active ? active.id : list[0].id);
+}
 /* Migration unique de l'ancien vs_roster (map role→key) vers vs_rosters */
 function rsMigrate() {
   if (rsAll().length) return;
@@ -8296,12 +8308,10 @@ function addCurrentToRoster() {
   saveToHistory();   // crée/MAJ la fiche dans spes_history
   let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
   const f = hist.find(h => h.pseudo === pseudo && h.role === currentRole);
-  if (typeof rsMigrate === 'function') rsMigrate();
-  let r = (typeof rsActive === 'function') ? rsActive() : null;
-  if (!r && typeof rsCreate === 'function') r = rsCreate('Mon équipe');
-  if (!r) { showToast('Roster indisponible', 'error'); return; }
   const role = currentRole;
   if (!RS_ROLES.includes(role)) { showToast('Poste « ' + role + ' » non reconnu pour le roster', 'warning'); return; }
+  const rid = rsPickTarget(); if (rid == null) return;
+  const r = rsGet(rid); if (!r) { showToast('Roster indisponible', 'error'); return; }
   const tag = document.getElementById('d-tag')?.value?.trim() || 'EUW';
   const server = document.getElementById('d-server')?.value || 'euw1';
   rsSetSlot(r.id, role, { pseudo, tag, server, proName: '', ficheId: f ? f.id : null });
@@ -9418,6 +9428,7 @@ async function fetchRiotData() {
       <span style="font-size:10px;opacity:.7">Stats S1 remplies automatiquement. Complétez P, E, S2 pour le score global.</span>
     `);
     setTimeout(() => { document.getElementById('api-progress').style.display='none'; }, 5000);
+    setTimeout(() => { if (typeof switchPanel === 'function') switchPanel('results'); }, 450);   // import réussi → on va direct au résultat (chantier 3)
 
   } catch(err) {
     const _progBar = document.getElementById('api-progress'); if (_progBar) _progBar.style.display = 'none';
@@ -11442,10 +11453,8 @@ const T50_ROLE = { TOP: 'Top', JUNGLE: 'Jgl', JUNGLER: 'Jgl', MIDDLE: 'Mid', MID
 function top50AddRoster(name, tag, server, role) {
   const rk = T50_ROLE[role] || role;
   if (!RS_ROLES.includes(rk)) { showToast('Poste « ' + role + ' » non géré pour le roster', 'warning'); return; }
-  if (typeof rsMigrate === 'function') rsMigrate();
-  let r = (typeof rsActive === 'function') ? rsActive() : null;
-  if (!r && typeof rsCreate === 'function') r = rsCreate('Mon équipe');
-  if (!r) { showToast('Roster indisponible', 'error'); return; }
+  const rid = rsPickTarget(); if (rid == null) return;
+  const r = rsGet(rid); if (!r) { showToast('Roster indisponible', 'error'); return; }
   rsSetSlot(r.id, rk, { pseudo: name, tag: tag || 'EUW', server: server || 'euw1', proName: '', ficheId: null });
   showToast(name + ' ajouté au roster « ' + r.name + ' » · ' + rk, 'success');
 }
