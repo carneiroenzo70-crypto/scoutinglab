@@ -1,154 +1,2553 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>VisionScore — Scouting & CRM pour structures esport</title>
-<meta name="description" content="VisionScore : la plateforme de scouting League of Legends pour structures esport. Scoring propriétaire SPES, CRM de recrutement et comparaison de joueurs."/>
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisionScore — Scouting LoL semi-pro & pro</title>
+<meta name="description" content="VisionScore — la plateforme de scouting League of Legends qui transforme les données ranked officielles en une note claire pour les structures semi-pro et pro.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0E1422; --surf:#161E30; --surf2:#1C2740; --border:rgba(140,165,205,.16);
-    --text:#EAF0FA; --sub:#9AAAC6; --emerald:#1FB47A; --emerald-glow:rgba(31,180,122,.22);
-    --red:#FF5A4D; --platine:#C7D2E6;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Helvetica Neue',Arial,sans-serif;
-       line-height:1.6;-webkit-font-smoothing:antialiased}
-  a{color:inherit}
-  .wrap{max-width:1080px;margin:0 auto;padding:0 1.5rem}
+/* vietnamese */
 
-  /* ── Header ── */
-  header{position:sticky;top:0;z-index:50;background:rgba(14,20,34,.82);backdrop-filter:blur(12px);
-         border-bottom:1px solid var(--border)}
-  .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .logo{font-size:1.25rem;font-weight:700;letter-spacing:-.02em}
-  .logo span{color:var(--emerald)}
-  .nav-cta{display:flex;align-items:center;gap:1rem}
-  .btn{display:inline-block;border-radius:10px;padding:.6rem 1.1rem;font-size:.9rem;font-weight:600;
-       text-decoration:none;cursor:pointer;border:1px solid transparent;transition:all .16s;font-family:inherit}
-  .btn-ghost{border-color:var(--border);color:var(--text);background:transparent}
-  .btn-ghost:hover{border-color:var(--emerald);color:var(--emerald)}
-  .btn-solid{background:var(--emerald);color:#04130C}
-  .btn-solid:hover{filter:brightness(1.08)}
+/* latin-ext */
 
-  /* ── Hero ── */
-  .hero{padding:5rem 0 4rem;text-align:center}
-  .badge{display:inline-block;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.16em;
-         text-transform:uppercase;color:var(--emerald);border:1px solid var(--emerald);
-         border-radius:30px;padding:.35rem .9rem;margin-bottom:1.5rem}
-  .hero h1{font-size:2.8rem;line-height:1.12;letter-spacing:-.02em;margin-bottom:1.25rem;max-width:780px;
-           margin-left:auto;margin-right:auto}
-  .hero h1 em{font-style:normal;color:var(--emerald)}
-  .hero p{font-size:1.15rem;color:var(--sub);max-width:600px;margin:0 auto 2rem}
-  .hero-cta{display:flex;gap:.9rem;justify-content:center;flex-wrap:wrap}
-  .btn-lg{padding:.85rem 1.6rem;font-size:1rem}
+/* latin */
 
-  /* ── Features ── */
-  .section{padding:4rem 0}
-  .section-head{text-align:center;margin-bottom:3rem}
-  .section-head h2{font-size:2rem;letter-spacing:-.01em;margin-bottom:.6rem}
-  .section-head p{color:var(--sub);max-width:560px;margin:0 auto}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.25rem}
-  .feat{background:var(--surf);border:1px solid var(--border);border-radius:16px;padding:1.75rem}
-  .feat .ic{width:44px;height:44px;border-radius:11px;background:var(--emerald-glow);
-            display:flex;align-items:center;justify-content:center;color:var(--emerald);margin-bottom:1rem}
-  .feat h3{font-size:1.15rem;margin-bottom:.5rem}
-  .feat p{color:var(--sub);font-size:.95rem}
+/* vietnamese */
 
-  /* ── Contact ── */
-  .contact{background:var(--surf);border:1px solid var(--border);border-radius:20px;
-           padding:3rem 2rem;text-align:center;margin:2rem 0 4rem}
-  .contact h2{font-size:1.9rem;margin-bottom:.75rem}
-  .contact p{color:var(--sub);max-width:520px;margin:0 auto 1.75rem}
-  .contact-methods{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
-  .contact-card{background:var(--surf2);border:1px solid var(--border);border-radius:12px;
-                padding:1rem 1.5rem;min-width:220px}
-  .contact-card .lbl{font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.1em;
-                     text-transform:uppercase;color:var(--sub);margin-bottom:.3rem}
-  .contact-card a{color:var(--emerald);text-decoration:none;font-weight:600}
-  .contact-card a:hover{text-decoration:underline}
+/* latin-ext */
 
-  footer{border-top:1px solid var(--border);padding:2rem 0;text-align:center;
-         color:var(--sub);font-size:.85rem}
+/* latin */
 
-  @media(max-width:640px){ .hero h1{font-size:2.1rem} .hero{padding:3.5rem 0 2.5rem} }
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+/* vietnamese */
+
+/* latin-ext */
+
+/* latin */
+
+
+/* ============================================================
+   VisionScore — Colors & Type Foundations
+   E-Sport scouting platform for League of Legends
+   semi-pro & pro structures.
+   ============================================================ */
+
+/* Decorative / display face — SUBSTITUTE for brand "Aquavit"
+   (Aquavit font files were not provided; Space Grotesk is the
+   nearest free match — geometric, slightly quirky letterforms
+   echoing the VisionScore wordmark. Swap in real Aquavit when
+   available.) Load in HTML:
+   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+   Body / UI / data face is real brand "Helvetica" (system). */
+
+:root {
+  /* ---------- TYPE FAMILIES ---------- */
+  --font-display: "Space Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif; /* Aquavit substitute */
+  --font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;                     /* brand Helvetica */
+  --font-mono: "SFMono-Regular", ui-monospace, "Roboto Mono", Menlo, monospace;    /* tabular stats */
+
+  /* ---------- TYPE WEIGHTS ---------- */
+  --fw-light: 300;    /* body (Helvetica Light) */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;     /* labels (Helvetica Bold) */
+  --fw-black: 900;    /* headings (Helvetica Black) */
+
+  /* ---------- TYPE SCALE (desktop, 1440) ---------- */
+  --fs-display: 64px;  --lh-display: 1.02;  /* hero headline */
+  --fs-h1: 44px;       --lh-h1: 1.06;
+  --fs-h2: 32px;       --lh-h2: 1.12;
+  --fs-h3: 24px;       --lh-h3: 1.2;
+  --fs-h4: 18px;       --lh-h4: 1.3;
+  --fs-body: 16px;     --lh-body: 1.55;
+  --fs-sm: 14px;       --lh-sm: 1.45;
+  --fs-label: 12px;    --lh-label: 1.2;   /* uppercase data labels */
+  --fs-micro: 11px;    --lh-micro: 1.2;
+  --tracking-label: 0.08em;   /* uppercase data labels */
+  --tracking-tight: -0.02em;  /* big black headings */
+
+  /* ============================================================
+     COLOR — DARK FIRST
+     ============================================================ */
+
+  /* Forest greens — backgrounds & surfaces */
+  --vs-forest-950: #07211D; /* deepest well / scrim */
+  --vs-forest-900: #0B2F2A; /* PRIMARY app background */
+  --vs-forest-800: #0F3A34; /* raised panel / navbar */
+  --vs-forest-700: #143F39; /* card surface (dark) */
+  --vs-forest-600: #1B4B43; /* card hover / inset */
+  --vs-forest-500: #245C52; /* hairline borders on dark */
+
+  /* Emerald — primary brand accent + active glow */
+  --vs-emerald-300: #5BE9BE; /* bright highlight / glow core */
+  --vs-emerald-400: #2DD4A7; /* PRIMARY emerald (logos, active) */
+  --vs-emerald-500: #1FA97C; /* pressed / deeper emerald */
+  --vs-emerald-600: #157A5C; /* deepest emerald / borders */
+
+  /* Red — CTAs, alerts, highlights */
+  --vs-red-400: #FF5A33;     /* hover */
+  --vs-red-500: #FF3300;     /* PRIMARY red CTA */
+  --vs-red-600: #D62A00;     /* pressed */
+
+  /* Platinum — premium accents, secondary tier coding */
+  --vs-platinum-300: #DCE8EA;
+  --vs-platinum-400: #BFD7DB; /* platinum metallic */
+  --vs-platinum-500: #94B4BA;
+
+  /* Light surfaces (light-mode cards / inverted blocks) */
+  --vs-light-50:  #FFFFFF;
+  --vs-light-100: #F0F4F8;   /* off-white surface */
+  --vs-light-200: #DDE6EE;
+  --vs-light-300: #C2D0DC;
+
+  /* ---------- TEXT (on dark) ---------- */
+  --vs-fg-1: #F0F4F8;  /* primary text */
+  --vs-fg-2: #A9C4BD;  /* secondary / muted teal-grey */
+  --vs-fg-3: #6E8C85;  /* tertiary / captions, disabled */
+  --vs-fg-inv: #0B2F2A; /* text on light/emerald surfaces */
+
+  /* ---------- RANK TIER COLORS ---------- */
+  --rank-iron:        #7C7A78;
+  --rank-bronze:      #B06A3B;
+  --rank-silver:      #A7B6C2;
+  --rank-gold:        #E6B23E;
+  --rank-platinum:    #4FBFC0;
+  --rank-emerald:     #2DD4A7;
+  --rank-diamond:     #4DA6FF;
+  --rank-master:      #B05CE6;
+  --rank-grandmaster: #E5484D;
+  --rank-challenger:  #5BD0F0;
+
+  /* ---------- SEMANTIC ---------- */
+  --color-bg: var(--vs-forest-900);
+  --color-surface: var(--vs-forest-700);
+  --color-surface-raised: var(--vs-forest-800);
+  --color-border: var(--vs-forest-500);
+  --color-text: var(--vs-fg-1);
+  --color-text-muted: var(--vs-fg-2);
+  --color-primary: var(--vs-emerald-400);
+  --color-cta: var(--vs-red-500);
+  --color-success: var(--vs-emerald-400);
+  --color-danger: var(--vs-red-500);
+  --color-warning: var(--rank-gold);
+  --color-info: var(--rank-diamond);
+
+  /* VisionScore gauge thresholds */
+  --score-low: var(--vs-red-500);   /* < 40 */
+  --score-mid: var(--rank-gold);    /* 40–70 */
+  --score-high: var(--vs-emerald-400); /* > 70 */
+
+  /* ============================================================
+     SPACING — 4px base
+     ============================================================ */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+
+  /* ---------- RADII ---------- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;    /* DEFAULT card radius (brief) */
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+
+  /* ---------- BORDERS ---------- */
+  --border-hairline: 1px solid var(--vs-forest-500);
+  --border-strong: 1px solid var(--vs-emerald-500);
+
+  /* ---------- SHADOWS (very light, per brief) ---------- */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.25);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,.30);
+  --shadow-md: 0 6px 18px rgba(0,0,0,.35);
+  --shadow-text: 0 1px 2px rgba(0,0,0,.45);
+
+  /* ---------- EMERALD GLOW (active / focus states) ---------- */
+  --glow-emerald-sm: 0 0 0 1px rgba(45,212,167,.5), 0 0 12px rgba(45,212,167,.25);
+  --glow-emerald-md: 0 0 0 1px rgba(45,212,167,.7), 0 0 22px rgba(45,212,167,.35);
+  --glow-red: 0 0 18px rgba(255,51,0,.40);
+
+  /* ---------- MOTION ---------- */
+  --ease-out: cubic-bezier(.2,.8,.2,1);
+  --ease-in-out: cubic-bezier(.4,0,.2,1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+}
+
+/* ============================================================
+   SEMANTIC ELEMENT DEFAULTS
+   ============================================================ */
+.vs-display {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-display);
+  line-height: var(--lh-display);
+  letter-spacing: var(--tracking-tight);
+}
+.vs-h1 { font-family: var(--font-sans); font-weight: var(--fw-black); font-size: var(--fs-h1); line-height: var(--lh-h1); letter-spacing: var(--tracking-tight); }
+.vs-h2 { font-family: var(--font-sans); font-weight: var(--fw-black); font-size: var(--fs-h2); line-height: var(--lh-h2); letter-spacing: var(--tracking-tight); }
+.vs-h3 { font-family: var(--font-sans); font-weight: var(--fw-bold);  font-size: var(--fs-h3); line-height: var(--lh-h3); }
+.vs-h4 { font-family: var(--font-sans); font-weight: var(--fw-bold);  font-size: var(--fs-h4); line-height: var(--lh-h4); }
+.vs-body { font-family: var(--font-sans); font-weight: var(--fw-light); font-size: var(--fs-body); line-height: var(--lh-body); }
+.vs-sm  { font-family: var(--font-sans); font-weight: var(--fw-regular); font-size: var(--fs-sm); line-height: var(--lh-sm); }
+.vs-label {
+  font-family: var(--font-sans);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-label);
+  line-height: var(--lh-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--vs-fg-2);
+}
+.vs-stat { font-family: var(--font-mono); font-weight: var(--fw-medium); font-variant-numeric: tabular-nums; }
+
+/* ============================================================
+   RANK ICON UTILITY
+   Tier crest SVGs ship with their canonical tier color baked in,
+   so they render correctly as a plain background-image (or <img>).
+   Usage: <span class="rank-icon" data-tier="gold"></span>
+          <img class="rank-icon" src="assets/ranks/gold.svg">
+   Paths are relative to THIS css file (project root).
+   ============================================================ */
+.rank-icon {
+  display: inline-block;
+  width: 28px; height: 28px;
+  background: var(--rank-img) center / contain no-repeat;
+  vertical-align: middle;
+}
+.rank-icon[data-tier="iron"]        { --rank-img:url("9a84ff00-be9e-4ced-8f09-83b6fdd84c51"); }
+.rank-icon[data-tier="bronze"]      { --rank-img:url("c93f9b04-7b4b-4e93-a1c6-75b198b12291"); }
+.rank-icon[data-tier="silver"]      { --rank-img:url("ec2c256b-460b-45f1-9f94-93b5805aef8e"); }
+.rank-icon[data-tier="gold"]        { --rank-img:url("2800282f-f2fb-43d0-9eaf-770fc1ec6237"); }
+.rank-icon[data-tier="platinum"]    { --rank-img:url("b77f2b77-8be3-4f6a-bd28-634b0cb8aaff"); }
+.rank-icon[data-tier="emerald"]     { --rank-img:url("925c3673-ceb7-4ac6-8706-f278d360d0dc"); }
+.rank-icon[data-tier="diamond"]     { --rank-img:url("a267374d-0f12-4b1f-b69d-0e7cae3e842f"); }
+.rank-icon[data-tier="master"]      { --rank-img:url("a749fb9e-b94b-46d9-8af6-3cea7b99a64b"); }
+.rank-icon[data-tier="grandmaster"] { --rank-img:url("13dc9413-7b35-46f9-9458-d8f22130ded6"); }
+.rank-icon[data-tier="challenger"]  { --rank-img:url("885cf7fb-f421-4304-ad38-00e9c96dfde1"); }
+
+/* VisionScore Web — UI kit styles (builds on ../../colors_and_type.css tokens) */
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background-color: var(--vs-forest-900);
+  /* Calm forest canvas — a single soft edge vignette, no grid.
+     Fixed to the viewport so it reads as the surface the app sits on. */
+  background-image:
+    radial-gradient(140% 120% at 50% 36%, transparent 58%, rgba(5,24,21,.55) 100%);
+  background-size: 100% 100%;
+  background-position: center;
+  background-attachment: fixed;
+  color: var(--vs-fg-1);
+  font-family: var(--font-sans);
+  font-weight: var(--fw-light);
+  -webkit-font-smoothing: antialiased;
+}
+button { font-family: inherit; cursor: pointer; }
+img { display: block; }
+
+.app { min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ---------- buttons ---------- */
+.btn { display:inline-flex; align-items:center; gap:8px; font-weight:700; font-size:14px; border:0; border-radius:8px; padding:11px 20px; transition:all var(--dur-base) var(--ease-out); white-space:nowrap; }
+.btn-cta { background:var(--vs-red-500); color:#fff; box-shadow:var(--glow-red); }
+.btn-cta:hover { background:var(--vs-red-400); }
+.btn-cta:active { background:var(--vs-red-600); }
+.btn-secondary { background:transparent; color:var(--vs-emerald-300); border:1px solid var(--vs-emerald-500); }
+.btn-secondary:hover { background:rgba(45,212,167,.1); box-shadow:var(--glow-emerald-sm); }
+.btn-ghost { background:var(--vs-forest-700); color:var(--vs-fg-1); border:1px solid var(--vs-forest-500); }
+.btn-ghost:hover { background:var(--vs-forest-600); }
+.btn-sm { padding:7px 14px; font-size:12px; }
+.btn-icon { padding:9px; border-radius:8px; }
+
+/* ---------- navbar ---------- */
+.nav { position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:28px; height:64px; padding:0 28px;
+  background:rgba(15,58,52,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--vs-forest-500); }
+.nav-logo { height:30px; }
+.nav-links { display:flex; gap:4px; margin-left:8px; }
+.nav-link { font-weight:700; font-size:14px; color:var(--vs-fg-2); background:none; border:0; padding:8px 14px; border-radius:6px; transition:all var(--dur-fast) var(--ease-out); }
+.nav-link:hover { color:var(--vs-fg-1); background:var(--vs-forest-700); }
+.nav-link.active { color:var(--vs-emerald-300); }
+.nav-right { margin-left:auto; display:flex; align-items:center; gap:12px; }
+
+/* ---------- layout ---------- */
+.page { flex:1; }
+.container { max-width:1280px; margin:0 auto; padding:0 28px; }
+.with-sidebar { display:grid; grid-template-columns:264px 1fr; gap:24px; align-items:start; max-width:1440px; margin:0 auto; padding:24px 28px; }
+.section { padding:48px 0; }
+.section-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.eyebrow { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--vs-emerald-400); margin-bottom:10px; }
+h1,h2,h3,h4 { margin:0; }
+.h1 { font-weight:900; font-size:44px; line-height:1.06; letter-spacing:-.02em; }
+.h2 { font-weight:900; font-size:30px; letter-spacing:-.02em; }
+.h3 { font-weight:700; font-size:20px; }
+.muted { color:var(--vs-fg-2); }
+.faint { color:var(--vs-fg-3); }
+
+/* ---------- card ---------- */
+.card { background:var(--vs-forest-700); border:1px solid var(--vs-forest-500); border-radius:8px; box-shadow:var(--shadow-sm); }
+.card-sel { border-color:var(--vs-emerald-500); box-shadow:var(--glow-emerald-sm); }
+.card-foot { background:var(--vs-forest-800); border-top:1px solid var(--vs-forest-600); }
+
+/* ---------- rank + avatar ---------- */
+.rank { display:inline-block; background:var(--ri) center/contain no-repeat; }
+.avatar { border-radius:50%; background:linear-gradient(135deg,#1B4B43,#0F3A34); border:1px solid var(--vs-emerald-500); flex:none; display:grid; place-items:center; font-weight:900; color:var(--vs-emerald-300); overflow:hidden; }
+.champ { border-radius:6px; display:grid; place-items:center; font-weight:900; color:#0B2F2A; font-size:12px; flex:none; }
+
+/* ---------- labels / stats ---------- */
+.label { font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--vs-fg-2); }
+.stat-v { font-family:var(--font-mono); font-weight:600; font-variant-numeric:tabular-nums; }
+.pill { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.04em; }
+.pill-emerald { background:rgba(45,212,167,.15); color:var(--vs-emerald-300); }
+.pill-red { background:rgba(255,51,0,.15); color:var(--vs-red-400); }
+.pill-soft { background:var(--vs-forest-600); color:var(--vs-fg-2); }
+.delta-up { color:var(--vs-emerald-400); font-weight:700; font-family:var(--font-mono); }
+.delta-down { color:var(--vs-red-400); font-weight:700; font-family:var(--font-mono); }
+
+/* ---------- search ---------- */
+.search { display:flex; align-items:center; gap:12px; background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:10px; padding:14px 18px; transition:all var(--dur-base) var(--ease-out); }
+.search.lg { padding:18px 22px; border-radius:12px; }
+.search:focus-within { border-color:var(--vs-emerald-500); box-shadow:var(--glow-emerald-md); }
+.search svg { color:var(--vs-emerald-400); flex:none; }
+.search input { flex:1; background:none; border:0; outline:0; color:var(--vs-fg-1); font-family:var(--font-sans); font-size:15px; }
+.search.lg input { font-size:18px; }
+.search input::placeholder { color:var(--vs-fg-3); }
+
+/* ---------- table ---------- */
+.tbl { width:100%; border-collapse:collapse; }
+.tbl thead th { text-align:left; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--vs-fg-3); padding:0 14px 12px; cursor:pointer; user-select:none; }
+.tbl tbody tr { border-top:1px solid var(--vs-forest-600); transition:background var(--dur-fast); }
+.tbl tbody tr:hover { background:var(--vs-forest-600); }
+.tbl td { padding:13px 14px; vertical-align:middle; }
+
+/* ---------- filter sidebar ---------- */
+.filters { position:sticky; top:88px; }
+.filter-group { padding:16px 0; border-bottom:1px solid var(--vs-forest-600); }
+.filter-group:first-child { padding-top:0; }
+.chip-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.chip { font-size:12px; font-weight:700; padding:6px 11px; border-radius:6px; background:var(--vs-forest-700); border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); transition:all var(--dur-fast); }
+.chip:hover { border-color:var(--vs-emerald-500); color:var(--vs-fg-1); }
+.chip.on { background:rgba(45,212,167,.16); border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.range { width:100%; accent-color:var(--vs-emerald-400); margin-top:12px; }
+
+/* ---------- dashboard nav ---------- */
+.dnav { display:flex; flex-direction:column; gap:4px; position:sticky; top:88px; }
+.dnav button { display:flex; align-items:center; gap:11px; padding:11px 14px; border-radius:8px; border:0; background:none; color:var(--vs-fg-2); font-weight:700; font-size:14px; text-align:left; transition:all var(--dur-fast); }
+.dnav button:hover { background:var(--vs-forest-700); color:var(--vs-fg-1); }
+.dnav button.on { background:var(--vs-forest-700); color:var(--vs-emerald-300); box-shadow:inset 3px 0 0 var(--vs-emerald-400); }
+
+/* ---------- footer ---------- */
+.footer { border-top:1px solid var(--vs-forest-500); background:var(--vs-forest-800); padding:40px 0 32px; margin-top:40px; }
+.footer-grid { display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:28px; }
+.footer a { display:block; color:var(--vs-fg-2); text-decoration:none; font-size:14px; padding:5px 0; }
+.footer a:hover { color:var(--vs-emerald-300); }
+
+/* scrollbars + scroller */
+.hscroll { display:flex; gap:16px; overflow-x:auto; padding-bottom:8px; scrollbar-width:thin; }
+.hscroll::-webkit-scrollbar { height:8px; }
+.hscroll::-webkit-scrollbar-thumb { background:var(--vs-forest-500); border-radius:8px; }
+
+.grid-cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; }
+.compare-grid { display:grid; gap:16px; }
+.fade-in { animation:fadeIn var(--dur-slow) var(--ease-out); }
+@keyframes fadeIn { from { transform:translateY(10px); } to { transform:none; } }
+
+/* VisionScore Hi-Fi — styles on top of kit.css for the app shell + new pages */
+
+/* ---- top chrome additions ---- */
+.nav { gap: 18px; }
+.nav-burger { color: var(--vs-fg-1); background: transparent; border: 1px solid var(--vs-forest-500); }
+.nav-burger:hover { background: var(--vs-forest-700); border-color: var(--vs-emerald-500); }
+.nav-right .btn-icon { border: 1px solid transparent; }
+.nav-right .btn-icon:hover { background: var(--vs-forest-700); }
+
+/* ---- burger drawer ---- */
+.scrim { position: fixed; inset: 0; background: rgba(7,33,29,.72); z-index: 80; display: flex; backdrop-filter: blur(3px); }
+.drawer { width: 320px; max-width: 86vw; height: 100%; background: var(--vs-forest-800);
+  border-right: 1px solid var(--vs-forest-500); padding: 20px; display: flex; flex-direction: column;
+  animation: drawerIn var(--dur-base) var(--ease-out); }
+@keyframes drawerIn { from { transform: translateX(-18px); opacity: .4; } to { transform: none; opacity: 1; } }
+.drawer-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--vs-fg-3); margin: 18px 6px 8px; }
+.drawer-item { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
+  padding: 11px 13px; border-radius: 8px; border: 0; background: none; color: var(--vs-fg-2);
+  font-weight: 700; font-size: 15px; transition: all var(--dur-fast); }
+.drawer-item:hover { background: var(--vs-forest-700); color: var(--vs-fg-1); }
+.drawer-item.on { background: var(--vs-forest-700); color: var(--vs-emerald-300); box-shadow: inset 3px 0 0 var(--vs-emerald-400); }
+.drawer-item.home { background: rgba(45,212,167,.08); color: var(--vs-fg-1); margin-bottom: 4px; }
+.drawer-dot { margin-left: auto; width: 7px; height: 7px; border-radius: 50%; background: var(--vs-emerald-400); box-shadow: var(--glow-emerald-sm); }
+.drawer-sep { height: 1px; background: var(--vs-forest-600); margin: 10px 4px; }
+
+/* ---- generic page wrap ---- */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 24px 28px 64px; }
+.wrap-wide { max-width: 1440px; }
+.page-head { margin-bottom: 22px; }
+.page-head .h2 { margin-top: 6px; }
+.page-head p { margin: 8px 0 0; max-width: 620px; }
+.grid { display: grid; }
+.flex { display: flex; }
+.between { display: flex; align-items: center; justify-content: space-between; }
+
+/* ---- segmented control (import 50/100/200, sort, role) ---- */
+.seg { display: inline-flex; background: var(--vs-forest-800); border: 1px solid var(--vs-forest-500); border-radius: 8px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: none; color: var(--vs-fg-2); font-weight: 700; font-size: 13px;
+  padding: 8px 16px; border-radius: 6px; transition: all var(--dur-fast); }
+.seg button:hover { color: var(--vs-fg-1); }
+.seg button.on { background: var(--vs-emerald-500); color: #06231F; box-shadow: var(--glow-emerald-sm); }
+
+/* ---- form field ---- */
+.fld { display: flex; flex-direction: column; gap: 7px; }
+.fld > .label { margin: 0; }
+.ctrl { display: flex; align-items: center; gap: 9px; background: var(--vs-forest-800);
+  border: 1px solid var(--vs-forest-500); border-radius: 7px; padding: 0 13px; height: 44px;
+  color: var(--vs-fg-1); font-size: 15px; transition: all var(--dur-base); }
+.ctrl:focus-within, .ctrl.active { border-color: var(--vs-emerald-500); box-shadow: var(--glow-emerald-sm); }
+.ctrl input { flex: 1; background: none; border: 0; outline: 0; color: var(--vs-fg-1); font-family: var(--font-sans); font-size: 15px; min-width: 0; }
+.ctrl input::placeholder { color: var(--vs-fg-3); }
+.ctrl svg { color: var(--vs-fg-3); flex: none; }
+.ctrl.select { cursor: pointer; justify-content: space-between; color: var(--vs-fg-2); }
+.ctrl.select.active { border-color: var(--vs-emerald-500); box-shadow: var(--glow-emerald-sm); color: var(--vs-fg-1); }
+
+/* ---- dropdown menu ---- */
+.dropdown-menu { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%;
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); border-radius: 8px;
+  box-shadow: var(--shadow-md); padding: 5px; z-index: 80; display: flex; flex-direction: column;
+  gap: 2px; max-height: 288px; overflow-y: auto; animation: ddIn var(--dur-fast) var(--ease-out); }
+@keyframes ddIn { from { transform: translateY(-5px); } to { transform: none; } }
+.dropdown-opt { display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  width: 100%; text-align: left; border: 0; background: none; cursor: pointer; padding: 9px 11px;
+  border-radius: 6px; color: var(--vs-fg-1); font-family: var(--font-sans); font-size: 14px;
+  font-weight: 600; white-space: nowrap; transition: background var(--dur-fast), color var(--dur-fast); }
+.dropdown-opt:hover { background: var(--vs-forest-600); }
+.dropdown-opt.on { color: var(--vs-emerald-300); }
+
+/* ---- champion tiles always render as full circles (image fills edge-to-edge,
+       and self-clips with its own border-radius so Safari can't leak corners) ---- */
+.champ-tile { border-radius: 50%; overflow: hidden; isolation: isolate; background: var(--vs-forest-600); border: 0 !important; }
+.champ-tile img, .champ-tile .champ {
+  position: absolute !important; inset: 0 !important;
+  width: 100% !important; height: 100% !important;
+  object-fit: cover !important; object-position: center 28% !important;
+  transform: scale(1.22); transform-origin: center 30%;
+  border: 0 !important; border-radius: 50% !important;
+}
+
+/* ---- number field steppers ---- */
+.numfield { justify-content: space-between; }
+.numfield input { min-width: 0; }
+.numfield-steps { display: flex; flex-direction: column; gap: 1px; flex: none; }
+.numfield-steps button { border: 0; background: none; color: var(--vs-fg-3); cursor: pointer;
+  display: grid; place-items: center; height: 15px; width: 18px; padding: 0; transition: color var(--dur-fast); }
+.numfield-steps button:hover { color: var(--vs-emerald-400); }
+
+/* role pills */
+.rolepills { display: flex; gap: 7px; flex-wrap: wrap; }
+.rolepills .chip { padding: 8px 14px; }
+
+/* ---- landing (dense) ---- */
+.entry-card { background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); border-radius: 10px;
+  padding: 18px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 14px;
+  transition: all var(--dur-base) var(--ease-out); }
+.entry-card:hover { border-color: var(--vs-emerald-500); box-shadow: var(--glow-emerald-sm); transform: translateY(-2px); }
+.entry-ico { width: 42px; height: 42px; border-radius: 9px; display: grid; place-items: center;
+  background: rgba(45,212,167,.12); color: var(--vs-emerald-300); }
+.entry-mini { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.entry-mini > div { background: var(--vs-forest-800); border: 1px solid var(--vs-forest-600); border-radius: 7px; padding: 9px 11px; }
+
+/* ---- KPI band ---- */
+.kpis { display: grid; grid-template-columns: repeat(5,1fr); gap: 12px; }
+.kpi { background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); border-radius: 8px; padding: 14px 16px; }
+.kpi .v { font-family: var(--font-mono); font-weight: 600; font-size: 26px; color: var(--vs-emerald-300); line-height: 1.1; margin-top: 4px; }
+
+/* ---- CRM pipeline ---- */
+.stage-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 10px; }
+.stage-bar { height: 3px; border-radius: 2px; opacity: .7; margin-bottom: 12px; }
+.prospect { display: flex; align-items: center; gap: 10px; background: var(--vs-forest-700);
+  border: 1px solid var(--vs-forest-500); border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all var(--dur-fast); }
+.prospect:hover { border-color: var(--vs-emerald-500); background: var(--vs-forest-600); }
+.prospect.sel { border-color: var(--vs-emerald-400); box-shadow: var(--glow-emerald-sm); }
+
+/* ---- toolbar ---- */
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--vs-forest-700);
+  border: 1px solid var(--vs-forest-500); border-radius: 10px; padding: 12px 14px; }
+
+/* dashed add slot */
+.slot-add { border: 1px dashed var(--vs-forest-500); border-radius: 8px; background: transparent; color: var(--vs-fg-3);
+  display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; font-size: 13px; transition: all var(--dur-fast); cursor: pointer; }
+.slot-add:hover { border-color: var(--vs-emerald-500); color: var(--vs-emerald-300); }
+
+/* ---- map ---- */
+.map-frame { aspect-ratio: 1/1; background: radial-gradient(circle at 50% 50%, #0F3A34, #0B2F2A 80%);
+  border: 1px solid var(--vs-forest-500); border-radius: 12px; position: relative; overflow: hidden; }
+.toggle { width: 38px; height: 22px; border-radius: 999px; border: 1px solid var(--vs-forest-500);
+  background: var(--vs-forest-800); position: relative; cursor: pointer; transition: all var(--dur-fast); flex: none; }
+.toggle::after { content:''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--vs-fg-3); transition: all var(--dur-fast); }
+.toggle.on { background: rgba(45,212,167,.25); border-color: var(--vs-emerald-500); }
+.toggle.on::after { left: 18px; background: var(--vs-emerald-300); }
+
+/* chart card */
+.chart-box { height: 200px; background: var(--vs-forest-800); border: 1px solid var(--vs-forest-600); border-radius: 8px; padding: 14px; position: relative; }
+
+/* filter header (non-sticky: a translucent glass panel can't stay legible
+   over scrolling data, so it scrolls with the page) */
+.sticky-head { position: relative; z-index: 1; background: transparent; }
+
+.fade-in { animation: fadeIn var(--dur-slow) var(--ease-out); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.tabnum { font-variant-numeric: tabular-nums; }
+
+/* ---- Analytics sub-nav (floating tab control, no full-width banner) ---- */
+.sub-nav { position: sticky; top: 64px; z-index: 40; display: flex; justify-content: center;
+  background: transparent; border-bottom: none; padding: 18px 28px 44px; }
+.sub-nav::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(to bottom,
+    var(--vs-forest-900) 0%,
+    color-mix(in oklab, var(--vs-forest-900) 88%, transparent) 42%,
+    color-mix(in oklab, var(--vs-forest-900) 55%, transparent) 66%,
+    color-mix(in oklab, var(--vs-forest-900) 22%, transparent) 84%,
+    transparent 100%);
+  -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 38%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 38%, transparent 100%); }
+.sub-nav .seg { background: var(--vs-forest-800); box-shadow: var(--shadow-sm); }
+.sub-nav .seg button { padding: 9px 22px; font-size: 13.5px; }
+
+/* ---- Champion pool: denser rows so the frame stays compact ---- */
+.pool-card .tbl td { padding: 6px 9px; }
+.pool-card .tbl thead th { padding-left: 9px; padding-right: 9px; padding-bottom: 8px; }
+.pool-card .section-head { padding: 0 9px !important; }
+
+/* ---- .rofl drop zone (Performance tab) ---- */
+.dropzone { border: 1.5px dashed var(--vs-forest-500); border-radius: 12px; background: var(--vs-forest-800);
+  padding: 40px 28px; text-align: center; cursor: pointer; transition: all var(--dur-fast) var(--ease-out); }
+.dropzone:hover { border-color: var(--vs-emerald-500); background: var(--vs-forest-700); }
+.dropzone.over { border-color: var(--vs-emerald-400); background: var(--vs-forest-700); box-shadow: var(--glow-emerald-sm); }
+.dropzone .dz-ic { width: 54px; height: 54px; border-radius: 12px; display: grid; place-items: center; margin: 0 auto 14px;
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); color: var(--vs-emerald-400); }
+.dropzone.over .dz-ic { color: var(--vs-emerald-300); }
+
+/* ---- vertical match timeline (Timeline tab) ---- */
+.tl-line { position: relative; padding-left: 0; }
+.tl-row { display: grid; grid-template-columns: 70px 34px 1fr; align-items: start; gap: 14px; }
+.tl-rail { position: relative; display: flex; flex-direction: column; align-items: center; }
+.tl-rail::before { content: ""; position: absolute; top: 0; bottom: -22px; width: 2px; background: var(--vs-forest-500); }
+.tl-row:last-child .tl-rail::before { display: none; }
+.tl-dot { position: relative; z-index: 1; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--vs-forest-800); border: 2px solid var(--vs-forest-500); }
+
+/* ============================================================
+   Easter egg — custom cursor (chosen from the burger menu).
+   'win' = system default (no override). The League cursors apply to the
+   whole UI like in-client; text fields keep an I-beam for typing.
+   ============================================================ */
+html[data-cursor="classic"],
+html[data-cursor="classic"] *:not(input):not(textarea) {
+  cursor: url("0711a349-55d4-4f99-813c-4eebf01f3e51") 0 0, auto !important;
+}
+html[data-cursor="normal"],
+html[data-cursor="normal"] *:not(input):not(textarea) {
+  cursor: url("3fb9e8a5-439d-4643-8d58-3093241c2304") 0 0, auto !important;
+}
+html[data-cursor="classic"] input, html[data-cursor="classic"] textarea,
+html[data-cursor="normal"]  input, html[data-cursor="normal"]  textarea { cursor: text !important; }
+
+/* ---- cursor picker (burger menu) ---- */
+.cursor-pick { display: flex; gap: 8px; margin: 4px 0 6px; }
+.cursor-opt { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 11px 6px; border-radius: 10px; background: var(--vs-forest-800);
+  border: 1px solid var(--vs-forest-500); color: var(--vs-fg-2);
+  transition: all var(--dur-fast) var(--ease-out); }
+.cursor-opt:hover { background: var(--vs-forest-700); color: var(--vs-fg-1); }
+.cursor-opt.on { border-color: var(--vs-emerald-400); box-shadow: var(--glow-emerald-sm); color: var(--vs-fg-1); }
+.cursor-opt img, .cursor-opt svg { width: 22px; height: 22px; image-rendering: -webkit-optimize-contrast; }
+.cursor-opt span { font-size: 10px; font-weight: 700; letter-spacing: .03em; text-align: center; line-height: 1.2; }
+
+/* VisionScore Hi-Fi — refinement layer (personality + épuré). Loaded last; overrides only. */
+
+/* ----------------------------------------------------------------
+   1. TYPOGRAPHY — give headings the brand display face (Space Grotesk),
+   lighter & tighter for a refined, distinctive voice.
+   ---------------------------------------------------------------- */
+.h1, .h2, .h3 { font-family: var(--font-display); letter-spacing: -0.022em; }
+.h1 { font-weight: 600; }
+.h2 { font-weight: 600; }
+.h3 { font-weight: 600; letter-spacing: -0.01em; }
+.eyebrow { font-family: var(--font-display); font-weight: 600; letter-spacing: 0.18em; color: var(--vs-emerald-300); }
+
+/* the signature "ward ping" — a small rotated emerald diamond before every eyebrow */
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; white-space: nowrap; }
+.eyebrow::before {
+  content: ''; width: 7px; height: 7px; background: var(--vs-emerald-400);
+  transform: rotate(45deg); box-shadow: 0 0 8px rgba(45,212,167,.6); flex: none;
+}
+.section-head .h3 { white-space: nowrap; }
+
+/* ----------------------------------------------------------------
+   2. RHYTHM — more breathing room, calmer page heads.
+   ---------------------------------------------------------------- */
+.wrap { padding: 34px 36px 80px; }
+.page-head { margin-bottom: 30px; }
+.page-head .h2 { font-size: 34px; margin-top: 10px; }
+.page-head p { color: var(--vs-fg-3); font-size: 15px; line-height: 1.6; }
+
+/* ----------------------------------------------------------------
+   3. SURFACES — quieter borders, softer cards, less competing colour.
+   ---------------------------------------------------------------- */
+.card { border-color: rgba(36,92,82,.7); box-shadow: 0 1px 0 rgba(255,255,255,.015), var(--shadow-sm); }
+.toolbar, .kpi { border-color: rgba(36,92,82,.7); }
+.kpi { background: var(--vs-forest-800); }
+.kpi .v { color: var(--vs-fg-1); }   /* numbers calm white, emerald reserved for live data */
+
+/* neutral chips by default; emerald only when active */
+.chip { background: transparent; border-color: var(--vs-forest-500); color: var(--vs-fg-2); font-weight: 600; }
+.pill-soft { background: transparent; border: 1px solid var(--vs-forest-500); }
+
+/* refined data labels */
+.label { letter-spacing: 0.1em; color: var(--vs-fg-3); font-weight: 600; }
+
+/* ----------------------------------------------------------------
+   4. NAV — finer hairline, refined active indicator, more space.
+   ---------------------------------------------------------------- */
+.nav { height: 68px; border-bottom: 1px solid rgba(36,92,82,.6); background: rgba(11,47,42,.82); gap: 22px; }
+.nav-links { gap: 2px; }
+.nav-link { font-weight: 600; font-size: 14px; position: relative; }
+.nav-link.active { color: var(--vs-fg-1); background: none; }
+.nav-link.active::after {
+  content: ''; position: absolute; left: 14px; right: 14px; bottom: 2px; height: 2px;
+  background: var(--vs-emerald-400); border-radius: 2px; box-shadow: 0 0 8px rgba(45,212,167,.5);
+}
+.nav-burger { border-color: rgba(36,92,82,.7); border-radius: 9px; }
+
+/* ----------------------------------------------------------------
+   5. HERO (Accueil) — the vision mark as a calm watermark + signature framing.
+   ---------------------------------------------------------------- */
+.hero { position: relative; padding: 40px 0 40px; overflow: hidden; }
+.hero::before {
+  content: ''; position: absolute; top: 50%; left: 50%; width: 560px; height: 560px;
+  transform: translate(-50%, -54%);
+  background: url("8aba32ef-7b93-42d0-8b00-6c75b9d746ec") center/contain no-repeat;
+  opacity: 0.08; pointer-events: none; z-index: 0;
+}
+.hero::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 50% 30%, rgba(45,212,167,.07), transparent 70%);
+}
+.hero > * { position: relative; z-index: 1; }
+.hero .h1 { font-weight: 600; letter-spacing: -0.03em; }
+
+/* refined hero search bar */
+.hero .toolbar { background: rgba(15,58,52,.6); border-color: var(--vs-forest-500); backdrop-filter: blur(8px); border-radius: 14px; }
+
+/* ----------------------------------------------------------------
+   6. ENTRY CARDS — calmer, editorial, no boxed mini-stats.
+   ---------------------------------------------------------------- */
+.entry-card { padding: 22px; gap: 18px; border-color: rgba(36,92,82,.7); border-radius: 12px; }
+.entry-card:hover { transform: translateY(-3px); }
+.entry-ico { background: transparent; border: 1px solid var(--vs-emerald-600); }
+.entry-mini { grid-template-columns: auto auto; gap: 26px; padding-top: 16px; border-top: 1px solid var(--vs-forest-600); }
+.entry-mini > div { background: none; border: 0; padding: 0; }
+.entry-mini .label { font-size: 9.5px; }
+
+/* ----------------------------------------------------------------
+   7. SEGMENTED / CTA — slightly softer, refined press feel.
+   ---------------------------------------------------------------- */
+.btn-cta { font-weight: 700; letter-spacing: 0.01em; }
+.seg button.on { background: var(--vs-emerald-400); color: #06231F; }
+
+/* ----------------------------------------------------------------
+   8. MOTION — gentler entrance, no harsh blank flash.
+   ---------------------------------------------------------------- */
+.fade-in { animation: vsIn var(--dur-base) var(--ease-out); }
+@keyframes vsIn { from { opacity: 0.001; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade-in { animation: none; } }
+
+/* monospace tabular feel for the analyst personality */
+.stat-v { letter-spacing: -0.01em; }
+
+/* ----------------------------------------------------------------
+   9. SCOUTING — Apple "liquid glass" frames.
+   Cards become translucent, blurred glass that lets the role-tinted
+   background bleed through, with a bright top specular edge, a faint
+   inner sheen, and a soft floating shadow. Inner sub-panels (section
+   heads, key-stat grids) turn into lighter frosted layers so the
+   glass reads as stacked sheets rather than opaque boxes.
+   ---------------------------------------------------------------- */
+.glass-frames .card {
+  position: relative;
+  background:
+    linear-gradient(150deg, rgba(255,255,255,.07), rgba(255,255,255,.015) 42%, rgba(7,32,28,.16)),
+    rgba(6,30,26,.46);
+  border: 1px solid rgba(255,255,255,.03);
+  border-radius: 20px;
+  -webkit-backdrop-filter: blur(72px) saturate(185%) brightness(1.06);
+          backdrop-filter: blur(72px) saturate(185%) brightness(1.06);
+  box-shadow:
+    /* refracted rim — soft top-left lensing edge */
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    /* lower inner shade gives the glass thickness */
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    /* lift off the background = dissociation */
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55);
+  overflow: hidden;
+  transition: box-shadow var(--m3-med2, .3s) var(--m3-standard, ease),
+              transform var(--m3-med2, .3s) var(--m3-standard, ease),
+              border-color var(--m3-med2, .3s) var(--m3-standard, ease);
+}
+/* uniform perimeter hairline + gentle directional sheen — keeps every
+   edge of every frame equally defined regardless of the background tint */
+.glass-frames .card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 0.5px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.06)),
+    rgba(255,255,255,.035);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+.glass-frames .card:hover {
+  border-color: rgba(255,255,255,.08);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.16),
+    inset 0 1px 1px rgba(255,255,255,.11),
+    inset 0 -10px 24px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 28px 60px -22px rgba(0,0,0,.74),
+    0 8px 22px -10px rgba(0,0,0,.55);
+}
+.glass-frames .card > * { position: relative; z-index: 1; }
+
+/* inner frosted sub-panels: section heads + key-stat dividers */
+.glass-frames .card .between[style*="forest-800"] {
+  background: rgba(255,255,255,.06) !important;
+  border-bottom-color: rgba(255,255,255,.10) !important;
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+}
+/* track backgrounds (progress rails) read better translucent on glass */
+.glass-frames .card [style*="forest-600"] { border-color: rgba(255,255,255,.10) !important; }
+
+/* selected/active emerald glass keeps its tint but stays glassy */
+.glass-frames .card.card-sel { border-color: rgba(45,212,167,.5); }
+
+/* frame titles route through the Aquavit display face */
+.glass-frames .card .h1,
+.glass-frames .card .h3,
+.glass-frames .card .glass-title {
+  font-family: var(--font-display);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-frames .card { transition: none; }
+}
+
+/* ----------------------------------------------------------------
+   9b. BURGER DRAWER — same liquid-glass treatment as the frames.
+   ---------------------------------------------------------------- */
+.glass-frames .drawer {
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.06), rgba(255,255,255,.012) 42%, rgba(7,32,28,.18)),
+    rgba(6,30,26,.62);
+  border-right: 1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(72px) saturate(185%) brightness(1.04);
+          backdrop-filter: blur(72px) saturate(185%) brightness(1.04);
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,.10),
+    inset -1px 0 0 rgba(7,32,28,.10),
+    8px 0 40px -14px rgba(0,0,0,.7);
+}
+
+/* ============================================================
+   VisionScore — LIGHT MODE
+   Cool "platinum" light theme derived from the brand platinum
+   (#BFD7DB). Activated via <html data-theme="light">.
+   Re-maps the forest surface scale + text scale to light values
+   and deepens the emerald accents so they stay legible on light.
+   ============================================================ */
+
+:root[data-theme="light"] {
+  /* ---- surfaces: platinum-tinted neutrals ---- */
+  --vs-forest-950: #B7CCCF;   /* deepest (scrim base / rare) */
+  --vs-forest-900: #DBE6E8;   /* APP BACKGROUND — platinum light */
+  --vs-forest-800: #E9F0F1;   /* navbar / raised panel / footer */
+  --vs-forest-700: #FFFFFF;   /* card surface */
+  --vs-forest-600: #E2EBEC;   /* hover / inset / progress track */
+  --vs-forest-500: #BDD1D4;   /* hairline borders */
+
+  /* ---- text: deep forest ink on light ---- */
+  --vs-fg-1: #0E2A26;         /* primary */
+  --vs-fg-2: #4E6A64;         /* secondary / muted */
+  --vs-fg-3: #879D98;         /* tertiary / faint */
+  /* --vs-fg-inv stays #0B2F2A (text on emerald / red) */
+
+  /* ---- emerald: deepen for legibility on light ---- */
+  --vs-emerald-300: #0E9270;  /* active text / highlights */
+  --vs-emerald-400: #0FA176;  /* PRIMARY (eyebrow, deltas, gauge, fills) */
+  /* 500 / 600 kept (already deep enough) */
+
+  /* ---- gold: deepen so threshold/pool text reads on white ---- */
+  --rank-gold: #B5821A;
+  --score-mid: #B5821A;
+
+  /* ---- shadows: soft, cool, light-appropriate ---- */
+  --shadow-xs: 0 1px 2px rgba(31,60,55,.08);
+  --shadow-sm: 0 2px 8px rgba(31,60,55,.10);
+  --shadow-md: 0 10px 26px rgba(31,60,55,.13);
+  --shadow-text: none;
+
+  /* ---- glow: subtler on light ---- */
+  --glow-emerald-sm: 0 0 0 1px rgba(15,161,118,.45), 0 0 10px rgba(15,161,118,.16);
+  --glow-emerald-md: 0 0 0 1px rgba(15,161,118,.6), 0 0 18px rgba(15,161,118,.22);
+}
+
+/* translucent navbar in light mode */
+:root[data-theme="light"] .nav {
+  background: rgba(233,240,241,.82);
+  border-bottom-color: var(--vs-forest-500);
+}
+
+/* burger scrim stays a soft cool darken */
+:root[data-theme="light"] .scrim { background: rgba(60,84,80,.42); }
+
+/* player avatar tile: flip to a bright emerald chip with white initial
+   (the dark forest gradient would read poorly on a light page) */
+:root[data-theme="light"] .avatar {
+  background: linear-gradient(135deg, #2DD4A7, #1FA97C);
+  border-color: #1FA97C;
+  color: #FFFFFF;
+}
+
+/* secondary button: deepen text for contrast on light */
+:root[data-theme="light"] .btn-secondary { color: var(--vs-emerald-600); }
+:root[data-theme="light"] .btn-secondary:hover { background: rgba(15,161,118,.10); }
+
+/* keep the segmented "on" state readable */
+:root[data-theme="light"] .seg button.on { color: #FFFFFF; }
+
+/* theme toggle button color */
+.theme-toggle { color: var(--vs-fg-2); }
+:root[data-theme="light"] .theme-toggle { color: var(--rank-gold); }
+
+/* refine.css bakes dark rgba(36,92,82,…) borders + dark search fills that
+   don't track the token scale — neutralise them on light. */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .kpi,
+:root[data-theme="light"] .toolbar,
+:root[data-theme="light"] .entry-card,
+:root[data-theme="light"] .nav-burger { border-color: var(--vs-forest-500); }
+
+:root[data-theme="light"] .card {
+  box-shadow: 0 1px 0 rgba(255,255,255,.4), var(--shadow-sm);
+}
+
+/* home hero search bar: dark glass → light glass */
+:root[data-theme="light"] .hero .toolbar {
+  background: rgba(255,255,255,.72);
+  border-color: var(--vs-forest-500);
+}
+
+/* hero ward-mark watermark is emerald art on dark; soften on light */
+:root[data-theme="light"] .hero::before { opacity: 0.05; }
+
+
+/* ============================================================
+   VisionScore — CORPORATE LAYER
+   Loaded after refine.css (and before theme-light.css overrides
+   that need to react to it). De-gamifies the e-sport skin into a
+   calm, professional scouting dashboard while keeping the brand:
+   forest surfaces, emerald accent, rank crests, SPES data.
+
+   Strategy:
+   1. Kill neon GLOWS  -> clean hairline rings + soft elevation
+   2. Single calm ACCENT (emerald). Red reserved for negative/live.
+   3. Quieter TYPE: lighter headings, disciplined labels.
+   4. More WHITESPACE, finer borders, editorial rhythm.
+   ============================================================ */
+
+/* ----------------------------------------------------------------
+   1. NEUTRALISE GLOW TOKENS
+   The single biggest "gamer" signal is the emerald/red glow on
+   hover/active/focus. Redefine the glow tokens to a clean 1px ring
+   with (at most) a whisper of diffusion — applies everywhere the
+   tokens are used, automatically.
+   ---------------------------------------------------------------- */
+:root,
+:root[data-theme="light"] {
+  --glow-emerald-sm: 0 0 0 1px rgba(45,212,167,.55);
+  --glow-emerald-md: 0 0 0 2px rgba(45,212,167,.65);
+  --glow-red: none;
+
+  /* corporate elevation scale — soft, neutral, no color cast */
+  --shadow-xs: 0 1px 2px rgba(0,0,0,.20);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.18), 0 1px 3px rgba(0,0,0,.14);
+  --shadow-md: 0 2px 4px rgba(0,0,0,.16), 0 8px 24px rgba(0,0,0,.26);
+
+  /* a softer, less-acid emerald for large solid fills */
+  --vs-accent-solid: #1FA97C;
+  --vs-accent-solid-hover: #2DD4A7;
+}
+:root[data-theme="light"] {
+  --shadow-sm: 0 1px 2px rgba(31,60,55,.10), 0 1px 3px rgba(31,60,55,.08);
+  --shadow-md: 0 2px 6px rgba(31,60,55,.10), 0 14px 30px rgba(31,60,55,.12);
+  --vs-accent-solid: #0FA176;
+  --vs-accent-solid-hover: #0E9270;
+}
+
+/* ----------------------------------------------------------------
+   2. PRIMARY ACTION -> calm emerald (no glowing-red gamer CTA).
+   Red stays for negatives, live indicators, destructive only.
+   ---------------------------------------------------------------- */
+.btn { border-radius: 8px; font-weight: 600; letter-spacing: 0; }
+.btn-cta {
+  background: var(--vs-accent-solid);
+  color: #04231D;
+  box-shadow: none;
+  font-weight: 700;
+}
+.btn-cta:hover { background: var(--vs-accent-solid-hover); }
+.btn-cta:active { background: var(--vs-emerald-500); }
+:root[data-theme="light"] .btn-cta { color: #FFFFFF; }
+
+.btn-secondary { color: var(--vs-emerald-300); border-color: var(--vs-emerald-600); }
+.btn-secondary:hover { background: rgba(45,212,167,.08); box-shadow: none; }
+:root[data-theme="light"] .btn-secondary:hover { background: rgba(15,161,118,.08); }
+
+/* ----------------------------------------------------------------
+   3. TYPE — quieter, more corporate hierarchy.
+   ---------------------------------------------------------------- */
+.h1 { font-weight: 600; letter-spacing: -.02em; }
+.h2 { font-weight: 600; }
+.h3 { font-weight: 600; }
+.page-head .h2 { font-size: 30px; }
+.hero .h1 { font-weight: 600 !important; letter-spacing: -.025em; }
+
+/* heavy 900 inline names -> a measured 700 */
+.card [style*="font-weight:900"],
+.tbl [style*="font-weight:900"],
+.tbl [style*="font-weight: 900"] { font-weight: 700 !important; }
+
+/* labels: calmer, slightly tighter tracking */
+.label, .vs-label { letter-spacing: .09em; font-weight: 600; color: var(--vs-fg-3); }
+
+/* ----------------------------------------------------------------
+   4. EYEBROW — drop the glowing ward-ping diamond for a clean,
+   corporate rule + uppercase label.
+   ---------------------------------------------------------------- */
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  letter-spacing: .14em;
+  font-size: 11px;
+  color: var(--vs-emerald-400);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.eyebrow::before {
+  width: 22px; height: 2px;
+  background: var(--vs-emerald-400);
+  transform: none;
+  box-shadow: none;
+  border-radius: 2px;
+}
+
+/* ----------------------------------------------------------------
+   5. NAV — refined, no glow on the active underline.
+   ---------------------------------------------------------------- */
+.nav { background: rgba(11,47,42,.92); border-bottom: 1px solid var(--vs-forest-500); }
+:root[data-theme="light"] .nav { background: rgba(233,240,241,.92); }
+.nav-link.active::after { box-shadow: none; height: 2px; }
+.nav-burger:hover { border-color: var(--vs-forest-500); }
+
+/* ----------------------------------------------------------------
+   6. HERO — calm the neon. Watermark to a whisper, no glow ping.
+   ---------------------------------------------------------------- */
+.hero::before { opacity: .035; }
+:root[data-theme="light"] .hero::before { opacity: .03; }
+.hero::after {
+  background: radial-gradient(ellipse 70% 55% at 50% 28%, rgba(45,212,167,.045), transparent 72%);
+}
+.hero .toolbar { box-shadow: var(--shadow-sm); }
+
+/* ----------------------------------------------------------------
+   7. SURFACES — finer borders, soft neutral elevation, calmer
+   selected state (ring instead of neon glow).
+   ---------------------------------------------------------------- */
+.card { border-color: var(--vs-forest-500); box-shadow: var(--shadow-sm); border-radius: 10px; }
+.card-sel, .prospect.sel { border-color: var(--vs-emerald-500); box-shadow: var(--shadow-sm), 0 0 0 1px var(--vs-emerald-600); }
+.kpi { border-radius: 10px; }
+.toolbar { border-radius: 10px; box-shadow: var(--shadow-xs); }
+
+/* focus ring: clean, no blur */
+.search:focus-within,
+.ctrl:focus-within, .ctrl.active,
+.ctrl.select.active {
+  border-color: var(--vs-emerald-500);
+  box-shadow: 0 0 0 3px rgba(45,212,167,.16);
+}
+:root[data-theme="light"] .search:focus-within,
+:root[data-theme="light"] .ctrl:focus-within,
+:root[data-theme="light"] .ctrl.active { box-shadow: 0 0 0 3px rgba(15,161,118,.14); }
+
+/* segmented control: solid calm emerald, no glow */
+.seg button.on { background: var(--vs-accent-solid); color: #04231D; box-shadow: none; }
+:root[data-theme="light"] .seg button.on { color: #fff; }
+
+/* chips: quiet, accent only when active (no glow) */
+.chip.on { background: rgba(45,212,167,.12); border-color: var(--vs-emerald-500); color: var(--vs-emerald-300); }
+
+/* drawer active marker: liquid-glass selected pane (no inset bar) */
+.drawer-dot { box-shadow: none; }
+.drawer-item.on, .dnav button.on {
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 52%, rgba(45,212,167,.07)),
+    rgba(45,212,167,.05);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+          backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.12),
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    0 6px 16px -10px rgba(0,0,0,.5);
+}
+/* cursor picker: same liquid-glass treatment on the selected option */
+.cursor-opt.on {
+  background:
+    linear-gradient(140deg, rgba(255,255,255,.12), rgba(255,255,255,.02) 52%, rgba(45,212,167,.07)),
+    rgba(45,212,167,.05);
+  border-color: rgba(255,255,255,.14);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+          backdrop-filter: blur(14px) saturate(150%);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.12),
+    0 6px 16px -10px rgba(0,0,0,.5);
+}
+
+/* Top 50 — "Critères" frame: exact same liquid glass as the sign-in card */
+.glass-frames .crit-glass {
+  border-radius: var(--radius-xl);
+  overflow: visible;
+  background:
+    radial-gradient(420px 220px at 92% -20%, rgba(45,212,167,.13), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
+    rgba(6,30,26,.10);
+  border: 1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+          backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 10px 24px -18px rgba(0,0,0,.55);
+}
+/* inner selects sit translucent on the glass, like the sign-in inputs */
+.crit-glass .ctrl {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+}
+
+/* ----------------------------------------------------------------
+   8. DATA VIZ — calm the neon.
+   ---------------------------------------------------------------- */
+/* score ring track + plate already forest; remove any glow on dots */
+.pathing-dot, .best-dot { box-shadow: none !important; }
+
+/* champion-pool W/L squares: quieter, monochrome-leaning */
+.wl-win  { background: rgba(45,212,167,.16) !important; color: var(--vs-emerald-300) !important; }
+.wl-loss { background: rgba(160,180,176,.14) !important; color: var(--vs-fg-3) !important; }
+
+/* ----------------------------------------------------------------
+   9. RHYTHM — a touch more breathing room.
+   ---------------------------------------------------------------- */
+.wrap { padding: 40px 40px 88px; }
+.page-head { margin-bottom: 34px; }
+
+/* ----------------------------------------------------------------
+   10. FULL-WIDTH — let pages use the whole screen (sane ultrawide cap).
+   ---------------------------------------------------------------- */
+.wrap, .wrap-wide { max-width: 1500px; width: 100%; }
+.container { max-width: 1500px; width: 100%; }
+.with-sidebar { max-width: 1500px; width: 100%; }
+
+/* ============================================================
+   VisionScore — MOTION SYSTEM  (Material Design 3, faithful)
+   Loaded last. A comprehensive, living motion layer:
+
+     • Full M3 easing + duration token set
+     • M3 "Expressive" spring easings (CSS linear()) for spatial motion
+     • State layers (hover 8% · focus 10% · press 12%) on every part
+     • Ripple (pointer-positioned, app.jsx)
+     • Press shape-morph (corner radius grows on press — M3 expressive)
+     • Sliding selection indicators (nav + segmented — app.jsx)
+     • Animated switches, text-field focus, chevrons, icons
+     • Staggered entrance for pages, lists, drawer, dropdown options
+     • Animated data-viz (score ring, radar, bars, count-up)
+
+   No infinite decorative loops — every motion is triggered by
+   entrance, hover, focus, press or selection. Fully gated behind
+   prefers-reduced-motion, with a frozen-timeline safety net.
+   ============================================================ */
+
+:root {
+  /* ---- M3 easing set (official) ---- */
+  --m3-standard:            cubic-bezier(0.2, 0, 0, 1);
+  --m3-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+  --m3-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --m3-emphasized:          cubic-bezier(0.2, 0, 0, 1);
+  --m3-emph-decelerate:     cubic-bezier(0.05, 0.7, 0.1, 1);
+  --m3-emph-accelerate:     cubic-bezier(0.3, 0, 0.8, 0.15);
+  --m3-legacy:              cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ---- M3 Expressive springs (linear() — physical, organic) ---- */
+  /* gentle spatial spring, ~5% overshoot — default for movement   */
+  --m3-spring: linear(
+    0, 0.0186, 0.0738, 0.1568, 0.2632 24.2%, 0.4895 36.4%,
+    0.6833, 0.8378, 0.9551 60.6%, 0.9961, 1.0231, 1.0388 72.7%,
+    1.0444, 1.0431, 1.0366 81.8%, 1.0168 87.9%, 1.0027, 0.9968,
+    0.9952, 0.9966, 1
+  );
+  /* bouncier spring, ~12% overshoot — playful accents (switch, chip) */
+  --m3-spring-bouncy: linear(
+    0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%,
+    1.017, 1.077, 1.121 24.3%, 1.149, 1.159, 1.156 29.9%, 1.129 32.8%,
+    1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.975 57.1%,
+    0.997 69.8%, 1.003 76.9%, 1.004 83.8%, 1
+  );
+
+  /* ---- M3 duration set ---- */
+  --m3-short1: 50ms;   --m3-short2: 100ms;  --m3-short3: 150ms;  --m3-short4: 200ms;
+  --m3-med1: 250ms;    --m3-med2: 300ms;    --m3-med3: 350ms;    --m3-med4: 400ms;
+  --m3-long1: 450ms;   --m3-long2: 500ms;   --m3-long3: 550ms;   --m3-long4: 600ms;
+  --m3-xlong1: 700ms;  --m3-xlong2: 800ms;
+
+  /* legacy aliases kept for older rules */
+  --m3-short: var(--m3-short4);
+  --m3-medium: var(--m3-med3);
+  --m3-long: var(--m3-long2);
+
+  /* state-layer tint — white on the dark forest theme */
+  --m3-state: 255, 255, 255;
+}
+:root[data-theme="light"] { --m3-state: 14, 42, 38; }
+
+/* ============================================================
+   1. STATE LAYERS  (M3: hover 8% · focus 10% · press 12%)
+   ============================================================ */
+.btn, .btn-icon, .nav-link, .chip, .seg button, .drawer-item, .dropdown-opt,
+.entry-card, .prospect, .slot-add, .kpi, .numfield-steps button, .toggle,
+.dnav button, .theme-toggle, .footer a {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn::before, .btn-icon::before, .nav-link::before, .chip::before,
+.seg button::before, .drawer-item::before, .dropdown-opt::before,
+.entry-card::before, .prospect::before, .slot-add::before, .kpi::before,
+.numfield-steps button::before, .dnav button::before, .theme-toggle::before,
+.footer a::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgb(var(--m3-state));
+  opacity: 0;
+  transition: opacity var(--m3-short3) var(--m3-standard);
+  pointer-events: none;
+  border-radius: inherit;
+}
+/* solid emerald surfaces read better with a dark state layer */
+.btn-cta::before, .seg button.on::before { background: #000; }
+
+.btn:hover::before, .btn-icon:hover::before, .nav-link:hover::before,
+.chip:hover::before, .seg button:hover::before, .drawer-item:hover::before,
+.dropdown-opt:hover::before, .entry-card:hover::before, .prospect:hover::before,
+.slot-add:hover::before, .kpi:hover::before, .numfield-steps button:hover::before,
+.dnav button:hover::before, .theme-toggle:hover::before, .footer a:hover::before { opacity: .08; }
+
+.btn:focus-visible::before, .btn-icon:focus-visible::before, .nav-link:focus-visible::before,
+.chip:focus-visible::before, .drawer-item:focus-visible::before, .theme-toggle:focus-visible::before { opacity: .10; }
+
+.btn:active::before, .btn-icon:active::before, .nav-link:active::before,
+.chip:active::before, .seg button:active::before, .drawer-item:active::before,
+.dropdown-opt:active::before, .entry-card:active::before, .prospect:active::before,
+.slot-add:active::before, .numfield-steps button:active::before,
+.dnav button:active::before, .theme-toggle:active::before { opacity: .12; }
+
+/* ============================================================
+   2. PRESS — spring scale + M3 expressive shape-morph
+   (corner radius grows on press, springs back on release)
+   ============================================================ */
+.btn, .btn-icon, .chip, .seg button, .entry-card, .prospect, .kpi, .nav-burger,
+.slot-add, .theme-toggle, .toggle {
+  transition:
+    transform var(--m3-med2) var(--m3-spring),
+    border-radius var(--m3-med2) var(--m3-spring),
+    background var(--m3-short3) var(--m3-standard),
+    border-color var(--m3-short3) var(--m3-standard),
+    box-shadow var(--m3-med1) var(--m3-emph-decelerate),
+    color var(--m3-short3) var(--m3-standard);
+}
+.btn:active            { transform: scale(.96); border-radius: 14px; }
+.btn-icon:active, .theme-toggle:active, .nav-burger:active { transform: scale(.92); border-radius: 14px; }
+.chip:active           { transform: scale(.95); border-radius: 12px; }
+.seg button:active     { transform: scale(.94); }
+.slot-add:active       { transform: scale(.99); }
+.entry-card:active, .prospect:active, .kpi:active { transform: scale(.985); }
+
+/* CTA + cards lift on hover (MD3 elevation, springy) */
+.btn-cta:hover  { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+/* …but the press "dezoom" must win over that hover-lift so EVERY button
+   (incl. the red CTAs) shrinks on click, exactly like the secondary CRM button */
+.btn-cta:active, .btn-cta:hover:active { transform: scale(.96); border-radius: 14px; }
+.card           { transition: transform var(--m3-med3) var(--m3-spring),
+                              border-color var(--m3-short3) var(--m3-standard),
+                              box-shadow var(--m3-med2) var(--m3-emph-decelerate); }
+.entry-card     { transition: transform var(--m3-med3) var(--m3-spring),
+                              border-color var(--m3-short3) var(--m3-standard),
+                              box-shadow var(--m3-med2) var(--m3-emph-decelerate); }
+.entry-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+.prospect:hover   { transform: translateX(2px); }
+
+/* ============================================================
+   3. RIPPLE  (spawned by app.jsx pointerdown delegation)
+   ============================================================ */
+.m3-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgb(var(--m3-state));
+  opacity: .20;
+  transform: scale(0);
+  pointer-events: none;
+  z-index: -1;
+  animation: m3RippleGrow var(--m3-long2) var(--m3-emph-decelerate) forwards;
+}
+.btn-cta .m3-ripple, .seg button.on .m3-ripple { background: #000; opacity: .12; }
+@keyframes m3RippleGrow { to { transform: scale(2.5); opacity: 0; } }
+
+/* ============================================================
+   4. ICON MICRO-MOTIONS
+   ============================================================ */
+.btn svg, .btn-icon svg, .nav-burger svg { transition: transform var(--m3-med2) var(--m3-spring); }
+/* entry card: trailing arrow glides, icon nudges */
+.entry-card .between > svg { transition: transform var(--m3-med2) var(--m3-spring); }
+.entry-card:hover .between > svg { transform: translateX(5px); }
+.entry-ico { transition: transform var(--m3-med2) var(--m3-spring), background var(--m3-short3), border-color var(--m3-short3); }
+.entry-card:hover .entry-ico { transform: scale(1.08) rotate(-4deg); }
+/* search icon reacts to focus */
+.search svg, .ctrl svg { transition: transform var(--m3-med2) var(--m3-spring), color var(--m3-short3) var(--m3-standard); }
+.search:focus-within svg { transform: scale(1.15); }
+/* theme toggle spins on hover/press */
+.theme-toggle svg { transition: transform var(--m3-long1) var(--m3-spring); }
+.theme-toggle:hover svg { transform: rotate(35deg); }
+.theme-toggle:active svg { transform: rotate(160deg) scale(.9); }
+/* notification bell — one-shot swing on hover */
+.nav-right .btn-icon:hover svg { animation: m3Bell var(--m3-long2) var(--m3-emph-decelerate); transform-origin: 50% 12%; }
+@keyframes m3Bell {
+  0% { transform: rotate(0); } 25% { transform: rotate(11deg); }
+  50% { transform: rotate(-8deg); } 70% { transform: rotate(5deg); }
+  85% { transform: rotate(-2deg); } 100% { transform: rotate(0); }
+}
+/* logo flexes on hover */
+.nav > button img { transition: transform var(--m3-med2) var(--m3-spring); }
+.nav > button:hover img { transform: scale(1.04); }
+/* avatars in clickable rows pop */
+.avatar, .champ-tile, .rank { transition: transform var(--m3-med2) var(--m3-spring); }
+.prospect:hover .avatar, .tbl tbody tr:hover .avatar,
+.entry-card:hover .avatar { transform: scale(1.08); }
+.tbl tbody tr:hover .champ-tile { transform: scale(1.12) rotate(-3deg); }
+/* trailing chevron in CRM rows slides (the CRM star is exempt — it only rotates) */
+.tbl tbody tr svg:not(.crm-star) { transition: transform var(--m3-med2) var(--m3-spring); }
+.tbl tbody tr:hover svg:not(.crm-star) { transform: translateX(3px); }
+/* numfield steppers */
+.numfield-steps button:hover svg { transform: scale(1.25); }
+
+/* CRM star — on hover the upper-left point swings up to become the apex
+   (72° clockwise = one star-point step) and the star grows 10% */
+.crm-star { transform-box: fill-box; transform-origin: 50% 50%; }
+.btn .crm-star { transition: transform var(--m3-long1) var(--m3-spring-bouncy); }
+.btn:hover .crm-star,
+.btn:focus-visible .crm-star { transform: rotate(72deg) scale(1.1); }
+
+/* ============================================================
+   5. NAV — sliding shared underline (positioned by app.jsx)
+   ============================================================ */
+.nav-links { position: relative; }
+.nav-links.has-rail .nav-link.active::after { display: none; }
+.nav-rail {
+  position: absolute;
+  bottom: 2px;
+  height: 2px;
+  background: var(--vs-emerald-400);
+  border-radius: 2px;
+  left: 0; width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: left var(--m3-long1) var(--m3-spring),
+              width var(--m3-long1) var(--m3-spring),
+              opacity var(--m3-short3) var(--m3-standard);
+}
+.nav-rail.show { opacity: 1; }
+
+/* ============================================================
+   6. SEGMENTED CONTROL — sliding selection pill (app.jsx)
+   ============================================================ */
+.seg { position: relative; }
+.seg.has-ind button { background: transparent !important; }
+.seg.has-ind button.on { color: #04231D; }
+:root[data-theme="light"] .seg.has-ind button.on { color: #fff; }
+.seg-ind {
+  position: absolute;
+  top: 3px; bottom: 3px;
+  left: 0; width: 0;
+  background: var(--vs-accent-solid);
+  border-radius: 6px;
+  z-index: 0;
+  opacity: 0;
+  transition: left var(--m3-long1) var(--m3-spring-bouncy),
+              width var(--m3-long1) var(--m3-spring-bouncy),
+              opacity var(--m3-short2) var(--m3-standard);
+}
+.seg-ind.show { opacity: 1; }
+.seg button { position: relative; z-index: 1; }
+
+/* ============================================================
+   7. SWITCH / TOGGLE — M3 thumb spring + press-stretch
+   ============================================================ */
+.toggle { transition: background var(--m3-med1) var(--m3-standard), border-color var(--m3-med1) var(--m3-standard); }
+.toggle::after { transition: left var(--m3-med2) var(--m3-spring-bouncy),
+                            width var(--m3-short3) var(--m3-spring-bouncy),
+                            background var(--m3-med1) var(--m3-standard); }
+.toggle:active::after { width: 21px; }
+.toggle.on:active::after { left: 13px; }
+
+/* chips: selection pops via spring (handled by transform transition above) */
+.chip.on { transition: background var(--m3-short3) var(--m3-standard),
+                       border-color var(--m3-short3) var(--m3-standard),
+                       color var(--m3-short3) var(--m3-standard),
+                       transform var(--m3-med2) var(--m3-spring-bouncy); }
+
+/* ============================================================
+   8. TEXT FIELDS — M3 focus: outline thickens + field lifts
+   ============================================================ */
+.ctrl, .search { transition: border-color var(--m3-med1) var(--m3-standard),
+                            box-shadow var(--m3-med2) var(--m3-emph-decelerate),
+                            transform var(--m3-med2) var(--m3-spring),
+                            background var(--m3-short3) var(--m3-standard); }
+.search:focus-within { transform: translateY(-1px); }
+
+/* ============================================================
+   9. ENTRANCE  +  STAGGER  (stamped by app.jsx per route change)
+   ============================================================ */
+@keyframes m3FadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: none; }
+}
+.m3-enter {
+  animation: m3FadeUp var(--m3-med3) var(--m3-emph-decelerate) both;
+  animation-delay: calc(var(--m3-i, 0) * 45ms);
+}
+/* page wrapper fades through on route change */
+@keyframes m3PageIn {
+  from { opacity: 0; transform: scale(.994); }
+  to   { opacity: 1; transform: none; }
+}
+.wrap.fade-in { animation: m3PageIn var(--m3-med2) var(--m3-standard) both; }
+
+/* ============================================================
+   10. OVERLAYS — dropdown / drawer / scrim, M3 emphasized
+   ============================================================ */
+.dropdown-menu { animation: m3MenuIn var(--m3-med1) var(--m3-emph-decelerate) both; transform-origin: top; }
+@keyframes m3MenuIn {
+  from { opacity: 0; transform: translateY(-8px) scaleY(.92); }
+  to   { opacity: 1; transform: none; }
+}
+/* dropdown options cascade in */
+.dropdown-menu .dropdown-opt {
+  animation: m3OptIn var(--m3-med1) var(--m3-emph-decelerate) both;
+  animation-delay: calc(var(--m3-oi, 0) * 28ms + 30ms);
+}
+@keyframes m3OptIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.scrim { animation: m3ScrimIn var(--m3-short3) var(--m3-standard) both; }
+@keyframes m3ScrimIn { from { opacity: 0; } to { opacity: 1; } }
+.drawer { animation: m3DrawerIn var(--m3-med4) var(--m3-emph-decelerate) both; }
+@keyframes m3DrawerIn {
+  from { transform: translateX(-30px); opacity: .15; }
+  to   { transform: none; opacity: 1; }
+}
+/* drawer items cascade */
+.drawer .drawer-item {
+  animation: m3FadeUp var(--m3-med2) var(--m3-emph-decelerate) both;
+  animation-delay: calc(var(--m3-di, 0) * 35ms + 80ms);
+}
+
+/* ============================================================
+   11. DATA-VIZ ENTRANCE
+   ============================================================ */
+@keyframes m3BarReveal { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.m3-bar-fill { animation: m3BarReveal var(--m3-long2) var(--m3-emph-decelerate) both; }
+@keyframes m3RadarIn { from { opacity: 0; transform: scale(.55); } to { opacity: 1; transform: none; } }
+.m3-radar-series {
+  transform-box: fill-box; transform-origin: center;
+  animation: m3RadarIn var(--m3-long3) var(--m3-emph-decelerate) both;
+}
+
+/* ============================================================
+   12. ACCESSIBILITY — respect reduced motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .m3-enter, .wrap.fade-in, .dropdown-menu, .dropdown-menu .dropdown-opt,
+  .scrim, .drawer, .drawer .drawer-item, .m3-bar-fill, .m3-radar-series { animation: none !important; }
+  .m3-ripple { display: none !important; }
+  * { transition-duration: 0.01ms !important; }
+}
+
+/* ============================================================
+   Frozen-timeline fallback (set by app.jsx when per-animation
+   playback is frozen — headless capture / export / backgrounded).
+   Force visible end-states so content is never stuck hidden.
+   ============================================================ */
+.m3-no-timeline .m3-enter,
+.m3-no-timeline .wrap.fade-in,
+.m3-no-timeline .m3-radar-series,
+.m3-no-timeline .dropdown-menu .dropdown-opt,
+.m3-no-timeline .drawer .drawer-item,
+.m3-no-timeline .scrim,
+.m3-no-timeline .drawer,
+.m3-no-timeline .dropdown-menu { animation: none !important; opacity: 1 !important; transform: none !important; }
+.m3-no-timeline .m3-bar-fill { animation: none !important; clip-path: none !important; }
+.m3-no-timeline .nav-rail.show, .m3-no-timeline .seg-ind.show { opacity: 1 !important; }
+
+/* ============================================================
+   13. SCOUTING — role-reactive ambient background
+   The selected role tints the whole canvas and incrusts its
+   glyph into the negative space behind the dossier. Layers
+   crossfade with M3 emphasized easing; the glyph settles in
+   with an emphasized-decelerate scale (the "expressive" beat).
+   ============================================================ */
+.role-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;            /* above the body canvas, behind all .app content */
+  overflow: hidden;
+  pointer-events: none;
+}
+.role-bg-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity var(--m3-xlong1) var(--m3-emphasized);
+  will-change: opacity;
+}
+.role-bg-layer.on { opacity: 1; }
+
+/* directional role tint emanating from the incrusted glyph (top-right) —
+   one tight gradient, not a pair of generic corner blobs */
+.role-bg-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 58% at 84% -4%,
+      color-mix(in oklab, var(--tint) 26%, transparent), transparent 60%);
+}
+
+/* the incrusted role glyph — big watermark masked from the role SVG */
+.role-bg-icon {
+  position: absolute;
+  top: 50%;
+  right: -8%;
+  width: min(82vh, 880px);
+  aspect-ratio: 452 / 462;
+  opacity: .42;
+  background: linear-gradient(150deg,
+    color-mix(in oklab, var(--tint) 92%, white 10%),
+    color-mix(in oklab, var(--tint) 50%, transparent));
+  -webkit-mask: var(--ic) center / contain no-repeat;
+          mask: var(--ic) center / contain no-repeat;
+  transform: translateY(-50%) scale(1.14) rotate(4deg);
+  transition: transform var(--m3-xlong2) var(--m3-emph-decelerate),
+              opacity var(--m3-xlong1) var(--m3-emphasized);
+  will-change: transform;
+}
+/* a second, smaller echo of the glyph low-left for depth */
+.role-bg-icon.echo {
+  top: auto; bottom: -6%; left: -4%; right: auto;
+  width: min(62vh, 640px);
+  opacity: .18;
+  transform: translateY(0) scale(1.1) rotate(-6deg);
+}
+.role-bg-layer.on .role-bg-icon {
+  transform: translateY(-50%) scale(1) rotate(0deg);
+}
+/* all roles except Mid: rotate the right glyph 45° counter-clockwise */
+.role-bg-layer.on:not([data-role="Mid"]) .role-bg-icon:not(.echo) {
+  transform: translateY(-50%) scale(1) rotate(-45deg);
+}
+/* Jungle & Support: a further 45° counter-clockwise, then 20° back clockwise (−70° total) */
+.role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
+.role-bg-layer.on[data-role="Support"] .role-bg-icon:not(.echo) {
+  transform: translateY(-50%) scale(1) rotate(-70deg);
+}
+.role-bg-layer.on .role-bg-icon.echo {
+  transform: translateY(0) scale(1) rotate(-3deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .role-bg-layer, .role-bg-icon { transition: none !important; }
+}
+.m3-no-timeline .role-bg-layer.on { opacity: 1 !important; }
+.m3-no-timeline .role-bg-icon { transform: translateY(-50%) scale(1) rotate(0deg) !important; }
+.m3-no-timeline .role-bg-layer:not([data-role="Mid"]) .role-bg-icon:not(.echo) { transform: translateY(-50%) scale(1) rotate(-45deg) !important; }
+.m3-no-timeline .role-bg-layer[data-role="Jungle"] .role-bg-icon:not(.echo),
+.m3-no-timeline .role-bg-layer[data-role="Support"] .role-bg-icon:not(.echo) { transform: translateY(-50%) scale(1) rotate(-70deg) !important; }
+.m3-no-timeline .role-bg-icon.echo { transform: none !important; }
+
+/* ============================================================
+   15. AMBIENT BRAND WATERMARK — non-scouting pages
+   Static emerald vision-mark incrusted into the canvas behind
+   the glass frames, the brand counterpart to the role glyphs.
+   Fades/scales in once on mount with M3 emphasized easing.
+   ============================================================ */
+.logo-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.logo-bg-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(66% 56% at 86% -2%,
+      color-mix(in oklab, var(--vs-emerald-400) 16%, transparent), transparent 60%);
+  opacity: 0;
+  animation: logoBgWashIn var(--m3-xlong1) var(--m3-emphasized) both;
+}
+.logo-bg-icon {
+  position: absolute;
+  top: 50%;
+  right: -10%;
+  width: min(80vh, 860px);
+  aspect-ratio: 1 / 1;
+  opacity: .30;
+  background: linear-gradient(150deg,
+    color-mix(in oklab, var(--vs-emerald-400) 90%, white 8%),
+    color-mix(in oklab, var(--vs-emerald-400) 48%, transparent));
+  -webkit-mask: url("8aba32ef-7b93-42d0-8b00-6c75b9d746ec") center / contain no-repeat;
+          mask: url("8aba32ef-7b93-42d0-8b00-6c75b9d746ec") center / contain no-repeat;
+  transform: translateY(-50%) scale(1) rotate(0deg);
+}
+.logo-bg-icon.echo {
+  top: auto; bottom: -8%; left: -3%; right: auto;
+  width: min(46vh, 460px);
+  opacity: .12;
+  transform: translateY(0) scale(1) rotate(0deg);
+}
+@keyframes logoBgWashIn { to { opacity: 1; } }
+@keyframes logoBgIconIn {
+  to { opacity: .30; transform: translateY(-50%) scale(1) rotate(0deg); }
+}
+@keyframes logoBgEchoIn {
+  to { opacity: .12; transform: translateY(0) scale(1) rotate(-3deg); }
+}
+:root[data-theme="light"] .logo-bg-wash {
+  background:
+    radial-gradient(66% 56% at 86% -2%,
+      color-mix(in oklab, var(--vs-emerald-400) 12%, transparent), transparent 60%);
+}
+
+/* light-mode canvas — soft framing vignette, no grid */
+:root[data-theme="light"] body {
+  background-color: var(--vs-forest-900);
+  background-image:
+    radial-gradient(140% 120% at 50% 36%, transparent 60%, rgba(120,150,150,.26) 100%);
+  background-size: 100% 100%;
+  background-position: center;
+  background-attachment: fixed;
+}
+:root[data-theme="light"] .logo-bg-icon { opacity: .26; }
+:root[data-theme="light"] .logo-bg-icon.echo { opacity: .11; }
+@keyframes logoBgIconInLight {
+  to { opacity: .26; transform: translateY(-50%) scale(1) rotate(0deg); }
+}
+@keyframes logoBgEchoInLight {
+  to { opacity: .11; transform: translateY(0) scale(1) rotate(-3deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-bg-wash, .logo-bg-icon { animation-duration: 1ms; }
+}
+
+/* ============================================================
+   14. SCOUTING — LIGHT MODE coherence
+   Dark theme uses a deep-forest frosted glass; on the platinum
+   light theme the same dark base reads muddy. Re-skin the glass
+   to a frosted-white "liquid glass" (bright edge highlight, cool
+   platinum tint, soft daylight shadow) and soften the role-tinted
+   ambient layers so they stay a gentle wash, not a heavy stain.
+   Specificity is raised above theme-light's `.card` rules.
+   ============================================================ */
+:root[data-theme="light"] .glass-frames .card {
+  background:
+    linear-gradient(150deg, rgba(168,192,194,.30), rgba(152,178,180,.20) 42%, rgba(138,164,166,.26));
+  border: 1px solid rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+          backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.28),
+    inset 0 1px 1px rgba(255,255,255,.18),
+    inset 0 -10px 22px -12px rgba(31,60,55,.10),
+    inset -1px -1px 0 rgba(31,60,55,.05),
+    0 20px 46px -20px rgba(31,60,55,.40),
+    0 6px 18px -10px rgba(31,60,55,.28);
+}
+:root[data-theme="light"] .glass-frames .card::after {
+  padding: 0.5px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.10) 38%, rgba(255,255,255,.10) 62%, rgba(255,255,255,.16)),
+    rgba(255,255,255,.12);
+}
+:root[data-theme="light"] .glass-frames .card:hover {
+  border-color: rgba(255,255,255,.22);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.36),
+    inset 0 1px 1px rgba(255,255,255,.24),
+    inset 0 -10px 24px -12px rgba(31,60,55,.12),
+    inset -1px -1px 0 rgba(31,60,55,.06),
+    0 26px 56px -20px rgba(31,60,55,.44),
+    0 8px 22px -10px rgba(31,60,55,.30);
+}
+:root[data-theme="light"] .glass-frames .card.card-sel { border-color: rgba(15,161,118,.5); }
+
+/* sign-in card — light liquid glass (mirrors .glass-frames .card) */
+:root[data-theme="light"] .vit-signin {
+  background:
+    radial-gradient(420px 220px at 90% -10%, rgba(15,161,118,.10), transparent 70%),
+    linear-gradient(150deg, rgba(168,192,194,.32), rgba(152,178,180,.22) 42%, rgba(138,164,166,.28));
+  border: 1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+          backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.28),
+    inset 0 1px 1px rgba(255,255,255,.18),
+    inset 0 -10px 22px -12px rgba(31,60,55,.10),
+    inset -1px -1px 0 rgba(31,60,55,.05),
+    0 20px 46px -20px rgba(31,60,55,.40),
+    0 6px 18px -10px rgba(31,60,55,.28);
+}
+:root[data-theme="light"] .vit-signin::before {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.10) 38%, rgba(255,255,255,.10) 62%, rgba(255,255,255,.16)),
+    rgba(255,255,255,.12);
+}
+:root[data-theme="light"] .vit-signin .auth-input.ctrl {
+  background: rgba(255,255,255,.55);
+  border-color: rgba(31,60,55,.12);
+}
+:root[data-theme="light"] .vit-signin .auth-box {
+  background: rgba(255,255,255,.55);
+  border-color: rgba(31,60,55,.16);
+}
+
+/* vitrine frames — light liquid glass (mirrors .glass-frames .card light) */
+:root[data-theme="light"] .sc-fiche,
+:root[data-theme="light"] .sc-diff-card,
+:root[data-theme="light"] .sc-visual,
+:root[data-theme="light"] .sc-pillar,
+:root[data-theme="light"] .sc-prospect,
+:root[data-theme="light"] .sc-finalcta {
+  background:
+    linear-gradient(150deg, rgba(168,192,194,.30), rgba(152,178,180,.20) 42%, rgba(138,164,166,.26));
+  border: 1px solid rgba(255,255,255,.05);
+  -webkit-backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+          backdrop-filter: blur(76px) saturate(170%) brightness(.98);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.28),
+    inset 0 1px 1px rgba(255,255,255,.18),
+    inset 0 -10px 22px -12px rgba(31,60,55,.10),
+    inset -1px -1px 0 rgba(31,60,55,.05),
+    0 20px 46px -20px rgba(31,60,55,.40),
+    0 6px 18px -10px rgba(31,60,55,.28);
+}
+:root[data-theme="light"] .sc-finalcta {
+  background:
+    radial-gradient(700px 360px at 50% 0%, rgba(15,161,118,.14), transparent 64%),
+    linear-gradient(150deg, rgba(168,192,194,.30), rgba(152,178,180,.20) 42%, rgba(138,164,166,.26));
+}
+:root[data-theme="light"] .sc-fiche::after,
+:root[data-theme="light"] .sc-diff-card::after,
+:root[data-theme="light"] .sc-pillar::after,
+:root[data-theme="light"] .sc-prospect::after,
+:root[data-theme="light"] .sc-finalcta::after {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.26), rgba(255,255,255,.10) 38%, rgba(255,255,255,.10) 62%, rgba(255,255,255,.16)),
+    rgba(255,255,255,.12);
+}
+:root[data-theme="light"] .sc-fiche-bar,
+:root[data-theme="light"] .sc-fiche-foot,
+:root[data-theme="light"] .sc-prospect-foot,
+:root[data-theme="light"] .sc-board-row,
+:root[data-theme="light"] .sc-mini {
+  background: rgba(255,255,255,.45) !important;
+  border-color: rgba(31,60,55,.10) !important;
+}
+:root[data-theme="light"] .sc-col {
+  background: rgba(31,60,55,.05) !important;
+  border-color: rgba(31,60,55,.10) !important;
+}
+
+/* burger drawer — light frosted glass */
+:root[data-theme="light"] .glass-frames .drawer {
+  background:
+    linear-gradient(140deg, rgba(190,210,212,.34), rgba(170,194,196,.22) 42%, rgba(150,178,180,.30));
+  border-right: 1px solid rgba(255,255,255,.18);
+  -webkit-backdrop-filter: blur(76px) saturate(170%) brightness(1.02);
+          backdrop-filter: blur(76px) saturate(170%) brightness(1.02);
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,.35),
+    inset -1px 0 0 rgba(31,60,55,.06),
+    8px 0 40px -14px rgba(31,60,55,.4);
+}
+
+/* inner frosted sub-panel on light: a faint cool darken, not white sheen */
+:root[data-theme="light"] .glass-frames .card .between[style*="forest-800"] {
+  background: rgba(31,60,55,.05) !important;
+  border-bottom-color: rgba(31,60,55,.10) !important;
+}
+
+/* ambient role layers: lighter touch on a bright page */
+:root[data-theme="light"] .role-bg-wash { opacity: .55; }
+:root[data-theme="light"] .role-bg-icon { opacity: .42; }
+:root[data-theme="light"] .role-bg-icon.echo { opacity: .20; }
+
+/* ============================================================
+   VisionScore — Connexion / Auth gate
+   Split brand showcase + sign-in form. Forest command-center
+   aesthetic, emerald "vision ping" glow, red action CTA.
+   ============================================================ */
+
+.auth {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  background: var(--vs-forest-900);
+  color: var(--vs-fg-1);
+}
+
+/* ---------------- brand showcase (left) ---------------- */
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 56px 60px;
+  background:
+    radial-gradient(1100px 620px at 14% -8%, rgba(45,212,167,.22), transparent 60%),
+    radial-gradient(760px 520px at 96% 112%, rgba(255,51,0,.10), transparent 62%),
+    linear-gradient(160deg, var(--vs-forest-800) 0%, var(--vs-forest-900) 58%, var(--vs-forest-950) 100%);
+  border-right: 1px solid var(--vs-forest-500);
+}
+/* faint ward-mark watermark */
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  right: -120px; top: 46%;
+  width: 560px; height: 560px;
+  background: var(--auth-mark) center / contain no-repeat;
+  opacity: .05;
+  transform: rotate(-8deg);
+  pointer-events: none;
+}
+.auth-brand::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.auth-brand > * { position: relative; z-index: 1; }
+
+.auth-brandhead { display: flex; align-items: center; gap: 12px; }
+
+.auth-hero { margin-top: auto; margin-bottom: 30px; max-width: 520px; }
+.auth-eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--vs-emerald-400);
+  display: inline-flex; align-items: center; gap: 9px;
+  margin-bottom: 20px;
+}
+.auth-eyebrow::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%;
+  background: var(--vs-emerald-400); box-shadow: var(--glow-emerald-sm);
+}
+.auth-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 50px;
+  line-height: 1.03;
+  letter-spacing: -.02em;
+  margin: 0 0 18px;
+  text-wrap: balance;
+}
+.auth-title em { color: var(--vs-emerald-300); font-style: normal; }
+.auth-sub {
+  color: var(--vs-fg-2);
+  font-size: 16.5px;
+  line-height: 1.6;
+  max-width: 440px;
+  margin: 0;
+}
+
+/* feature list */
+.auth-feats { display: flex; flex-direction: column; gap: 14px; margin: 30px 0 0; }
+.auth-feat { display: flex; align-items: flex-start; gap: 14px; }
+.auth-feat-ic {
+  width: 38px; height: 38px; border-radius: 9px; flex: none;
+  display: grid; place-items: center;
+  background: rgba(45,212,167,.12); color: var(--vs-emerald-300);
+  border: 1px solid var(--vs-forest-500);
+}
+.auth-feat-t { font-weight: 700; font-size: 14.5px; }
+.auth-feat-d { color: var(--vs-fg-3); font-size: 12.5px; margin-top: 2px; }
+.auth-feat-d b { color: var(--vs-fg-2); font-weight: 700; }
+
+/* floating product-preview card */
+.auth-preview {
+  margin-top: 34px;
+  align-self: flex-start;
+  width: 340px;
+  padding: 14px 16px 0;
+  background: var(--vs-forest-700);
+  border: 1px solid var(--vs-forest-500);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.auth-preview-head { display: flex; align-items: center; gap: 12px; }
+.auth-preview-id { min-width: 0; }
+.auth-preview-name { font-weight: 900; font-size: 15px; }
+.auth-preview-meta { color: var(--vs-fg-3); font-size: 11px; font-family: var(--font-mono); margin-top: 1px; }
+.auth-preview-body { display: flex; align-items: center; gap: 18px; padding: 14px 0 6px; }
+.auth-preview-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 4px 14px; flex: 1; }
+.auth-preview-stats .label { font-size: 9.5px; }
+.auth-preview-stats .stat-v { font-size: 16px; }
+.auth-preview-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 0 -16px; padding: 9px 16px;
+  background: var(--vs-forest-800); border-top: 1px solid var(--vs-forest-600);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.auth-trust {
+  margin-top: 26px;
+  color: var(--vs-fg-3); font-size: 12px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.auth-trust .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--vs-fg-3); }
+
+/* ---------------- form (right) ---------------- */
+.auth-form-wrap {
+  position: relative;
+  display: flex; flex-direction: column;
+  padding: 28px 32px;
+}
+.auth-topbar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 14px;
+  font-size: 13px;
+}
+.auth-topbar .muted { color: var(--vs-fg-2); }
+.auth-link { color: var(--vs-emerald-300); font-weight: 700; text-decoration: none; }
+.auth-link:hover { color: var(--vs-emerald-400); text-decoration: underline; }
+.auth-tbtn {
+  display: grid; place-items: center; width: 38px; height: 38px;
+  border-radius: 8px; border: 1px solid var(--vs-forest-500);
+  background: var(--vs-forest-800); color: var(--vs-fg-2);
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.auth-tbtn:hover { color: var(--vs-fg-1); border-color: var(--vs-emerald-500); }
+
+.auth-form {
+  width: 100%;
+  max-width: 388px;
+  margin: auto;
+}
+.auth-mark-sm { display: none; margin-bottom: 26px; }
+.auth-h {
+  font-weight: 900; font-size: 30px; letter-spacing: -.02em; margin: 0 0 8px;
+}
+.auth-h-sub { color: var(--vs-fg-2); font-size: 15px; margin: 0 0 28px; }
+
+.fld { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+.fld > .label { margin: 0; }
+.auth-input.ctrl { height: 48px; background: var(--vs-forest-800); }
+.auth-input.ctrl input { font-size: 15px; }
+.auth-eye {
+  display: grid; place-items: center; background: none; border: 0;
+  color: var(--vs-fg-3); padding: 4px; margin: -4px -4px -4px 0; border-radius: 6px;
+}
+.auth-eye:hover { color: var(--vs-fg-1); }
+
+.auth-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 4px 0 22px;
+}
+.auth-check { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; user-select: none; font-size: 13.5px; color: var(--vs-fg-2); }
+.auth-check input { position: absolute; opacity: 0; pointer-events: none; }
+.auth-box {
+  width: 18px; height: 18px; border-radius: 5px; flex: none;
+  border: 1px solid var(--vs-forest-500); background: var(--vs-forest-800);
+  display: grid; place-items: center; color: transparent;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.auth-check input:checked + .auth-box {
+  background: var(--vs-emerald-400); border-color: var(--vs-emerald-400); color: var(--vs-fg-inv);
+  box-shadow: var(--glow-emerald-sm);
+}
+.auth-check input:focus-visible + .auth-box { box-shadow: var(--glow-emerald-md); }
+
+.auth-submit.btn {
+  width: 100%; justify-content: center; height: 50px; font-size: 15px;
+}
+
+.auth-divider {
+  display: flex; align-items: center; gap: 14px;
+  color: var(--vs-fg-3); font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+  margin: 22px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ""; flex: 1; height: 1px; background: var(--vs-forest-500);
+}
+
+.auth-riot.btn {
+  width: 100%; justify-content: center; height: 48px; font-size: 14.5px;
+}
+.auth-riot .auth-riot-mark {
+  width: 18px; height: 18px; border-radius: 4px; flex: none;
+  display: grid; place-items: center;
+  background: var(--vs-red-500); color: #fff; font-weight: 900; font-size: 11px;
+  font-family: var(--font-display);
+}
+
+.auth-foot {
+  margin-top: 30px; text-align: center;
+  color: var(--vs-fg-3); font-size: 13px;
+}
+.auth-foot p { margin: 0; }
+.auth-foot .reserved { margin-top: 8px; font-size: 11.5px; color: var(--vs-fg-3); }
+
+/* ---------------- entrance motion ----------------
+   Content is ALWAYS visible (opacity never drops). The entrance animates
+   transform only, so even at a frozen frame-0 the content shows — just
+   slightly offset — never hidden in print/PDF/headless contexts. */
+@keyframes authIn { from { transform: translateY(14px); } to { transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  .auth.is-entering .auth-anim { animation: authIn .5s var(--ease-out) both; animation-delay: var(--d, 0ms); }
+}
+
+/* ---------------- responsive ---------------- */
+@media (max-width: 980px) {
+  .auth { grid-template-columns: 1fr; }
+  .auth-brand { display: none; }
+  .auth-mark-sm { display: block; }
+  .auth-form-wrap { padding: 22px 22px 40px; min-height: 100vh; }
+}
+@media (max-width: 460px) {
+  .auth-h { font-size: 26px; }
+}
+
+/* ============================================================
+   VITRINE — page publique (vitrine logiciel + connexion intégrée)
+   ============================================================ */
+.vit { min-height: 100vh; display: flex; flex-direction: column; background: transparent; color: var(--vs-fg-1); }
+
+/* public top bar */
+.vit-nav {
+  position: sticky; top: 0; z-index: 50;
+  display: flex; align-items: center; gap: 26px; height: 66px; padding: 0 40px;
+  background: rgba(11,47,42,.82); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--vs-forest-500);
+}
+.vit-nav-links { display: flex; gap: 4px; margin-left: 10px; }
+.vit-nav-links a {
+  font-family: var(--font-display); letter-spacing: .01em;
+  color: var(--vs-fg-2); font-weight: 700; font-size: 14px;
+  padding: 8px 12px; border-radius: 6px; text-decoration: none;
+  transition: all var(--dur-fast) var(--ease-out);
+}
+.vit-nav-links a:hover { color: var(--vs-fg-1); background: var(--vs-forest-700); }
+.vit-nav-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.vit-demo { color: var(--vs-fg-2); font-size: 13.5px; font-weight: 600; text-decoration: none; transition: color var(--dur-fast) var(--ease-out); }
+.vit-demo:hover { color: var(--vs-emerald-300); }
+a.btn { text-decoration: none; }
+.vit-login-btn { padding-inline: 18px; }
+
+/* integrated sign-in card (hero right column) — liquid glass frame,
+   matching the app's .glass-frames .card treatment */
+.vit-signin {
+  position: relative; overflow: hidden; width: 100%; max-width: 440px; justify-self: end;
+  background:
+    radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.13), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
+    rgba(6,30,26,.10);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--radius-xl); padding: 28px;
+  -webkit-backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+          backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55);
+}
+/* uniform perimeter hairline + directional sheen */
+.vit-signin::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  padding: 0.5px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.06)),
+    rgba(255,255,255,.035);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  z-index: 2;
+}
+.vit-signin > * { position: relative; z-index: 1; }
+/* inputs sit translucent on the glass instead of opaque forest tiles */
+.vit-signin .auth-input.ctrl {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.10);
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+}
+.vit-signin .auth-box {
+  background: rgba(255,255,255,.05);
+  border-color: rgba(255,255,255,.14);
+}
+.vit-signin-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--vs-emerald-400); margin-bottom: 12px;
+}
+.vit-ping { width: 7px; height: 7px; border-radius: 50%; background: var(--vs-emerald-400); box-shadow: var(--glow-emerald-sm); }
+.vit-signin-title { font-family: var(--font-display); font-weight: 700; font-size: 25px; letter-spacing: -.01em; margin: 0 0 4px; }
+.vit-signin-sub { color: var(--vs-fg-2); font-size: 14px; margin: 0 0 20px; }
+.vit-signin-foot { margin: 16px 0 0; text-align: center; color: var(--vs-fg-3); font-size: 11.5px; }
+
+@media (max-width: 1000px) {
+  .vit-nav-links { display: none; }
+  .vit-signin { justify-self: center; }
+}
+@media (max-width: 560px) {
+  .vit-nav { padding: 0 20px; gap: 14px; }
+  .vit-demo { display: none; }
+}
+
+/* ============================================================
+   VisionScore — HOME / FEATURE VITRINE
+   A marketing-grade showcase of the platform's capabilities,
+   built on the corporate forest+emerald skin. Calm at rest;
+   MD3 scroll-reveal choreography brings each section in.
+   ============================================================ */
+
+.showcase { flex: 1; overflow-x: clip; }
+
+/* ---- section scaffolding ---- */
+.sc-sec { padding: 92px 0; }
+.sc-in { max-width: 1180px; margin: 0 auto; padding: 0 40px; }
+.sc-head { max-width: 660px; margin: 0 auto 52px; text-align: center; }
+.sc-head.left { margin-left: 0; text-align: left; }
+.sc-display { font-weight: 600; line-height: 1.04; letter-spacing: -.015em; margin: 0; }
+.sc-sub { color: var(--vs-fg-2); font-size: 17px; line-height: 1.6; margin: 16px 0 0; }
+.sc-eyebrow {
+  display: inline-flex; align-items: center; gap: 11px;
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--vs-emerald-400); margin-bottom: 16px;
+}
+.sc-eyebrow::before { content:""; width: 22px; height: 2px; background: var(--vs-emerald-400); border-radius: 2px; }
+.sc-head:not(.left) .sc-eyebrow { justify-content: center; }
+
+/* alternating band tone */
+.sc-band { background: var(--vs-forest-950); border-block: 1px solid var(--vs-forest-600); }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.sc-hero { position: relative; overflow: hidden; padding: 84px 0 76px; }
+.sc-hero::before {
+  content:""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 16% 6%, rgba(45,212,167,.13), transparent 58%),
+    radial-gradient(720px 480px at 98% 96%, rgba(255,51,0,.05), transparent 60%);
+}
+.sc-hero::after {
+  content:none;
+}
+.sc-hero .sc-in { position: relative; z-index: 1; }
+.sc-hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 60px; align-items: center; }
+.sc-hero-title { font-weight: 600; font-size: 58px; line-height: 1.02; letter-spacing: -.02em; margin: 0 0 20px; }
+.sc-hero-title em { color: var(--vs-emerald-300); font-style: normal; }
+.sc-hero-sub { color: var(--vs-fg-2); font-size: 18.5px; line-height: 1.6; max-width: 480px; margin: 0 0 28px; }
+
+.sc-hero-search { max-width: 560px; padding: 10px; margin-bottom: 20px; }
+.sc-hero-search .ctrl { flex: 1; height: 50px; border: 0; background: transparent; }
+.sc-hero-search .ctrl input { font-size: 16px; }
+
+.sc-cta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sc-cta-row .btn { height: 50px; padding-inline: 22px; font-size: 15px; }
+
+.sc-trustline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 26px; color: var(--vs-fg-3); font-size: 13px; }
+.sc-trustline .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--vs-fg-3); }
+.sc-trustline b { color: var(--vs-fg-2); font-weight: 700; }
+
+/* ---- floating product fiche preview ---- */
+.sc-fiche {
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-md); overflow: hidden;
+}
+.sc-fiche-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  background: var(--vs-forest-800); border-bottom: 1px solid var(--vs-forest-600);
+  font-size: 11px; color: var(--vs-fg-3); font-family: var(--font-mono);
+}
+.sc-fiche-bar .seg-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--vs-forest-500); }
+.sc-fiche-body { padding: 18px; }
+.sc-fiche-id { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.sc-fiche-name { font-weight: 800; font-size: 17px; }
+.sc-fiche-meta { color: var(--vs-fg-3); font-size: 11.5px; font-family: var(--font-mono); margin-top: 2px; }
+.sc-fiche-main { display: grid; grid-template-columns: auto 1fr; gap: 20px; align-items: center; }
+.sc-fiche-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px 18px; }
+.sc-fiche-stats .stat-v { font-size: 17px; color: var(--vs-emerald-300); }
+.sc-fiche-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 16px -18px -18px; padding: 12px 18px; background: var(--vs-forest-800);
+  border-top: 1px solid var(--vs-forest-600);
+}
+
+/* ============================================================
+   TRUST / DIFFERENTIATORS
+   ============================================================ */
+.sc-diff { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.sc-diff-card {
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500);
+  border-radius: var(--radius-lg); padding: 26px; box-shadow: var(--shadow-sm);
+}
+.sc-diff-ic {
+  width: 46px; height: 46px; border-radius: 11px; display: grid; place-items: center;
+  background: rgba(45,212,167,.12); color: var(--vs-emerald-300); margin-bottom: 16px;
+}
+.sc-diff-t { font-weight: 700; font-size: 17px; margin-bottom: 7px; }
+.sc-diff-d { color: var(--vs-fg-2); font-size: 14px; line-height: 1.55; }
+
+/* ============================================================
+   FEATURE ROWS (alternating)
+   ============================================================ */
+.sc-feature { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.sc-feature + .sc-feature { margin-top: 104px; }
+.sc-feature.flip .sc-feat-copy { order: 2; }
+.sc-feat-copy .sc-title { font-weight: 600; font-size: 34px; line-height: 1.08; letter-spacing: -.015em; margin: 0 0 14px; }
+.sc-feat-copy .sc-sub { margin-bottom: 22px; }
+.sc-feat-list { list-style: none; margin: 0 0 26px; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.sc-feat-list li { display: flex; align-items: flex-start; gap: 11px; color: var(--vs-fg-2); font-size: 14.5px; line-height: 1.45; }
+.sc-feat-tick { width: 22px; height: 22px; border-radius: 6px; flex: none; display: grid; place-items: center; background: rgba(45,212,167,.14); color: var(--vs-emerald-300); margin-top: 1px; }
+
+/* visual frame holding each preview */
+.sc-visual {
+  position: relative; background: var(--vs-forest-800); border: 1px solid var(--vs-forest-500);
+  border-radius: var(--radius-xl); padding: 22px; box-shadow: var(--shadow-md);
+}
+.sc-visual::before {
+  content:""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(420px 240px at 80% 0%, rgba(45,212,167,.08), transparent 70%);
+}
+.sc-visual > * { position: relative; }
+
+/* ---- leaderboard preview (Top 50) ---- */
+.sc-board { display: flex; flex-direction: column; gap: 8px; }
+.sc-board-row {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); border-radius: 9px;
+}
+.sc-rank-no { width: 26px; text-align: center; font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--vs-fg-3); flex: none; }
+.sc-board-row.top .sc-rank-no { color: var(--vs-emerald-300); }
+.sc-board-name { font-weight: 700; font-size: 14.5px; }
+.sc-board-meta { color: var(--vs-fg-3); font-size: 11px; font-family: var(--font-mono); }
+
+/* ---- CRM kanban preview ---- */
+.sc-kanban { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.sc-col { background: var(--vs-forest-900); border: 1px solid var(--vs-forest-600); border-radius: 10px; padding: 10px; }
+.sc-col-head { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--vs-fg-2); margin-bottom: 10px; }
+.sc-col-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.sc-mini { display: flex; align-items: center; gap: 9px; padding: 9px; background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500); border-radius: 8px; }
+.sc-mini + .sc-mini { margin-top: 8px; }
+.sc-mini-name { font-weight: 700; font-size: 13px; }
+.sc-mini-score { margin-left: auto; font-family: var(--font-mono); font-weight: 700; font-size: 15px; }
+
+/* ---- legend (compare) ---- */
+.sc-legend { display: flex; justify-content: center; gap: 20px; margin-top: 14px; }
+.sc-legend span { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--vs-fg-2); font-weight: 700; }
+.sc-legend i { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+/* ============================================================
+   SPES EXPLAINER
+   ============================================================ */
+.sc-pillars { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+.sc-pillar {
+  background: var(--vs-forest-700); border: 1px solid var(--vs-forest-500);
+  border-radius: var(--radius-lg); padding: 22px 18px; text-align: center;
+}
+.sc-pillar-ic { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; margin: 0 auto 14px; background: rgba(45,212,167,.12); color: var(--vs-emerald-300); }
+.sc-pillar-t { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.sc-pillar-d { color: var(--vs-fg-3); font-size: 12.5px; line-height: 1.5; }
+
+/* ============================================================
+   HOW IT WORKS
+   ============================================================ */
+.sc-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; position: relative; }
+.sc-step { position: relative; }
+.sc-step-no {
+  font-family: var(--font-display); font-weight: 600; font-size: 15px;
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--vs-forest-800); border: 1px solid var(--vs-emerald-600);
+  color: var(--vs-emerald-300); margin-bottom: 18px;
+}
+.sc-step-t { font-weight: 700; font-size: 18px; margin-bottom: 8px; }
+.sc-step-d { color: var(--vs-fg-2); font-size: 14.5px; line-height: 1.55; }
+.sc-step:not(:last-child)::after {
+  content:""; position: absolute; top: 22px; left: 56px; right: -12px; height: 1px;
+  background: linear-gradient(90deg, var(--vs-emerald-600), transparent);
+}
+
+/* ============================================================
+   LIVE PROSPECTS
+   ============================================================ */
+.sc-prospects { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.sc-prospect {
+  text-align: left; padding: 0; overflow: hidden; cursor: pointer;
+  border: 1px solid var(--vs-forest-500); border-radius: var(--radius-lg);
+  background: var(--vs-forest-700); box-shadow: var(--shadow-sm);
+}
+.sc-prospect-top { display: flex; align-items: center; gap: 11px; padding: 13px 15px; }
+.sc-prospect-name { font-weight: 800; font-size: 15px; }
+.sc-prospect-meta { color: var(--vs-fg-3); font-size: 11px; font-family: var(--font-mono); margin-top: 1px; }
+.sc-prospect-foot { display: flex; align-items: center; justify-content: space-between; padding: 10px 15px; background: var(--vs-forest-800); border-top: 1px solid var(--vs-forest-600); }
+
+/* ============================================================
+   FINAL CTA
+   ============================================================ */
+.sc-finalcta {
+  position: relative; overflow: hidden; text-align: center;
+  background:
+    radial-gradient(700px 360px at 50% 0%, rgba(45,212,167,.16), transparent 64%),
+    var(--vs-forest-800);
+  border: 1px solid var(--vs-forest-500); border-radius: var(--radius-xl);
+  padding: 66px 40px; box-shadow: var(--shadow-md);
+}
+.sc-finalcta .sc-display { font-size: 40px; margin-bottom: 14px; }
+.sc-finalcta .sc-sub { margin: 0 auto 30px; max-width: 520px; }
+.sc-finalcta .sc-cta-row { justify-content: center; }
+
+/* ============================================================
+   FOOTER
+   ============================================================ */
+.sc-footer { border-top: 1px solid var(--vs-forest-500); background: var(--vs-forest-800); margin-top: 40px; }
+.sc-footer-in { max-width: 1180px; margin: 0 auto; padding: 52px 40px 40px; }
+.sc-footer-grid { display: grid; grid-template-columns: 1.6fr 1fr 1fr 1fr; gap: 32px; }
+.sc-footer-brand p { color: var(--vs-fg-3); font-size: 13.5px; line-height: 1.6; margin: 16px 0 0; max-width: 280px; }
+.sc-footer-col h4 { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--vs-fg-3); margin: 0 0 14px; font-family: var(--font-sans); }
+.sc-footer-col button { display: block; background: none; border: 0; padding: 6px 0; color: var(--vs-fg-2); font-size: 14px; font-weight: 500; text-align: left; transition: color var(--m3-short3, .15s) var(--ease-out); }
+.sc-footer-col button:hover { color: var(--vs-emerald-300); }
+.sc-footer-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--vs-forest-600); color: var(--vs-fg-3); font-size: 12.5px; }
+
+/* ============================================================
+   MD3 SCROLL-REVEAL
+   Base state is VISIBLE. JS adds `.sc-armed` to the root on mount
+   (only when motion is allowed); that arms the hidden start-state,
+   and the IntersectionObserver adds `.in` as each element enters.
+   A safety timer removes `.sc-armed` so nothing can stay hidden in
+   frozen-playback / export / no-JS contexts.
+   ============================================================ */
+.sc-armed .sc-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity var(--m3-long2, 500ms) var(--m3-emph-decelerate, cubic-bezier(.05,.7,.1,1)),
+    transform var(--m3-long2, 500ms) var(--m3-emph-decelerate, cubic-bezier(.05,.7,.1,1));
+  transition-delay: calc(var(--r-i, 0) * 80ms);
+  will-change: opacity, transform;
+}
+.sc-armed .sc-reveal.in { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-armed .sc-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 1000px) {
+  .sc-hero-grid { grid-template-columns: 1fr; gap: 40px; }
+  .sc-hero-title { font-size: 46px; }
+  .sc-feature, .sc-feature.flip { grid-template-columns: 1fr; gap: 36px; }
+  .sc-feature.flip .sc-feat-copy { order: 0; }
+  .sc-feature .sc-visual { order: 2; }
+  .sc-pillars { grid-template-columns: repeat(2, 1fr); }
+  .sc-diff, .sc-steps, .sc-prospects { grid-template-columns: 1fr; }
+  .sc-step:not(:last-child)::after { display: none; }
+  .sc-footer-grid { grid-template-columns: 1fr 1fr; gap: 28px; }
+}
+@media (max-width: 560px) {
+  .sc-sec { padding: 64px 0; }
+  .sc-in { padding: 0 22px; }
+  .sc-hero-title { font-size: 38px; }
+  .sc-pillars { grid-template-columns: 1fr; }
+  .sc-footer-grid { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   LIQUID-GLASS FRAMES — make the vitrine cards match the app's
+   .glass-frames .card treatment (translucent frosted sheets with a
+   refracted rim + perimeter sheen) instead of opaque forest tiles.
+   ============================================================ */
+.sc-fiche,
+.sc-diff-card,
+.sc-visual,
+.sc-pillar,
+.sc-prospect {
+  position: relative;
+  background:
+    linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
+    rgba(6,30,26,.12);
+  border: 1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+          backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55);
+}
+.sc-finalcta {
+  background:
+    radial-gradient(700px 360px at 50% 0%, rgba(45,212,167,.16), transparent 64%),
+    linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
+    rgba(6,30,26,.12);
+  border: 1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+          backdrop-filter: blur(22px) saturate(155%) brightness(1.04);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55);
+}
+/* uniform perimeter hairline + directional sheen on every frame */
+.sc-fiche::after,
+.sc-diff-card::after,
+.sc-pillar::after,
+.sc-prospect::after,
+.sc-finalcta::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  padding: 0.5px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.06)),
+    rgba(255,255,255,.035);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  z-index: 3;
+}
+/* sc-visual already uses ::before for its radial sheen — add the same
+   masked hairline as a layered gradient on that pseudo's sibling */
+.sc-visual { box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55); }
+
+/* keep card content above the sheen */
+.sc-fiche > *, .sc-diff-card > *, .sc-pillar > *,
+.sc-prospect > *, .sc-finalcta > * { position: relative; z-index: 1; }
+
+/* hover lift on the interactive prospect frames */
+.sc-prospect:hover {
+  border-color: rgba(255,255,255,.08);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.16),
+    inset 0 1px 1px rgba(255,255,255,.11),
+    inset 0 -10px 24px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 28px 60px -22px rgba(0,0,0,.74),
+    0 8px 22px -10px rgba(0,0,0,.55);
+}
+
+/* inner strips become lighter frosted sub-panels (like the app) */
+.sc-fiche-bar,
+.sc-fiche-foot,
+.sc-prospect-foot,
+.sc-board-row,
+.sc-mini {
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.10) !important;
+  -webkit-backdrop-filter: blur(6px);
+          backdrop-filter: blur(6px);
+}
+.sc-fiche-bar { border-bottom-color: rgba(255,255,255,.10) !important; }
+.sc-prospect-foot { border-top-color: rgba(255,255,255,.10) !important; }
+.sc-col {
+  background: rgba(7,32,28,.22) !important;
+  border-color: rgba(255,255,255,.07) !important;
+}
+
+/* ============================================================
+   VisionScore — AQUAVIT (real brand display face)
+   Replaces the Space Grotesk substitute. All titles route through
+   --font-display, which now resolves to Aquavit.
+   ============================================================ */
+
+
+
+
+
+
+
+
+:root {
+  --font-display: "Aquavit", "Space Grotesk", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Route every title through the brand display face. Body, data, labels and
+   stats stay Helvetica/mono — Aquavit is a display face, used for titles only. */
+.h1, .h2, .h3, .h4,
+.vs-display, .vs-h1, .vs-h2, .vs-h3, .vs-h4,
+.auth-title, .auth-h,
+.sc-display, .sc-title, .sc-hero-title {
+  font-family: var(--font-display);
+}
+
+/* Aquavit runs a touch wide; let big display titles breathe and balance. */
+.sc-display, .sc-hero-title, .auth-title { letter-spacing: -.01em; text-wrap: balance; }
+
+/* Bandeau haut de page — the top nav reads in the brand display face.
+   Logo stays an image; tab labels + sub-nav tabs route through Aquavit. */
+.nav .nav-link,
+.sub-nav .seg button {
+  font-family: var(--font-display);
+  letter-spacing: .01em;
+}
+/* ============================================================
+   AQUAVIT IS ALWAYS SET IN ALL CAPS.
+   Every selector that routes through --font-display is forced uppercase
+   so the brand display face is never shown in mixed/lower case.
+   (Selective lowercase exceptions will be added on request.)
+   ============================================================ */
+.h1, .h2, .h3, .h4,
+.vs-display, .vs-h1, .vs-h2, .vs-h3, .vs-h4,
+.auth-title, .auth-h,
+.sc-display, .sc-title, .sc-hero-title,
+.nav .nav-link, .sub-nav .seg button,
+.vit-nav-links a, .vit-signin-title, .auth-riot-mark,
+.eyebrow, .sc-eyebrow, .vit-signin-eyebrow {
+  text-transform: uppercase;
+}
+
+/* Top-nav page links + sub-nav tabs: extra tracking reads well in caps. */
+.nav .nav-link,
+.sub-nav .seg button {
+  letter-spacing: .07em;
+}
+
+/* Theme (clair/sombre) toggle: hover + ripple are standard like the other
+   icon buttons. On swap, the sun/moon spins in place — pure rotation, no
+   scale or fade, so the glyph never leaves its frame. */
+.theme-toggle svg { animation: themeSpin 500ms var(--ease-out) both; }
+@keyframes themeSpin { from { transform: rotate(-180deg); } to { transform: rotate(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle svg { animation: none; }
+}
+
+
+/* — Overrides intégration — */
+.sc-reveal{ opacity:1 !important; transform:none !important; }
+.vs-wordmark{ font-family:"Space Grotesk","Helvetica Neue",Helvetica,Arial,sans-serif; font-weight:700; font-size:21px; letter-spacing:-.02em; color:var(--vs-fg-1); line-height:1; }
+html{ scroll-behavior:smooth; }
 </style>
 </head>
 <body>
-  <header>
-    <div class="wrap nav">
-      <div class="logo">Vision<span>Score</span></div>
-      <div class="nav-cta">
-        <a href="#contact" class="btn btn-ghost">Nous contacter</a>
-        <a href="/login" class="btn btn-solid">Se connecter</a>
-      </div>
-    </div>
-  </header>
+<div class="vit" data-screen-label="Connexion"><header class="vit-nav"><span class="vs-wordmark">Vision<span style="color:var(--vs-emerald-400)">Score</span></span><nav class="vit-nav-links"><a href="#features">Plateforme</a><a href="#spes">Score SPES</a><a href="#how">Comment ça marche</a></nav><div class="vit-nav-right"><a class="vit-demo" href="mailto:contact@visionscore.gg">Demander une démo</a><a class="btn btn-cta btn-sm vit-login-btn" href="#signin">Se connecter</a></div></header><main class="showcase"><section class="sc-hero"><div class="sc-in"><div class="sc-hero-grid"><div class="sc-hero-copy"><div class="sc-eyebrow">Scouting e‑sport · League of Legends</div><h1 class="sc-hero-title">Repérez le prochain <em>pro talent.</em></h1><p class="sc-hero-sub">La plateforme de scouting qui transforme les données ranked officielles en une note claire — le <b style="color: var(--vs-fg-1); font-weight: 700;">VisionScore™</b>. Scoutez, notez et comparez chaque joueur, de chaque région.</p><div class="sc-cta-row"><button class="btn btn-cta" data-go="signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg>Commencer le scouting</button><a class="btn btn-ghost" href="mailto:contact@visionscore.gg"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"></path></svg>Voir la démo</a></div><div class="sc-trustline"><span>Données <b>API Riot Games</b></span><span class="dot"></span><span>EUW · EUNE · KR · NA · BR</span><span class="dot"></span><span><b>Zéro biais MMR</b></span></div></div><form id="signin" class="vit-signin"><div class="vit-signin-eyebrow"><span class="vit-ping"></span>Accès structure</div><h3 class="vit-signin-title">Connectez-vous</h3><p class="vit-signin-sub">Reprenez vos analyses et votre pipeline de scouting.</p><label class="fld"><span class="label">Adresse e‑mail</span><div class="ctrl auth-input"><input id="vs-email" type="email" placeholder="vous@structure.gg" autocomplete="username"></div></label><label class="fld"><span class="label">Mot de passe</span><div class="ctrl auth-input"><input id="vs-pass" type="password" placeholder="••••••••" autocomplete="current-password"><button type="button" class="auth-eye" aria-label="Afficher" tabindex="-1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4-4"></path></svg></button></div></label><div class="auth-row"><label class="auth-check"><input id="vs-remember" type="checkbox" checked=""><span class="auth-box"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Se souvenir de moi</label><a class="auth-link" href="#">Mot de passe oublié ?</a></div><div id="vs-login-msg" style="display:none;font-size:13px;margin:-2px 0 2px;color:var(--vs-red-400)"></div><button type="submit" class="btn btn-cta auth-submit">Se connecter <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></button><p class="vit-signin-foot">Accès réservé aux structures esport semi‑pro &amp; pro.</p></form></div></div></section><section class="sc-sec sc-band"><div class="sc-in"><div class="sc-diff"><div class="sc-diff-card sc-reveal" style="--r-i: 0;"><div class="sc-diff-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg></div><div class="sc-diff-t">Données officielles</div><div class="sc-diff-d">Branché sur l'API Riot Games — 50 à 200 parties SoloQ par joueur, sur cinq régions.</div></div><div class="sc-diff-card sc-reveal" style="--r-i: 1;"><div class="sc-diff-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="11" width="3" height="6"></rect><rect x="12" y="7" width="3" height="10"></rect><rect x="17" y="13" width="3" height="4"></rect></svg></div><div class="sc-diff-t">Score SPES calibré</div><div class="sc-diff-d">Une note 0–100 sur cinq dimensions, pensée pour le scouting semi‑pro et pro.</div></div><div class="sc-diff-card sc-reveal" style="--r-i: 2;"><div class="sc-diff-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"></path></svg></div><div class="sc-diff-t">Zéro biais MMR</div><div class="sc-diff-d">Des seuils absolus par rôle — la note ne dépend pas du rang, mais de la performance réelle.</div></div></div></div></section><section class="sc-sec" id="features"><div class="sc-in"><div class="sc-head sc-reveal"><div class="sc-eyebrow" style="justify-content: center;">La plateforme</div><h2 class="sc-display" style="font-size: 38px;">Tout ce qu'il faut pour scouter sérieusement.</h2><p class="sc-sub">Quatre modules, une seule source de vérité sur vos prospects.</p></div><div class="sc-feature"><div class="sc-feat-copy sc-reveal"><div class="sc-eyebrow">Scouting</div><h3 class="sc-title">Notez n'importe quel joueur sur 5 dimensions.</h3><p class="sc-sub">Importez 50 à 200 parties et obtenez une fiche SPES complète : score global, radar par dimension, pool de champions et historique détaillé.</p><ul class="sc-feat-list"><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Import 50 / 100 / 200 dernières SoloQ</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Radar SPES + score VisionScore™ sur 100</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Seuils absolus par rôle, pas relatifs au rang</li></ul><button class="btn btn-secondary" data-go="signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>Ouvrir le scouting</button></div><div class="sc-visual sc-reveal" style="--r-i: 1;"><div class="sc-fiche"><div class="sc-fiche-bar"><span class="seg-dot"></span><span class="seg-dot"></span><span class="seg-dot"></span><span style="margin-left: 8px;">visionscore.gg / fiche</span><span class="pill pill-emerald" style="margin-left: auto;">◆ Pépite</span></div><div class="sc-fiche-body"><div class="sc-fiche-id"><div class="avatar" style="width: 46px; height: 46px; font-size: 18.4px;">V</div><div style="min-width: 0px;"><div class="sc-fiche-name">Velja</div><div class="sc-fiche-meta">#EUW9 · EUW · Jungle · 17 ans</div></div><div style="margin-left: auto;"><span style="display: inline-flex; align-items: center; gap: 6px;"><span style="font-weight: 700; font-size: 10.5px; color: var(--rank-challenger); letter-spacing: 0.01em;">Challenger I</span></span></div></div><div class="sc-fiche-main"><div style="display: flex; flex-direction: column; align-items: center; gap: 8px;"><div style="width: 120px; height: 120px; border-radius: 50%; display: grid; place-items: center; position: relative; background: conic-gradient(var(--vs-emerald-400) 88%, var(--vs-forest-600) 0); transition: background 60ms linear;"><div style="position: absolute; inset: 9px; border-radius: 50%; background: var(--vs-forest-700);"></div><div style="position: relative; text-align: center; max-width: 96px;"><div style="font-family: var(--font-mono); font-weight: 600; font-size: 36px; color: var(--vs-emerald-400); line-height: 1;">88</div><div class="label" style="font-size: 9.84px; letter-spacing: 0.02em; margin-top: 3px; white-space: nowrap;">VisionScore™</div></div></div></div><div class="sc-fiche-stats"><div><div class="label" style="font-size: 10px;">Win rate</div><div class="stat-v" style="color: var(--vs-emerald-300);">64.8%</div></div><div><div class="label" style="font-size: 10px;">KDA</div><div class="stat-v" style="color: var(--vs-emerald-300);">4.7</div></div><div><div class="label" style="font-size: 10px;">CS/min</div><div class="stat-v" style="color: var(--vs-emerald-300);">6.4</div></div><div><div class="label" style="font-size: 10px;">Vision</div><div class="stat-v" style="color: var(--vs-emerald-300);">1.9</div></div></div></div><div class="sc-fiche-foot"><span class="muted" style="font-size: 12.5px;">50 dernières SoloQ · EUW</span><span class="delta-up" style="display: inline-flex; align-items: center; gap: 2px; font-size: 13px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg>+4</span></div></div></div></div></div><div class="sc-feature flip"><div class="sc-feat-copy sc-reveal"><div class="sc-eyebrow">Top 50</div><h3 class="sc-title">Générez un classement sur‑mesure.</h3><p class="sc-sub">Définissez vos critères et laissez VisionScore trier la ladder. Un palmarès de prospects classés par note, prêt à exploiter.</p><ul class="sc-feat-list"><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>10 critères combinables, 5 rôles</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Tri par VisionScore™, progression ou région</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Export et envoi vers le pipeline en un clic</li></ul><button class="btn btn-secondary" data-go="signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>Générer un Top 50</button></div><div class="sc-visual sc-reveal" style="--r-i: 1;"><div class="sc-board"><div class="sc-board-row top"><span class="sc-rank-no">1</span><div class="avatar" style="width: 34px; height: 34px; font-size: 13.6px;">V</div><div style="min-width: 0px;"><div class="sc-board-name">Velja</div><div class="sc-board-meta">EUW · Jungle</div></div><div style="margin-left: auto; display: flex; align-items: center; gap: 9px;"><span class="stat-v" style="font-size: 19px; color: var(--vs-emerald-400);">88</span></div></div><div class="sc-board-row"><span class="sc-rank-no">2</span><div class="avatar" style="width: 34px; height: 34px; font-size: 13.6px;">L</div><div style="min-width: 0px;"><div class="sc-board-name">Lyse</div><div class="sc-board-meta">KR · Mid</div></div><div style="margin-left: auto; display: flex; align-items: center; gap: 9px;"><span class="stat-v" style="font-size: 19px; color: var(--vs-emerald-400);">86</span></div></div><div class="sc-board-row"><span class="sc-rank-no">3</span><div class="avatar" style="width: 34px; height: 34px; font-size: 13.6px;">N</div><div style="min-width: 0px;"><div class="sc-board-name">Noah</div><div class="sc-board-meta">EUW · Mid</div></div><div style="margin-left: auto; display: flex; align-items: center; gap: 9px;"><span class="stat-v" style="font-size: 19px; color: var(--vs-emerald-400);">84</span></div></div><div class="sc-board-row"><span class="sc-rank-no">4</span><div class="avatar" style="width: 34px; height: 34px; font-size: 13.6px;">K</div><div style="min-width: 0px;"><div class="sc-board-name">Kaori</div><div class="sc-board-meta">EUW · ADC</div></div><div style="margin-left: auto; display: flex; align-items: center; gap: 9px;"><span class="stat-v" style="font-size: 19px; color: var(--vs-emerald-400);">80</span></div></div><div class="sc-board-row"><span class="sc-rank-no">5</span><div class="avatar" style="width: 34px; height: 34px; font-size: 13.6px;">N</div><div style="min-width: 0px;"><div class="sc-board-name">Nemo</div><div class="sc-board-meta">EUW · Support</div></div><div style="margin-left: auto; display: flex; align-items: center; gap: 9px;"><span class="stat-v" style="font-size: 19px; color: var(--vs-emerald-400);">77</span></div></div></div></div></div><div class="sc-feature"><div class="sc-feat-copy sc-reveal"><div class="sc-eyebrow">CRM Agent</div><h3 class="sc-title">Pilotez votre pipeline de recrutement.</h3><p class="sc-sub">Chaque prospect suit un parcours, du repérage à la signature. Visualisez votre vivier d'un coup d'œil et n'oubliez plus personne.</p><ul class="sc-feat-list"><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Pipeline Repéré → En essai → Signé</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Fiches prospects centralisées</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Statut, notes et rappels par joueur</li></ul><button class="btn btn-secondary" data-go="signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>Ouvrir le CRM</button></div><div class="sc-visual sc-reveal" style="--r-i: 1;"><div class="sc-kanban"><div class="sc-col"><div class="sc-col-head"><span class="sc-col-dot" style="background: var(--rank-platinum);"></span>Repéré</div><div class="sc-mini"><div class="avatar" style="width: 28px; height: 28px; font-size: 11.2px;">L</div><span class="sc-mini-name">Lyse</span><span class="sc-mini-score" style="color: var(--vs-emerald-400);">86</span></div><div class="sc-mini"><div class="avatar" style="width: 28px; height: 28px; font-size: 11.2px;">O</div><span class="sc-mini-name">Orion</span><span class="sc-mini-score" style="color: var(--vs-emerald-400);">71</span></div></div><div class="sc-col"><div class="sc-col-head"><span class="sc-col-dot" style="background: var(--vs-emerald-400);"></span>En discussion</div><div class="sc-mini"><div class="avatar" style="width: 28px; height: 28px; font-size: 11.2px;">N</div><span class="sc-mini-name">Noah</span><span class="sc-mini-score" style="color: var(--vs-emerald-400);">84</span></div><div class="sc-mini"><div class="avatar" style="width: 28px; height: 28px; font-size: 11.2px;">K</div><span class="sc-mini-name">Kaori</span><span class="sc-mini-score" style="color: var(--vs-emerald-400);">80</span></div></div><div class="sc-col"><div class="sc-col-head"><span class="sc-col-dot" style="background: var(--vs-emerald-300);"></span>En essai</div><div class="sc-mini"><div class="avatar" style="width: 28px; height: 28px; font-size: 11.2px;">V</div><span class="sc-mini-name">Velja</span><span class="sc-mini-score" style="color: var(--vs-emerald-400);">88</span></div></div></div></div></div><div class="sc-feature flip"><div class="sc-feat-copy sc-reveal"><div class="sc-eyebrow">Analytics</div><h3 class="sc-title">Analysez, comparez, trouvez l'upgrade.</h3><p class="sc-sub">Quatre outils en un : analyse de replays .rofl, comparaison de fiches SPES, upgrade finder du roster et timeline des moments clés.</p><ul class="sc-feat-list"><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Replay .rofl — stats partie par partie</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Comparaison SPES jusqu'à 4 joueurs</li><li><span class="sc-feat-tick"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span>Upgrade finder + timeline des objectifs</li></ul><button class="btn btn-secondary" data-go="signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg>Ouvrir Analytics</button></div><div class="sc-visual sc-reveal" style="--r-i: 1;"><div><svg viewBox="-54 -24 408 348" preserveAspectRatio="xMidYMid meet" style="display: block; width: 100%; max-width: 408px; height: auto; margin: 0px auto;"><polygon fill="none" stroke="var(--vs-forest-500)" stroke-width="1" points="150,116.25 182.0981574249614,139.57067643984553 169.83775226487097,177.30432356015447 130.16224773512903,177.30432356015447 117.90184257503856,139.57067643984553"></polygon><polygon fill="none" stroke="var(--vs-forest-500)" stroke-width="1" points="150,82.5 214.19631484992286,129.14135287969106 189.67550452974194,204.60864712030894 110.32449547025807,204.60864712030894 85.80368515007713,129.14135287969106"></polygon><polygon fill="none" stroke="var(--vs-forest-500)" stroke-width="1" points="150,48.75 246.2944722748843,118.71202931953658 209.51325679461291,231.91297068046345 90.48674320538711,231.91297068046345 53.7055277251157,118.71202931953658"></polygon><polygon fill="none" stroke="var(--vs-forest-500)" stroke-width="1" points="150,15 278.3926296998457,108.28270575938211 229.35100905948389,259.2172942406179 70.64899094051614,259.2172942406179 21.60737030015426,108.28270575938211"></polygon><line x1="150" y1="150" x2="150" y2="15" stroke="var(--vs-forest-500)" stroke-width="1"></line><line x1="150" y1="150" x2="278.3926296998457" y2="108.28270575938211" stroke="var(--vs-forest-500)" stroke-width="1"></line><line x1="150" y1="150" x2="229.35100905948389" y2="259.2172942406179" stroke="var(--vs-forest-500)" stroke-width="1"></line><line x1="150" y1="150" x2="70.64899094051614" y2="259.2172942406179" stroke="var(--vs-forest-500)" stroke-width="1"></line><line x1="150" y1="150" x2="21.60737030015426" y2="108.28270575938211" stroke="var(--vs-forest-500)" stroke-width="1"></line><polygon class="m3-radar-series" points="150,33.900000000000006 239.874840789892,120.79789403156747 215.06782742877675,239.5581812773067 97.62833402074065,222.08341419880782 54.989454022114145,119.12920226194277" fill="var(--vs-emerald-400)" fill-opacity="0.18" stroke="var(--vs-emerald-400)" stroke-width="2"></polygon><polygon class="m3-radar-series" points="150,25.799999999999997 245.01054597788584,119.12920226194275 216.65484760996645,241.74252716211902 96.04131383955097,224.2677600836202 60.12515921010798,120.79789403156748" fill="var(--rank-diamond)" fill-opacity="0.18" stroke="var(--rank-diamond)" stroke-width="2"></polygon><text x="150" y="4.199999999999989" fill="var(--vs-fg-2)" font-size="10.8" font-weight="700" text-anchor="middle" dominant-baseline="middle" style="text-transform: uppercase; letter-spacing: 0.02em;">Lane</text><text x="288.6640400758334" y="104.94532222013267" fill="var(--vs-fg-2)" font-size="10.8" font-weight="700" text-anchor="start" dominant-baseline="middle" style="text-transform: uppercase; letter-spacing: 0.02em;">Roam</text><text x="235.69908978424257" y="267.9546777798673" fill="var(--vs-fg-2)" font-size="10.8" font-weight="700" text-anchor="start" dominant-baseline="middle" style="text-transform: uppercase; letter-spacing: 0.02em;">Stats</text><text x="64.30091021575743" y="267.9546777798673" fill="var(--vs-fg-2)" font-size="10.8" font-weight="700" text-anchor="end" dominant-baseline="middle" style="text-transform: uppercase; letter-spacing: 0.02em;">Vision</text><text x="11.335959924166588" y="104.94532222013268" fill="var(--vs-fg-2)" font-size="10.8" font-weight="700" text-anchor="end" dominant-baseline="middle" style="text-transform: uppercase; letter-spacing: 0.02em;">Entretien</text></svg><div class="sc-legend"><span><i style="background: var(--vs-emerald-400);"></i>Noah · 84</span><span><i style="background: var(--rank-diamond);"></i>Lyse · 86</span></div></div></div></div></div></section><section class="sc-sec sc-band" id="spes"><div class="sc-in"><div class="sc-head sc-reveal"><div class="sc-eyebrow" style="justify-content: center;">Le score SPES</div><h2 class="sc-display" style="font-size: 38px;">Cinq dimensions, une seule note.</h2><p class="sc-sub">Chaque joueur est évalué sur cinq axes complémentaires, agrégés en un VisionScore™ unique et comparable.</p></div><div class="sc-pillars"><div class="sc-pillar sc-reveal" style="--r-i: 0;"><div class="sc-pillar-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="11" width="3" height="6"></rect><rect x="12" y="7" width="3" height="10"></rect><rect x="17" y="13" width="3" height="4"></rect></svg></div><div class="sc-pillar-t">Stats</div><div class="sc-pillar-d">Performance brute : KDA, CS/min, dégâts, win rate.</div></div><div class="sc-pillar sc-reveal" style="--r-i: 1;"><div class="sc-pillar-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg></div><div class="sc-pillar-t">Macro</div><div class="sc-pillar-d">Lecture de carte, objectifs, rotations et vision.</div></div><div class="sc-pillar sc-reveal" style="--r-i: 2;"><div class="sc-pillar-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg></div><div class="sc-pillar-t">Impact</div><div class="sc-pillar-d">Poids réel sur la partie : kill participation, tempo.</div></div><div class="sc-pillar sc-reveal" style="--r-i: 3;"><div class="sc-pillar-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"></path><path d="m5 12 7-7 7 7"></path></svg></div><div class="sc-pillar-t">Progression</div><div class="sc-pillar-d">Trajectoire sur les 50 dernières parties.</div></div><div class="sc-pillar sc-reveal" style="--r-i: 4;"><div class="sc-pillar-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div class="sc-pillar-t">Entretien</div><div class="sc-pillar-d">Évaluation humaine : mental, communication, ambition.</div></div></div></div></section><section class="sc-sec" id="how"><div class="sc-in"><div class="sc-head sc-reveal"><div class="sc-eyebrow" style="justify-content: center;">Comment ça marche</div><h2 class="sc-display" style="font-size: 38px;">D'un pseudo à une fiche complète.</h2><p class="sc-sub">Trois étapes, quelques secondes.</p></div><div class="sc-steps"><div class="sc-step sc-reveal" style="--r-i: 0;"><div class="sc-step-no">01</div><div class="sc-step-t">Recherchez un summoner</div><div class="sc-step-d">Saisissez un pseudo et sa région. VisionScore récupère ses parties via l'API officielle Riot Games.</div></div><div class="sc-step sc-reveal" style="--r-i: 1;"><div class="sc-step-no">02</div><div class="sc-step-t">Importez ses parties</div><div class="sc-step-d">Choisissez la profondeur d'analyse — 50, 100 ou 200 dernières SoloQ — et lancez le calcul.</div></div><div class="sc-step sc-reveal" style="--r-i: 2;"><div class="sc-step-no">03</div><div class="sc-step-t">Recevez la fiche SPES</div><div class="sc-step-d">Score sur 100, radar 5 dimensions, pool de champions et historique. Prêt à partager ou comparer.</div></div></div></div></section><section class="sc-sec"><div class="sc-in"><div class="sc-finalcta sc-reveal"><h2 class="sc-display">Prêt à dénicher la prochaine pépite ?</h2><p class="sc-sub">Connectez-vous à votre espace, ou demandez une démo guidée pour votre structure.</p><div class="sc-cta-row"><a class="btn btn-cta" href="#signin"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg> Se connecter</a><a class="btn btn-ghost" href="mailto:contact@visionscore.gg">Demander une démo</a></div></div></div></section><footer class="sc-footer"><div class="sc-footer-in"><div class="sc-footer-grid"><div class="sc-footer-brand"><span class="vs-wordmark">Vision<span style="color:var(--vs-emerald-400)">Score</span></span><p>La plateforme de scouting League of Legends pour les structures semi‑pro et pro. Données via l'API officielle Riot Games.</p></div><div class="sc-footer-col"><h4>Plateforme</h4><button data-go="signin">Scouting</button><button data-go="signin">Top 50</button><button data-go="signin">CRM Agent</button><button data-go="signin">Analytics</button></div><div class="sc-footer-col"><h4>Outils</h4><button data-go="signin">Map LoL</button><button data-go="signin">Graphiques</button></div><div class="sc-footer-col"><h4>Ressources</h4><a href="#spes" style="display: block; padding: 6px 0px; color: var(--vs-fg-2); font-size: 14px; font-weight: 500; text-decoration: none;">Le score SPES</a><a href="mailto:contact@visionscore.gg" style="display: block; padding: 6px 0px; color: var(--vs-fg-2); font-size: 14px; font-weight: 500; text-decoration: none;">Demander une démo</a><a href="mailto:contact@visionscore.gg" style="display: block; padding: 6px 0px; color: var(--vs-fg-2); font-size: 14px; font-weight: 500; text-decoration: none;">Contact</a></div></div><div class="sc-footer-bar"><span>© 2025 VisionScore — Tous droits réservés.</span><span>Non affilié à Riot Games · Données via Riot Games API</span></div></div></footer></main></div>
+<script>
 
-  <section class="hero">
-    <div class="wrap">
-      <span class="badge">Scouting · CRM · League of Legends</span>
-      <h1>Détectez la <em>pépite</em> avant les autres.</h1>
-      <p>VisionScore évalue chaque joueur de A à Z grâce à notre scoring propriétaire SPES,
-         centralise votre pipeline de recrutement dans un CRM dédié et compare vos cibles
-         poste par poste pour construire le meilleur roster.</p>
-      <div class="hero-cta">
-        <a href="#contact" class="btn btn-solid btn-lg">Demander une démo</a>
-        <a href="/login" class="btn btn-ghost btn-lg">Accéder à la plateforme</a>
-      </div>
-    </div>
-  </section>
+(function(){
+  function b64urlDecode(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; return atob(s); }
+  // déjà connecté → app
+  try { var t=localStorage.getItem('vs_token')||sessionStorage.getItem('vs_token');
+    if(t){ var p=JSON.parse(b64urlDecode(t.split('.')[0])); if(p.exp && p.exp>Date.now()/1000) location.replace('/app'); } } catch(e){}
 
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Tout l'outillage d'un staff pro</h2>
-        <p>Conçu avec et pour des structures esport. Des données Riot officielles à la décision de recrutement.</p>
-      </div>
-      <div class="grid">
-        <div class="feat">
-          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="14 7 21 7 21 14"/></svg></div>
-          <h3>Scoring SPES</h3>
-          <p>Une note sur 5 dimensions, calibrée poste par poste et rang par rang. Chaque rôle a ses propres seuils pour révéler le vrai potentiel.</p>
-        </div>
-        <div class="feat">
-          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
-          <h3>CRM de recrutement</h3>
-          <p>Répertoriez chaque joueur par statut — prospect, en observation, négociation, signé — et pilotez votre pipeline comme une structure pro.</p>
-        </div>
-        <div class="feat">
-          <div class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20z"/></svg></div>
-          <h3>Comparaison de joueurs</h3>
-          <p>Affrontez plusieurs profils côte à côte, même rôle ou rôles différents, avec un radar 5D pour construire le roster optimal.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+  function scrollToSignin(){ var f=document.getElementById('signin'); if(f){ f.scrollIntoView({behavior:'smooth',block:'center'}); var em=document.getElementById('vs-email'); if(em) setTimeout(function(){em.focus();},400); } }
+  document.addEventListener('click', function(e){
+    var go=e.target.closest('[data-go="signin"]'); if(go){ e.preventDefault(); scrollToSignin(); }
+    var eye=e.target.closest('.auth-eye'); if(eye){ var inp=document.getElementById('vs-pass'); if(inp){ inp.type = inp.type==='password'?'text':'password'; } }
+  });
 
-  <section class="section" id="contact">
-    <div class="wrap">
-      <div class="contact">
-        <h2>Intéressé pour votre structure ?</h2>
-        <p>Présentez-nous votre équipe et vos besoins : nous vous ouvrons un accès de démonstration
-           et vous accompagnons dans la prise en main.</p>
-        <div class="contact-methods">
-          <div class="contact-card">
-            <div class="lbl">Email</div>
-            <a href="mailto:contact@visionscore.gg">contact@visionscore.gg</a>
-          </div>
-          <div class="contact-card">
-            <div class="lbl">Déjà client ?</div>
-            <a href="/login">Se connecter →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+  var form=document.getElementById('signin');
+  if(form){ form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var email=(document.getElementById('vs-email')||{}).value||''; email=email.trim();
+    var pass=(document.getElementById('vs-pass')||{}).value||'';
+    var remember=(document.getElementById('vs-remember')||{}).checked;
+    var msg=document.getElementById('vs-login-msg');
+    function showErr(t){ if(msg){ msg.style.display='block'; msg.textContent=t; } }
+    if(!email||!pass){ showErr('Identifiant et mot de passe requis.'); return; }
+    var btn=form.querySelector('.auth-submit'); if(btn){ btn.disabled=true; btn.style.opacity='.7'; }
+    try {
+      var res=await fetch('/api/login',{ method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ username: email, password: pass, remember: remember }) });
+      var data=await res.json();
+      if(!res.ok){ showErr(data.error||'Identifiants incorrects.'); if(btn){btn.disabled=false;btn.style.opacity='1';} return; }
+      var store = remember ? localStorage : sessionStorage;
+      store.setItem('vs_token', data.token);
+      store.setItem('vs_user', JSON.stringify({ username:data.username, label:data.label }));
+      location.replace('/app');
+    } catch(err){ showErr('Erreur réseau, réessayez.'); if(btn){btn.disabled=false;btn.style.opacity='1';} }
+  }); }
+})();
 
-  <footer>
-    <div class="wrap">© <span id="year"></span> VisionScore — Plateforme de scouting esport · visionscore.gg</div>
-  </footer>
-  <script>document.getElementById('year').textContent = new Date().getFullYear();</script>
+</script>
 </body>
 </html>
