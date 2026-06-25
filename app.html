@@ -22,11 +22,11 @@
   var t = localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token');
   var valid = false;
   if (t) { try { var p = JSON.parse(b64urlDecode(t.split('.')[0])); valid = p.exp && p.exp > Date.now()/1000; } catch(e){} }
-  if (!valid) { try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); }catch(e){} location.replace('/login'); }
+  if (!valid) { try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); }catch(e){} location.replace('/'); }
 })();
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
-function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/login'); }
+function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/'); }
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
