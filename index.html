@@ -2516,8 +2516,13 @@ a.btn { text-decoration: none; }
 .vs-logo{ height:21px; width:auto; display:block; }
 .sc-footer-brand .vs-mark{ height:34px; }
 .sc-footer-brand .vs-logo{ height:23px; }
-/* logo-mark de fond : on remappe le masque blob de la maquette vers notre SVG */
-.logo-bg-icon{ -webkit-mask:url('/assets/logos/logo-mark.svg') center / contain no-repeat !important; mask:url('/assets/logos/logo-mark.svg') center / contain no-repeat !important; }
+/* logo-mark de fond : emblème SEUL (étoile), sans le monogramme « VS » — comme la wireframe */
+.logo-bg-icon{ -webkit-mask:url('/assets/logos/logo-emblem.svg') center / contain no-repeat !important; mask:url('/assets/logos/logo-emblem.svg') center / contain no-repeat !important; }
+/* Champs de connexion : pas de bande blanche → verre sombre + texte platine (comme le design) */
+.vit-signin .auth-input.ctrl{ background:rgba(15,58,52,.55) !important; border-color:rgba(191,215,219,.16) !important; }
+.vit-signin .auth-input.ctrl input{ color:#BFD7DB !important; }
+.vit-signin .auth-input.ctrl input::placeholder{ color:rgba(191,215,219,.45) !important; }
+.vit-signin .auth-input.ctrl svg{ color:rgba(191,215,219,.55) !important; }
 /* (Animations d'apparition pilotées en JS — voir le script en bas de page) */
 html{ scroll-behavior:smooth; }
 </style>
