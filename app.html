@@ -161,6 +161,33 @@ body.theme-dark .vsd .dim-header:hover{ background:var(--vs-forest-700)!importan
 html[data-cursor="normal"], html[data-cursor="normal"] *{ cursor:url('/assets/cursors/normal.png') 0 0, auto !important; }
 html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/assets/cursors/classique.png') 0 0, auto !important; }
 
+/* ════ SCOUTING — fond ambiant réactif au rôle (porté de la maquette) ════
+   Le rôle sélectionné teinte le canvas et incruste son glyphe dans l'espace
+   négatif derrière le dossier. N'apparaît que sur Scouter / Résultats. */
+.role-bg{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; opacity:0; transition:opacity .45s cubic-bezier(.2,0,0,1); }
+body.rolebg-on .role-bg{ opacity:1; }
+.role-bg-layer{ position:absolute; inset:0; opacity:0; transition:opacity .5s cubic-bezier(.2,0,0,1); will-change:opacity; }
+.role-bg-layer.on{ opacity:1; }
+.role-bg-wash{ position:absolute; inset:0; background:radial-gradient(70% 58% at 84% -4%, color-mix(in oklab, var(--tint) 26%, transparent), transparent 60%); }
+.role-bg-icon{
+  position:absolute; top:50%; right:-8%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.42;
+  background:linear-gradient(150deg, color-mix(in oklab, var(--tint) 92%, white 10%), color-mix(in oklab, var(--tint) 50%, transparent));
+  -webkit-mask:var(--ic) center / contain no-repeat; mask:var(--ic) center / contain no-repeat;
+  transform:translateY(-50%) scale(1.14) rotate(4deg);
+  transition:transform .7s cubic-bezier(.05,.7,.1,1), opacity .5s cubic-bezier(.2,0,0,1); will-change:transform;
+}
+.role-bg-icon.echo{ top:auto; bottom:-6%; left:-4%; right:auto; width:min(62vh,640px); opacity:.18; transform:translateY(0) scale(1.1) rotate(-6deg); }
+.role-bg-layer.on .role-bg-icon{ transform:translateY(-50%) scale(1) rotate(0deg); }
+.role-bg-layer.on:not([data-role="Mid"]) .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-45deg); }
+.role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
+.role-bg-layer.on[data-role="Support"] .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-70deg); }
+.role-bg-layer.on .role-bg-icon.echo{ transform:translateY(0) scale(1) rotate(-3deg); }
+/* Mode clair : glyphes plus discrets sur le canvas menthe */
+body:not(.theme-dark) .role-bg-wash{ opacity:.5; }
+body:not(.theme-dark) .role-bg-icon{ opacity:.30; }
+body:not(.theme-dark) .role-bg-icon.echo{ opacity:.14; }
+@media (prefers-reduced-motion: reduce){ .role-bg-layer, .role-bg-icon{ transition:none !important; } }
+
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
 .vsd-burger:hover{ background:#143F39; border-color:#2DD4A7; }
@@ -224,9 +251,9 @@ body:not(.theme-dark) .vsd .dim-header{ background:transparent !important; borde
 body:not(.theme-dark) .vsd .dim-num-input{ background:var(--vs-forest-800) !important; }
 
 /* ════ HEADER (bande du haut) — indicateur actif souligné (comme la wireframe) ════ */
-header.hd .hd-nav-item{ position:relative; font-weight:600; }
-header.hd .hd-nav-item.active{ box-shadow:none !important; background:none !important; color:var(--lime) !important; }
-header.hd .hd-nav-item.active::after{ content:''; position:absolute; left:11px; right:11px; bottom:-3px; height:2px; background:var(--lime); border-radius:2px; box-shadow:0 0 8px rgba(45,212,167,.45); }
+header.hd .hd-nav-item{ position:relative; font-weight:700; }
+header.hd .hd-nav-item.active{ box-shadow:none !important; background:none !important; border:0 !important; color:var(--lime) !important; }
+header.hd .hd-nav-item.active::after{ content:''; position:absolute; left:14px; right:14px; bottom:-1px; height:2px; background:var(--lime); border-radius:2px; box-shadow:0 0 8px rgba(45,212,167,.35); }
 body.theme-dark header.hd{ background:rgba(11,47,42,.92) !important; -webkit-backdrop-filter:blur(20px) saturate(1.3); backdrop-filter:blur(20px) saturate(1.3); }
 body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; border-bottom:1px solid #CBDADC !important; box-shadow:0 1px 12px rgba(31,60,55,.06) !important; }
 
@@ -237,6 +264,20 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
 .vsd .ctrl:focus-within{ border-color:var(--vs-emerald-500); box-shadow:var(--glow-emerald-sm); }
 .vsd .ctrl input{ flex:1; background:none; border:0; outline:0; color:var(--vs-fg-1); font-family:var(--font-sans); font-size:15px; min-width:0; }
 .vsd .ctrl input::placeholder{ color:var(--vs-fg-3); }
+/* Autofill Chrome/Edge — supprime le liseré blanc + police système imposée */
+.vsd .ctrl input:-webkit-autofill,
+.vsd .ctrl input:-webkit-autofill:hover,
+.vsd .ctrl input:-webkit-autofill:focus,
+.vsd .ctrl input:-webkit-autofill:active,
+.vsd .ctrl.select select:-webkit-autofill{
+  -webkit-text-fill-color:var(--vs-fg-1) !important;
+  -webkit-box-shadow:0 0 0 60px var(--vs-forest-800) inset !important;
+  box-shadow:0 0 0 60px var(--vs-forest-800) inset !important;
+  caret-color:var(--vs-fg-1);
+  font-family:var(--font-sans) !important;
+  font-size:15px !important;
+  transition:background-color 9999s ease-out 0s !important;
+}
 .vsd .ctrl svg{ color:var(--vs-fg-3); flex:none; }
 .vsd .ctrl.select{ cursor:pointer; justify-content:space-between; color:var(--vs-fg-2); }
 .vsd .ctrl.select select{ -webkit-appearance:none; appearance:none; background:none; border:0; outline:0; width:100%; color:var(--vs-fg-1); font-family:var(--font-sans); font-size:15px; cursor:pointer; }
@@ -1706,21 +1747,19 @@ body.landing-active #panel-landing.active { display:block !important; }
   filter:drop-shadow(0 0 6px rgba(45,212,167,.4));
 }
 
-/* ── Nav items pro ── */
+/* ── Nav items — épuré, calqué sur la wireframe (casse normale, sans icônes) ── */
 .hd-nav-item {
-  font-size:11.5px;
-  letter-spacing:.05em;
-  text-transform:uppercase;
+  font-size:13.5px;
+  letter-spacing:0;
+  text-transform:none;
+  font-weight:700;
+  gap:0;
 }
 .hd-nav-item.active {
-  box-shadow:inset 0 0 0 1px var(--lime-bd);
+  box-shadow:none;
 }
-.hd-nav-item svg {
-  opacity:.7;
-  transition:opacity .15s;
-}
-.hd-nav-item:hover svg,
-.hd-nav-item.active svg { opacity:1; }
+/* Icônes retirées de la barre : la wireframe est purement textuelle */
+.hd-nav-item svg { display:none; }
 
 /* ── Cards ultra pro ── */
 .card {
@@ -1874,6 +1913,35 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <body class="landing-active">
 
 <!-- ════ HEADER ════ -->
+<!-- Fond ambiant réactif au rôle (Scouter / Résultats) -->
+<div class="role-bg" aria-hidden="true">
+  <div class="role-bg-layer" data-role="Top" style="--tint:#FF4733">
+    <div class="role-bg-wash"></div>
+    <div class="role-bg-icon" style="--ic:url('/assets/roles/top.svg')"></div>
+    <div class="role-bg-icon echo" style="--ic:url('/assets/roles/top.svg')"></div>
+  </div>
+  <div class="role-bg-layer" data-role="Jungle" style="--tint:#1FC27E">
+    <div class="role-bg-wash"></div>
+    <div class="role-bg-icon" style="--ic:url('/assets/roles/jungle.svg')"></div>
+    <div class="role-bg-icon echo" style="--ic:url('/assets/roles/jungle.svg')"></div>
+  </div>
+  <div class="role-bg-layer" data-role="Mid" style="--tint:#F0B43C">
+    <div class="role-bg-wash"></div>
+    <div class="role-bg-icon" style="--ic:url('/assets/roles/mid.svg')"></div>
+    <div class="role-bg-icon echo" style="--ic:url('/assets/roles/mid.svg')"></div>
+  </div>
+  <div class="role-bg-layer" data-role="ADC" style="--tint:#A472FF">
+    <div class="role-bg-wash"></div>
+    <div class="role-bg-icon" style="--ic:url('/assets/roles/adc.svg')"></div>
+    <div class="role-bg-icon echo" style="--ic:url('/assets/roles/adc.svg')"></div>
+  </div>
+  <div class="role-bg-layer" data-role="Support" style="--tint:#2FE0C8">
+    <div class="role-bg-wash"></div>
+    <div class="role-bg-icon" style="--ic:url('/assets/roles/support.svg')"></div>
+    <div class="role-bg-icon echo" style="--ic:url('/assets/roles/support.svg')"></div>
+  </div>
+</div>
+
 <header class="hd">
   <button class="vsd-burger" onclick="vsdToggleDrawer(true)" title="Menu" aria-label="Menu" style="margin-right:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="hd-logo">
@@ -2435,10 +2503,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
       <script>
       /* Helpers du bloc scouting redesign (Claude Design) */
+      // Fond ambiant : mappe le rôle app → layer de la maquette et l'active
+      window.vsdSetRoleBg = function(role){
+        var map = { 'Top':'Top', 'Jgl':'Jungle', 'Jungle':'Jungle', 'Mid':'Mid', 'ADC':'ADC', 'Bot':'ADC', 'Sup':'Support', 'Support':'Support' };
+        var target = map[role] || 'Mid';
+        document.querySelectorAll('.role-bg-layer').forEach(function(l){
+          l.classList.toggle('on', l.getAttribute('data-role') === target);
+        });
+      };
       function vsdScoutRole(btn, role){
         var p = btn.parentNode;
         p.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
         btn.classList.add('on');
+        vsdSetRoleBg(role);
         // setRole() met à jour la vraie variable currentRole + recalcule les dimensions
         if (typeof setRole === 'function') setRole(role);
         if (typeof onIdentityChange === 'function') onIdentityChange();
@@ -5744,6 +5821,7 @@ function setRole(role, btn) {
   if (btn && btn.classList.contains('role-pill')) btn.classList.add('active');
   // Sync les chips de rôle du bloc scouting redesign
   document.querySelectorAll('.vsd .rolepills .chip').forEach(c => c.classList.toggle('on', c.dataset.role === role));
+  if (typeof vsdSetRoleBg === 'function') vsdSetRoleBg(role);
   buildAllDims();
   buildStatsGrid();
   updateGlobal();
@@ -6185,6 +6263,8 @@ function switchPanel(id) {
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
   if (id === 'prematch') initPrematch();
+  // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
+  document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
 }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
@@ -12409,6 +12489,7 @@ function vsdRenderHome(){
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') vsdToggleDrawer(false); });
 try{ vsdApplyCursor(); }catch(e){}
 try{ vsdRenderHome(); }catch(e){}
+try{ vsdSetRoleBg('Mid'); }catch(e){}
 </script>
 </body>
 </html>
