@@ -310,11 +310,11 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
    DESIGN SYSTEM
 ════════════════════════════════ */
 :root {
-  /* ── Fonds Platine clair ── */
-  --bg:        #EEF1F7;
+  /* ── Fonds Platine-menthe clair (canvas wireframe) ── */
+  --bg:        #DBE6E8;
   --surf1:     #FFFFFF;
-  --surf2:     #F4F7FC;
-  --surf3:     #E8EDF6;
+  --surf2:     #E9F0F1;
+  --surf3:     #E2EBEC;
 
   /* ── Bordures ── */
   --border:    rgba(100,120,160,.10);
@@ -405,10 +405,13 @@ body.theme-dark .map-canvas-wrap { box-shadow: 0 22px 60px rgba(0,0,0,.45), 0 8p
 body {
   font-family:'helvetica-neue-lt-pro','Helvetica Neue', Arial, sans-serif;
   background:var(--bg);
+  /* Canvas menthe-platine — même construction que le fond sombre, palette claire :
+     glows émeraude discrets + vignette forestière douce (comme la wireframe). */
   background-image:
-    radial-gradient(ellipse at 8% 12%, rgba(45,212,167,.055) 0%, transparent 42%),
-    radial-gradient(ellipse at 92% 88%, rgba(45,212,167,.045) 0%, transparent 38%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.80' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+    radial-gradient(ellipse at 8% 12%, rgba(15,161,118,.06) 0%, transparent 44%),
+    radial-gradient(ellipse at 92% 88%, rgba(15,161,118,.05) 0%, transparent 40%),
+    radial-gradient(140% 120% at 50% 34%, transparent 56%, rgba(84,120,114,.22) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.80' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='280' height='280' filter='url(%23n)' opacity='.02'/%3E%3C/svg%3E");
   background-attachment: fixed;
   color:var(--text);
   min-height:100vh;
@@ -12352,27 +12355,50 @@ function vsdHomeScout(){
 }
 function vsdRenderHome(){
   var box=document.getElementById('home-prospects'); if(!box) return;
-  var RC={ 'Grandmaster':'--rank-grandmaster','Challenger':'--rank-challenger','Diamond':'--rank-diamond','Master':'--rank-master','Emerald':'--rank-emerald','Platinum':'--rank-platinum','Gold':'--rank-gold' };
-  var pros=[
-    {n:'Kaori',t:'EUW7',r:'EUW',age:19,role:'ADC',sc:80,d:5,rank:'Grandmaster I',rk:'Grandmaster'},
-    {n:'Velja',t:'EUW9',r:'EUW',age:17,role:'Jungle',sc:88,d:4,rank:'Challenger I',rk:'Challenger'},
-    {n:'Lyric',t:'EUNE',r:'EUNE',age:16,role:'Mid',sc:66,d:4,rank:'Diamond II',rk:'Diamond'},
-    {n:'Orion',t:'EUW4',r:'EUW',age:17,role:'Top',sc:71,d:3,rank:'Diamond I',rk:'Diamond'},
-    {n:'Noah',t:'EUW2',r:'EUW',age:18,role:'Mid',sc:84,d:2,rank:'Grandmaster I',rk:'Grandmaster'},
-    {n:'Rune',t:'EUNE',r:'EUNE',age:18,role:'Jungle',sc:73,d:2,rank:'Master II',rk:'Master'}
-  ];
-  box.innerHTML=pros.map(function(p){
-    var scCol=p.sc>=70?'var(--vs-emerald-400)':'var(--rank-gold)';
-    var rankCol='var('+(RC[p.rk]||'--vs-fg-2')+')';
-    return '<button class="card" onclick="vsdGo(\'top50\')" style="text-align:left;padding:0;overflow:hidden;cursor:pointer;border:1px solid var(--vs-forest-500)">'
-      +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px">'
-        +'<div class="avatar" style="width:40px;height:40px;font-size:16px">'+p.n.charAt(0)+'</div>'
-        +'<div style="min-width:0"><div style="font-weight:900;font-size:15px">'+p.n+'</div><div class="faint" style="font-size:11px;font-family:var(--font-mono)">#'+p.t+' · '+p.r+' · '+p.age+' ans</div></div>'
-        +'<div style="margin-left:auto;text-align:right"><div style="display:flex;align-items:center;gap:5px;justify-content:flex-end"><span class="stat-v" style="font-size:20px;color:'+scCol+'">'+p.sc+'</span><span class="delta-up" style="font-size:13px">▲+'+p.d+'</span></div><div class="label" style="font-size:9px">VisionScore™</div></div>'
-      +'</div>'
-      +'<div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span style="font-weight:700;font-size:10.5px;color:'+rankCol+';letter-spacing:.01em">'+p.rank+'</span><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">'+p.role+'</span></div>'
-    +'</button>';
-  }).join('');
+
+  // Vrai ladder : les meilleurs prospects réellement scannés (Top 50 SPES)
+  var data=[];
+  try{ if(typeof top50Data!=='undefined' && Array.isArray(top50Data)) data=top50Data.slice(); }catch(e){}
+
+  var titleCase=function(s){ s=String(s||'').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1); };
+  var tierCol=function(t){ try{ if(typeof TIER_COLOR!=='undefined' && TIER_COLOR[t]) return TIER_COLOR[t]; }catch(e){} return 'var(--vs-fg-2)'; };
+  var ageMultOf=function(a){ try{ if(a && typeof ageBonus==='function') return ageBonus(a); }catch(e){} return 1; };
+
+  if(!data.length){
+    // Pas de fond factice : on invite à lancer le scan Top 50 (véritables joueurs)
+    box.style.gridTemplateColumns='1fr';
+    box.innerHTML='<div class="card" style="padding:26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500)">'
+      +'<div class="entry-ico" style="width:44px;height:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>'
+      +'<div><div class="h3" style="font-size:16px">Aucun prospect scanné pour l\'instant</div>'
+      +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">Lance un scan du ladder pour peupler ton Top 50 avec de vrais joueurs, notés par le modèle SPES.</div></div>'
+      +'<button class="btn btn-cta btn-sm" onclick="vsdGo(\'top50\')" style="margin-top:2px">Générer le Top 50 →</button>'
+      +'</div>';
+    box.__ladderReal=false;
+  } else {
+    // Tri par score final (avec bonus d\'âge, comme le Top 50) puis top 6
+    data.forEach(function(p){ var m=ageMultOf(p.age); p.__sf=p.age?Math.min(10,parseFloat(p.score||0)*m):parseFloat(p.score||0); });
+    data.sort(function(a,b){ return b.__sf-a.__sf; });
+    var pros=data.slice(0,6);
+    box.style.gridTemplateColumns='1fr 1fr';
+    box.innerHTML=pros.map(function(p){
+      var sf=(p.__sf||0);
+      var scCol=sf>=8?'var(--vs-emerald-400)':sf>=6.5?'var(--rank-gold)':'var(--vs-fg-2)';
+      var rankStr=titleCase(p.tier)+' '+(p.rank||'')+(p.lp!=null?' · '+p.lp+'LP':'');
+      var isPep=false; try{ isPep=p.scorePotentiel && p.age && p.age<=19 && (p.scorePotentiel-Math.min(parseFloat(p.score),(typeof RANG_PLAFOND!=='undefined'?(RANG_PLAFOND[(TIER_IDX[p.tier]||6)]||8.2):8.2)))>=1.5; }catch(e){}
+      var badge=isPep
+        ? '<span class="delta-up" style="font-size:12px" title="Pépite — fort potentiel">◆ pép.</span>'
+        : (p.age?'<span class="faint" style="font-size:11px;font-family:var(--font-mono)">'+p.age+' ans</span>':'');
+      return '<button class="card" onclick="vsdGo(\'top50\')" style="text-align:left;padding:0;overflow:hidden;cursor:pointer;border:1px solid var(--vs-forest-500)">'
+        +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px">'
+          +'<div class="avatar" style="width:40px;height:40px;font-size:16px">'+(p.name||'?').charAt(0).toUpperCase()+'</div>'
+          +'<div style="min-width:0"><div style="font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.name||'?')+'</div><div class="faint" style="font-size:11px;font-family:var(--font-mono)">'+(p.tag?'#'+p.tag+' · ':'')+(p.age?p.age+' ans':'')+'</div></div>'
+          +'<div style="margin-left:auto;text-align:right"><div style="display:flex;align-items:center;gap:5px;justify-content:flex-end"><span class="stat-v" style="font-size:20px;color:'+scCol+'">'+sf.toFixed(1)+'</span>'+badge+'</div><div class="label" style="font-size:9px">VisionScore™</div></div>'
+        +'</div>'
+        +'<div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span style="font-weight:700;font-size:10.5px;color:'+tierCol(p.tier)+';letter-spacing:.01em">'+rankStr+'</span><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">'+(p.role||'?')+'</span></div>'
+      +'</button>';
+    }).join('');
+    box.__ladderReal=true;
+  }
   // Activité (données réelles si dispo)
   var scouted=0,fiches=0,rosters=0;
   try{ var h=JSON.parse(localStorage.getItem('vs_history')||'[]'); if(Array.isArray(h)){ fiches=h.length; scouted=h.length; } }catch(e){}
