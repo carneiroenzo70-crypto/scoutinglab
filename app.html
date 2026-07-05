@@ -157,6 +157,49 @@ body.theme-dark .vsd .dim-header:hover{ background:var(--vs-forest-700)!importan
 .vsd .vsd-dropzone:hover{ border-color:var(--vs-emerald-500); background:rgba(45,212,167,.05); }
 .vsd .vsd-dz-ic{ width:54px; height:54px; border-radius:14px; display:grid; place-items:center; margin:0 auto 12px; background:rgba(45,212,167,.12); color:var(--vs-emerald-400); }
 
+/* ════ Curseur façon LoL (Système / Normal / Classique) ════ */
+html[data-cursor="normal"], html[data-cursor="normal"] *{ cursor:url('/assets/cursors/normal.png') 0 0, auto !important; }
+html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/assets/cursors/classique.png') 0 0, auto !important; }
+
+/* ════ Menu latéral (drawer) ════ */
+.vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
+.vsd-burger:hover{ background:#143F39; border-color:#2DD4A7; }
+.vsd-scrim{ position:fixed; inset:0; background:rgba(7,33,29,.72); z-index:9998; display:none; -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
+.vsd-scrim.open{ display:block; }
+.vsd-drawer{ position:fixed; top:0; left:0; width:320px; max-width:86vw; height:100%; background:#0F3A34; border-right:1px solid #245C52; padding:20px; display:flex; flex-direction:column; overflow-y:auto; z-index:9999; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; color:#F0F4F8; transform:translateX(-100%); transition:transform .26s cubic-bezier(.2,.8,.2,1); }
+.vsd-scrim.open .vsd-drawer{ transform:none; }
+.vsd-drawer-label{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6E8C85; margin:18px 6px 8px; }
+.vsd-drawer-item{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:11px 13px; border-radius:8px; border:0; background:none; color:#A9C4BD; font-weight:600; font-size:15px; cursor:pointer; transition:all .12s; font-family:inherit; }
+.vsd-drawer-item:hover{ background:#143F39; color:#F0F4F8; }
+.vsd-drawer-item.on{ background:#143F39; color:#5BE9BE; box-shadow:inset 3px 0 0 #2DD4A7; }
+.vsd-drawer-item.home{ background:rgba(45,212,167,.08); color:#F0F4F8; margin-bottom:4px; }
+.vsd-drawer-item .vsd-ddot{ margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2DD4A7; box-shadow:0 0 10px rgba(45,212,167,.5); }
+.vsd-drawer-sep{ height:1px; background:#1B4B43; margin:10px 4px; }
+.vsd-cursor-pick{ display:flex; gap:8px; margin:4px 0 6px; }
+.vsd-cursor-opt{ flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; padding:11px 6px; border-radius:10px; background:#0F3A34; border:1px solid #245C52; color:#A9C4BD; cursor:pointer; transition:all .12s; font-family:inherit; }
+.vsd-cursor-opt:hover{ background:#143F39; color:#F0F4F8; }
+.vsd-cursor-opt.on{ border-color:#2DD4A7; box-shadow:0 0 0 1px rgba(45,212,167,.5),0 0 12px rgba(45,212,167,.25); color:#F0F4F8; }
+.vsd-cursor-opt img, .vsd-cursor-opt svg{ width:22px; height:22px; }
+.vsd-cursor-opt span{ font-size:10px; font-weight:700; letter-spacing:.03em; }
+
+/* ════ Accueil ludique ════ */
+.vsd .hero{ position:relative; padding:36px 0 30px; overflow:hidden; text-align:center; }
+.vsd .hero::before{ content:''; position:absolute; top:50%; left:50%; width:520px; height:520px; transform:translate(-50%,-54%); -webkit-mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; background:var(--vs-emerald-400); opacity:.06; pointer-events:none; z-index:0; }
+.vsd .hero > *{ position:relative; z-index:1; }
+.vsd .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:rgba(15,58,52,.6); border:1px solid var(--vs-forest-500); border-radius:14px; padding:10px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
+.vsd .entry-card{ background:rgba(6,30,26,.46); border:1px solid var(--vs-forest-500); border-radius:12px; padding:20px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:16px; transition:transform .2s var(--ease-out), border-color .2s, box-shadow .2s; font-family:inherit; color:var(--vs-fg-1); -webkit-backdrop-filter:blur(40px); backdrop-filter:blur(40px); }
+.vsd .entry-card:hover{ border-color:var(--vs-emerald-500); box-shadow:var(--glow-emerald-sm); transform:translateY(-3px); }
+.vsd .entry-card:hover .between > svg:last-child{ transform:translateX(5px); }
+.vsd .entry-card .between > svg{ transition:transform .2s var(--ease-out); }
+.vsd .entry-mini{ display:grid; grid-template-columns:auto auto; gap:26px; padding-top:14px; border-top:1px solid var(--vs-forest-600); }
+.vsd .delta-up{ color:var(--vs-emerald-400); font-weight:700; font-family:var(--font-mono); }
+.vsd .delta-down{ color:var(--vs-red-400); font-weight:700; font-family:var(--font-mono); }
+.vsd .card-foot{ background:var(--vs-forest-800); border-top:1px solid var(--vs-forest-600); }
+.vsd .chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.vsd .nav-link{ font-weight:600; font-size:13px; color:var(--vs-fg-2); background:none; border:0; padding:4px 8px; border-radius:6px; cursor:pointer; font-family:inherit; }
+.vsd .nav-link:hover{ color:var(--vs-fg-1); background:var(--vs-forest-700); }
+@media (max-width:860px){ .vsd .home-grid-main{ grid-template-columns:1fr !important; } .vsd .home-entry-grid{ grid-template-columns:1fr 1fr !important; } .vsd .home-prospects{ grid-template-columns:1fr !important; } }
+
 /* Form fields */
 .vsd .fld{ display:flex; flex-direction:column; gap:7px; }
 .vsd .fld > .label{ margin:0; }
@@ -1799,6 +1842,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
 <!-- ════ HEADER ════ -->
 <header class="hd">
+  <button class="vsd-burger" onclick="vsdToggleDrawer(true)" title="Menu" aria-label="Menu" style="margin-right:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="hd-logo">
     <div class="hd-mark">
       <!-- Logo principal only — no mark in header (mark = home button) -->
@@ -1862,6 +1906,37 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     </button>
   </div>
 </header>
+<!-- ════ MENU LATÉRAL (drawer) ════ -->
+<div class="vsd-scrim" id="vsd-scrim" onclick="if(event.target===this)vsdToggleDrawer(false)">
+  <aside class="vsd-drawer" id="vsd-drawer">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <img src="/assets/logos/logo.svg" alt="VisionScore" style="height:22px;display:block"/>
+      <button class="btn-icon" onclick="vsdToggleDrawer(false)" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <button class="vsd-drawer-item home" data-nav="welcome" onclick="vsdDrawerGo('welcome')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Accueil</span></button>
+    <div class="vsd-drawer-label">Plateforme</div>
+    <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
+    <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 50</span></button>
+    <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
+    <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
+    <button class="vsd-drawer-item" data-nav="prematch" onclick="vsdDrawerGo('prematch')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg><span>Avant-match</span></button>
+    <div class="vsd-drawer-label">Outils</div>
+    <button class="vsd-drawer-item" data-nav="map" onclick="vsdDrawerGo('map')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Map LoL</span></button>
+    <button class="vsd-drawer-item" data-nav="graphs" onclick="vsdDrawerGo('graphs')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Graphiques</span></button>
+    <div style="flex:1"></div>
+    <div class="vsd-drawer-sep"></div>
+    <div class="vsd-drawer-label" style="display:flex;align-items:center;gap:6px">Curseur <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg></div>
+    <div class="vsd-cursor-pick">
+      <button class="vsd-cursor-opt" data-cursor="systeme" onclick="vsdSetCursor('systeme')" title="Système"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 2.5l0 16.5 4.2-4.1 2.5 5.2 2.2-1-2.4-5 5.6 0z"/></svg><span>Système</span></button>
+      <button class="vsd-cursor-opt" data-cursor="normal" onclick="vsdSetCursor('normal')" title="Normal"><img src="/assets/cursors/normal.png" alt="Normal" width="22" height="22"/><span>Normal</span></button>
+      <button class="vsd-cursor-opt" data-cursor="classique" onclick="vsdSetCursor('classique')" title="Classique"><img src="/assets/cursors/classique.png" alt="Classique" width="22" height="22"/><span>Classique</span></button>
+    </div>
+    <div class="vsd-drawer-sep"></div>
+    <button class="vsd-drawer-item" onclick="vsdToggleDrawer(false);if(typeof toggleTheme==='function')toggleTheme()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><span>Thème clair / sombre</span></button>
+    <button class="vsd-drawer-item" style="color:var(--vs-red-400)" onclick="vsLogout()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span>Quitter</span></button>
+  </aside>
+</div>
+
 <!-- Dropdown Plus — flottant, hors du flux normal -->
 <div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
@@ -2045,7 +2120,65 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     </div><!-- /panel-landing -->
 
-    <div id="panel-welcome" class="panel" style="padding:0;overflow:hidden">
+    <div id="panel-welcome" class="panel" style="padding:0">
+     <div class="vsd">
+      <div class="vsd-wrap" style="max-width:1180px;margin:0 auto;padding:20px 20px 60px;gap:0">
+        <!-- Hero -->
+        <div class="hero">
+          <div class="eyebrow">Scouting e-sport · League of Legends</div>
+          <h1 class="h1" style="font-size:44px;max-width:760px;margin:8px auto 10px">Repère le prochain pro talent.</h1>
+          <p class="muted" style="font-size:17px;max-width:520px;margin:0 auto 22px">Scoute, note et compare les joueurs ranked de chaque région.</p>
+          <div class="toolbar" style="max-width:720px;margin:0 auto">
+            <div class="ctrl" style="flex:1;height:48px;border:0;background:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Velja #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:16px"/></div>
+            <button class="btn btn-cta" onclick="vsdHomeScout()">Scouter</button>
+          </div>
+        </div>
+
+        <!-- 4 cartes d'entrée -->
+        <div class="grid home-entry-grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px">
+          <button class="entry-card" onclick="vsdGo('scout')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Scouting</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Trouver un joueur, importer 50/100/200 parties, le noter sur 5 dimensions SPES.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Parties</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">50–200</div></div><div><div class="label" style="font-size:10px">Sortie</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">Fiche SPES</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('top50')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Top 50</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Générer un classement de 50 joueurs selon tes critères.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Critères</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">10</div></div><div><div class="label" style="font-size:10px">Rôles</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">5</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('crm')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">CRM Agent</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Fiches prospects + pipeline de recrutement.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">12</div></div><div><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">1</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('analytics')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Analytics</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Performance .rofl, comparaison, upgrade finder et timeline.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Onglets</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">4</div></div><div><div class="label" style="font-size:10px">Replay</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">.rofl</div></div></div>
+          </button>
+        </div>
+
+        <!-- Prospects en hausse + panneau latéral -->
+        <div class="grid home-grid-main" style="grid-template-columns:1fr 320px;gap:18px;align-items:start">
+          <div>
+            <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">Prospects en hausse</div><h2 class="h2" style="font-size:24px">Ça grimpe sur la ladder</h2></div><button class="btn btn-secondary btn-sm" onclick="vsdGo('top50')">Voir le Top 50</button></div>
+            <div class="grid home-prospects" style="grid-template-columns:1fr 1fr;gap:12px" id="home-prospects"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Régions suivies</div><div class="chip-row"><span class="chip on">EUW</span><span class="chip">EUNE</span><span class="chip">KR</span><span class="chip">NA</span><span class="chip">BR</span></div></div>
+            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Activité</div>
+              <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Joueurs scoutés</span><span class="stat-v" style="font-size:15px" id="home-act-scout">—</span></div>
+              <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Fiches SPES</span><span class="stat-v" style="font-size:15px" id="home-act-fiches">—</span></div>
+              <div class="between" style="padding:7px 0"><span class="muted" style="font-size:14px">Rosters</span><span class="stat-v" style="font-size:15px" id="home-act-rosters">—</span></div>
+            </div>
+            <div class="card" style="padding:16px;display:flex;gap:12px;align-items:center;background:var(--vs-forest-800)"><div class="entry-ico" style="background:rgba(255,51,0,.12);color:var(--vs-red-400)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:14px">Outils</div><div class="faint" style="font-size:12px">Carte LoL · Graphiques</div></div><button class="nav-link" onclick="vsdGo('map')">Ouvrir →</button></div>
+          </div>
+        </div>
+      </div>
+     </div>
+    </div><!-- /panel-welcome -->
+
+    <div id="panel-welcome-OLD" class="panel" style="display:none;padding:0;overflow:hidden">
       <div class="wq-container">
 
         <!-- Logo VisionScore centré en haut -->
@@ -12147,5 +12280,79 @@ checkBackendStatus();
     </div>
   </div>
 </div>
+
+<script>
+/* ════ Menu latéral (drawer) + curseur LoL + accueil ludique ════ */
+function vsdToggleDrawer(open){
+  var s=document.getElementById('vsd-scrim'); if(!s) return;
+  s.classList.toggle('open', !!open);
+  if(open){
+    var act=((document.querySelector('.panel.active')||{}).id||'').replace('panel-','');
+    document.querySelectorAll('.vsd-drawer-item[data-nav]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-nav')===act); });
+    var cm=document.documentElement.getAttribute('data-cursor')||'systeme';
+    document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===cm); });
+  }
+}
+function vsdGo(panel){
+  if(panel==='welcome'){ if(typeof resetToWelcome==='function') resetToWelcome(); return; }
+  if(typeof setAppMode==='function') setAppMode('agent');
+  if(typeof switchPanel==='function') switchPanel(panel);
+}
+function vsdDrawerGo(panel){
+  vsdToggleDrawer(false);
+  setTimeout(function(){ if(panel==='welcome'){ if(typeof resetToWelcome==='function') resetToWelcome(); } else vsdGo(panel); }, 80);
+}
+function vsdSetCursor(mode){
+  if(mode==='systeme') document.documentElement.removeAttribute('data-cursor');
+  else document.documentElement.setAttribute('data-cursor', mode);
+  try{ localStorage.setItem('vs_cursor', mode); }catch(e){}
+  document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===mode); });
+}
+function vsdApplyCursor(){
+  var m='systeme'; try{ m=localStorage.getItem('vs_cursor')||'systeme'; }catch(e){}
+  if(m && m!=='systeme') document.documentElement.setAttribute('data-cursor', m);
+  document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===m); });
+}
+function vsdHomeScout(){
+  var el=document.getElementById('home-search'); var v=(el&&el.value||'').trim();
+  if(v){ var m=v.split('#'); var p=document.getElementById('d-pseudo'), t=document.getElementById('d-tag');
+    if(p) p.value=m[0].trim(); if(t&&m[1]) t.value=m[1].replace(/[^a-zA-Z0-9]/g,'').trim();
+    if(typeof onIdentityChange==='function') try{ onIdentityChange(); }catch(e){} }
+  vsdGo('scout');
+}
+function vsdRenderHome(){
+  var box=document.getElementById('home-prospects'); if(!box) return;
+  var RC={ 'Grandmaster':'--rank-grandmaster','Challenger':'--rank-challenger','Diamond':'--rank-diamond','Master':'--rank-master','Emerald':'--rank-emerald','Platinum':'--rank-platinum','Gold':'--rank-gold' };
+  var pros=[
+    {n:'Kaori',t:'EUW7',r:'EUW',age:19,role:'ADC',sc:80,d:5,rank:'Grandmaster I',rk:'Grandmaster'},
+    {n:'Velja',t:'EUW9',r:'EUW',age:17,role:'Jungle',sc:88,d:4,rank:'Challenger I',rk:'Challenger'},
+    {n:'Lyric',t:'EUNE',r:'EUNE',age:16,role:'Mid',sc:66,d:4,rank:'Diamond II',rk:'Diamond'},
+    {n:'Orion',t:'EUW4',r:'EUW',age:17,role:'Top',sc:71,d:3,rank:'Diamond I',rk:'Diamond'},
+    {n:'Noah',t:'EUW2',r:'EUW',age:18,role:'Mid',sc:84,d:2,rank:'Grandmaster I',rk:'Grandmaster'},
+    {n:'Rune',t:'EUNE',r:'EUNE',age:18,role:'Jungle',sc:73,d:2,rank:'Master II',rk:'Master'}
+  ];
+  box.innerHTML=pros.map(function(p){
+    var scCol=p.sc>=70?'var(--vs-emerald-400)':'var(--rank-gold)';
+    var rankCol='var('+(RC[p.rk]||'--vs-fg-2')+')';
+    return '<button class="card" onclick="vsdGo(\'top50\')" style="text-align:left;padding:0;overflow:hidden;cursor:pointer;border:1px solid var(--vs-forest-500)">'
+      +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px">'
+        +'<div class="avatar" style="width:40px;height:40px;font-size:16px">'+p.n.charAt(0)+'</div>'
+        +'<div style="min-width:0"><div style="font-weight:900;font-size:15px">'+p.n+'</div><div class="faint" style="font-size:11px;font-family:var(--font-mono)">#'+p.t+' · '+p.r+' · '+p.age+' ans</div></div>'
+        +'<div style="margin-left:auto;text-align:right"><div style="display:flex;align-items:center;gap:5px;justify-content:flex-end"><span class="stat-v" style="font-size:20px;color:'+scCol+'">'+p.sc+'</span><span class="delta-up" style="font-size:13px">▲+'+p.d+'</span></div><div class="label" style="font-size:9px">VisionScore™</div></div>'
+      +'</div>'
+      +'<div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span style="font-weight:700;font-size:10.5px;color:'+rankCol+';letter-spacing:.01em">'+p.rank+'</span><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">'+p.role+'</span></div>'
+    +'</button>';
+  }).join('');
+  // Activité (données réelles si dispo)
+  var scouted=0,fiches=0,rosters=0;
+  try{ var h=JSON.parse(localStorage.getItem('vs_history')||'[]'); if(Array.isArray(h)){ fiches=h.length; scouted=h.length; } }catch(e){}
+  try{ if(typeof rsAll==='function') rosters=rsAll().length; }catch(e){}
+  var set=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
+  set('home-act-scout', scouted); set('home-act-fiches', fiches); set('home-act-rosters', rosters);
+}
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') vsdToggleDrawer(false); });
+try{ vsdApplyCursor(); }catch(e){}
+try{ vsdRenderHome(); }catch(e){}
+</script>
 </body>
 </html>
