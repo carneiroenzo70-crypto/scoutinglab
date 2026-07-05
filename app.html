@@ -200,6 +200,36 @@ html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/ass
 .vsd .nav-link:hover{ color:var(--vs-fg-1); background:var(--vs-forest-700); }
 @media (max-width:860px){ .vsd .home-grid-main{ grid-template-columns:1fr !important; } .vsd .home-entry-grid{ grid-template-columns:1fr 1fr !important; } .vsd .home-prospects{ grid-template-columns:1fr !important; } }
 
+/* ════ MODE CLAIR — palette platine (comme la wireframe) ════ */
+body:not(.theme-dark) .vsd{
+  --vs-forest-950:#B7CCCF; --vs-forest-900:#DBE6E8; --vs-forest-800:#E9F0F1; --vs-forest-700:#FFFFFF; --vs-forest-600:#E2EBEC; --vs-forest-500:#BDD1D4;
+  --vs-fg-1:#0E2A26; --vs-fg-2:#4E6A64; --vs-fg-3:#879D98;
+  --vs-emerald-300:#0E9270; --vs-emerald-400:#0FA176;
+  --rank-gold:#B5821A;
+  --glow-emerald-sm:0 0 0 1px rgba(15,161,118,.45), 0 0 10px rgba(15,161,118,.16);
+}
+/* surfaces "verre" hardcodées → claires */
+body:not(.theme-dark) .vsd .card,
+body:not(.theme-dark) .vsd .dim-section{ background:#FFFFFF; border:1px solid var(--vs-forest-500); -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:0 2px 8px rgba(31,60,55,.10); }
+body:not(.theme-dark) .vsd .entry-card{ background:#FFFFFF; -webkit-backdrop-filter:none; backdrop-filter:none; }
+body:not(.theme-dark) .vsd .entry-card:hover{ box-shadow:0 12px 30px rgba(31,60,55,.16); }
+body:not(.theme-dark) .vsd .hero .toolbar{ background:rgba(255,255,255,.78); }
+body:not(.theme-dark) .vsd .toolbar{ background:#FFFFFF; }
+body:not(.theme-dark) .vsd .vsd-dropzone{ background:rgba(255,255,255,.55); }
+body:not(.theme-dark) .vsd .card-foot{ background:var(--vs-forest-800); }
+body:not(.theme-dark) .vsd .avatar{ background:var(--vs-emerald-400); color:#FFFFFF; border-color:var(--vs-emerald-500); }
+body:not(.theme-dark) .vsd .hero::before{ opacity:.045; }
+body:not(.theme-dark) .vsd .btn-cta{ color:#FFFFFF; }
+body:not(.theme-dark) .vsd .dim-header{ background:transparent !important; border-bottom:1px solid var(--vs-forest-500) !important; }
+body:not(.theme-dark) .vsd .dim-num-input{ background:var(--vs-forest-800) !important; }
+
+/* ════ HEADER (bande du haut) — indicateur actif souligné (comme la wireframe) ════ */
+header.hd .hd-nav-item{ position:relative; font-weight:600; }
+header.hd .hd-nav-item.active{ box-shadow:none !important; background:none !important; color:var(--lime) !important; }
+header.hd .hd-nav-item.active::after{ content:''; position:absolute; left:11px; right:11px; bottom:-3px; height:2px; background:var(--lime); border-radius:2px; box-shadow:0 0 8px rgba(45,212,167,.45); }
+body.theme-dark header.hd{ background:rgba(11,47,42,.92) !important; -webkit-backdrop-filter:blur(20px) saturate(1.3); backdrop-filter:blur(20px) saturate(1.3); }
+body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; border-bottom:1px solid #CBDADC !important; box-shadow:0 1px 12px rgba(31,60,55,.06) !important; }
+
 /* Form fields */
 .vsd .fld{ display:flex; flex-direction:column; gap:7px; }
 .vsd .fld > .label{ margin:0; }
@@ -12309,10 +12339,16 @@ function vsdApplyCursor(){
 }
 function vsdHomeScout(){
   var el=document.getElementById('home-search'); var v=(el&&el.value||'').trim();
-  if(v){ var m=v.split('#'); var p=document.getElementById('d-pseudo'), t=document.getElementById('d-tag');
-    if(p) p.value=m[0].trim(); if(t&&m[1]) t.value=m[1].replace(/[^a-zA-Z0-9]/g,'').trim();
-    if(typeof onIdentityChange==='function') try{ onIdentityChange(); }catch(e){} }
   vsdGo('scout');
+  if(!v) return;
+  var m=v.split('#');
+  var p=document.getElementById('d-pseudo'), t=document.getElementById('d-tag');
+  if(p) p.value=m[0].trim();
+  if(t) t.value=(m[1]||'').replace(/[^a-zA-Z0-9]/g,'').trim();
+  if(typeof onIdentityChange==='function'){ try{ onIdentityChange(); }catch(e){} }
+  // Lance directement l'import Riot (auto-détecte rang, rôle, région, stats) —
+  // l'utilisateur n'a plus qu'à compléter l'âge et le rang d'il y a 1 an.
+  if(p && p.value && typeof fetchRiotData==='function'){ setTimeout(function(){ try{ fetchRiotData(); }catch(e){} }, 300); }
 }
 function vsdRenderHome(){
   var box=document.getElementById('home-prospects'); if(!box) return;
