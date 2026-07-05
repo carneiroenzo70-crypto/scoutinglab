@@ -8748,23 +8748,17 @@ crmLoad();
 
 // ── Init au démarrage ─────────────────────────────────────
 (function initApp() {
-  const savedMode = localStorage.getItem('spes_mode');
-  if (savedMode && (savedMode === 'agent' || savedMode === 'coach')) {
-    // Returning user — skip landing and welcome, go directly to tool
-    document.body.classList.remove('landing-active');
-    setTimeout(() => setAppMode(savedMode), 50);
-  } else {
-    // New visitor — show agent/coach choice directly
-    document.body.classList.remove('landing-active');
-    document.body.classList.add('welcome-active');
-    const landing = document.getElementById('panel-landing');
-    if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
-    const welcome = document.getElementById('panel-welcome');
-    if (welcome) { welcome.classList.add('active'); }
-    const scout = document.getElementById('panel-scout');
-    if (scout) scout.classList.remove('active');
-    document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
-  }
+  // Au démarrage on affiche TOUJOURS la page d'accueil ludique (top ladder, etc.).
+  // L'utilisateur navigue ensuite via le menu, la nav ou les cartes d'entrée.
+  document.body.classList.remove('landing-active');
+  document.body.classList.add('welcome-active');
+  const landing = document.getElementById('panel-landing');
+  if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
+  document.querySelectorAll('.panel').forEach(p => {
+    if (p.id === 'panel-welcome') { p.classList.add('active'); p.style.display = ''; }
+    else { p.classList.remove('active'); }
+  });
+  document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
 })();
 
 // Recalcule toutes les fiches sauvegardées avec le barème actuel.
