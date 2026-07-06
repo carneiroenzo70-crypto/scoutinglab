@@ -168,7 +168,9 @@ html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/ass
 body.rolebg-on .role-bg{ opacity:1; }
 .role-bg-layer{ position:absolute; inset:0; opacity:0; transition:opacity .5s cubic-bezier(.2,0,0,1); will-change:opacity; }
 .role-bg-layer.on{ opacity:1; }
-.role-bg-wash{ position:absolute; inset:0; background:radial-gradient(74% 60% at 84% -4%, color-mix(in oklab, var(--tint) 34%, transparent), transparent 62%); }
+.role-bg-wash{ position:absolute; inset:0; background:
+  radial-gradient(78% 62% at 84% -4%, color-mix(in oklab, var(--tint) 40%, transparent), transparent 60%),
+  radial-gradient(150% 130% at 50% 22%, color-mix(in oklab, var(--tint) 16%, transparent), transparent 74%); }
 .role-bg-icon{
   position:absolute; top:50%; right:-8%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.52;
   background:linear-gradient(150deg, color-mix(in oklab, var(--tint) 92%, white 10%), color-mix(in oklab, var(--tint) 50%, transparent));
@@ -187,6 +189,11 @@ body:not(.theme-dark) .role-bg-wash{ opacity:.62; }
 body:not(.theme-dark) .role-bg-icon{ opacity:.38; }
 body:not(.theme-dark) .role-bg-icon.echo{ opacity:.17; }
 @media (prefers-reduced-motion: reduce){ .role-bg-layer, .role-bg-icon{ transition:none !important; } }
+/* Sur Scouter/Résultats : cartes plus translucides pour laisser transparaître le fond teinté */
+body.theme-dark.rolebg-on #panel-scout .vsd .card,
+body.theme-dark.rolebg-on #panel-results .vsd .card,
+body.theme-dark.rolebg-on #panel-scout .vsd .dim-section,
+body.theme-dark.rolebg-on #panel-results .vsd .dim-section{ background:rgba(6,30,26,.30); }
 
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
