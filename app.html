@@ -5668,6 +5668,38 @@ function updateVerdict() {
 // ════════════════════════════════════════════
 // RESULTS PANEL
 // ════════════════════════════════════════════
+/* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
+window.vsDemoLoadDossier = function(){
+  var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
+  setV('d-pseudo','Caliste'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','18');
+  setV('d-rank','8');       // Grandmaster
+  setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +2
+  if (typeof setRole === 'function') setRole('ADC');
+  // Stats brutes réalistes (à ajuster librement)
+  Object.assign(rawData, {
+    winrate:64.8, kda:5.6, cs_min:9.9, vision:33, vision_min:1.25,
+    dmg_share:41, kill_part:69, dpm:820, chal_cs10:94,
+    chal_first_blood:30, chal_solo_kills:1.8, chal_max_lvl_lead:1.6,
+    regularite:78, champ_pool:5,
+    chal_team_dmg_pct:33, chal_vision_adv:14, chal_perfect_game:26
+  });
+  // Pool de champions réaliste (ADC)
+  champHistory = [
+    { name:'Kaisa',    games:41, wr:68, kda:5.4 },
+    { name:'Jinx',     games:33, wr:64, kda:5.0 },
+    { name:'Aphelios', games:22, wr:59, kda:4.3 },
+    { name:'Zeri',     games:18, wr:61, kda:4.8 },
+    { name:'Lucian',   games:14, wr:57, kda:4.1 },
+    { name:'Varus',    games:9,  wr:56, kda:3.9 }
+  ];
+  try{ buildAllDims(); }catch(e){}
+  try{ updateGlobal(); }catch(e){}
+  try{ updateVerdict(); }catch(e){}
+  try{ updateRadar(); }catch(e){}
+  try{ buildStatsGrid(); }catch(e){}
+  try{ buildResults(); }catch(e){}
+};
+
 function buildResults() {
   const f = getRoleFields();
   const RW = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
@@ -12549,14 +12581,11 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
     document.body.classList.add('vs-demo-mode');
     // laisse la place à la bannière
     var mainEl=document.querySelector('.main'); if(mainEl) mainEl.style.paddingBottom='72px';
-    // pré-remplit un joueur exemple + entre sur le scouting
+    // charge un dossier exemple complet (Caliste) + atterrit sur le dossier
     try{
-      var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-      setV('d-pseudo','Caliste'); setV('d-tag','EUW');
-      var srv=document.getElementById('d-server'); if(srv){ srv.value='euw1'; }
-      var ageEl=document.getElementById('d-age'); if(ageEl) ageEl.value='18';
       document.body.classList.remove('welcome-active');
-      if(typeof switchPanel==='function') switchPanel('scout');
+      if(typeof vsDemoLoadDossier==='function') vsDemoLoadDossier();
+      if(typeof switchPanel==='function') switchPanel('results');
     }catch(e){}
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
