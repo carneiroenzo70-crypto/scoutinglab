@@ -168,24 +168,24 @@ html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/ass
 body.rolebg-on .role-bg{ opacity:1; }
 .role-bg-layer{ position:absolute; inset:0; opacity:0; transition:opacity .5s cubic-bezier(.2,0,0,1); will-change:opacity; }
 .role-bg-layer.on{ opacity:1; }
-.role-bg-wash{ position:absolute; inset:0; background:radial-gradient(70% 58% at 84% -4%, color-mix(in oklab, var(--tint) 26%, transparent), transparent 60%); }
+.role-bg-wash{ position:absolute; inset:0; background:radial-gradient(74% 60% at 84% -4%, color-mix(in oklab, var(--tint) 34%, transparent), transparent 62%); }
 .role-bg-icon{
-  position:absolute; top:50%; right:-8%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.42;
+  position:absolute; top:50%; right:-8%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.52;
   background:linear-gradient(150deg, color-mix(in oklab, var(--tint) 92%, white 10%), color-mix(in oklab, var(--tint) 50%, transparent));
   -webkit-mask:var(--ic) center / contain no-repeat; mask:var(--ic) center / contain no-repeat;
   transform:translateY(-50%) scale(1.14) rotate(4deg);
   transition:transform .7s cubic-bezier(.05,.7,.1,1), opacity .5s cubic-bezier(.2,0,0,1); will-change:transform;
 }
-.role-bg-icon.echo{ top:auto; bottom:-6%; left:-4%; right:auto; width:min(62vh,640px); opacity:.18; transform:translateY(0) scale(1.1) rotate(-6deg); }
+.role-bg-icon.echo{ top:auto; bottom:-6%; left:-4%; right:auto; width:min(62vh,640px); opacity:.22; transform:translateY(0) scale(1.1) rotate(-6deg); }
 .role-bg-layer.on .role-bg-icon{ transform:translateY(-50%) scale(1) rotate(0deg); }
 .role-bg-layer.on:not([data-role="Mid"]) .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-45deg); }
 .role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
 .role-bg-layer.on[data-role="Support"] .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-70deg); }
 .role-bg-layer.on .role-bg-icon.echo{ transform:translateY(0) scale(1) rotate(-3deg); }
 /* Mode clair : glyphes plus discrets sur le canvas menthe */
-body:not(.theme-dark) .role-bg-wash{ opacity:.5; }
-body:not(.theme-dark) .role-bg-icon{ opacity:.30; }
-body:not(.theme-dark) .role-bg-icon.echo{ opacity:.14; }
+body:not(.theme-dark) .role-bg-wash{ opacity:.62; }
+body:not(.theme-dark) .role-bg-icon{ opacity:.38; }
+body:not(.theme-dark) .role-bg-icon.echo{ opacity:.17; }
 @media (prefers-reduced-motion: reduce){ .role-bg-layer, .role-bg-icon{ transition:none !important; } }
 
 /* ════ Menu latéral (drawer) ════ */
@@ -1976,11 +1976,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     </button>
     <div style="width:1px;height:14px;background:var(--border);margin:0 2px;flex-shrink:0"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouter</button>
-    <button class="hd-nav-item" id="nav-results" onclick="switchPanel('results')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Résultats</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM</button>
     <button class="hd-nav-item" id="nav-analytics" onclick="switchPanel('analytics')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> Analytics</button>
-    <button class="hd-nav-item" id="nav-prematch" onclick="switchPanel('prematch')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
@@ -2042,6 +2040,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+  <button class="more-menu-item" onclick="switchPanel('results');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg> Résultats</button>
+  <button class="more-menu-item" onclick="switchPanel('prematch');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
   <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Graphiques</button>
   <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Carte</button>
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
@@ -6255,8 +6255,8 @@ function switchPanel(id) {
   else document.body.classList.remove('map-fullscreen');
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
-  const _navMap = { scout:'nav-scout', results:'nav-results', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-prematch', graphs:'nav-more', map:'nav-more', history:'nav-more' };
+  const _navMap = { scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-more', graphs:'nav-more', map:'nav-more', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
