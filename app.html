@@ -17,7 +17,9 @@
 </style>
 <script>
 /* ── Garde d'authentification — exécuté avant tout le reste ── */
+window.VS_DEMO = /[?&]demo=1(?:&|$)/.test(location.search);
 (function(){
+  if (window.VS_DEMO) return; /* mode démo sans compte — accès en lecture à l'interface */
   function b64urlDecode(s){ s=s.replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; return atob(s); }
   var t = localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token');
   var valid = false;
@@ -12524,6 +12526,29 @@ document.addEventListener('keydown', function(e){ if(e.key==='Escape') vsdToggle
 try{ vsdApplyCursor(); }catch(e){}
 try{ vsdRenderHome(); }catch(e){}
 try{ vsdSetRoleBg('Mid'); }catch(e){}
+/* ── Mode démo sans compte (/app?demo=1) : bannière + joueur exemple + scouting ── */
+(function vsDemoInit(){
+  if(!window.VS_DEMO) return;
+  function run(){
+    if(document.getElementById('vs-demo-bar')) return;
+    var bar=document.createElement('div'); bar.id='vs-demo-bar';
+    bar.innerHTML='<span class="vs-demo-bar-txt">Mode démo — vous explorez l\'interface de scouting VisionScore. Créez un compte pour analyser vos propres joueurs.</span><a class="btn btn-cta btn-sm" href="/?demande=1">Demander une démo</a>';
+    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:10px 18px;background:rgba(11,47,42,.96);border-top:1px solid var(--lime,#2DD4A7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#F0F4F8;font-size:13px;box-shadow:0 -8px 24px rgba(0,0,0,.35)';
+    document.body.appendChild(bar);
+    document.body.classList.add('vs-demo-mode');
+    // laisse la place à la bannière
+    var mainEl=document.querySelector('.main'); if(mainEl) mainEl.style.paddingBottom='72px';
+    // pré-remplit un joueur exemple + entre sur le scouting
+    try{
+      var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
+      setV('d-pseudo','Faker'); setV('d-tag','KR1');
+      var srv=document.getElementById('d-server'); if(srv){ srv.value='kr'; }
+      document.body.classList.remove('welcome-active');
+      if(typeof switchPanel==='function') switchPanel('scout');
+    }catch(e){}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
 </script>
 </body>
 </html>
