@@ -524,13 +524,15 @@ button, .btn, select,
 
 /* ── HEADER ── */
 .hd {
-  display:flex; align-items:center; justify-content:space-between;
+  display:flex; align-items:center; justify-content:flex-start; gap:22px;
   padding:0 28px; height:56px;
   border-bottom:1px solid var(--border);
   background:rgba(6,8,16,.95);
   backdrop-filter:blur(20px) saturate(1.2);
   position:sticky; top:0; z-index:100;
 }
+/* Contrôles (thème, API, plan, quitter) poussés à droite : burger+logo+nav restent groupés à gauche */
+.hd > *:last-child{ margin-left:auto; }
 .hd-logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
 .hd-mark { display:flex; align-items:center; flex-shrink:0; }
 .hd-logo-img { height:38px; width:auto; object-fit:contain; max-width:220px; }
@@ -1799,12 +1801,12 @@ body.landing-active #panel-landing.active { display:block !important; }
   filter:drop-shadow(0 0 6px rgba(45,212,167,.4));
 }
 
-/* ── Nav items — épuré, calqué sur la wireframe (casse normale, sans icônes) ── */
+/* ── Nav items — majuscules, grand, calqué sur la wireframe (sans icônes) ── */
 .hd-nav-item {
   font-size:15px;
-  letter-spacing:0;
-  text-transform:none;
-  padding:9px 15px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  padding:9px 14px;
   font-weight:700;
   gap:0;
 }
@@ -1996,7 +1998,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 </div>
 
 <header class="hd">
-  <button class="vsd-burger" onclick="vsdToggleDrawer(true)" title="Menu" aria-label="Menu" style="margin-right:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+  <button class="vsd-burger" onclick="vsdToggleDrawer(true)" title="Menu" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="hd-logo">
     <div class="hd-mark">
       <!-- Logo principal only — no mark in header (mark = home button) -->
