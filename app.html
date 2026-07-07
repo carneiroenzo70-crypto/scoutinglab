@@ -215,8 +215,11 @@ body:not(.theme-dark) .vsd .dim-section .dim-body{ background:#FFFFFF; box-shado
 
 /* ════ Notation qualitative — grille 2 colonnes + respiration ════ */
 .vsd .vsd-wrap{ gap:22px; }
-.vsd-dims-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; align-items:start; }
+.vsd-dims-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; align-items:stretch; }
 @media (max-width:820px){ .vsd-dims-grid{ grid-template-columns:1fr; } }
+/* Symétrie : les 2 cartes d'une rangée s'alignent en hauteur (le corps remplit) */
+.vsd-dims-grid .dim-section{ align-self:stretch; }
+.vsd-dims-grid .dim-section .dim-body{ flex:1 1 auto; }
 .vsd-dims-grid .dim-section{ margin-bottom:0; }
 /* Bordures plus nettes pour dissocier les frames */
 body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
@@ -534,7 +537,7 @@ button, .btn, select,
 .hd-mark svg { width:15px; height:15px; }
 .hd-name { font-size:15px; font-weight:800; letter-spacing:.06em; color:var(--text); }
 .hd-ver { font-family:monospace; font-size:9px; color:var(--sub); letter-spacing:.06em; }
-.hd-nav { display:flex; gap:2px; }
+.hd-nav { display:flex; gap:6px; }
 .hd-nav-item {
   padding:6px 15px; border-radius:var(--r-sm);
   font-size:12px; font-weight:600; letter-spacing:.04em;
@@ -1772,7 +1775,7 @@ body.landing-active #panel-landing.active { display:block !important; }
 
 /* ── Header premium ── */
 .hd {
-  height:52px;
+  height:64px;
   background:rgba(240,243,249,.97);
   border-bottom:1px solid rgba(100,120,160,.12);
   backdrop-filter:blur(28px) saturate(1.5);
@@ -1798,9 +1801,10 @@ body.landing-active #panel-landing.active { display:block !important; }
 
 /* ── Nav items — épuré, calqué sur la wireframe (casse normale, sans icônes) ── */
 .hd-nav-item {
-  font-size:13.5px;
+  font-size:15px;
   letter-spacing:0;
   text-transform:none;
+  padding:9px 15px;
   font-weight:700;
   gap:0;
 }
@@ -2597,7 +2601,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
 
       <!-- Panneau recherche d'âge -->
-      <div id="age-search-panel" style="display:none;background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px 16px;margin-bottom:12px;"></div>
+      <div id="age-search-panel" class="vsd" style="display:none;margin-bottom:16px"></div>
 
       <!-- Score Grid : ring + radar -->
       <!-- Badge pépite (affiché si potentiel >> performance) -->
@@ -6140,16 +6144,18 @@ function renderAgeSearchPanel(gameName, tag, currentAge) {
   el.style.display = 'block';
   const links = generateAgeLinks(gameName, tag);
 
-  el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">' +
-    '<div style="font-family:monospace;font-size:10px;color:var(--sub);letter-spacing:.08em;text-transform:uppercase">Recherche âge</div>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-    links.map(l =>
-      '<a href="' + l.url + '" target="_blank" rel="noopener" style="font-size:11px;padding:3px 9px;background:var(--surf2);border:1px solid var(--border);border-radius:4px;color:var(--sub2);text-decoration:none;font-family:monospace;transition:all .15s">' + l.label + ' ↗</a>'
-    ).join('') +
+  el.innerHTML = '<div class="card" style="padding:14px 18px">' +
+    '<div class="between" style="gap:12px;flex-wrap:wrap">' +
+      '<div class="label" style="margin:0">Recherche âge</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+        links.map(l =>
+          '<a class="chip" href="' + l.url + '" target="_blank" rel="noopener" style="text-decoration:none">' + l.label + ' ↗</a>'
+        ).join('') +
+        '<button class="btn btn-secondary btn-sm" onclick="autoFindAge()">Auto-recherche</button>' +
+      '</div>' +
     '</div>' +
-    '<button onclick="autoFindAge()" style="font-size:11px;padding:3px 10px;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;color:var(--lime);cursor:pointer;font-family:monospace">Auto-recherche</button>' +
-    '</div>' +
-    '<div id="age-search-result" style="margin-top:6px;font-size:11px;color:var(--sub)"></div>';
+    '<div id="age-search-result" class="faint" style="margin-top:8px;font-size:12px"></div>' +
+  '</div>';
 }
 
 // Déclenche la recherche automatique d'âge pour la fiche courante
