@@ -235,7 +235,7 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 
 /* Sections mises en pause (retour utilisateur) : style de jeu détecté + analyses
    avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
-#playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card{ display:none !important; }
+#playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card{ display:none !important; }
 
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
@@ -2700,7 +2700,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="entry-ico" style="width:34px;height:34px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
             <div>
               <div class="h3" style="font-size:17px">Notation qualitative</div>
-              <div class="faint" style="font-size:12px">Étape 2 — note les 5 dimensions du modèle SPES (1–10). Le dossier complet est dans l'onglet Résultats.</div>
+              <div class="faint" style="font-size:12px">Notes calculées automatiquement depuis les données Riot — les 5 dimensions du modèle SPES (1–10).</div>
             </div>
           </div>
           <span class="pill pill-emerald">Modèle SPES</span>
@@ -8310,8 +8310,11 @@ async function generateOfficialReport() {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     const fname = 'VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
-    a.href=url; a.download=fname; a.click(); URL.revokeObjectURL(url);
-    showToast('Rapport officiel — '+fname, 'success');
+    a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+    // Ouvre aussi le PDF dans un onglet pour l'afficher tout de suite
+    try{ window.open(url, '_blank'); }catch(_){}
+    setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(_){} }, 60000); // revoke différé (sinon le téléchargement peut échouer)
+    showToast('Rapport PDF généré — ouvert dans un onglet et téléchargé', 'success');
 
   } catch(err) {
     showToast('Erreur PDF : '+err.message, 'error');
@@ -12606,6 +12609,8 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
     var notationWrap=grid?grid.closest('.vsd'):null;
     if(notationWrap&&notationWrap.parentNode){ notationWrap.parentNode.insertBefore(dossier, notationWrap); }
     else { scout.appendChild(dossier); }
+    // Notation masquée tant qu'aucun joueur n'est chargé (avant-import épuré)
+    if(notationWrap){ notationWrap.id='scout-notation'; notationWrap.style.display='none'; }
     results.style.display='none';
     return true;
   }
@@ -12614,7 +12619,9 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
     if(typeof switchPanel==='function') switchPanel('scout');
     try{ if(typeof buildResults==='function') buildResults(); }catch(e){}
     var d=document.getElementById('scout-dossier');
-    if(d){ d.style.display=''; try{ d.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
+    if(d){ d.style.display=''; }
+    var n=document.getElementById('scout-notation'); if(n) n.style.display='';
+    if(d){ try{ d.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', vsMergeDossier); else vsMergeDossier();
 })();
