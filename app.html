@@ -2813,20 +2813,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="pdf-header-date" id="pdf-date"></div>
           </div>
 
-          <!-- Barre d'actions -->
+          <!-- Bandeau dossier (épuré, façon maquette) -->
           <div class="between" style="flex-wrap:wrap;gap:10px">
-            <div class="eyebrow" style="margin:0">Dossier joueur</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap" class="res-actions">
-              <button class="btn btn-secondary btn-sm" onclick="generateOfficialReport()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 12 15 15"/></svg> Rapport Officiel</button>
-              <button class="btn btn-ghost btn-sm" onclick="shareByURL()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
-              <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
-              <button class="btn btn-ghost btn-sm" onclick="saveToHistory()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
-              <button class="btn btn-secondary btn-sm" onclick="addCurrentToRoster()" title="Sauvegarde et ajoute ce joueur à ton roster, au bon poste, en un clic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + Roster</button>
-              <button class="btn btn-ghost btn-sm" onclick="addCurrentToCrm()" title="Ajoute ce joueur à la pipeline CRM en un clic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + CRM</button>
-            </div>
+            <div class="eyebrow" style="margin:0">Dossier joueur · notation SPES &amp; data</div>
+            <span class="pill pill-soft" id="vsd-parties-pill" style="text-transform:none;letter-spacing:0">Fiche SPES complète</span>
           </div>
 
-          <!-- En-tête joueur -->
+          <!-- En-tête joueur (avatar + identité + 2 actions primaires) -->
           <div class="card m3-enter" style="padding:20px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;--m3-i:0">
             <div class="avatar" id="vsd-avatar" style="width:72px;height:72px;font-size:29px">—</div>
             <div>
@@ -2838,7 +2831,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <span class="pill pill-soft" id="vsd-pill-age">—</span>
               </div>
             </div>
-            <div id="spes-tier-badge" style="display:none;margin-left:auto"><span class="spes-tier" id="spes-tier-label">—</span></div>
+            <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span id="spes-tier-badge" style="display:none"><span class="spes-tier" id="spes-tier-label">—</span></span>
+              <button class="btn btn-secondary" onclick="addCurrentToCrm()" title="Ajoute ce joueur à la pipeline CRM"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg> Ajouter au CRM</button>
+              <button class="btn btn-cta" onclick="generateOfficialReport()" title="Rapport officiel PDF"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Export PDF</button>
+            </div>
+          </div>
+
+          <!-- Actions secondaires (discrètes) -->
+          <div class="res-actions" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-top:-6px">
+            <button class="btn btn-ghost btn-sm" onclick="shareByURL()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
+            <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
+            <button class="btn btn-ghost btn-sm" onclick="saveToHistory()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
+            <button class="btn btn-ghost btn-sm" onclick="addCurrentToRoster()" title="Ajoute ce joueur à ton roster"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> + Roster</button>
           </div>
 
           <!-- Score + radar -->
@@ -5665,17 +5670,17 @@ function updateVerdict() {
 /* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
 window.vsDemoLoadDossier = function(){
   var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-  setV('d-pseudo','Caliste'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','18');
-  setV('d-rank','8');       // Grandmaster
-  setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +2
+  setV('d-pseudo','Caliste'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','19');
+  setV('d-rank','7');       // Master
+  setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +1
   if (typeof setRole === 'function') setRole('ADC');
-  // Stats brutes réalistes (à ajuster librement)
+  // Stats brutes réalistes (à ajuster librement) — profil élite crédible, pas maxé
   Object.assign(rawData, {
-    winrate:64.8, kda:5.6, cs_min:9.9, vision:33, vision_min:1.25,
-    dmg_share:41, kill_part:69, dpm:820, chal_cs10:94,
-    chal_first_blood:30, chal_solo_kills:1.8, chal_max_lvl_lead:1.6,
-    regularite:78, champ_pool:5,
-    chal_team_dmg_pct:33, chal_vision_adv:14, chal_perfect_game:26
+    winrate:59.5, kda:4.7, cs_min:9.4, vision:29, vision_min:1.1,
+    dmg_share:38, kill_part:64, dpm:730, chal_cs10:88,
+    chal_first_blood:24, chal_solo_kills:1.4, chal_max_lvl_lead:1.3,
+    regularite:70, champ_pool:4,
+    chal_team_dmg_pct:30, chal_vision_adv:11, chal_perfect_game:22
   });
   // Pool de champions réaliste (ADC)
   champHistory = [
