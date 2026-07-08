@@ -239,7 +239,7 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 /* Sections mises en pause (retour utilisateur) : style de jeu détecté + analyses
    avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
 #playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
-#champ-card{ display:none !important; } /* pool legacy plat masqué : on garde le pool maquette (dossier) */
+#champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
@@ -5680,6 +5680,7 @@ window.vsDemoLoadDossier = function(){
   setV('d-pseudo','Caliste'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','19');
   setV('d-rank','7');       // Master
   setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +1
+  window.vsRankDetail = { division:'II', lp:38 }; // rang complet démo (Master II · 38 LP)
   if (typeof setRole === 'function') setRole('ADC');
   // Stats brutes réalistes (à ajuster librement) — profil élite crédible, pas maxé
   Object.assign(rawData, {
@@ -5736,7 +5737,11 @@ function buildResults() {
   setHtml('vsd-rank-icon', rankIcon(rank, 'rank-icon-sm'));
   const RANK_COL = { Iron:'--rank-iron', Bronze:'--rank-bronze', Silver:'--rank-silver', Gold:'--rank-gold', Platinum:'--rank-platinum', Emerald:'--rank-emerald', Diamond:'--rank-diamond', Master:'--rank-master', Grandmaster:'--rank-grandmaster', Challenger:'--rank-challenger' };
   const rnm = document.getElementById('vsd-rank-name');
-  if (rnm) { rnm.textContent = rank; rnm.style.color = 'var(' + (RANK_COL[rank] || '--vs-fg-1') + ')'; }
+  if (rnm) {
+    const _rd = window.vsRankDetail;
+    rnm.textContent = rank + (_rd ? (' ' + _rd.division + ' · ' + _rd.lp + ' LP') : '');
+    rnm.style.color = 'var(' + (RANK_COL[rank] || '--vs-fg-1') + ')';
+  }
   setTxt('vsd-pill-server', serverLbl || '—');
   setTxt('vsd-pill-role', roleLbl);
   const agePill = document.getElementById('vsd-pill-age');
@@ -10069,6 +10074,7 @@ async function fetchRiotData() {
       const _pcName = document.getElementById('pc-name'); if (_pcName) _pcName.textContent = pseudo2;
       const _pcMeta = document.getElementById('pc-meta'); if (_pcMeta) _pcMeta.textContent = `#${tag} · ${currentRole} · ${server.toUpperCase()} · ${stats.totalGames} parties`;
       if (soloQ) {
+        window.vsRankDetail = { division: soloQ.rank, lp: soloQ.leaguePoints }; // rang complet pour le dossier
         const _pcRank = document.getElementById('pc-rank'); if (_pcRank) _pcRank.textContent = `${soloQ.tier} ${soloQ.rank}`;
         const _pcLp   = document.getElementById('pc-lp');   if (_pcLp)   _pcLp.textContent   = `${soloQ.leaguePoints} LP`;
         const badgeInner = document.getElementById('pc-rank-badge-inner');
