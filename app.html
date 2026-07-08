@@ -10950,11 +10950,11 @@ async function drawMapBase() {
   const base = document.getElementById('map-base-canvas');
   const ctx = base.getContext('2d');
 
-  // Rendu officiel détaillé de la Faille (saison 2024), bundlé en local pour être
-  // fiable, haute résolution et CORS-clean. Fallbacks Data Dragon si l'asset manque.
+  // Minimap officielle top-down (saison 2024), carrée et non déformée, bundlée en
+  // local. Le champ de jeu remplit le carré → les marqueurs s'alignent pile.
   let loaded = false;
   const urls = [
-    './assets/map/rift-s14.webp',
+    './assets/map/rift-minimap.webp',
     'https://ddragon.leagueoflegends.com/cdn/13.24.1/img/map/map11.png',
     'https://ddragon.leagueoflegends.com/cdn/6.8.1/img/map/map11.png',
   ];
@@ -10967,16 +10967,12 @@ async function drawMapBase() {
         img.onload = () => {
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          // On dessine UNIQUEMENT la zone de jeu (murs extérieurs, base bleue en
-          // bas-gauche → base rouge en haut-droite) et on l'étire sur tout le carré.
-          // Ainsi la Faille est centrée/équilibrée ET le champ de jeu remplit le
-          // carré, ce qui aligne les marqueurs (mappés sur 0..size). Fractions
-          // calibrées sur l'asset s14 (rognage du décor : falaises + forêt).
+          // Minimap carrée → on remplit le carré sans déformation ni rognage
+          // (source carrée dessinée sur canvas carré = fit parfait).
           const iw = img.naturalWidth, ih = img.naturalHeight;
-          const C = window._mapCrop || { l:0.055, r:0.055, t:0.045, b:0.065 };
-          const sx = iw * C.l, sy = ih * C.t;
-          const sw = iw * (1 - C.l - C.r), sh = ih * (1 - C.t - C.b);
-          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
+          const scale = Math.max(size / iw, size / ih);
+          const dw = iw * scale, dh = ih * scale;
+          ctx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
           window._mapImg = img;
           loaded = true;
           resolve();
