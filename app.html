@@ -5681,6 +5681,7 @@ window.vsDemoLoadDossier = function(){
   setV('d-rank','7');       // Master
   setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +1
   window.vsRankDetail = { division:'II', lp:38 }; // rang complet démo (Master II · 38 LP)
+  window.vsProfileIconId = 5427; // icône de profil LoL pour la photo du dossier démo
   if (typeof setRole === 'function') setRole('ADC');
   // Stats brutes réalistes (à ajuster librement) — profil élite crédible, pas maxé
   Object.assign(rawData, {
@@ -5707,6 +5708,23 @@ window.vsDemoLoadDossier = function(){
   try{ buildResults(); }catch(e){}
 };
 
+// Rend la photo de profil LoL (icône d'invocateur DDragon) dans le cercle d'avatar.
+// Repli sur l'initiale si aucun iconId ou si l'image ne charge pas.
+function vsSetAvatarPhoto(elId, iconId, fallback) {
+  const el = document.getElementById(elId);
+  if (!el || iconId == null) return;
+  const render = (ver) => {
+    el.innerHTML = `<img src="https://ddragon.leagueoflegends.com/cdn/${ver}/img/profileicon/${iconId}.png"
+      style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block"
+      onerror="this.parentNode.textContent='${(fallback||'—').replace(/'/g,'')}'">`;
+  };
+  if (window.vsDDragonVer) { render(window.vsDDragonVer); return; }
+  fetch('https://ddragon.leagueoflegends.com/api/versions.json')
+    .then(r => r.json())
+    .then(versions => { window.vsDDragonVer = versions[0]; render(versions[0]); })
+    .catch(() => {/* garde l'initiale */});
+}
+
 function buildResults() {
   const f = getRoleFields();
   const RW = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
@@ -5731,7 +5749,9 @@ function buildResults() {
   const setHtml = (id, v) => { const e = document.getElementById(id); if (e) e.innerHTML  = v; };
 
   // En-tête joueur
-  setTxt('vsd-avatar', (pseudo && pseudo !== '—') ? pseudo.charAt(0).toUpperCase() : '—');
+  const _initial = (pseudo && pseudo !== '—') ? pseudo.charAt(0).toUpperCase() : '—';
+  setTxt('vsd-avatar', _initial);
+  vsSetAvatarPhoto('vsd-avatar', window.vsProfileIconId, _initial);
   setTxt('vsd-name', pseudo);
   setTxt('vsd-tag', tagRaw ? ('#' + tagRaw) : '');
   setHtml('vsd-rank-icon', rankIcon(rank, 'rank-icon-sm'));
@@ -10086,6 +10106,7 @@ async function fetchRiotData() {
       // Photo de profil DDragon — sum.profileIconId (pas acc qui n'a pas ce champ)
       const avatarEl = document.getElementById('pc-avatar');
       const iconId = sum?.profileIconId ?? acc?.profileIconId;
+      window.vsProfileIconId = iconId ?? null; // réutilisé par le dossier (vsd-avatar)
       if (avatarEl && iconId != null) {
         fetch('https://ddragon.leagueoflegends.com/api/versions.json')
           .then(r => r.json())
