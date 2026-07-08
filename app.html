@@ -818,7 +818,7 @@ button, .btn, select,
 
 /* ── STATUS ── */
 .status-box { border-radius:var(--r-sm); padding:10px 14px; font-size:12px; line-height:1.75; margin-top:10px; }
-.status-ok  { background:rgba(45,212,191,.07); border:1px solid rgba(45,212,191,.22); color:var(--teal); border-radius:var(--r-sm); }
+.status-ok  { background:transparent; border:0; padding:0; margin-top:0; color:inherit; } /* le résumé d'import est désormais une carte .vsd propre */
 .status-err { background:rgba(255,90,74,.07);  border:1px solid rgba(255,90,74,.22);  color:var(--red);  border-radius:var(--r-sm); }
 .status-info{ background:rgba(74,158,255,.07); border:1px solid rgba(74,158,255,.22); color:var(--blue); border-radius:var(--r-sm); }
 
@@ -2540,7 +2540,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="prog-info"><span id="api-prog-txt"></span><span id="api-prog-pct">0%</span></div>
             <div class="prog-track"><div class="prog-fill" id="api-prog-fill"></div></div>
           </div>
-          <div id="api-status" style="margin-top:10px"></div>
+          <div id="api-status" class="vsd" style="margin-top:10px"></div>
           <div style="margin-top:10px">
             <button class="btn btn-ghost btn-sm" onclick="toggleDebug()" style="font-size:10px;padding:6px 11px;display:inline-flex;align-items:center;gap:5px"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Logs techniques</button>
             <div class="debug-log" id="debug-log"></div>
@@ -10116,13 +10116,23 @@ async function fetchRiotData() {
     }
 
     setProgress(100, '✓ Import terminé');
-    const top3 = stats.champDetails.slice(0,3).map(c => `<strong>${c.name}</strong> (${c.games}G · ${c.wr}% WR)`).join(' · ');
+    const _wr = stats.totalGames ? Math.round(stats.wins/stats.totalGames*100) : 0;
+    const top3 = stats.champDetails.slice(0,3).map(c => `<span class="chip" style="text-transform:none;letter-spacing:0"><strong>${c.name}</strong> · ${c.wr}% WR</span>`).join('');
     setStatus('success', `
-      <strong>${stats.totalGames} parties analysées</strong> — ${stats.wins}V / ${stats.totalGames-stats.wins}D<br>
-      ${soloQ ? rankIcon(soloQ.tier,'rank-icon-sm')+' '+soloQ.tier+' '+soloQ.rank+' — '+soloQ.leaguePoints+' LP' : '<span style="opacity:.6">Non classé SoloQ</span>'}<br>
-      <span style="opacity:.7">Champions :</span> ${top3 || '—'}<br>
-      Pool qualifié (≥5 parties, ≥55% WR) : ${stats.champ_pool} champion${stats.champ_pool!==1?'s':''}<br>
-      <span style="font-size:10px;opacity:.7">Stats S1 remplies automatiquement. Complétez P, E, S2 pour le score global.</span>
+      <div class="card" style="padding:16px 20px;display:flex;flex-direction:column;gap:12px">
+        <div class="between" style="flex-wrap:wrap;gap:12px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="entry-ico" style="width:36px;height:36px;flex:none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div>
+              <div class="h3" style="font-size:15px">${stats.totalGames} parties analysées</div>
+              <div class="faint" style="font-size:12px;font-family:var(--font-mono)">${stats.wins}V · ${stats.totalGames-stats.wins}D · ${_wr}% WR</div>
+            </div>
+          </div>
+          <span style="display:inline-flex;align-items:center;gap:8px">${soloQ ? rankIcon(soloQ.tier,'rank-icon-sm')+'<span class="pill pill-emerald">'+soloQ.tier+' '+soloQ.rank+' · '+soloQ.leaguePoints+' LP</span>' : '<span class="pill pill-soft">Non classé SoloQ</span>'}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="label" style="margin:0">Champions</span>${top3 || '<span class="faint">—</span>'}</div>
+        <div class="faint" style="font-size:11.5px">Pool qualifié (≥5 parties, ≥55% WR) : <strong style="color:var(--vs-emerald-300)">${stats.champ_pool}</strong> champion${stats.champ_pool!==1?'s':''} · stats importées automatiquement.</div>
+      </div>
     `);
     setTimeout(() => { document.getElementById('api-progress').style.display='none'; }, 5000);
     setTimeout(() => { if (typeof switchPanel === 'function') showDossier(); }, 450);   // import réussi → on va direct au résultat (chantier 3)
