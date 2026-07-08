@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisionScore — Présentation</title>
+<meta name="description" content="VisionScore — la plateforme de scouting League of Legends pour structures esport semi-pro et pro.">
+<style>
+  :root{
+    --bg:#0B2F2A; --surf:#0F3A34; --surf2:#143F39; --line:#245C52; --line2:#2E6E62;
+    --fg:#F0F4F8; --fg2:#A9C4BD; --fg3:#6E8C85;
+    --em:#2DD4A7; --em3:#7BEBCF; --em-dim:rgba(45,212,167,.12);
+    --gold:#F5A623;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:var(--sans); background:#071f1b; color:var(--fg); line-height:1.5;
+    background-image:radial-gradient(ellipse at 50% -10%, rgba(45,212,167,.10), transparent 55%); }
+  .sheet{ max-width:900px; margin:0 auto; background:var(--bg); position:relative; overflow:hidden;
+    box-shadow:0 30px 90px -30px rgba(0,0,0,.7); }
+  .sheet-in{ position:relative; z-index:1; padding:46px 54px 40px; }
+  /* watermark emblème */
+  .wm{ position:absolute; top:-6%; right:-8%; width:min(60%,520px); aspect-ratio:1/1; opacity:.06; z-index:0;
+    background:linear-gradient(150deg,#3DE7BC,rgba(45,212,167,.4));
+    -webkit-mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; }
+
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+  .brand{ display:flex; align-items:center; gap:11px; }
+  .brand img.mark{ height:34px; } .brand img.word{ height:22px; }
+  .top-tag{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--em); font-weight:700; text-align:right; }
+
+  .eyebrow{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--em); font-weight:700; margin:26px 0 8px; }
+  h1{ font-family:var(--serif); font-weight:700; font-size:34px; line-height:1.1; margin:0 0 12px; letter-spacing:-.01em; }
+  h1 em{ color:var(--em3); font-style:normal; }
+  .lead{ color:var(--fg2); font-size:15px; max-width:640px; margin:0; }
+
+  .grid4{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-top:22px; }
+  .mod{ background:var(--surf); border:1px solid var(--line); border-radius:12px; padding:15px 17px; }
+  .mod-h{ display:flex; align-items:center; gap:9px; margin-bottom:5px; }
+  .mod-ic{ width:30px; height:30px; border-radius:8px; background:var(--em-dim); color:var(--em); display:grid; place-items:center; flex:none; }
+  .mod-t{ font-weight:800; font-size:14.5px; }
+  .mod-d{ color:var(--fg2); font-size:12.7px; line-height:1.45; }
+
+  .sec-t{ font-family:var(--serif); font-size:20px; font-weight:700; margin:30px 0 12px; }
+  .spes{ display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  .pil{ background:var(--surf); border:1px solid var(--line); border-radius:10px; padding:12px 10px; text-align:center; }
+  .pil-t{ font-weight:800; font-size:13px; margin-top:3px; }
+  .pil-d{ color:var(--fg3); font-size:10.5px; line-height:1.35; margin-top:3px; }
+  .pil-ic{ color:var(--em); }
+
+  .diffs{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:6px; }
+  .diff-t{ font-weight:800; font-size:13.5px; color:var(--em3); margin-bottom:4px; }
+  .diff-d{ color:var(--fg2); font-size:12.3px; line-height:1.45; }
+
+  .pilot{ margin-top:26px; background:linear-gradient(180deg,rgba(45,212,167,.10),rgba(45,212,167,.03));
+    border:1px solid var(--em); border-radius:14px; padding:20px 22px; }
+  .pilot-e{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--em); font-weight:700; }
+  .pilot-t{ font-family:var(--serif); font-size:21px; font-weight:700; margin:5px 0 6px; }
+  .pilot-d{ color:var(--fg2); font-size:13px; max-width:640px; }
+
+  .foot{ margin-top:28px; padding-top:18px; border-top:1px solid var(--line); display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .foot-c{ font-size:13px; }
+  .foot-c b{ color:var(--fg); } .foot-c a{ color:var(--em3); text-decoration:none; }
+  .foot-c .l{ display:block; margin-top:3px; color:var(--fg2); }
+  .foot-note{ color:var(--fg3); font-size:10.5px; max-width:280px; text-align:right; }
+
+  .print-btn{ position:fixed; right:20px; bottom:20px; z-index:50; height:46px; padding:0 20px; border:0; border-radius:24px;
+    background:var(--em); color:#04231D; font-weight:800; font-size:14px; font-family:var(--sans); cursor:pointer;
+    box-shadow:0 12px 30px -8px rgba(45,212,167,.5); display:inline-flex; align-items:center; gap:8px; }
+  .print-btn:hover{ filter:brightness(1.06); }
+
+  @media print{
+    @page{ size:A4; margin:12mm; }
+    body{ background:#fff; }
+    .sheet{ box-shadow:none; max-width:none; }
+    .sheet-in{ padding:0; }
+    .print-btn{ display:none; }
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+  @media(max-width:640px){ .grid4,.diffs{ grid-template-columns:1fr; } .spes{ grid-template-columns:repeat(2,1fr); } .sheet-in{ padding:30px 22px; } h1{ font-size:27px; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="wm" aria-hidden="true"></div>
+  <div class="sheet-in">
+
+    <div class="top">
+      <span class="brand"><img class="mark" src="/assets/logos/logo-mark.svg" alt=""><img class="word" src="/assets/logos/logo.svg" alt="VisionScore"></span>
+      <span class="top-tag">Dossier de présentation<br>Scouting esport · League of Legends</span>
+    </div>
+
+    <div class="eyebrow">Pas un simple outil de scoring</div>
+    <h1>On ne note pas le niveau.<br>On révèle le <em>potentiel.</em></h1>
+    <p class="lead">VisionScore transforme les données ranked officielles (API Riot Games) en une note claire — le <b style="color:var(--fg)">VisionScore™</b> — pensée pour les structures qui recrutent. La plupart des sites vous disent ce qu'un joueur vaut aujourd'hui ; nous répondons à la seule question qui compte : <b style="color:var(--fg)">jusqu'où peut-il aller ?</b></p>
+
+    <div class="grid4">
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg></span><span class="mod-t">Scouting</span></div><div class="mod-d">Importez 50 à 200 parties d'un joueur → fiche SPES complète : score global, radar 5 dimensions, pool de champions et historique.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.2 13.9 7 23l5-3 5 3-1.2-9.1"/></svg></span><span class="mod-t">Top 50</span></div><div class="mod-d">Générez un classement de prospects sur-mesure : rôle, rang, région, âge, win rate. Triés par VisionScore™, prêts à pousser dans le CRM.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span><span class="mod-t">CRM Agent</span></div><div class="mod-d">Pilotez votre pipeline de recrutement, du repérage à la signature. Fiches centralisées, statut et notes par joueur.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></span><span class="mod-t">Analytics</span></div><div class="mod-d">Analyse de replays .rofl, comparaison de fiches jusqu'à 4 joueurs, upgrade finder du roster et timeline des moments clés.</div></div>
+    </div>
+
+    <div class="sec-t">Le score SPES — cinq dimensions, une note</div>
+    <div class="spes">
+      <div class="pil"><div class="pil-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div><div class="pil-t">Stats</div><div class="pil-d">KDA, CS/min, dégâts, win rate</div></div>
+      <div class="pil"><div class="pil-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></div><div class="pil-t">Macro</div><div class="pil-d">Carte, objectifs, rotations, vision</div></div>
+      <div class="pil"><div class="pil-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><div class="pil-t">Impact</div><div class="pil-d">Kill participation, tempo, poids réel</div></div>
+      <div class="pil"><div class="pil-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></div><div class="pil-t">Progression</div><div class="pil-d">Trajectoire récente</div></div>
+      <div class="pil"><div class="pil-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div class="pil-t">Entretien</div><div class="pil-d">Mental, communication, ambition</div></div>
+    </div>
+
+    <div class="sec-t">Ce qui nous rend différents</div>
+    <div class="diffs">
+      <div><div class="diff-t">Le rang comme ancre</div><div class="diff-d">Le rang fonde le VisionScore ; les stats ne font que le moduler. Une note n'est jamais « relative au rang » : un 8/10 veut dire la même chose partout.</div></div>
+      <div><div class="diff-t">L'âge projette le potentiel</div><div class="diff-d">Un Diamant de 16 ans et un de 24 ans n'ont pas la même valeur. Chaque note est pondérée par l'âge — un même score brut cache un plafond… ou une fusée.</div></div>
+      <div><div class="diff-t">Détection de pépites</div><div class="diff-d">Un score de potentiel distinct repère les joueurs qui surperforment leur rang et leur âge — ceux que les classements bruts laissent passer.</div></div>
+    </div>
+
+    <div class="pilot">
+      <div class="pilot-e">Programme pilote · 3 places</div>
+      <div class="pilot-t">Les 3 premières structures démarrent gratuitement.</div>
+      <div class="pilot-d">1 à 2 mois d'accès complet, sans engagement. En échange : vos retours terrain pour calibrer l'outil sur votre façon de recruter. On accompagne chaque structure personnellement — d'où les places limitées.</div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-c">
+        <b>Réservez une démo — 20 min en visio.</b>
+        <span class="l">visionscore.gg · <a href="mailto:enzo.carneiro@visionscore.gg">enzo.carneiro@visionscore.gg</a> · <a href="mailto:mateo.dasilva@visionscore.gg">mateo.dasilva@visionscore.gg</a></span>
+      </div>
+      <div class="foot-note">Données via l'API officielle Riot Games. VisionScore n'est ni affilié ni soutenu par Riot Games.</div>
+    </div>
+
+  </div>
+</div>
+
+<button class="print-btn" onclick="window.print()">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+  Imprimer / Enregistrer en PDF
+</button>
+</body>
+</html>
