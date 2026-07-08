@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>VisionScore — Admin comptes</title>
+<style>
+  :root{
+    --bg:#0B2F2A; --surf:#0F3A34; --surf2:#143F39; --line:#245C52;
+    --fg:#F0F4F8; --fg2:#A9C4BD; --fg3:#6E8C85;
+    --em:#2DD4A7; --em2:#25B892; --em-dim:rgba(45,212,167,.12);
+    --red:#FF6B4A; --red-dim:rgba(255,107,74,.12);
+    --amber:#F5A623;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg);
+    background-image:radial-gradient(ellipse at 50% 0%, rgba(45,212,167,.07), transparent 60%); color:var(--fg); min-height:100vh; }
+  .wrap{ max-width:1000px; margin:0 auto; padding:32px 20px 80px; }
+  header{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  header img{ height:30px; }
+  h1{ font-size:24px; margin:0; font-weight:800; letter-spacing:-.01em; }
+  .sub{ color:var(--fg2); font-size:14px; margin:2px 0 26px; }
+  .card{ background:var(--surf); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:18px; }
+  .card h2{ font-size:15px; margin:0 0 14px; font-weight:700; }
+  label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--fg3); margin:0 0 6px; font-weight:700; }
+  input,select{ width:100%; height:42px; padding:0 13px; background:var(--bg); border:1px solid var(--line); border-radius:9px;
+    color:var(--fg); font-size:14px; font-family:inherit; outline:none; }
+  input:focus,select:focus{ border-color:var(--em2); box-shadow:0 0 0 1px var(--em2); }
+  .row{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; align-items:end; }
+  .row .full{ grid-column:1/-1; }
+  button{ height:42px; padding:0 18px; border:0; border-radius:9px; font-weight:700; font-size:14px; cursor:pointer; font-family:inherit;
+    display:inline-flex; align-items:center; justify-content:center; gap:7px; transition:filter .15s, background .15s, opacity .15s; }
+  .btn-cta{ background:var(--em); color:#04231D; }
+  .btn-cta:hover{ filter:brightness(1.06); }
+  .btn-ghost{ background:transparent; color:var(--fg2); border:1px solid var(--line); }
+  .btn-ghost:hover{ background:var(--surf2); color:var(--fg); }
+  .btn-sm{ height:32px; padding:0 12px; font-size:12.5px; border-radius:7px; }
+  .btn-danger{ background:var(--red-dim); color:var(--red); border:1px solid rgba(255,107,74,.3); }
+  .btn-danger:hover{ background:rgba(255,107,74,.2); }
+  .btn-warn{ background:rgba(245,166,35,.12); color:var(--amber); border:1px solid rgba(245,166,35,.3); }
+  .btn-ok{ background:var(--em-dim); color:var(--em); border:1px solid rgba(45,212,167,.3); }
+  table{ width:100%; border-collapse:collapse; }
+  th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--fg3); padding:8px 10px; border-bottom:1px solid var(--line); font-weight:700; }
+  td{ padding:11px 10px; border-bottom:1px solid rgba(36,92,82,.5); font-size:14px; vertical-align:middle; }
+  tr:last-child td{ border-bottom:0; }
+  .pill{ display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:700; }
+  .pill-on{ background:var(--em-dim); color:var(--em); }
+  .pill-off{ background:var(--red-dim); color:var(--red); }
+  .pill-plan{ background:var(--surf2); color:var(--fg2); text-transform:capitalize; }
+  .muted{ color:var(--fg3); font-size:12.5px; }
+  .actions{ display:flex; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+  #msg{ min-height:20px; font-size:13.5px; margin-top:10px; }
+  #msg.ok{ color:var(--em); } #msg.err{ color:var(--red); }
+  .gate{ max-width:420px; margin:12vh auto 0; }
+  .hidden{ display:none !important; }
+  @media(max-width:640px){ .row{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="/assets/logos/logo-mark.svg" alt=""><h1>Admin — comptes structures</h1>
+  </header>
+  <p class="sub">Créez, activez/désactivez ou supprimez les accès. La désactivation coupe l'accès sous quelques secondes, même si la structure est déjà connectée.</p>
+
+  <!-- Porte d'entrée : secret admin -->
+  <div id="gate" class="card gate">
+    <h2>Accès administrateur</h2>
+    <label for="secret">Secret admin</label>
+    <input id="secret" type="password" placeholder="ADMIN_SECRET" autocomplete="off">
+    <div style="margin-top:14px"><button class="btn-cta" style="width:100%" onclick="unlock()">Déverrouiller</button></div>
+    <p class="muted" style="margin-top:12px">Le secret n'est jamais stocké — il reste en mémoire le temps de la session.</p>
+    <div id="gate-msg" style="min-height:18px;font-size:13px;color:var(--red);margin-top:6px"></div>
+  </div>
+
+  <!-- Panneau principal -->
+  <div id="app" class="hidden">
+    <div class="card">
+      <h2>Nouveau compte</h2>
+      <div class="row">
+        <div><label>Identifiant</label><input id="n-user" placeholder="ex. karmine-corp"></div>
+        <div><label>Nom affiché</label><input id="n-label" placeholder="ex. Karmine Corp"></div>
+        <div><label>Mot de passe</label><input id="n-pass" type="text" placeholder="min. 8 caractères"></div>
+        <div><label>Offre</label><select id="n-plan"><option value="starter">Starter</option><option value="pro">Pro</option><option value="elite" selected>Elite</option></select></div>
+      </div>
+      <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
+        <button class="btn-cta" onclick="createUser()">Créer le compte</button>
+        <button class="btn-ghost" onclick="loadUsers()">Rafraîchir la liste</button>
+      </div>
+      <div id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Comptes existants</h2>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr><th>Structure</th><th>Identifiant</th><th>Offre</th><th>Statut</th><th>Créé le</th><th></th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Chargement…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var SECRET = '';
+function H(){ return { 'Content-Type':'application/json', 'X-Admin-Secret':SECRET }; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function setMsg(t,ok){ var m=document.getElementById('msg'); m.textContent=t; m.className=ok?'ok':'err'; }
+
+async function unlock(){
+  SECRET = document.getElementById('secret').value.trim();
+  var gm = document.getElementById('gate-msg'); gm.textContent='';
+  if(!SECRET){ gm.textContent='Entrez le secret.'; return; }
+  // test via un GET
+  try{
+    var res = await fetch('/api/admin-users', { headers:H() });
+    if(res.status===403){ gm.textContent='Secret incorrect.'; SECRET=''; return; }
+    if(!res.ok){ gm.textContent='Erreur '+res.status+'.'; return; }
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    renderUsers((await res.json()).users||[]);
+  }catch(e){ gm.textContent='Erreur réseau.'; }
+}
+
+async function loadUsers(){
+  try{
+    var res = await fetch('/api/admin-users', { headers:H() });
+    if(!res.ok){ setMsg('Erreur '+res.status,false); return; }
+    renderUsers((await res.json()).users||[]);
+    setMsg('Liste à jour.',true);
+  }catch(e){ setMsg('Erreur réseau.',false); }
+}
+
+function renderUsers(users){
+  var tb=document.getElementById('tbody');
+  if(!users.length){ tb.innerHTML='<tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Aucun compte.</td></tr>'; return; }
+  users.sort(function(a,b){ return (a.username||'').localeCompare(b.username||''); });
+  tb.innerHTML = users.map(function(u){
+    var on = u.active !== false;
+    var created = u.createdAt ? new Date(u.createdAt).toLocaleDateString('fr-FR') : '—';
+    return '<tr>'+
+      '<td style="font-weight:700">'+esc(u.label||u.username)+'</td>'+
+      '<td class="muted" style="font-family:monospace">'+esc(u.username)+'</td>'+
+      '<td><span class="pill pill-plan">'+esc(u.plan||'elite')+'</span></td>'+
+      '<td><span class="pill '+(on?'pill-on':'pill-off')+'">'+(on?'● Actif':'● Désactivé')+'</span></td>'+
+      '<td class="muted">'+created+'</td>'+
+      '<td><div class="actions">'+
+        (on
+          ? '<button class="btn-sm btn-warn" onclick="setActive(\''+esc(u.username)+'\',false)">Désactiver</button>'
+          : '<button class="btn-sm btn-ok" onclick="setActive(\''+esc(u.username)+'\',true)">Réactiver</button>')+
+        '<button class="btn-sm btn-danger" onclick="delUser(\''+esc(u.username)+'\')">Supprimer</button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+}
+
+async function createUser(){
+  var username=document.getElementById('n-user').value.trim().toLowerCase();
+  var label=document.getElementById('n-label').value.trim();
+  var password=document.getElementById('n-pass').value;
+  var plan=document.getElementById('n-plan').value;
+  if(!username||!password){ setMsg('Identifiant et mot de passe requis.',false); return; }
+  if(password.length<8){ setMsg('Mot de passe trop court (min. 8).',false); return; }
+  try{
+    var res=await fetch('/api/admin-users',{ method:'POST', headers:H(), body:JSON.stringify({username,label,password,plan}) });
+    var d=await res.json();
+    if(res.ok){ setMsg('Compte « '+username+' » créé.',true); document.getElementById('n-user').value=''; document.getElementById('n-label').value=''; document.getElementById('n-pass').value=''; loadUsers(); }
+    else setMsg(d.error||'Erreur.',false);
+  }catch(e){ setMsg('Erreur réseau.',false); }
+}
+
+async function setActive(username, active){
+  try{
+    var res=await fetch('/api/admin-users',{ method:'PATCH', headers:H(), body:JSON.stringify({username,active}) });
+    var d=await res.json();
+    if(res.ok){ setMsg('Compte « '+username+' » '+(active?'réactivé':'désactivé')+'.',true); loadUsers(); }
+    else setMsg(d.error||'Erreur.',false);
+  }catch(e){ setMsg('Erreur réseau.',false); }
+}
+
+async function delUser(username){
+  if(!confirm('Supprimer définitivement le compte « '+username+' » ? (Pour couper l\'accès sans perdre le compte, préférez « Désactiver ».)')) return;
+  try{
+    var res=await fetch('/api/admin-users',{ method:'DELETE', headers:H(), body:JSON.stringify({username}) });
+    var d=await res.json();
+    if(res.ok){ setMsg('Compte « '+username+' » supprimé.',true); loadUsers(); }
+    else setMsg(d.error||'Erreur.',false);
+  }catch(e){ setMsg('Erreur réseau.',false); }
+}
+
+document.getElementById('secret').addEventListener('keydown',function(e){ if(e.key==='Enter') unlock(); });
+</script>
+</body>
+</html>

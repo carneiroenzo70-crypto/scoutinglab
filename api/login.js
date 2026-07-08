@@ -30,6 +30,11 @@ module.exports = async function handler(req, res) {
   const ok = user && verifyPassword(password, user.salt, user.hash);
   if (!ok) return res.status(401).json({ error: 'Identifiant ou mot de passe incorrect' });
 
+  // Compte désactivé (contrat terminé / suspendu) → accès refusé. active absent = actif.
+  if (user.active === false) {
+    return res.status(403).json({ error: 'Compte désactivé. Contactez VisionScore pour réactiver votre accès.' });
+  }
+
   const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 jours ou 1 jour
   const plan = user.plan || 'elite';
   const token = signToken({ u: username, label: user.label || username, plan }, maxAge);

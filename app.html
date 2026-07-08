@@ -29,6 +29,25 @@ window.VS_DEMO = /[?&]demo=1(?:&|$)/.test(location.search);
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
 function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/'); }
+/* ── Heartbeat de session : applique une désactivation de compte même si le token
+   est encore valide. Ne déconnecte QUE sur un refus explicite (401/403), jamais
+   sur une erreur réseau/serveur (évite les faux positifs). ── */
+async function vsCheckSession(){
+  if (window.VS_DEMO) return;
+  var t = vsToken(); if (!t) return;
+  try {
+    var res = await fetch('/api/session', { headers: vsAuthHeaders() });
+    if (res.status === 401 || res.status === 403) {
+      var msg = 'Votre session a expiré.';
+      try { var d = await res.json(); if (d && d.error) msg = d.error; } catch(e){}
+      try { alert(msg); } catch(e){}
+      vsLogout();
+    }
+  } catch(e) { /* réseau indispo → on ne déconnecte pas */ }
+}
+document.addEventListener('DOMContentLoaded', vsCheckSession);
+/* re-vérifie quand l'onglet reprend le focus (contrat coupé pendant la session) */
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) vsCheckSession(); });
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
