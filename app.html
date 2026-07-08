@@ -10967,12 +10967,16 @@ async function drawMapBase() {
         img.onload = () => {
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          // Cover-fit : préserve le ratio, centre et rogne le décor pour remplir
-          // le carré sans déformer (l'asset s14 est en 3:2, pas carré).
+          // On dessine UNIQUEMENT la zone de jeu (murs extérieurs, base bleue en
+          // bas-gauche → base rouge en haut-droite) et on l'étire sur tout le carré.
+          // Ainsi la Faille est centrée/équilibrée ET le champ de jeu remplit le
+          // carré, ce qui aligne les marqueurs (mappés sur 0..size). Fractions
+          // calibrées sur l'asset s14 (rognage du décor : falaises + forêt).
           const iw = img.naturalWidth, ih = img.naturalHeight;
-          const scale = Math.max(size / iw, size / ih);
-          const dw = iw * scale, dh = ih * scale;
-          ctx.drawImage(img, (size - dw) / 2, (size - dh) / 2, dw, dh);
+          const C = window._mapCrop || { l:0.055, r:0.055, t:0.045, b:0.065 };
+          const sx = iw * C.l, sy = ih * C.t;
+          const sw = iw * (1 - C.l - C.r), sh = ih * (1 - C.t - C.b);
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, size, size);
           window._mapImg = img;
           loaded = true;
           resolve();
@@ -11332,31 +11336,25 @@ function renderKillsDeaths(ctx, size, points, showHeatmap, showMarkers, markerCo
 
     filtered.forEach(p => {
       const [cx, cy] = mapCoordToCanvas(p.x, p.y, size);
-      const r = size * 0.009;
+      const r = size * 0.0052; // marqueur fin (~4px @808)
 
-      // Shadow/glow ring
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * 2.2, 0, Math.PI*2);
-      ctx.fillStyle = glowColor;
-      ctx.fill();
+      // Halo doux et discret
+      const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 3.2);
+      halo.addColorStop(0, glowColor);
+      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(cx, cy, r * 3.2, 0, Math.PI*2); ctx.fill();
 
-      // White outline for visibility on map
-      ctx.beginPath();
-      ctx.arc(cx, cy, r + 1.2, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(255,255,255,0.9)';
-      ctx.fill();
+      // Pastille pleine + fin contour sombre pour la netteté
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2);
+      ctx.fillStyle = markerColor; ctx.fill();
+      ctx.lineWidth = Math.max(1, size * 0.0012);
+      ctx.strokeStyle = 'rgba(4,20,17,.85)';
+      ctx.stroke();
 
-      // Colored fill
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI*2);
-      ctx.fillStyle = markerColor;
-      ctx.fill();
-
-      // Inner dark dot for precision
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * 0.35, 0, Math.PI*2);
-      ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fill();
+      // Reflet central léger
+      ctx.beginPath(); ctx.arc(cx - r*0.28, cy - r*0.28, r*0.32, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill();
     });
   }
 }
