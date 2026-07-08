@@ -259,6 +259,28 @@ body.theme-dark .vsd .dim-section .dim-header:hover{
   box-shadow:inset 0 1px 0 rgba(180,255,235,.12), 0 16px 30px -16px rgba(0,0,0,.75), var(--glow-emerald-sm) !important;
 }
 
+/* ════ Fond décoratif « sparkles » (charte wireframe) ════
+   Étoiles à 4 branches émeraude, discrètes, derrière le contenu de chaque rubrique. */
+.vsd-spark-layer{ position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.main > .panel{ position:relative; z-index:1; }
+.vsd-spark{ position:absolute; fill:#2DD4A7;
+  filter:drop-shadow(0 0 46px rgba(45,212,167,.20)); }
+.vsd-spark--xl{ width:380px; height:380px; top:1%;  right:3%;  opacity:.12; }
+.vsd-spark--l { width:200px; height:200px; top:33%; right:0%;  opacity:.10; }
+.vsd-spark--m { width:126px; height:126px; top:17%; right:15%; opacity:.075; }
+.vsd-spark--s { width:76px;  height:76px;  top:46%; right:11%; opacity:.06; }
+/* Thème clair : émeraude plus doux sur fond blanc */
+body:not(.theme-dark) .vsd-spark{ fill:#25B892; }
+body:not(.theme-dark) .vsd-spark--xl{ opacity:.08; }
+body:not(.theme-dark) .vsd-spark--l { opacity:.07; }
+body:not(.theme-dark) .vsd-spark--m { opacity:.05; }
+body:not(.theme-dark) .vsd-spark--s { opacity:.045; }
+/* Pas de sparkles sur l'accueil/landing ni en carte plein écran */
+.main:has(#panel-landing.active) .vsd-spark-layer,
+.main:has(#panel-welcome.active) .vsd-spark-layer,
+body.map-fullscreen .vsd-spark-layer{ display:none; }
+@media (max-width:820px){ .vsd-spark--m, .vsd-spark--s{ display:none; } .vsd-spark--xl{ width:240px; height:240px; } }
+
 /* Sections mises en pause (retour utilisateur) : style de jeu détecté + analyses
    avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
 #playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
@@ -2177,6 +2199,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <!-- MAIN -->
   <main class="main">
 
+    <!-- ══ Fond décoratif « sparkles » (charte wireframe) — derrière toutes les rubriques ══ -->
+    <div class="vsd-spark-layer" aria-hidden="true">
+      <svg class="vsd-spark vsd-spark--xl" viewBox="0 0 100 100"><path d="M50 0 C50 27 73 50 100 50 C73 50 50 73 50 100 C50 73 27 50 0 50 C27 50 50 27 50 0 Z"/></svg>
+      <svg class="vsd-spark vsd-spark--l" viewBox="0 0 100 100"><path d="M50 0 C50 27 73 50 100 50 C73 50 50 73 50 100 C50 73 27 50 0 50 C27 50 50 27 50 0 Z"/></svg>
+      <svg class="vsd-spark vsd-spark--m" viewBox="0 0 100 100"><path d="M50 0 C50 27 73 50 100 50 C73 50 50 73 50 100 C50 73 27 50 0 50 C27 50 50 27 50 0 Z"/></svg>
+      <svg class="vsd-spark vsd-spark--s" viewBox="0 0 100 100"><path d="M50 0 C50 27 73 50 100 50 C73 50 50 73 50 100 C50 73 27 50 0 50 C27 50 50 27 50 0 Z"/></svg>
+    </div>
+
     <!-- ══ PANEL : SCOUT ══ -->
     <!-- ══ PANEL : ACCUEIL ══ -->
     <!-- ════ LANDING PAGE MARKETING ════ -->
@@ -3167,7 +3197,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
             </div>
           </div>
-          <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:10px">
+          <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
             <div class="fld">
               <div class="label" style="font-size:10px">Rôle</div>
               <div class="ctrl select" style="height:38px"><select id="t50-role-filter" onchange="top50RenderTable()">
@@ -3198,12 +3228,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
             </div>
             <div class="fld">
-              <div class="label" style="font-size:10px">Âge max</div>
+              <div class="label" style="font-size:10px">Âge</div>
               <div class="ctrl select" style="height:38px"><select id="t50-age-filter" onchange="top50RenderTable()">
                 <option value="0">Tous les âges</option>
                 <option value="17">≤ 17 ans (pépites)</option>
-                <option value="19">≤ 19 ans (jeunes)</option>
+                <option value="19">16–19 (jeunes)</option>
                 <option value="22">≤ 22 ans</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fld">
+              <div class="label" style="font-size:10px">Win rate min</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-wr-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="50">50%</option>
+                <option value="55">55%</option>
+                <option value="60">60%</option>
               </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
             </div>
           </div>
@@ -3239,18 +3278,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                   <th>Joueur</th>
                   <th>Rang</th>
                   <th>Rôle</th>
-                  <th style="text-align:center">Score SPES</th>
-                  <th style="text-align:center">WR%</th>
-                  <th style="text-align:center">KDA</th>
                   <th style="text-align:center">Âge</th>
-                  <th style="color:var(--vs-emerald-400)">Compétitif</th>
-                  <th>Statut</th>
-                  <th>Notes</th>
-                  <th>Actions</th>
+                  <th style="text-align:center">WR</th>
+                  <th style="text-align:center">KDA</th>
+                  <th style="text-align:center">CS/M</th>
+                  <th style="text-align:center">Vision</th>
+                  <th style="text-align:center;color:var(--vs-emerald-400)">VisionScore™</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="t50-tbody">
-                <tr><td colspan="12" class="faint" style="padding:2rem;text-align:center">Lancez « Générer le Top 50 » pour sortir le classement des prospects.</td></tr>
+                <tr><td colspan="11" class="faint" style="padding:2rem;text-align:center">Lancez « Générer le Top 50 » pour sortir le classement des prospects.</td></tr>
               </tbody>
             </table>
           </div>
@@ -12007,8 +12045,34 @@ function top50SaveLocal() {
 function top50LoadLocal() {
   try {
     const d = localStorage.getItem('top50_data');
-    if (d) { top50Data = JSON.parse(d); top50RenderTable(); }
+    if (d) { top50Data = JSON.parse(d); top50RenderTable(); return; }
   } catch(e) {}
+  // Aucune donnée locale → on affiche un Top d'exemple (démo) pour que la page
+  // reste présentable. Écrasé dès qu'un vrai scan est lancé.
+  top50SeedDemo();
+}
+
+// Top 50 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
+function top50SeedDemo() {
+  const D = [
+    { name:'Velja',  tag:'EUW9', server:'euw1', role:'Jgl', tier:'CHALLENGER',  rank:'I', lp:842, age:17, wr:64.8, kda:4.7, csm:6.4, vision:38, vsScore:88, scorePotentiel:9.4 },
+    { name:'Lyse',   tag:'KR3',  server:'kr',   role:'Mid', tier:'CHALLENGER',  rank:'I', lp:790, age:18, wr:66.2, kda:5.8, csm:9.5, vision:26, vsScore:86, scorePotentiel:9.2 },
+    { name:'Noah',   tag:'EUW2', server:'euw1', role:'Mid', tier:'GRANDMASTER', rank:'I', lp:512, age:18, wr:61.6, kda:5.0, csm:9.2, vision:24, vsScore:83, scorePotentiel:9.0 },
+    { name:'Kaori',  tag:'EUW7', server:'euw1', role:'ADC', tier:'GRANDMASTER', rank:'I', lp:466, age:19, wr:60.1, kda:4.9, csm:9.8, vision:22, vsScore:80, scorePotentiel:8.6 },
+    { name:'Sylas',  tag:'EUW4', server:'euw1', role:'Top', tier:'CHALLENGER',  rank:'I', lp:701, age:20, wr:58.9, kda:3.8, csm:8.1, vision:19, vsScore:78 },
+    { name:'Renji',  tag:'EUN1', server:'eun1', role:'Jgl', tier:'GRANDMASTER', rank:'I', lp:402, age:18, wr:59.3, kda:4.4, csm:6.1, vision:34, vsScore:77, scorePotentiel:8.8 },
+    { name:'Aiko',   tag:'KR7',  server:'kr',   role:'Sup', tier:'CHALLENGER',  rank:'I', lp:688, age:19, wr:60.7, kda:5.2, csm:1.4, vision:61, vsScore:76 },
+    { name:'Milo',   tag:'EUW5', server:'euw1', role:'Mid', tier:'MASTER',      rank:'I', lp:238, age:17, wr:62.4, kda:5.1, csm:9.1, vision:23, vsScore:75, scorePotentiel:8.9 },
+    { name:'Draven', tag:'NA2',  server:'na1',  role:'ADC', tier:'GRANDMASTER', rank:'II',lp:355, age:21, wr:57.2, kda:4.6, csm:9.6, vision:20, vsScore:73 },
+    { name:'Yuki',   tag:'EUW8', server:'euw1', role:'Top', tier:'MASTER',      rank:'I', lp:284, age:18, wr:58.0, kda:3.6, csm:8.0, vision:18, vsScore:72, scorePotentiel:8.4 },
+    { name:'Orion',  tag:'EUW3', server:'euw1', role:'Sup', tier:'MASTER',      rank:'II',lp:176, age:20, wr:56.4, kda:4.8, csm:1.2, vision:57, vsScore:70 },
+    { name:'Zephy',  tag:'EUN2', server:'eun1', role:'Jgl', tier:'DIAMOND',     rank:'I', lp:92,  age:16, wr:60.9, kda:4.3, csm:6.0, vision:31, vsScore:69, scorePotentiel:8.7 },
+  ];
+  top50Data = D.map(p => Object.assign({
+    score: (p.vsScore/10).toFixed(2), statut:'Nouveau', ageSource:'Leaguepedia', ageStatus:'✅',
+    addedAt: Date.now()
+  }, p));
+  try { top50RenderTable(); } catch(e){}
 }
 
 // ── Score SPES prospect — aligné sur les formules D1-D5 de la fiche joueur ─────
@@ -12240,19 +12304,21 @@ function top50RenderTable() {
   // Appliquer les filtres rôle et âge
   const roleFilter = document.getElementById('t50-role-filter')?.value || 'all';
   const ageFilter  = parseInt(document.getElementById('t50-age-filter')?.value || '0');
+  const wrFilter   = parseInt(document.getElementById('t50-wr-filter')?.value || '0');
   const filteredData = top50Data.filter(p => {
     if (roleFilter !== 'all' && p.role !== roleFilter) return false;
     if (ageFilter > 0 && p.age && parseInt(p.age) > ageFilter) return false;
+    if (wrFilter > 0 && parseFloat(p.wr) < wrFilter) return false;
     return true;
   });
 
   if (!top50Data.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Aucun prospect — lancez un scan.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--sub);font-size:.85rem">Aucun prospect — lancez un scan.</td></tr>';
     return;
   }
 
   if (!filteredData.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="padding:2rem;text-align:center;color:var(--amber);font-size:.85rem">Aucun prospect ne correspond aux filtres sélectionnés.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="padding:2rem;text-align:center;color:var(--amber);font-size:.85rem">Aucun prospect ne correspond aux filtres sélectionnés.</td></tr>';
     return;
   }
 
@@ -12307,6 +12373,11 @@ function top50RenderTable() {
                    :           {lbl:'C',  col:'var(--sub2)', bg:'var(--surf3)'};
     const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(45,212,167,.05),transparent);' : '';
     const initT50 = (p.name||'?').charAt(0).toUpperCase();
+    const vs = p.vsScore != null ? p.vsScore : Math.round(parseFloat(scoreFinal) * 10);
+    const vsCol = vs >= 85 ? 'var(--vs-emerald-300)' : vs >= 75 ? 'var(--vs-emerald-400)' : vs >= 65 ? '#A78BFA' : vs >= 55 ? '#F59E0B' : 'var(--sub2)';
+    const csmTxt = (p.csm != null && p.csm !== '') ? p.csm : '—';
+    const visTxt = (p.vision != null && p.vision !== '') ? p.vision : '—';
+    const roleLbl = { Top:'Top', Jgl:'Jungle', Mid:'Mid', ADC:'ADC', Sup:'Support' }[p.role] || (p.role||'?');
     return `<tr style="${pepiteBg}">
       <td><span class="stat-v" style="font-size:15px;color:var(--vs-emerald-300)">${String(i+1).padStart(2,'0')}</span></td>
       <td>
@@ -12314,54 +12385,27 @@ function top50RenderTable() {
           <div class="avatar" style="width:34px;height:34px;font-size:14px">${initT50}</div>
           <div>
             <div style="font-weight:700;line-height:1.15">${p.name}</div>
-            <div class="faint" style="font-size:11px;font-family:var(--font-mono)">${p.tag?'#'+p.tag:''}${(p.champs||[]).length?' · '+(p.champs||[]).slice(0,2).map(c=>c.name).join(' · '):''}</div>
+            <div class="faint" style="font-size:11px;font-family:var(--font-mono)">${p.tag?'#'+p.tag:''}${p.server?' · '+({euw1:'EUW',eun1:'EUNE',na1:'NA',kr:'KR'}[p.server]||p.server.toUpperCase()):''}</div>
           </div>
         </div>
       </td>
       <td style="white-space:nowrap">
         <div style="display:flex;align-items:center;gap:8px">
           ${rankIcon(p.tier, 'rank-icon-lg')}
-          <span style="color:${tc};font-weight:700;font-size:12px;letter-spacing:.01em">${p.tier} ${p.rank} — ${p.lp}LP</span>
+          <span style="color:${tc};font-weight:700;font-size:12px;letter-spacing:.01em">${(p.tier||'').charAt(0)+(p.tier||'').slice(1).toLowerCase()} ${p.rank||''}</span>
         </div>
       </td>
-      <td><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">${p.role||'?'}</span></td>
-      <td style="text-align:center">
-        <div style="display:flex;align-items:center;justify-content:center;gap:5px">
-          <span class="stat-v" style="font-weight:700;font-size:17px;color:${scCol}">${scoreFinal}</span>
-          <span class="t50-tier" style="color:${tierInfo.col};border-color:${tierInfo.col};background:${tierInfo.bg}">${tierInfo.lbl}</span>
-        </div>
-        ${p.age ? `<div class="faint" style="font-size:.65rem;color:var(--vs-emerald-400)">×${ageMult.toFixed(2)} (${p.age}ans)</div>` : ''}
-      </td>
+      <td><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">${roleLbl}</span></td>
+      <td style="text-align:center"><span class="stat-v" style="color:${p.age && p.age<=19 ? 'var(--vs-emerald-400)':'var(--fg,var(--text))'}">${p.age||'—'}</span>${isPepite?' <span title="Pépite" style="color:var(--vs-emerald-300)">◆</span>':''}</td>
       <td style="text-align:center"><span class="stat-v" style="color:${wrCol}">${p.wr}%</span></td>
       <td style="text-align:center"><span class="stat-v" style="color:${kdaCol}">${p.kda}</span></td>
-      <td style="padding:.5rem .75rem;text-align:center">
-        <div style="display:flex;align-items:center;gap:4px;justify-content:center">
-          ${ageHTML}
-          <button onclick="top50SetAge(${i})" style="background:none;border:none;cursor:pointer;font-size:.75rem;color:var(--sub)" title="Modifier l\'âge">✏️</button>
-        </div>
-      </td>
-      <td style="padding:.5rem .75rem;max-width:140px">
-        ${p.hasCompetHistory ? `
-          <div style="font-size:.72rem;font-weight:600;color:var(--teal)">${p.competTeam||'?'}</div>
-          ${p.competHistory && p.competHistory.length > 1 ? `<div style="font-size:.6rem;color:var(--sub)">${p.competHistory.slice(1,3).map(h=>h.team).join(' · ')}</div>` : ''}
-          ${p.competRoleLP ? `<div style="font-size:.6rem;color:var(--sub2);font-family:monospace">${p.competRoleLP}</div>` : ''}
-        ` : `<span style="font-size:.65rem;color:var(--sub)">—</span>`}
-      </td>
-      <td style="padding:.5rem .75rem">
-        <button onclick="top50NextStatut(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:.72rem;cursor:pointer;color:${statCol};white-space:nowrap">${p.statut}</button>
-      </td>
-      <td style="padding:.5rem .75rem;max-width:160px">
-        <input value="${(p.notes||'').replace(/"/g,'&quot;')}" placeholder="Notes scout…"
-          onchange="top50SetNote(${i},this.value)"
-          style="width:100%;background:transparent;border:none;border-bottom:.5px solid var(--border);font-size:.75rem;color:var(--fg,var(--text));padding:2px 0;outline:none;font-family:inherit"/>
-      </td>
-      <td style="padding:.5rem .75rem">
-        <div style="display:flex;gap:4px">
-          <button onclick="top50OpenSPES('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${(p.tier||'DIAMOND').replace(/'/g,"\'")}','${(p.rank||'I')}',${p.lp})" title="Ouvrir fiche SPES" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 8px;font-size:.72rem;color:var(--lime);cursor:pointer">SPES →</button>
-          <button onclick="top50AddRoster('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.server||'euw1').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}')" title="Ajouter au roster" style="background:none;border:1px solid var(--lime-bd);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--lime);cursor:pointer">+Ros</button>
-          <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}')" title="Ajouter au CRM" style="background:none;border:1px solid rgba(74,158,255,.4);border-radius:4px;padding:2px 6px;font-size:.72rem;color:#4A9EFF;cursor:pointer">+CRM</button>
-          <button onclick="top50Remove(${i})" style="background:none;border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:.72rem;color:var(--sub);cursor:pointer">✕</button>
-        </div>
+      <td style="text-align:center"><span class="stat-v">${csmTxt}</span></td>
+      <td style="text-align:center"><span class="stat-v">${visTxt}</span></td>
+      <td style="text-align:center"><span class="stat-v" style="font-weight:800;font-size:19px;color:${vsCol}">${vs}</span></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}')" class="btn btn-ghost btn-sm" title="Ajouter au CRM" style="display:inline-flex;align-items:center;gap:5px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> CRM
+        </button>
       </td>
     </tr>`;
   }).join('');
