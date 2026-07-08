@@ -236,6 +236,29 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vsd .btn-cta:hover{ box-shadow:0 8px 22px -8px rgba(45,212,167,.5); }
 .vsd .dim-header{ transition:background .15s var(--ease-out); }
 
+/* ════ Notation — largeur réduite, titres plus grands, relief 3D (réf. maquette) ════ */
+.vsd-dims-grid{ max-width:1060px; margin-left:auto; margin-right:auto; gap:20px 22px; }
+/* Titres de dimension plus grands + score plus lisible */
+.vsd .dim-section .dim-header-title{ font-size:19px !important; font-weight:600 !important; letter-spacing:.01em; }
+.vsd .dim-section .dim-header-score{ font-size:20px !important; font-weight:600 !important; }
+.vsd .dim-section .dim-header{ padding:15px 20px !important; }
+/* Relief 3D : léger dégradé vertical + liseré haut lumineux + ombre portée douce */
+body.theme-dark .vsd .dim-section .dim-header,
+body.theme-dark .vsd .dim-section .dim-body{
+  background:linear-gradient(180deg, rgba(17,56,49,.78), rgba(9,37,32,.55)) !important;
+  box-shadow:inset 0 1px 0 rgba(180,255,235,.08), 0 12px 26px -16px rgba(0,0,0,.7), 0 3px 6px -3px rgba(0,0,0,.5) !important;
+}
+body:not(.theme-dark) .vsd .dim-section .dim-header,
+body:not(.theme-dark) .vsd .dim-section .dim-body{
+  background:linear-gradient(180deg, #FFFFFF, #F3F8F6) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 10px 22px -14px rgba(31,60,55,.28), 0 2px 5px -2px rgba(31,60,55,.16) !important;
+}
+/* Le survol de la carte-titre renforce le relief */
+body.theme-dark .vsd .dim-section .dim-header:hover{
+  background:linear-gradient(180deg, rgba(21,64,56,.9), rgba(12,45,39,.66)) !important;
+  box-shadow:inset 0 1px 0 rgba(180,255,235,.12), 0 16px 30px -16px rgba(0,0,0,.75), var(--glow-emerald-sm) !important;
+}
+
 /* Sections mises en pause (retour utilisateur) : style de jeu détecté + analyses
    avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
 #playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
@@ -1016,7 +1039,7 @@ button, .btn, select,
 }
 .map-canvas-wrap {
   position:relative; width:100%;
-  aspect-ratio:1/1; max-height:min(80vh,900px); margin:0 auto;
+  aspect-ratio:1/1; max-width:min(80vh,760px); max-height:min(80vh,760px); margin:0 auto;
   border-radius:10px; overflow:hidden;
   transform: none;
   transition: box-shadow .3s;
@@ -1036,16 +1059,19 @@ body.map-fullscreen #hd-nav-main { display:none !important; }
 body.map-fullscreen #panel-map.active { padding:0 !important; }
 body.map-fullscreen .map-container {
   position:fixed !important; top:0; left:0; right:0; bottom:0; z-index:200;
+  height:100vh; height:100dvh;
   border:none !important; border-radius:0 !important; margin:0 !important;
   display:flex !important; flex-direction:column;
 }
 body.map-fullscreen .map-canvas-wrap-outer {
   flex:1; overflow:hidden; padding:0 !important; display:flex;
+  align-items:center; justify-content:center;
 }
+/* Plein écran : la carte reste CARRÉE et centrée (letterbox), jamais étirée */
 body.map-fullscreen .map-canvas-wrap {
-  flex:1; width:100% !important;
-  aspect-ratio:unset !important; max-height:none !important;
-  border-radius:0 !important; box-shadow:none !important;
+  flex:0 0 auto; height:100%; width:auto !important;
+  aspect-ratio:1/1 !important; max-width:100% !important; max-height:100% !important;
+  margin:0 auto; border-radius:0 !important; box-shadow:none !important;
 }
 body.map-fullscreen .map-controls {
   flex-shrink:0; background:rgba(8,11,16,.96) !important;
@@ -10924,13 +10950,13 @@ async function drawMapBase() {
   const base = document.getElementById('map-base-canvas');
   const ctx = base.getContext('2d');
 
-  // Carte officielle Riot — Community Dragon minimap haute résolution
+  // Carte officielle Riot — rendu détaillé Data Dragon (map11), CORS-clean et fidèle
+  // au visuel de la Faille. Les URLs Community Dragon sont bloquées par CORS.
   let loaded = false;
   const urls = [
+    'https://ddragon.leagueoflegends.com/cdn/6.8.1/img/map/map11.png',
+    'https://ddragon.leagueoflegends.com/cdn/5.5.1/img/map/map11.png',
     'https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
-    'https://raw.communitydragon.org/pbe/plugins/rcp-fe-lol-minimap/global/default/pf-minimap-11.png',
-    'https://cdn.communitydragon.org/latest/map/sr/minimap',
-    'https://ddragon.leagueoflegends.com/cdn/img/map/map11.png',
     './map.png',
   ];
 
@@ -10940,6 +10966,8 @@ async function drawMapBase() {
         const img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = () => {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, size, size);
           window._mapImg = img;
           loaded = true;
