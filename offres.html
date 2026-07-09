@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/assets/logos/favicon.svg">
+<title>VisionScore — Offres</title>
+<meta name="description" content="Les offres VisionScore : trois formules de scouting League of Legends pour structures esport professionnelles. Tarification sur devis.">
+<link rel="canonical" href="https://visionscore.gg/offres">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VisionScore">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://visionscore.gg/offres">
+<meta property="og:title" content="VisionScore — Nos offres">
+<meta property="og:description" content="Trois formules de scouting League of Legends pour structures esport professionnelles. Tarification sur devis.">
+<meta property="og:image" content="https://visionscore.gg/assets/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VisionScore — Nos offres">
+<meta name="twitter:description" content="Trois formules de scouting League of Legends pour structures esport professionnelles.">
+<meta name="twitter:image" content="https://visionscore.gg/assets/og-cover.jpg">
+<style>
+  @font-face{ font-family:'Aquavit'; src:url('/assets/fonts/aquavit-regular.otf') format('opentype'); font-weight:400; font-display:swap; }
+  @font-face{ font-family:'Aquavit'; src:url('/assets/fonts/aquavit-medium.otf') format('opentype'); font-weight:500; font-display:swap; }
+  @font-face{ font-family:'Aquavit'; src:url('/assets/fonts/aquavit-semibold.otf') format('opentype'); font-weight:600; font-display:swap; }
+  @font-face{ font-family:'Aquavit'; src:url('/assets/fonts/aquavit-bold.otf') format('opentype'); font-weight:700; font-display:swap; }
+  @font-face{ font-family:'Aquavit'; src:url('/assets/fonts/aquavit-black.otf') format('opentype'); font-weight:900; font-display:swap; }
+
+  :root{
+    --bg:#0B2F2A; --surf:#0F3A34; --surf2:#143F39; --line:#245C52; --line2:#2E6E62;
+    --fg:#F0F4F8; --fg2:#A9C4BD; --fg3:#6E8C85;
+    --em:#2DD4A7; --em3:#7BEBCF; --em-dim:rgba(45,212,167,.12);
+    --gold:#F5A623;
+    --display:'Aquavit',system-ui,sans-serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:var(--sans); background:#071f1b; color:var(--fg); line-height:1.55; -webkit-font-smoothing:antialiased; }
+
+  /* fond emblème (identique à l'app) */
+  .logo-bg{ position:fixed; inset:0; width:100vw; height:100vh; z-index:0; pointer-events:none; opacity:.05;
+    background:linear-gradient(150deg,#3DE7BC,rgba(45,212,167,.4));
+    -webkit-mask:url('/assets/logos/logo-emblem.svg') center/min(78vmin,760px) no-repeat;
+    mask:url('/assets/logos/logo-emblem.svg') center/min(78vmin,760px) no-repeat; }
+  .glow{ position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:radial-gradient(ellipse at 50% -12%, rgba(45,212,167,.12), transparent 55%); }
+
+  .wrap{ position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:0 24px; }
+
+  /* header */
+  header{ position:relative; z-index:2; }
+  .nav{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding:22px 0 6px; }
+  .brand{ display:flex; align-items:center; gap:11px; text-decoration:none; }
+  .brand img.mark{ height:30px; } .brand img.word{ height:19px; }
+  .nav-links{ display:flex; align-items:center; gap:22px; }
+  .nav-links a{ color:var(--fg2); text-decoration:none; font-size:14px; font-weight:600; }
+  .nav-links a:hover{ color:var(--fg); }
+  .btn{ display:inline-flex; align-items:center; gap:8px; height:42px; padding:0 20px; border-radius:23px; border:0;
+    font-family:var(--sans); font-weight:800; font-size:14px; cursor:pointer; text-decoration:none; white-space:nowrap; }
+  .btn-cta{ background:var(--em); color:#04231D; box-shadow:0 12px 30px -10px rgba(45,212,167,.5); }
+  .btn-cta:hover{ filter:brightness(1.06); }
+  .btn-ghost{ background:transparent; color:var(--fg); border:1px solid var(--line2); }
+  .btn-ghost:hover{ border-color:var(--em); color:var(--em3); }
+  .btn-sm{ height:38px; padding:0 16px; font-size:13.5px; }
+
+  /* hero */
+  .hero{ text-align:center; padding:56px 0 8px; }
+  .eyebrow{ font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--em); font-weight:700; }
+  h1{ font-family:var(--display); font-weight:700; font-size:clamp(34px,5vw,52px); line-height:1.04; margin:14px 0 16px; letter-spacing:-.01em; }
+  h1 em{ color:var(--em3); font-style:normal; }
+  .hero-lead{ color:var(--fg2); font-size:16.5px; max-width:640px; margin:0 auto; }
+
+  /* pricing grid */
+  .plans{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:44px 0 8px; align-items:stretch; }
+  .plan{ position:relative; display:flex; flex-direction:column; background:var(--surf); border:1px solid var(--line);
+    border-radius:18px; padding:26px 24px; }
+  .plan.feat{ border-color:var(--em); background:linear-gradient(180deg,rgba(45,212,167,.09),rgba(45,212,167,.02)),var(--surf);
+    box-shadow:0 24px 60px -30px rgba(45,212,167,.5); }
+  .plan-badge{ position:absolute; top:-11px; left:50%; transform:translateX(-50%); background:var(--em); color:#04231D;
+    font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:5px 13px; border-radius:20px; white-space:nowrap; }
+  .plan-name{ font-family:var(--display); font-weight:700; font-size:24px; }
+  .plan-for{ color:var(--em3); font-size:12.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; margin-top:3px; }
+  .plan-desc{ color:var(--fg2); font-size:13.5px; margin:12px 0 16px; min-height:56px; }
+  .plan-price{ display:flex; align-items:baseline; gap:8px; padding:14px 0 4px; border-top:1px solid var(--line); }
+  .plan-price .amount{ font-family:var(--display); font-weight:700; font-size:26px; color:var(--fg); }
+  .plan-price .per{ color:var(--fg3); font-size:13px; }
+  .plan ul{ list-style:none; margin:16px 0 22px; padding:0; display:flex; flex-direction:column; gap:11px; }
+  .plan li{ display:flex; gap:10px; font-size:13.7px; color:var(--fg); line-height:1.4; }
+  .plan li svg{ flex:none; color:var(--em); margin-top:2px; }
+  .plan li.off{ color:var(--fg3); } .plan li.off svg{ color:var(--fg3); opacity:.6; }
+  .plan .cta{ margin-top:auto; }
+  .plan .cta .btn{ width:100%; justify-content:center; }
+
+  /* anchoring */
+  .anchor{ margin:40px 0 0; background:var(--surf); border:1px solid var(--line); border-radius:16px;
+    padding:26px 28px; display:flex; gap:22px; align-items:center; flex-wrap:wrap; }
+  .anchor-ic{ width:46px; height:46px; border-radius:12px; background:var(--em-dim); color:var(--em); display:grid; place-items:center; flex:none; }
+  .anchor-t{ font-family:var(--display); font-weight:700; font-size:19px; margin-bottom:4px; }
+  .anchor-d{ color:var(--fg2); font-size:14px; max-width:760px; }
+  .anchor-d b{ color:var(--fg); }
+
+  /* pilote */
+  .pilot{ margin:22px 0 0; background:linear-gradient(180deg,rgba(45,212,167,.10),rgba(45,212,167,.03));
+    border:1px solid var(--em); border-radius:16px; padding:24px 28px; display:flex; gap:24px;
+    align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .pilot-e{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--em); font-weight:700; }
+  .pilot-t{ font-family:var(--display); font-size:22px; font-weight:700; margin:5px 0 6px; }
+  .pilot-d{ color:var(--fg2); font-size:13.5px; max-width:560px; }
+
+  /* faq */
+  .faq{ margin:48px 0 0; }
+  .faq-t{ font-family:var(--display); font-size:26px; font-weight:700; text-align:center; margin-bottom:22px; }
+  .faq-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .qa{ background:var(--surf); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .qa-q{ font-weight:800; font-size:14.5px; margin-bottom:6px; }
+  .qa-a{ color:var(--fg2); font-size:13.4px; line-height:1.5; }
+
+  /* footer */
+  footer{ position:relative; z-index:1; margin-top:56px; border-top:1px solid var(--line); }
+  .foot-in{ max-width:1080px; margin:0 auto; padding:26px 24px 40px; display:flex; align-items:flex-end;
+    justify-content:space-between; gap:24px; flex-wrap:wrap; }
+  .foot-c{ font-size:13.5px; } .foot-c b{ color:var(--fg); }
+  .foot-c a{ color:var(--em3); text-decoration:none; } .foot-c .l{ display:block; margin-top:4px; color:var(--fg2); }
+  .foot-note{ color:var(--fg3); font-size:10.8px; max-width:300px; text-align:right; }
+
+  @media(max-width:860px){
+    .plans{ grid-template-columns:1fr; max-width:440px; margin-left:auto; margin-right:auto; }
+    .plan.feat{ order:-1; }
+    .faq-grid{ grid-template-columns:1fr; }
+    .nav-links a:not(.btn){ display:none; }
+    .foot-note{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+<div class="logo-bg" aria-hidden="true"></div>
+<div class="glow" aria-hidden="true"></div>
+
+<header>
+  <div class="wrap">
+    <nav class="nav">
+      <a class="brand" href="/"><img class="mark" src="/assets/logos/logo-mark.svg" alt=""><img class="word" src="/assets/logos/logo.svg" alt="VisionScore"></a>
+      <div class="nav-links">
+        <a href="/#features">Fonctionnalités</a>
+        <a href="/presentation">Présentation</a>
+        <a class="btn btn-cta btn-sm" href="https://calendly.com/carneiroenzo70/visionscore-presentation" target="_blank" rel="noopener">Réserver une démo</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">Nos offres</div>
+    <h1>Une formule pour<br>chaque <em>structure.</em></h1>
+    <p class="hero-lead">Du club qui structure son recrutement à l'organisation qui gère plusieurs rosters, VisionScore s'adapte à votre échelle. Tarification sur devis — parce qu'aucune structure ne recrute exactement pareil.</p>
+  </section>
+
+  <section class="plans">
+
+    <!-- STARTER -->
+    <div class="plan">
+      <div class="plan-name">Starter</div>
+      <div class="plan-for">Structures en croissance</div>
+      <div class="plan-desc">Pour poser les bases d'un scouting sérieux, sans usine à gaz. L'essentiel pour repérer et suivre vos prospects.</div>
+      <div class="plan-price"><span class="amount">Sur devis</span><span class="per">/ mois</span></div>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Scouting individuel — fiche SPES complète</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Score VisionScore™ &amp; radar 5 dimensions</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Top 50 prospects (1 rôle à la fois)</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1 utilisateur</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Support par e-mail</li>
+      </ul>
+      <div class="cta"><a class="btn btn-ghost" href="https://calendly.com/carneiroenzo70/visionscore-presentation" target="_blank" rel="noopener">Demander un tarif</a></div>
+    </div>
+
+    <!-- PRO -->
+    <div class="plan feat">
+      <div class="plan-badge">Le plus choisi</div>
+      <div class="plan-name">Pro</div>
+      <div class="plan-for">Le standard des équipes qui recrutent</div>
+      <div class="plan-desc">Tout l'arsenal de scouting et le CRM pour piloter un pipeline de recrutement de A à Z, en équipe.</div>
+      <div class="plan-price"><span class="amount">Sur devis</span><span class="per">/ mois</span></div>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b style="color:var(--em3)">Tout Starter, plus :</b></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Top 50 sur tous les rôles &amp; régions</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>CRM Agent — pipeline de recrutement complet</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Comparaison de fiches (jusqu'à 4 joueurs)</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Jusqu'à 5 utilisateurs</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Support prioritaire</li>
+      </ul>
+      <div class="cta"><a class="btn btn-cta" href="https://calendly.com/carneiroenzo70/visionscore-presentation" target="_blank" rel="noopener">Demander un tarif</a></div>
+    </div>
+
+    <!-- ELITE -->
+    <div class="plan">
+      <div class="plan-name">Élite</div>
+      <div class="plan-for">Organisations multi-rosters</div>
+      <div class="plan-desc">Le scouting sans limite pour les structures qui gèrent plusieurs équipes et veulent un accompagnement dédié.</div>
+      <div class="plan-price"><span class="amount">Sur devis</span><span class="per">/ mois</span></div>
+      <ul>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><b style="color:var(--em3)">Tout Pro, plus :</b></li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Analyse de replays .rofl &amp; timeline</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Upgrade finder du roster</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Utilisateurs illimités</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Onboarding &amp; accompagnement dédié</li>
+        <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Interlocuteur direct chez VisionScore</li>
+      </ul>
+      <div class="cta"><a class="btn btn-ghost" href="https://calendly.com/carneiroenzo70/visionscore-presentation" target="_blank" rel="noopener">Demander un tarif</a></div>
+    </div>
+
+  </section>
+
+  <section class="anchor">
+    <div class="anchor-ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+    <div>
+      <div class="anchor-t">Un recrutement raté coûte bien plus qu'un abonnement.</div>
+      <div class="anchor-d">Les structures esport investissent déjà des dizaines de milliers d'euros par an dans leurs outils — billetterie, CRM, data. VisionScore sécurise la décision la plus chère de toutes : <b>qui vous signez</b>. Le prix d'une formule se rentabilise sur un seul bon transfert évité.</div>
+    </div>
+  </section>
+
+  <section class="pilot">
+    <div>
+      <div class="pilot-e">Programme pilote · places limitées</div>
+      <div class="pilot-t">Les 3 premières structures démarrent gratuitement.</div>
+      <div class="pilot-d">1 à 2 mois d'accès complet, sans engagement. En échange : vos retours terrain pour calibrer l'outil sur votre façon de recruter. On accompagne chaque structure personnellement.</div>
+    </div>
+    <a class="btn btn-cta" href="https://calendly.com/carneiroenzo70/visionscore-presentation" target="_blank" rel="noopener">Réserver ma place</a>
+  </section>
+
+  <section class="faq">
+    <div class="faq-t">Questions fréquentes</div>
+    <div class="faq-grid">
+      <div class="qa">
+        <div class="qa-q">Pourquoi les tarifs ne sont-ils pas affichés ?</div>
+        <div class="qa-a">Parce qu'aucune structure ne recrute pareil. On calibre l'offre selon votre nombre de rosters, d'utilisateurs et vos besoins d'accompagnement — le devis se fait en 20 min de visio.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Y a-t-il un engagement ?</div>
+        <div class="qa-a">Non. Les formules sont mensuelles et sans engagement. Le programme pilote est également sans engagement pour les 3 premières structures.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">D'où viennent les données ?</div>
+        <div class="qa-a">Exclusivement de l'API officielle Riot Games — parties ranked, historique, champions. Aucune donnée scrapée ni approximative.</div>
+      </div>
+      <div class="qa">
+        <div class="qa-q">Peut-on changer de formule ?</div>
+        <div class="qa-a">Oui, à tout moment. Vous montez ou descendez de formule selon votre saison et vos besoins, sans friction.</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="foot-in">
+    <div class="foot-c">
+      <b>Une question sur les offres ? Parlons-en — 20 min en visio.</b>
+      <span class="l">visionscore.gg · <a href="mailto:enzo.carneiro@visionscore.gg">enzo.carneiro@visionscore.gg</a> · <a href="mailto:mateo.dasilva@visionscore.gg">mateo.dasilva@visionscore.gg</a></span>
+    </div>
+    <div class="foot-note">Données via l'API officielle Riot Games. VisionScore n'est ni affilié ni soutenu par Riot Games. © 2026 VisionScore.</div>
+  </div>
+</footer>
+
+</body>
+</html>
