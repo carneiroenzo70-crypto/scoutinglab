@@ -2476,7 +2476,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <div class="h3" style="font-size:16px">Bienvenue sur VisionScore</div>
               <div class="muted" style="font-size:13px;line-height:1.6;margin:3px 0 12px">Votre outil de scouting LoL semi-pro. Pour analyser un joueur :</div>
               <div class="chip-row" style="display:flex;gap:8px;flex-wrap:wrap">
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">①</span>&nbsp;Entrez le pseudo <span class="faint">(ex. Caliste#EUW)</span></span>
+                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">①</span>&nbsp;Entrez le pseudo <span class="faint">(ex. Velja#EUW9)</span></span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">②</span>&nbsp;Sélectionnez le rôle</span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">③</span>&nbsp;Importer</span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">④</span>&nbsp;Résultats</span>
@@ -5773,28 +5773,28 @@ function updateVerdict() {
 /* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
 window.vsDemoLoadDossier = function(){
   var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-  setV('d-pseudo','Caliste'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','19');
-  setV('d-rank','7');       // Master
-  setV('d-rank-prev','6');  // Diamond il y a 1 an → progression +1
-  window.vsRankDetail = { division:'II', lp:38 }; // rang complet démo (Master II · 38 LP)
+  setV('d-pseudo','Velja'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','17');
+  setV('d-rank','9');       // Challenger
+  setV('d-rank-prev','8');  // Grandmaster il y a 1 an → progression +1
+  window.vsRankDetail = { division:'I', lp:842 }; // rang complet démo (Challenger I · 842 LP)
   window.vsProfileIconId = 5427; // icône de profil LoL pour la photo du dossier démo
-  if (typeof setRole === 'function') setRole('ADC');
-  // Stats brutes réalistes (à ajuster librement) — profil élite crédible, pas maxé
+  if (typeof setRole === 'function') setRole('Jgl');
+  // Stats brutes réalistes (Jungle) — cohérent avec la landing (Velja, VisionScore 88)
   Object.assign(rawData, {
-    winrate:59.5, kda:4.7, cs_min:9.4, vision:29, vision_min:1.1,
-    dmg_share:38, kill_part:64, dpm:730, chal_cs10:88,
-    chal_first_blood:24, chal_solo_kills:1.4, chal_max_lvl_lead:1.3,
-    regularite:70, champ_pool:4,
-    chal_team_dmg_pct:30, chal_vision_adv:11, chal_perfect_game:22
+    winrate:64.8, kda:4.7, cs_min:6.4, vision:38, vision_min:1.9,
+    dmg_share:24, kill_part:68, dpm:560, chal_cs10:62,
+    chal_first_blood:32, chal_solo_kills:1.1, chal_max_lvl_lead:1.4,
+    regularite:72, champ_pool:5,
+    chal_team_dmg_pct:22, chal_vision_adv:14, chal_perfect_game:20
   });
-  // Pool de champions réaliste (ADC)
+  // Pool de champions réaliste (Jungle)
   champHistory = [
-    { name:'Kaisa',    games:41, wr:68, kda:5.4 },
-    { name:'Jinx',     games:33, wr:64, kda:5.0 },
-    { name:'Aphelios', games:22, wr:59, kda:4.3 },
-    { name:'Zeri',     games:18, wr:61, kda:4.8 },
-    { name:'Lucian',   games:14, wr:57, kda:4.1 },
-    { name:'Varus',    games:9,  wr:56, kda:3.9 }
+    { name:'Viego',    games:39, wr:69, kda:5.1 },
+    { name:'Lee Sin',  games:31, wr:63, kda:4.6 },
+    { name:'Graves',   games:24, wr:61, kda:4.9 },
+    { name:'Nidalee',  games:17, wr:60, kda:4.4 },
+    { name:'Belveth',  games:12, wr:58, kda:4.2 },
+    { name:'Kindred',  games:8,  wr:57, kda:4.0 }
   ];
   try{ buildAllDims(); }catch(e){}
   try{ updateGlobal(); }catch(e){}
