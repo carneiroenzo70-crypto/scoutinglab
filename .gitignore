@@ -5,3 +5,6 @@ _landing.css
 _landing_markup.html
 _scope_landing.js
 _assemble_index.js
+
+# Documents commerciaux internes — NE JAMAIS déployer publiquement
+commercial/
