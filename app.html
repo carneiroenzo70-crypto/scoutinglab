@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', applyPlanGating);
   --dur-fast:120ms; --ease-out:cubic-bezier(.2,.8,.2,1);
   color:var(--vs-fg-1); font-family:var(--font-sans);
 }
-.vsd-wrap{ display:flex; flex-direction:column; gap:20px; }
+.vsd-wrap{ display:flex; flex-direction:column; gap:16px; }
 
 /* Typo */
 .vsd .h1{ font-family:var(--font-display)!important; font-weight:600; font-size:28px; line-height:1.06; letter-spacing:-.02em; color:var(--vs-fg-1); }
@@ -234,7 +234,7 @@ body:not(.theme-dark) .vsd .dim-section .dim-body{ background:#FFFFFF; box-shado
 .vsd .dim-section .dim-header:hover{ transform:translateY(-1px); border-color:var(--vs-emerald-500) !important; }
 
 /* ════ Notation qualitative — grille 2 colonnes + respiration ════ */
-.vsd .vsd-wrap{ gap:22px; }
+.vsd .vsd-wrap{ gap:16px; }
 .vsd-dims-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; align-items:stretch; }
 @media (max-width:820px){ .vsd-dims-grid{ grid-template-columns:1fr; } }
 /* Symétrie : les 2 cartes d'une rangée s'alignent en hauteur (le corps remplit) */
@@ -315,7 +315,7 @@ body.map-fullscreen .logo-bg{ display:none; }
 .vsd-drawer-label{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6E8C85; margin:18px 6px 8px; }
 .vsd-drawer-item{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:11px 13px; border-radius:8px; border:0; background:none; color:#A9C4BD; font-weight:600; font-size:15px; cursor:pointer; transition:all .12s; font-family:inherit; }
 .vsd-drawer-item:hover{ background:#143F39; color:#F0F4F8; }
-.vsd-drawer-item.on{ background:#143F39; color:#5BE9BE; box-shadow:inset 3px 0 0 #2DD4A7; }
+.vsd-drawer-item.on{ background:#143F39; color:#5BE9BE; }
 .vsd-drawer-item.home{ background:rgba(45,212,167,.08); color:#F0F4F8; margin-bottom:4px; }
 .vsd-drawer-item .vsd-ddot{ margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2DD4A7; box-shadow:0 0 10px rgba(45,212,167,.5); }
 .vsd-drawer-sep{ height:1px; background:#1B4B43; margin:10px 4px; }
@@ -3318,7 +3318,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — onglet du hub Analytics) ══ -->
     <div id="panel-analyse" class="panel">
-      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:14px">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
 
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
@@ -3492,7 +3492,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <!-- ══ PANEL : ANALYTICS ══ -->
     <div id="panel-analytics" class="panel">
-      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:14px">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <div class="page-head">
           <div class="eyebrow">Analytics</div>
           <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
@@ -3538,7 +3538,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <!-- ══ PANEL : AVANT-MATCH (dossier adversaire) ══ -->
     <div id="panel-prematch" class="panel">
-      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:14px">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <div class="page-head">
           <div class="eyebrow">Avant-match</div>
           <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Dossier d'avant-match <span class="pill pill-emerald">API Riot · Leaguepedia</span></h2>
