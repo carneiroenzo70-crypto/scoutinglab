@@ -319,6 +319,13 @@ body.map-fullscreen .logo-bg{ display:none; }
 #playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
+/* ════ Sous-header de contexte de page (maquette) : — EYEBROW / TITRE / description ════ */
+.vsd .page-head{ margin-bottom:10px; }
+.vsd .page-head .eyebrow{ display:flex; align-items:center; gap:9px; }
+.vsd .page-head .eyebrow::before{ content:''; width:20px; height:2px; background:var(--vs-emerald-400); flex:none; }
+.vsd .page-head .h2{ font-size:34px; }
+.vsd .page-head .muted{ font-size:14px; line-height:1.6; max-width:640px; margin-top:8px; }
+
 /* ════ Titres Aquavit : TOUT EN MAJUSCULES (maquette web) ════
    Ne s'applique qu'aux titres — pas aux pseudos (.hero-name), verdicts, boutons ni stats. */
 .vsd .h1, .vsd .h2, .vsd .h3, .vsd .card-title, .vsd .glass-title, .vsd .dim-header-title,
@@ -2489,6 +2496,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <div id="panel-scout" class="panel">
 
+      <!-- Sous-header de contexte (maquette 02) -->
+      <div class="vsd">
+        <div class="page-head">
+          <div class="eyebrow">Scouting</div>
+          <h2 class="h2">Scouter un joueur</h2>
+          <p class="muted">Renseigne le joueur, importe 50 · 100 · 200 parties, puis lis sa note SPES, son pentagone, son champion pool et ses stats.</p>
+        </div>
+      </div>
+
       <!-- Onboarding — visible uniquement si aucun pseudo entré -->
       <div id="onboarding-banner" class="vsd" style="margin-bottom:20px">
         <div class="card" style="padding:18px 22px;position:relative;overflow:hidden">
@@ -3218,7 +3234,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="page-head">
           <div class="eyebrow">Top 50</div>
           <h2 class="h2">Générer un Top 50</h2>
-          <p class="muted">Combine des critères pour sortir un classement de prospects, prêt à pousser dans le CRM.</p>
+          <p class="muted">Combine des critères (rôle, rang min, région, WR, KDA, CS/min, âge, VisionScore…) pour sortir un classement de 50 joueurs, prêt à pousser dans le CRM.</p>
         </div>
 
         <!-- Critères de génération -->
@@ -3350,12 +3366,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
         </div>
 
-        <!-- Header dynamique -->
+        <!-- Header dynamique (format sous-header maquette) -->
         <div class="between" style="margin-bottom:4px;flex-wrap:wrap;gap:12px">
-          <div>
-            <div class="eyebrow">Comparer</div>
-            <h2 class="h2" style="font-size:1.5rem" id="analyse-title">Analyse multi-joueurs</h2>
-            <p class="muted" style="font-size:.85rem;margin:4px 0 0" id="analyse-subtitle">Ajoute jusqu'à 5 fiches — scouting (2-3 joueurs) ou analyse de roster (4-5 joueurs).</p>
+          <div class="page-head" style="margin-bottom:0">
+            <div class="eyebrow">Comparaison</div>
+            <h2 class="h2" id="analyse-title">Comparer des prospects</h2>
+            <p class="muted" id="analyse-subtitle">Jusqu'à 5 fiches SPES côte à côte, radars superposés + détail par dimension. Les fiches viennent du scouting ou du CRM.</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <div id="analyse-slots-bar" style="display:flex;gap:4px">
