@@ -3012,16 +3012,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
           </div>
 
-          <!-- Pool de champions + Recommandation -->
-          <div class="grid vsd-pool-grid" style="grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+          <!-- ChampPool (1fr) · MatchHistory (1.3fr) — wireframe 02 -->
+          <div class="grid vsd-pool-grid" style="grid-template-columns:1fr 1.3fr;gap:16px;align-items:start">
             <div class="card" style="padding:18px 8px 6px">
               <div class="section-head" style="margin-bottom:6px;padding:0 14px"><h3 class="h3">Champion pool · Top 10</h3><span class="faint" id="vsd-pool-sub" style="font-size:12px"></span></div>
               <table class="tbl"><thead><tr><th>Champion</th><th>% Parties</th><th>Win rate</th><th>KDA</th><th>Score SPES</th></tr></thead><tbody id="vsd-champ-tbody"><tr><td colspan="5" class="faint" style="padding:18px 14px">Importez via l'API pour voir le pool de champions</td></tr></tbody></table>
             </div>
-            <div class="card" style="padding:18px 22px">
-              <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
-              <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
+            <div class="card" style="padding:18px 8px 6px">
+              <div class="section-head" style="margin-bottom:6px;padding:0 14px"><h3 class="h3">Historique de parties</h3><span class="faint" style="font-size:12px">importées</span></div>
+              <table class="tbl"><tbody id="vsd-history-tbody"><tr><td class="faint" style="padding:18px 14px">Importez via l'API pour voir les dernières parties</td></tr></tbody></table>
             </div>
+          </div>
+
+          <!-- Recommandation scout -->
+          <div class="card" style="padding:18px 22px">
+            <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
+            <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
           </div>
 
           <!-- Notation détaillée -->
@@ -5959,6 +5965,7 @@ function vsSetAvatarPhoto(elId, iconId, fallback) {
 }
 
 function buildResults() {
+  try { if (typeof vsdRenderMatchHistory === 'function') vsdRenderMatchHistory(); } catch(e) {}
   const f = getRoleFields();
   const RW = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
   const dims = [
@@ -10327,6 +10334,9 @@ async function fetchRiotData() {
     const stats = calculateStats(matches, acc.puuid);
 
     rawData._puuid = acc.puuid;
+    // Historique de parties (wireframe 02) — matches conservés pour le tableau du dossier
+    window._lastMatches = matches; window._lastPuuid = acc.puuid;
+    try { vsdRenderMatchHistory(); } catch(e) {}
     // Apply rank
     if (soloQ) {
       const idx = TIER_TO_IDX[soloQ.tier] ?? 6;
@@ -12868,6 +12878,30 @@ function vsdHomeScout(){
   // l'utilisateur n'a plus qu'à compléter l'âge et le rang d'il y a 1 an.
   if(p && p.value && typeof fetchRiotData==='function'){ setTimeout(function(){ try{ fetchRiotData(); }catch(e){} }, 300); }
 }
+// ── Historique de parties du dossier (wireframe 02) ──────────────────────────
+function vsdRenderMatchHistory(){
+  var tbody=document.getElementById('vsd-history-tbody'); if(!tbody) return;
+  var matches=window._lastMatches, puuid=window._lastPuuid;
+  if(!Array.isArray(matches)||!matches.length||!puuid) return;
+  var rows=[];
+  matches.slice(0,8).forEach(function(m){
+    var p=((m&&m.info&&m.info.participants)||[]).find(function(x){return x.puuid===puuid;});
+    if(!p) return;
+    var durMin=Math.round((m.info.gameDuration||0)/60);
+    var kda=p.kills+'/'+p.deaths+'/'+p.assists;
+    var csm=durMin>0?(((p.totalMinionsKilled||0)+(p.neutralMinionsKilled||0))/durMin).toFixed(1):'—';
+    rows.push('<tr>'
+      +'<td style="width:6px;padding:0;background:'+(p.win?'var(--vs-emerald-400)':'var(--vs-red-400)')+'"></td>'
+      +'<td style="width:30px"><span class="vs-crest" style="width:24px;height:24px">'+(p.championName||'?').charAt(0)+'</span></td>'
+      +'<td style="font-weight:700;color:'+(p.win?'var(--vs-emerald-300)':'var(--vs-red-400)')+'">'+(p.win?'Victoire':'Défaite')+' <span style="color:var(--vs-fg-1);font-weight:600">· '+(p.championName||'?')+'</span></td>'
+      +'<td style="width:64px;color:var(--vs-fg-2);font-family:var(--font-mono);font-size:12px">'+durMin+' min</td>'
+      +'<td style="width:70px;font-family:var(--font-mono);font-size:12px">'+kda+'</td>'
+      +'<td style="width:70px;color:var(--vs-fg-2);font-family:var(--font-mono);font-size:12px">'+csm+' cs/m</td>'
+    +'</tr>');
+  });
+  if(rows.length) tbody.innerHTML=rows.join('');
+}
+
 // ── Régions suivies (filtre de l'accueil) ─────────────────────────────────────
 var VS_REGION_MAP={ EUW:['euw1'], EUNE:['eun1'], KR:['kr'], NA:['na1'], BR:['br1'] };
 function vsFollowedRegions(){
