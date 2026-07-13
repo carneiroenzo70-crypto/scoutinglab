@@ -320,27 +320,11 @@ body.map-fullscreen .logo-bg{ display:none; }
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
 /* ════ Menu latéral (drawer) ════ */
-/* Wireframe 00-07 : top bar épurée — burger + wordmark + « / Page ». Nav = drawer uniquement. */
-#hd-nav-main, #more-menu{ display:none !important; }
-/* Wireframe : pas de sidebar latérale — tout passe par le drawer (les liens OP.GG/DPM restent dans « Liens externes » du scouting) */
-.shell > .sb{ display:none !important; }
-/* Wireframe : table dense + pill score (structure clean.css, couleurs VisionScore) */
-.vsd table.vs-table{ width:100%; border-collapse:collapse; }
-.vsd table.vs-table th{ text-align:left; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); padding:0 12px 10px; border-bottom:1px solid var(--vs-forest-500); }
-.vsd table.vs-table td{ padding:12px; border-bottom:1px solid var(--vs-forest-600); vertical-align:middle; font-size:13px; color:var(--vs-fg-1); }
-.vsd table.vs-table tr:last-child td{ border-bottom:0; }
-.vsd table.vs-table tbody tr{ transition:background .12s; }
-.vsd table.vs-table tbody tr:hover{ background:var(--vs-forest-700); }
-.vsd .vs-pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-size:11px; font-weight:700; border:1px solid var(--vs-forest-500); color:var(--vs-fg-1); font-family:var(--font-mono); }
-.vsd .vs-pill.hi{ background:var(--vs-emerald-400); color:#04231D; border-color:var(--vs-emerald-400); }
-.vsd .vs-crest{ border:1.5px dashed var(--vs-forest-500); border-radius:6px; display:inline-grid; place-items:center; flex:none; color:var(--vs-fg-2); font-size:11px; font-weight:700; }
-.hd-crumb{ font-size:12px; color:var(--vs-fg-3,#8A8D91); font-style:italic; margin-left:2px; white-space:nowrap; }
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
 .vsd-burger:hover{ background:#143F39; border-color:#2DD4A7; }
 .vsd-scrim{ position:fixed; inset:0; background:rgba(7,33,29,.72); z-index:9998; display:none; -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); }
 .vsd-scrim.open{ display:block; }
-/* Wireframe 00 : drawer 280px ancré à DROITE, pleine hauteur */
-.vsd-drawer{ position:fixed; top:0; right:0; left:auto; width:280px; max-width:86vw; height:100%; background:#0F3A34; border-left:1px solid #245C52; padding:20px; display:flex; flex-direction:column; gap:4px; overflow-y:auto; z-index:9999; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; color:#F0F4F8; transform:translateX(100%); transition:transform .26s cubic-bezier(.2,.8,.2,1); }
+.vsd-drawer{ position:fixed; top:0; left:0; width:320px; max-width:86vw; height:100%; background:#0F3A34; border-right:1px solid #245C52; padding:20px; display:flex; flex-direction:column; overflow-y:auto; z-index:9999; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; color:#F0F4F8; transform:translateX(-100%); transition:transform .26s cubic-bezier(.2,.8,.2,1); }
 .vsd-scrim.open .vsd-drawer{ transform:none; }
 .vsd-drawer-label{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6E8C85; margin:18px 6px 8px; }
 .vsd-drawer-item{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:11px 13px; border-radius:8px; border:0; background:none; color:#A9C4BD; font-weight:600; font-size:15px; cursor:pointer; transition:all .12s; font-family:inherit; }
@@ -2123,7 +2107,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </svg>
     </div>
   </div>
-  <span class="hd-crumb" id="hd-crumb">/ Accueil</span>
   <nav class="hd-nav" id="hd-nav-main">
     <button onclick="resetToWelcome()" id="nav-home" style="background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--sub);display:flex;align-items:center;border-radius:6px;transition:all .15s;opacity:.65" title="Accueil — changer de mode" onmouseover="this.style.opacity='1';this.style.background='var(--surf2)'" onmouseout="this.style.opacity='.65';this.style.background='none'">
       <svg style="height:22px;width:22px" viewBox="0 0 391.43 391.43" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/><path d="M199.45,216.97l11-4.58c2.98,11.92,9.62,19.25,18.45,19.25,7.45,0,13.52-5.04,13.52-12.83,0-5.73-3.32-11.46-13.63-16.5l-10.43-5.04c-11.11-5.38-16.61-12.95-16.61-21.88,0-12.72,11.11-20.85,24.18-20.85s23.26,7.91,29.1,20.97l-11.34,3.09c-3.67-11.23-9.62-19.02-19.36-19.02-7.33,0-12.72,4.47-12.72,11.92,0,5.96,3.44,11.34,13.63,16.5l10.54,5.16c11.34,5.61,16.96,12.49,16.96,21.77,0,13.29-11.57,22-25.78,22s-23.49-8.25-27.5-19.94Z"/><path d="M136.4,155.5h12.83c0,1.95,2.41,9.85,7.33,24.86l14.44,44.23,11.23-33.11c3.09-8.82,4.01-13.86,4.01-18.68,0-6.07-1.6-11.92-4.93-17.3h14.09c.23,1.37.46,3.09.46,5.27,0,9.17-3.32,17.3-8.59,31.97l-14.89,41.94h-9.62l-26.35-79.17Z"/></svg>
@@ -2167,23 +2150,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <button class="btn-icon" onclick="vsdToggleDrawer(false)" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <button class="vsd-drawer-item home" data-nav="welcome" onclick="vsdDrawerGo('welcome')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Accueil</span></button>
-    <div class="vsd-drawer-sep"></div>
     <div class="vsd-drawer-label">Plateforme</div>
     <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
     <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 50</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
-    <button class="vsd-drawer-item" data-nav="analyse" onclick="vsdDrawerGo('analyse')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg><span>Comparaison</span></button>
-    <div class="vsd-drawer-sep"></div>
+    <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
+    <button class="vsd-drawer-item" data-nav="prematch" onclick="vsdDrawerGo('prematch')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg><span>Avant-match</span></button>
     <div class="vsd-drawer-label">Outils</div>
     <button class="vsd-drawer-item" data-nav="map" onclick="vsdDrawerGo('map')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Map LoL</span></button>
     <button class="vsd-drawer-item" data-nav="graphs" onclick="vsdDrawerGo('graphs')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Graphiques</span></button>
-    <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg><span>Analytics</span></button>
-    <button class="vsd-drawer-item" data-nav="prematch" onclick="vsdDrawerGo('prematch')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg><span>Avant-match</span></button>
-    <button class="vsd-drawer-item" data-nav="history" onclick="vsdDrawerGo('history')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Historique</span></button>
     <div style="flex:1"></div>
     <div class="vsd-drawer-sep"></div>
-    <div class="vsd-drawer-label">Compte &amp; réglages</div>
-    <div class="vsd-drawer-label" style="display:flex;align-items:center;gap:6px;margin-top:6px">Curseur <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg></div>
+    <div class="vsd-drawer-label" style="display:flex;align-items:center;gap:6px">Curseur <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg></div>
     <div class="vsd-cursor-pick">
       <button class="vsd-cursor-opt" data-cursor="systeme" onclick="vsdSetCursor('systeme')" title="Système"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 2.5l0 16.5 4.2-4.1 2.5 5.2 2.2-1-2.4-5 5.6 0z"/></svg><span>Système</span></button>
       <button class="vsd-cursor-opt" data-cursor="normal" onclick="vsdSetCursor('normal')" title="Normal"><img src="/assets/cursors/normal.png" alt="Normal" width="22" height="22"/><span>Normal</span></button>
@@ -2381,72 +2359,47 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <div id="panel-welcome" class="panel" style="padding:0">
      <div class="vsd">
-      <div class="vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 24px 72px;gap:24px">
-
-        <!-- Page head (wireframe 01) -->
-        <div>
-          <div class="eyebrow">Accueil</div>
-          <h1 class="h1" style="font-size:30px;margin:0">Accueil VisionScore</h1>
-          <p class="muted" style="max-width:620px;margin:8px 0 0;font-size:14px;line-height:1.5">4 portes d'entrée vers la plateforme, recherche centrale, aperçu de l'activité récente.</p>
-        </div>
-
-        <!-- SearchBar · Region/Role Select · CTA (wireframe 01) -->
-        <div class="toolbar">
-          <div class="ctrl" style="flex:1;height:44px;border:0;background:transparent;min-width:220px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Caliste #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:15px"/></div>
-          <div class="ctrl select" style="width:auto;min-width:96px;height:44px"><select id="home-region" title="Région">
-            <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="kr">KR</option><option value="na1">NA</option><option value="br1">BR</option>
-          </select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-          <div class="ctrl select" style="width:auto;min-width:118px;height:44px"><select id="home-role" title="Rôle">
-            <option value="">Tous rôles</option><option value="Top">Top</option><option value="Jgl">Jungle</option><option value="Mid">Mid</option><option value="ADC">ADC</option><option value="Sup">Support</option>
-          </select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-          <button class="btn btn-cta" onclick="vsdHomeScout()">Scouter</button>
-        </div>
-
-        <!-- EntryCard × 4 (wireframe 01 : titre + n° 01-04, description, 2 mini-stats, bouton Ouvrir) -->
-        <div class="grid home-entry-grid" style="grid-template-columns:repeat(4,1fr);gap:16px">
-          <div class="entry-card" style="cursor:default">
-            <div class="between"><span class="h3" style="font-size:17px">Scouting</span><span class="label" style="font-size:11px">01</span></div>
-            <p class="muted" style="font-size:13px;line-height:1.5;margin:0;min-height:38px">Trouver un joueur, importer 50/100/200 parties, le noter.</p>
-            <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Parties</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)" id="home-ec-games">0</div></div>
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Région</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)" id="home-ec-region">—</div></div>
-            </div>
-            <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="vsdGo('scout')">Ouvrir</button>
-          </div>
-          <div class="entry-card" style="cursor:default">
-            <div class="between"><span class="h3" style="font-size:17px">Top 50</span><span class="label" style="font-size:11px">02</span></div>
-            <p class="muted" style="font-size:13px;line-height:1.5;margin:0;min-height:38px">Générer un classement de 50 joueurs selon tes critères.</p>
-            <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Filtres</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)">10</div></div>
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Rôles</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)">5</div></div>
-            </div>
-            <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="vsdGo('top50')">Ouvrir</button>
-          </div>
-          <div class="entry-card" style="cursor:default">
-            <div class="between"><span class="h3" style="font-size:17px">CRM Agent</span><span class="label" style="font-size:11px">03</span></div>
-            <p class="muted" style="font-size:13px;line-height:1.5;margin:0;min-height:38px">Fiches prospects + pipeline de recrutement.</p>
-            <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)" id="home-ec-crm">0</div></div>
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)" id="home-ec-essai">0</div></div>
-            </div>
-            <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="vsdGo('crm')">Ouvrir</button>
-          </div>
-          <div class="entry-card" style="cursor:default">
-            <div class="between"><span class="h3" style="font-size:17px">Comparaison</span><span class="label" style="font-size:11px">04</span></div>
-            <p class="muted" style="font-size:13px;line-height:1.5;margin:0;min-height:38px">Comparer jusqu'à 5 fiches SPES côte à côte.</p>
-            <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Slots</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)" id="home-ec-slots">0/5</div></div>
-              <div class="card" style="padding:8px 10px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Radars</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300)">SPES</div></div>
-            </div>
-            <button class="btn btn-secondary" style="width:100%;justify-content:center" onclick="vsdGo('analyse')">Ouvrir</button>
+      <div class="vsd-wrap" style="max-width:1180px;margin:0 auto;padding:20px 20px 60px;gap:0">
+        <!-- Hero -->
+        <div class="hero">
+          <div class="eyebrow">Scouting e-sport · League of Legends</div>
+          <h1 class="h1" style="font-size:44px;max-width:760px;margin:8px auto 10px">Repère le prochain pro talent.</h1>
+          <p class="muted" style="font-size:17px;max-width:520px;margin:0 auto 22px">Scoute, note et compare les joueurs ranked de chaque région.</p>
+          <div class="toolbar" style="max-width:720px;margin:0 auto">
+            <div class="ctrl" style="flex:1;height:48px;border:0;background:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Caliste #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:16px"/></div>
+            <button class="btn btn-cta" onclick="vsdHomeScout()">Scouter</button>
           </div>
         </div>
 
-        <!-- RecentProspects (2fr) · RegionFilter (1fr) — wireframe 01 -->
-        <div class="grid home-grid-main" style="grid-template-columns:2fr 1fr;gap:16px;align-items:start">
-          <div class="card" style="padding:20px">
-            <div class="between" style="margin-bottom:10px"><span class="label">Derniers prospects ajoutés</span><button class="chip" style="cursor:pointer" onclick="vsdGo('top50')">Top 50</button></div>
-            <div id="home-prospects"></div>
+        <!-- 4 cartes d'entrée -->
+        <div class="grid home-entry-grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px">
+          <button class="entry-card" onclick="vsdGo('scout')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Scouting</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Trouver un joueur, importer 50/100/200 parties, le noter sur 5 dimensions SPES.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Parties</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">50–200</div></div><div><div class="label" style="font-size:10px">Sortie</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">Fiche SPES</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('top50')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Top 50</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Générer un classement de 50 joueurs selon tes critères.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Critères</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">10</div></div><div><div class="label" style="font-size:10px">Rôles</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">5</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('crm')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">CRM Agent</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Fiches prospects + pipeline de recrutement.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">12</div></div><div><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">1</div></div></div>
+          </button>
+          <button class="entry-card" onclick="vsdGo('analytics')">
+            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
+            <div><div class="h3" style="font-size:19px">Analytics</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Performance .rofl, comparaison, upgrade finder et timeline.</p></div>
+            <div class="entry-mini"><div><div class="label" style="font-size:10px">Onglets</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">4</div></div><div><div class="label" style="font-size:10px">Replay</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">.rofl</div></div></div>
+          </button>
+        </div>
+
+        <!-- Prospects en hausse + panneau latéral -->
+        <div class="grid home-grid-main" style="grid-template-columns:1fr 320px;gap:18px;align-items:start">
+          <div>
+            <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">Prospects en hausse</div><h2 class="h2" style="font-size:24px">Ça grimpe sur la ladder</h2></div><button class="btn btn-secondary btn-sm" onclick="vsdGo('top50')">Voir le Top 50</button></div>
+            <div class="grid home-prospects" style="grid-template-columns:1fr 1fr;gap:12px" id="home-prospects"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:14px">
             <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Régions suivies</div><div class="chip-row" id="home-region-chips"><span class="chip on" data-region="EUW" onclick="vsToggleRegion(this)" style="cursor:pointer">EUW</span><span class="chip on" data-region="EUNE" onclick="vsToggleRegion(this)" style="cursor:pointer">EUNE</span><span class="chip on" data-region="KR" onclick="vsToggleRegion(this)" style="cursor:pointer">KR</span><span class="chip on" data-region="NA" onclick="vsToggleRegion(this)" style="cursor:pointer">NA</span><span class="chip on" data-region="BR" onclick="vsToggleRegion(this)" style="cursor:pointer">BR</span></div></div>
@@ -3012,22 +2965,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
           </div>
 
-          <!-- ChampPool (1fr) · MatchHistory (1.3fr) — wireframe 02 -->
-          <div class="grid vsd-pool-grid" style="grid-template-columns:1fr 1.3fr;gap:16px;align-items:start">
+          <!-- Pool de champions + Recommandation -->
+          <div class="grid vsd-pool-grid" style="grid-template-columns:1fr 1fr;gap:16px;align-items:start">
             <div class="card" style="padding:18px 8px 6px">
               <div class="section-head" style="margin-bottom:6px;padding:0 14px"><h3 class="h3">Champion pool · Top 10</h3><span class="faint" id="vsd-pool-sub" style="font-size:12px"></span></div>
               <table class="tbl"><thead><tr><th>Champion</th><th>% Parties</th><th>Win rate</th><th>KDA</th><th>Score SPES</th></tr></thead><tbody id="vsd-champ-tbody"><tr><td colspan="5" class="faint" style="padding:18px 14px">Importez via l'API pour voir le pool de champions</td></tr></tbody></table>
             </div>
-            <div class="card" style="padding:18px 8px 6px">
-              <div class="section-head" style="margin-bottom:6px;padding:0 14px"><h3 class="h3">Historique de parties</h3><span class="faint" style="font-size:12px">importées</span></div>
-              <table class="tbl"><tbody id="vsd-history-tbody"><tr><td class="faint" style="padding:18px 14px">Importez via l'API pour voir les dernières parties</td></tr></tbody></table>
+            <div class="card" style="padding:18px 22px">
+              <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
+              <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
             </div>
-          </div>
-
-          <!-- Recommandation scout -->
-          <div class="card" style="padding:18px 22px">
-            <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
-            <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
           </div>
 
           <!-- Notation détaillée -->
@@ -3275,6 +3222,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button onclick="top50Export()" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button onclick="top50ToggleView()" id="t50-view-btn" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vue publique</button>
+              <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
             </div>
           </div>
           <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
@@ -3325,59 +3273,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <option value="60">60%</option>
               </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
             </div>
-            <!-- Wireframe 03 : 2e rangée de critères -->
-            <div class="fld">
-              <div class="label" style="font-size:10px">KDA min</div>
-              <div class="ctrl select" style="height:38px"><select id="t50-kda-filter" onchange="top50RenderTable()">
-                <option value="0">Tous</option>
-                <option value="3">3.0</option>
-                <option value="3.5">3.5</option>
-                <option value="4">4.0</option>
-                <option value="5">5.0</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-            <div class="fld">
-              <div class="label" style="font-size:10px">CS/min min</div>
-              <div class="ctrl select" style="height:38px"><select id="t50-csm-filter" onchange="top50RenderTable()">
-                <option value="0">Tous</option>
-                <option value="6">6.0</option>
-                <option value="7">7.0</option>
-                <option value="7.5">7.5</option>
-                <option value="8.5">8.5</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-            <div class="fld">
-              <div class="label" style="font-size:10px">Vision min</div>
-              <div class="ctrl select" style="height:38px"><select id="t50-vis-filter" onchange="top50RenderTable()">
-                <option value="0">Tous</option>
-                <option value="15">15</option>
-                <option value="25">25</option>
-                <option value="35">35</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-            <div class="fld">
-              <div class="label" style="font-size:10px">Taille champ pool</div>
-              <div class="ctrl select" style="height:38px"><select id="t50-pool-filter" onchange="top50RenderTable()">
-                <option value="0">Tous</option>
-                <option value="3">≤ 3</option>
-                <option value="5">≤ 5</option>
-                <option value="8">≤ 8</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-            <div class="fld">
-              <div class="label" style="font-size:10px">VisionScore min</div>
-              <div class="ctrl select" style="height:38px"><select id="t50-score-filter" onchange="top50RenderTable()">
-                <option value="0">Tous</option>
-                <option value="6">6.0</option>
-                <option value="7">7.0</option>
-                <option value="8">8.0</option>
-                <option value="9">9.0</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-          </div>
-          <div class="between" style="margin-top:14px;flex-wrap:wrap;gap:10px">
-            <span class="faint" style="font-size:12px;font-style:italic">Critères combinables — appliqués en direct sur le classement.</span>
-            <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
           </div>
         </div>
 
@@ -3454,12 +3349,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <p class="muted" style="font-size:.85rem;margin:4px 0 0" id="analyse-subtitle">Ajoute jusqu'à 5 fiches — scouting (2-3 joueurs) ou analyse de roster (4-5 joueurs).</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <div id="analyse-slots-bar" style="display:flex;gap:4px">
+              <div id="aslot-1" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">1</div>
+              <div id="aslot-2" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">2</div>
+              <div id="aslot-3" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">3</div>
+              <div id="aslot-4" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">4</div>
+              <div id="aslot-5" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">5</div>
+            </div>
+            <button onclick="analyseAddCurrent()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter fiche actuelle</button>
             <button onclick="analyseClear()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Vider</button>
           </div>
         </div>
-
-        <!-- SlotPicker — wireframe 05 : mini-cartes remplies + emplacement vide pointillé -->
-        <div class="grid" id="analyse-slotpicker" style="grid-template-columns:repeat(5,1fr);gap:12px"></div>
 
         <!-- Mode selector (visible quand ≥1 joueur) -->
         <div id="analyse-mode-bar" style="display:none;gap:8px;margin-bottom:16px">
@@ -3554,39 +3454,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted">Structures clientes, suivi des joueurs de « Repéré » à « Signé », candidatures et matching.</p>
         </div>
 
-        <!-- KpiBand — 5 tuiles (wireframe 04) -->
-        <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:16px">
-          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:22px" id="crm-kpi-prospects">0</div></div>
-          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:22px" id="crm-kpi-essai">0</div></div>
-          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Signés (saison)</div><div class="stat-v" style="font-size:22px" id="crm-kpi-signes">0</div></div>
-          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Score moyen</div><div class="stat-v" style="font-size:22px" id="crm-kpi-score">—</div></div>
-          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Structures</div><div class="stat-v" style="font-size:22px" id="crm-kpi-structures">0</div></div>
-        </div>
-
-        <!-- Toolbar — recherche + filtres + actions (wireframe 04) + onglets conservés -->
-        <div class="toolbar" style="align-items:center">
-          <div class="ctrl" style="width:220px;height:38px;border:0;background:transparent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="crm-pipe-search" placeholder="Chercher un prospect" oninput="crmRenderPipeline()" style="font-size:13px"/></div>
-          <div class="ctrl select" style="width:auto;min-width:92px;height:38px"><select id="crm-pipe-role" onchange="crmRenderPipeline()">
-            <option value="">Rôle</option><option value="Top">Top</option><option value="Jgl">Jungle</option><option value="Mid">Mid</option><option value="ADC">ADC</option><option value="Sup">Support</option>
-          </select><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-          <div class="ctrl select" style="width:auto;min-width:110px;height:38px"><select id="crm-pipe-stage" onchange="crmRenderPipeline()">
-            <option value="">Étape</option><option value="nouveau">Repéré</option><option value="contact">À contacter</option><option value="entretien">En discussion</option><option value="proposition">En essai</option><option value="signe">Validé/Signé</option><option value="ecarte">Écarté</option>
-          </select><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-          <div style="flex:1"></div>
-          <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Importer</button>
-        </div>
-
+        <!-- Toolbar : onglets + sync -->
         <div class="between" style="flex-wrap:wrap;gap:12px">
           <div class="rolepills" id="crm-tabs">
-            <button class="chip" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
-            <button class="chip on" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
+            <button class="chip on" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
+            <button class="chip" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
             <button class="chip" id="crm-tab-candidatures" onclick="crmShowTab('candidatures')">Candidatures</button>
             <button class="chip" id="crm-tab-matching" onclick="crmShowTab('matching')">Matching</button>
           </div>
+          <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures</button>
         </div>
 
         <!-- Tab: Structures -->
-        <div id="crm-tab-structures-content" style="display:none">
+        <div id="crm-tab-structures-content">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
             <div style="font-size:.85rem;color:var(--sub)">Gérez vos contacts dans les structures esport européennes.</div>
             <button onclick="crmAddStructure()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nouvelle structure</button>
@@ -3594,17 +3474,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div id="crm-structures-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
         </div>
 
-        <!-- Tab: Pipeline — ProspectList (1fr) + DetailPanel (320px sticky), wireframe 04 -->
-        <div id="crm-tab-pipeline-content" style="display:block">
-          <div class="grid" id="crm-pipe-layout" style="grid-template-columns:1fr;gap:16px;align-items:start">
-            <div class="card" style="padding:8px 8px 0;overflow-x:auto">
-              <table class="vs-table" id="crm-pipe-table" style="min-width:640px">
-                <thead><tr><th style="width:26px"></th><th>Prospect</th><th style="width:80px">Rôle</th><th style="width:120px">Étape</th><th style="width:64px">Score</th><th style="width:140px">Structure</th></tr></thead>
-                <tbody id="crm-pipe-tbody"></tbody>
-              </table>
-            </div>
-            <div class="card" id="crm-pipe-detail" style="display:none;align-self:start;position:sticky;top:72px;padding:16px;border-color:var(--vs-emerald-500)"></div>
-          </div>
+        <!-- Tab: Pipeline -->
+        <div id="crm-tab-pipeline-content" style="display:none">
+          <div style="font-size:.85rem;color:var(--sub);margin-bottom:1rem">Suivez l'avancement de vos démarches pour chaque joueur.</div>
+          <div id="crm-pipeline-board" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem"></div>
         </div>
 
         <!-- Tab: Candidatures -->
@@ -5965,7 +5838,6 @@ function vsSetAvatarPhoto(elId, iconId, fallback) {
 }
 
 function buildResults() {
-  try { if (typeof vsdRenderMatchHistory === 'function') vsdRenderMatchHistory(); } catch(e) {}
   const f = getRoleFields();
   const RW = ROLE_WEIGHTS[currentRole] || { d1:.2,d2:.2,d3:.2,d4:.2,d5:.2 };
   const dims = [
@@ -6599,7 +6471,6 @@ function goToWelcome() {
   if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
   const welcome = document.getElementById('panel-welcome');
   if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
-  const _c = document.getElementById('hd-crumb'); if (_c) _c.textContent = '/ Accueil';
 }
 
 function switchPanel(id) {
@@ -6623,13 +6494,6 @@ function switchPanel(id) {
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
   if (id === 'prematch') initPrematch();
-  if (id === 'crm') { try { crmRenderKpis(); crmRenderPipeline(); } catch(e) {} }
-  // Fil d'ariane « / Page » de la top bar (wireframe 00-07)
-  const _crumbs = { welcome:'Accueil', scout:'Scouting', results:'Scouting', top50:'Top 50', crm:'CRM Agent',
-                    analyse:'Comparaison', analytics:'Analytics', prematch:'Avant-match', map:'Map LoL',
-                    graphs:'Graphiques', history:'Historique' };
-  const _crumbEl = document.getElementById('hd-crumb');
-  if (_crumbEl) _crumbEl.textContent = '/ ' + (_crumbs[id] || id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
   document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
 }
@@ -6780,22 +6644,24 @@ function buildAnalysePanel() {
   const subtitle= document.getElementById('analyse-subtitle');
   if (!empty || !content) return;
 
-  // SlotPicker (wireframe 05) : mini-cartes remplies (pastille couleur + avatar + nom + ✕)
-  // + 1 emplacement vide pointillé « ＋ ajouter la fiche actuelle »
-  const picker = document.getElementById('analyse-slotpicker');
-  if (picker) {
-    let html = analyseSlots.map((slot, i) =>
-      '<div class="card" style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--vs-forest-800)">' +
-        '<span style="width:12px;height:12px;border-radius:3px;background:' + PLAYER_COLORS[i] + ';flex:none"></span>' +
-        '<div class="avatar" style="width:28px;height:28px;font-size:11px;flex:none">' + (slot.pseudo||'?').charAt(0).toUpperCase() + '</div>' +
-        '<span style="flex:1;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + slot.pseudo + '">' + slot.pseudo + '</span>' +
-        '<button onclick="analyseRemove(' + i + ')" title="Retirer" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;font-size:13px;padding:2px 5px;flex:none">✕</button>' +
-      '</div>'
-    ).join('');
-    if (analyseSlots.length < 5) {
-      html += '<button onclick="analyseAddCurrent()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1px dashed var(--vs-forest-500);border-radius:12px;background:none;color:var(--vs-fg-3);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;min-height:50px" title="Ajoute le dossier actuellement importé dans le Scouting">＋ ajouter une fiche SPES</button>';
+  // Mettre à jour les slots visuels
+  for (let i=1; i<=5; i++) {
+    const el = document.getElementById('aslot-' + i);
+    if (!el) continue;
+    const slot = analyseSlots[i-1];
+    if (slot) {
+      el.style.background = PLAYER_COLORS[i-1];
+      el.style.borderColor = PLAYER_COLORS[i-1];
+      el.style.color = '#000';
+      el.textContent = slot.pseudo.slice(0,2).toUpperCase();
+      el.title = slot.pseudo;
+    } else {
+      el.style.background = 'var(--surf3)';
+      el.style.borderColor = 'var(--border)';
+      el.style.color = 'var(--sub)';
+      el.textContent = i;
+      el.title = '';
     }
-    picker.innerHTML = html;
   }
 
   if (!analyseSlots.length) {
@@ -8621,15 +8487,13 @@ async function generateOfficialReport() {
 let crmStructures = [];
 let crmPipeline   = [];
 
-// Étapes pipeline — libellés wireframe 04 (Repéré → À contacter → En discussion → En essai → Validé/Signé)
-// Les ids restent inchangés pour ne pas casser les pipelines sauvegardés.
 const CRM_PIPELINE_STAGES = [
-  { id:'nouveau',    label:'Repéré',       color:'var(--sub)' },
-  { id:'contact',    label:'À contacter',  color:'var(--blue)' },
-  { id:'entretien',  label:'En discussion',color:'var(--amber)' },
-  { id:'proposition',label:'En essai',     color:'var(--teal)' },
-  { id:'signe',      label:'Validé/Signé', color:'var(--lime)' },
-  { id:'ecarte',     label:'Écarté',       color:'var(--red)' },
+  { id:'nouveau',    label:'Nouveau',    color:'var(--sub)' },
+  { id:'contact',    label:'Contacté',   color:'var(--blue)' },
+  { id:'entretien',  label:'Entretien',  color:'var(--amber)' },
+  { id:'proposition',label:'Proposition',color:'var(--teal)' },
+  { id:'signe',      label:'Signé',      color:'var(--lime)' },
+  { id:'ecarte',     label:'Écarté',     color:'var(--red)' },
 ];
 
 const CRM_ROLES = ['Top','Jgl','Mid','ADC','Sup'];
@@ -8947,96 +8811,37 @@ async function crmDeletePipeline(id) {
 }
 
 function crmRenderPipeline() {
-  // Wireframe 04 : ProspectList (table) + DetailPanel sticky — remplace l'ancien kanban.
-  crmRenderKpis();
-  const tbody = document.getElementById('crm-pipe-tbody'); if (!tbody) return;
-  const q = (document.getElementById('crm-pipe-search')?.value || '').toLowerCase();
-  const roleF  = document.getElementById('crm-pipe-role')?.value  || '';
-  const stageF = document.getElementById('crm-pipe-stage')?.value || '';
-  let rows = crmPipeline.slice();
-  if (q)      rows = rows.filter(p => ((p.playerName||'') + ' ' + (p.structureName||'')).toLowerCase().includes(q));
-  if (roleF)  rows = rows.filter(p => p.role === roleF);
-  if (stageF) rows = rows.filter(p => p.stage === stageF);
-  const stageLbl = id => (CRM_PIPELINE_STAGES.find(s => s.id === id) || {}).label || id;
-  const stageCol = id => (CRM_PIPELINE_STAGES.find(s => s.id === id) || {}).color || 'var(--sub)';
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le Scouting, le Top 50 ou les Candidatures.') + '</td></tr>';
-    crmRenderDetail(); return;
+  const el = document.getElementById('crm-pipeline-board');
+  if (!el) return;
+  if (!crmPipeline.length) {
+    el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--sub);font-size:.85rem;grid-column:1/-1">Pipeline vide — ajoutez des joueurs depuis la section Structures.</div>';
+    return;
   }
-  tbody.innerHTML = rows.map(p => {
-    const sc = parseFloat(p.score); const hi = !isNaN(sc) && sc >= 8 ? ' hi' : '';
-    const sel = p.id === crmSelectedId ? ' style="background:var(--vs-forest-700);cursor:pointer"' : ' style="cursor:pointer"';
-    return '<tr onclick="crmSelectProspect(' + p.id + ')"' + sel + '>' +
-      '<td><span class="vs-crest" style="width:20px;height:20px">' + (p.playerName||'?').charAt(0).toUpperCase() + '</span></td>' +
-      '<td style="font-weight:700">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:11px">#' + p.playerTag + '</span>' : '') + '</td>' +
-      '<td><span class="chip" style="font-size:10px;padding:3px 8px">' + (p.role||'?') + '</span></td>' +
-      '<td style="color:' + stageCol(p.stage) + ';font-size:12px;font-weight:700">' + stageLbl(p.stage) + '</td>' +
-      '<td>' + (isNaN(sc) ? '<span class="faint">—</span>' : '<span class="vs-pill' + hi + '">' + sc.toFixed(1) + '</span>') + '</td>' +
-      '<td style="color:var(--vs-fg-2);font-size:12px">' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '—') + '</td>' +
-    '</tr>';
-  }).join('');
-  crmRenderDetail();
-}
-
-// ── KPIs (wireframe 04) ─────────────────────────────────────
-function crmRenderKpis() {
-  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
-  const pipe = crmPipeline.filter(p => p.stage !== 'ecarte');
-  set('crm-kpi-prospects', pipe.length);
-  set('crm-kpi-essai',  pipe.filter(p => p.stage === 'proposition').length);
-  set('crm-kpi-signes', pipe.filter(p => p.stage === 'signe').length);
-  const scores = pipe.map(p => parseFloat(p.score)).filter(v => !isNaN(v));
-  set('crm-kpi-score', scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—');
-  set('crm-kpi-structures', crmStructures.length);
-}
-
-// ── Panneau détail (wireframe 04) ───────────────────────────
-let crmSelectedId = null;
-function crmSelectProspect(id) { crmSelectedId = (crmSelectedId === id ? null : id); crmRenderPipeline(); }
-function crmRenderDetail() {
-  const box = document.getElementById('crm-pipe-detail'), layout = document.getElementById('crm-pipe-layout');
-  if (!box || !layout) return;
-  const p = crmPipeline.find(x => x.id === crmSelectedId);
-  if (!p) { box.style.display = 'none'; layout.style.gridTemplateColumns = '1fr'; return; }
-  layout.style.gridTemplateColumns = '1fr 320px'; box.style.display = 'block';
-  const today = new Date();
-  const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
-  const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-  box.innerHTML =
-    '<div class="between"><span class="label">Fiche prospect</span><button onclick="crmSelectProspect(' + p.id + ')" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;font-size:15px;padding:2px 6px">✕</button></div>' +
-    '<div style="display:flex;align-items:center;gap:12px;margin:12px 0">' +
-      '<div class="avatar" style="width:48px;height:48px;font-size:18px">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
-      '<div><div class="h3" style="font-size:16px">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:12px">#' + p.playerTag + '</span>' : '') + '</div>' +
-      '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><span class="chip on" style="font-size:10px;padding:3px 8px">' + (p.role||'?') + '</span>' + (p.age ? '<span class="chip" style="font-size:10px;padding:3px 8px">' + p.age + ' ans</span>' : '') + (p.score ? '<span class="chip" style="font-size:10px;padding:3px 8px">' + p.score + '/10</span>' : '') + '</div></div>' +
-    '</div>' +
-    (p.verifiedRank ? '<div style="font-size:12px;margin-bottom:8px;color:' + (p.rankMatch ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
-    (p.dateRelance ? '<div style="font-size:12px;color:' + (relanceAlert ? 'var(--amber,#E8A317)' : 'var(--vs-fg-3)') + ';margin-bottom:8px">Relance : ' + p.dateRelance + '</div>' : '') +
-    '<div style="height:1px;background:var(--vs-forest-500);margin:10px 0"></div>' +
-    '<span class="label">Étape pipeline</span>' +
-    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + CRM_PIPELINE_STAGES.map(s => '<button class="chip' + (p.stage === s.id ? ' on' : '') + '" style="font-size:10.5px;padding:4px 9px;cursor:pointer" onclick="crmSetStage(' + p.id + ',\'' + s.id + '\')">' + s.label + '</button>').join('') + '</div>' +
-    '<div style="margin-top:12px"><span class="label">Notes scout</span>' +
-    '<textarea style="width:100%;min-height:70px;margin-top:6px;background:var(--vs-forest-800);border:1px solid var(--vs-forest-500);border-radius:8px;color:var(--vs-fg-1);font:inherit;font-size:12.5px;padding:8px;resize:vertical" placeholder="Champ texte libre…" onchange="crmSaveNotes(' + p.id + ',this.value)">' + (p.notes || '') + '</textarea></div>' +
-    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
-      '<button class="btn btn-secondary btn-sm" onclick="crmOpenDossier(' + p.id + ')">Ouvrir dossier</button>' +
-      '<button class="btn btn-ghost btn-sm" onclick="crmSetRelance(' + p.id + ')">Relance</button>' +
-      '<button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400)" onclick="crmDeletePipeline(' + p.id + ')">✕ Retirer</button>' +
+  el.innerHTML = CRM_PIPELINE_STAGES.map(stage => {
+    const players = crmPipeline.filter(p => p.stage === stage.id);
+    const cards = players.map(p => {
+      const today = new Date();
+      const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
+      const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
+      return '<div style="background:var(--surf1);border:1px solid ' + (relanceAlert ? 'var(--amber)' : 'var(--border)') + ';border-radius:8px;padding:.75rem;margin-bottom:.5rem">' +
+        '<div style="font-weight:700;font-size:.85rem;margin-bottom:.25rem">' + p.playerName + (p.playerTag ? ' <span style="color:var(--sub);font-size:.7rem">#' + p.playerTag + '</span>' : '') + '</div>' +
+        '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.25rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
+        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:.25rem;color:' + (p.rankMatch ? 'var(--lime)' : 'var(--red)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
+        '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + (p.structureName || 'Sans structure') + '</div>' +
+        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? 'Relance : ' : '') + p.dateRelance + '</div>' : '') +
+        (p.notes ? '<div style="font-size:.7rem;color:var(--sub);font-style:italic;margin-bottom:.5rem">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
+        '<div style="display:flex;gap:.25rem;flex-wrap:wrap">' +
+          (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" style="font-size:.68rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:3px;padding:1px 7px;color:var(--lime);cursor:pointer">→ Suivant</button>' : '') +
+          '<button onclick="crmSetRelance(' + p.id + ')" style="font-size:.68rem;background:var(--surf2);border:1px solid var(--border);border-radius:3px;padding:1px 7px;color:var(--sub);cursor:pointer">Relance</button>' +
+          '<button onclick="crmDeletePipeline(' + p.id + ')" style="font-size:.68rem;background:none;border:1px solid rgba(255,90,74,.25);border-radius:3px;padding:1px 6px;color:var(--red);cursor:pointer">✕</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+    return '<div class="card" style="padding:.875rem">' +
+      '<div style="font-size:.72rem;font-weight:700;color:' + stage.color + ';letter-spacing:.06em;text-transform:uppercase;margin-bottom:.75rem">' + stage.label + ' <span style="color:var(--sub)">' + players.length + '</span></div>' +
+      (cards || '<div style="font-size:.75rem;color:var(--sub);padding:.5rem 0;text-align:center">Vide</div>') +
     '</div>';
-}
-function crmSetStage(id, stage) {
-  const p = crmPipeline.find(x => x.id === id); if (!p) return;
-  p.stage = stage;
-  (p.history = p.history || []).push({ date: new Date().toISOString(), action: 'Étape → ' + stage });
-  crmSave(); crmRenderPipeline();
-}
-function crmSaveNotes(id, val) { const p = crmPipeline.find(x => x.id === id); if (!p) return; p.notes = val; crmSave(); }
-function crmOpenDossier(id) {
-  const p = crmPipeline.find(x => x.id === id); if (!p) return;
-  vsdGo('scout');
-  const el = document.getElementById('d-pseudo'), t = document.getElementById('d-tag');
-  if (el) el.value = p.playerName || '';
-  if (t)  t.value  = p.playerTag  || '';
-  if (p.role && typeof setRole === 'function') { try { setRole(p.role); } catch(e) {} }
-  if (typeof onIdentityChange === 'function') { try { onIdentityChange(); } catch(e) {} }
+  }).join('');
 }
 
 // ── MATCHING ────────────────────────────────────────────────
@@ -10334,9 +10139,6 @@ async function fetchRiotData() {
     const stats = calculateStats(matches, acc.puuid);
 
     rawData._puuid = acc.puuid;
-    // Historique de parties (wireframe 02) — matches conservés pour le tableau du dossier
-    window._lastMatches = matches; window._lastPuuid = acc.puuid;
-    try { vsdRenderMatchHistory(); } catch(e) {}
     // Apply rank
     if (soloQ) {
       const idx = TIER_TO_IDX[soloQ.tier] ?? 6;
@@ -12529,30 +12331,14 @@ function top50RenderTable() {
   const tbody = document.getElementById('t50-tbody');
   if (!tbody) return;
 
-  // Appliquer les 10 critères combinables (wireframe 03)
+  // Appliquer les filtres rôle et âge
   const roleFilter = document.getElementById('t50-role-filter')?.value || 'all';
   const ageFilter  = parseInt(document.getElementById('t50-age-filter')?.value || '0');
   const wrFilter   = parseInt(document.getElementById('t50-wr-filter')?.value || '0');
-  const kdaFilter  = parseFloat(document.getElementById('t50-kda-filter')?.value || '0');
-  const csmFilter  = parseFloat(document.getElementById('t50-csm-filter')?.value || '0');
-  const visFilter  = parseFloat(document.getElementById('t50-vis-filter')?.value || '0');
-  const poolFilter = parseInt(document.getElementById('t50-pool-filter')?.value || '0');
-  const scFilter   = parseFloat(document.getElementById('t50-score-filter')?.value || '0');
   const filteredData = top50Data.filter(p => {
     if (roleFilter !== 'all' && p.role !== roleFilter) return false;
     if (ageFilter > 0 && p.age && parseInt(p.age) > ageFilter) return false;
     if (wrFilter > 0 && parseFloat(p.wr) < wrFilter) return false;
-    if (kdaFilter > 0 && parseFloat(p.kda) < kdaFilter) return false;
-    const _csm = p.csMin ?? p.csm, _vis = p.visAvg ?? p.vision;
-    if (csmFilter > 0 && _csm != null && parseFloat(_csm) < csmFilter) return false;
-    // Vision : le scan réel stocke vision/min (~1-3), la démo un score/partie (~20-60) → seuil adapté à l'échelle
-    if (visFilter > 0 && _vis != null) {
-      const vv = parseFloat(_vis);
-      if ((vv < 10 ? visFilter / 10 : visFilter) > vv) return false;
-    }
-    const _pool = Array.isArray(p.champs) ? p.champs.length : null;
-    if (poolFilter > 0 && _pool != null && _pool > poolFilter) return false;
-    if (scFilter > 0 && parseFloat(p.score) < scFilter) return false;
     return true;
   });
 
@@ -12862,12 +12648,7 @@ function vsdApplyCursor(){
 }
 function vsdHomeScout(){
   var el=document.getElementById('home-search'); var v=(el&&el.value||'').trim();
-  // Région + rôle choisis dans la barre d'accueil (wireframe 01)
-  var regSel=document.getElementById('home-region'), roleSel=document.getElementById('home-role');
   vsdGo('scout');
-  var srv=document.getElementById('d-server');
-  if(srv && regSel && regSel.value) srv.value=regSel.value;
-  if(roleSel && roleSel.value && typeof setRole==='function'){ try{ setRole(roleSel.value); }catch(e){} }
   if(!v) return;
   var m=v.split('#');
   var p=document.getElementById('d-pseudo'), t=document.getElementById('d-tag');
@@ -12878,30 +12659,6 @@ function vsdHomeScout(){
   // l'utilisateur n'a plus qu'à compléter l'âge et le rang d'il y a 1 an.
   if(p && p.value && typeof fetchRiotData==='function'){ setTimeout(function(){ try{ fetchRiotData(); }catch(e){} }, 300); }
 }
-// ── Historique de parties du dossier (wireframe 02) ──────────────────────────
-function vsdRenderMatchHistory(){
-  var tbody=document.getElementById('vsd-history-tbody'); if(!tbody) return;
-  var matches=window._lastMatches, puuid=window._lastPuuid;
-  if(!Array.isArray(matches)||!matches.length||!puuid) return;
-  var rows=[];
-  matches.slice(0,8).forEach(function(m){
-    var p=((m&&m.info&&m.info.participants)||[]).find(function(x){return x.puuid===puuid;});
-    if(!p) return;
-    var durMin=Math.round((m.info.gameDuration||0)/60);
-    var kda=p.kills+'/'+p.deaths+'/'+p.assists;
-    var csm=durMin>0?(((p.totalMinionsKilled||0)+(p.neutralMinionsKilled||0))/durMin).toFixed(1):'—';
-    rows.push('<tr>'
-      +'<td style="width:6px;padding:0;background:'+(p.win?'var(--vs-emerald-400)':'var(--vs-red-400)')+'"></td>'
-      +'<td style="width:30px"><span class="vs-crest" style="width:24px;height:24px">'+(p.championName||'?').charAt(0)+'</span></td>'
-      +'<td style="font-weight:700;color:'+(p.win?'var(--vs-emerald-300)':'var(--vs-red-400)')+'">'+(p.win?'Victoire':'Défaite')+' <span style="color:var(--vs-fg-1);font-weight:600">· '+(p.championName||'?')+'</span></td>'
-      +'<td style="width:64px;color:var(--vs-fg-2);font-family:var(--font-mono);font-size:12px">'+durMin+' min</td>'
-      +'<td style="width:70px;font-family:var(--font-mono);font-size:12px">'+kda+'</td>'
-      +'<td style="width:70px;color:var(--vs-fg-2);font-family:var(--font-mono);font-size:12px">'+csm+' cs/m</td>'
-    +'</tr>');
-  });
-  if(rows.length) tbody.innerHTML=rows.join('');
-}
-
 // ── Régions suivies (filtre de l'accueil) ─────────────────────────────────────
 var VS_REGION_MAP={ EUW:['euw1'], EUNE:['eun1'], KR:['kr'], NA:['na1'], BR:['br1'] };
 function vsFollowedRegions(){
@@ -12937,13 +12694,13 @@ function vsdRenderHome(){
   var tierCol=function(t){ try{ if(typeof TIER_COLOR!=='undefined' && TIER_COLOR[t]) return TIER_COLOR[t]; }catch(e){} return 'var(--vs-fg-2)'; };
   var ageMultOf=function(a){ try{ if(a && typeof ageBonus==='function') return ageBonus(a); }catch(e){} return 1; };
 
-  var REGION_LBL={ euw1:'EUW', eun1:'EUNE', kr:'KR', na1:'NA', br1:'BR' };
   if(!data.length){
     // Pas de fond factice : on invite à lancer le scan Top 50 (véritables joueurs)
+    box.style.gridTemplateColumns='1fr';
     var emptyMsg = hadData
       ? {t:'Aucun prospect dans ces régions', d:'Aucun joueur scanné pour les régions suivies. Ajoute une région ci-contre ou lance un scan du ladder.'}
       : {t:'Aucun prospect scanné pour l\'instant', d:'Lance un scan du ladder pour peupler ton Top 50 avec de vrais joueurs, notés par le modèle SPES.'};
-    box.innerHTML='<div style="padding:22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500);border-radius:12px">'
+    box.innerHTML='<div class="card" style="padding:26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500)">'
       +'<div class="entry-ico" style="width:44px;height:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>'
       +'<div><div class="h3" style="font-size:16px">'+emptyMsg.t+'</div>'
       +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">'+emptyMsg.d+'</div></div>'
@@ -12951,25 +12708,28 @@ function vsdRenderHome(){
       +'</div>';
     box.__ladderReal=false;
   } else {
-    // Tri par score final (avec bonus d'âge, comme le Top 50) puis top 6 — table dense (wireframe 01)
+    // Tri par score final (avec bonus d\'âge, comme le Top 50) puis top 6
     data.forEach(function(p){ var m=ageMultOf(p.age); p.__sf=p.age?Math.min(10,parseFloat(p.score||0)*m):parseFloat(p.score||0); });
     data.sort(function(a,b){ return b.__sf-a.__sf; });
     var pros=data.slice(0,6);
-    box.innerHTML='<table class="vs-table"><tbody>'+pros.map(function(p){
+    box.style.gridTemplateColumns='1fr 1fr';
+    box.innerHTML=pros.map(function(p){
       var sf=(p.__sf||0);
-      var hi=sf>=8?' hi':'';
-      var tierLetter=(p.tier||'?').charAt(0).toUpperCase();
-      var roleLbl={Top:'Top',Jgl:'Jungle',Mid:'Mid',ADC:'ADC',Sup:'Support'}[p.role]||p.role||'?';
-      var reg=REGION_LBL[p.server]||'—';
+      var scCol=sf>=8?'var(--vs-emerald-400)':sf>=6.5?'var(--rank-gold)':'var(--vs-fg-2)';
+      var rankStr=titleCase(p.tier)+' '+(p.rank||'')+(p.lp!=null?' · '+p.lp+'LP':'');
       var isPep=false; try{ isPep=p.scorePotentiel && p.age && p.age<=19 && (p.scorePotentiel-Math.min(parseFloat(p.score),(typeof RANG_PLAFOND!=='undefined'?(RANG_PLAFOND[(TIER_IDX[p.tier]||6)]||8.2):8.2)))>=1.5; }catch(e){}
-      return '<tr onclick="vsdGo(\'top50\')" style="cursor:pointer">'
-        +'<td style="width:36px"><span class="vs-crest" style="width:22px;height:22px" title="'+titleCase(p.tier)+' '+(p.rank||'')+'"><span style="color:'+tierCol(p.tier)+'">'+tierLetter+'</span></span></td>'
-        +'<td style="font-weight:700">'+(p.name||'?')+(isPep?' <span class="delta-up" style="font-size:11px" title="Pépite — fort potentiel">◆</span>':'')+'</td>'
-        +'<td style="width:110px;color:var(--vs-fg-2)">'+roleLbl+' · '+reg+'</td>'
-        +'<td style="width:80px;color:var(--vs-fg-3);font-family:var(--font-mono);font-size:11px">'+(p.age?p.age+' ans':'—')+'</td>'
-        +'<td style="width:70px;text-align:right"><span class="vs-pill'+hi+'">'+sf.toFixed(1)+'</span></td>'
-      +'</tr>';
-    }).join('')+'</tbody></table>';
+      var badge=isPep
+        ? '<span class="delta-up" style="font-size:12px" title="Pépite — fort potentiel">◆ pép.</span>'
+        : (p.age?'<span class="faint" style="font-size:11px;font-family:var(--font-mono)">'+p.age+' ans</span>':'');
+      return '<button class="card" onclick="vsdGo(\'top50\')" style="text-align:left;padding:0;overflow:hidden;cursor:pointer;border:1px solid var(--vs-forest-500)">'
+        +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px">'
+          +'<div class="avatar" style="width:40px;height:40px;font-size:16px">'+(p.name||'?').charAt(0).toUpperCase()+'</div>'
+          +'<div style="min-width:0"><div style="font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.name||'?')+'</div><div class="faint" style="font-size:11px;font-family:var(--font-mono)">'+(p.tag?'#'+p.tag+' · ':'')+(p.age?p.age+' ans':'')+'</div></div>'
+          +'<div style="margin-left:auto;text-align:right"><div style="display:flex;align-items:center;gap:5px;justify-content:flex-end"><span class="stat-v" style="font-size:20px;color:'+scCol+'">'+sf.toFixed(1)+'</span>'+badge+'</div><div class="label" style="font-size:9px">VisionScore™</div></div>'
+        +'</div>'
+        +'<div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span style="font-weight:700;font-size:10.5px;color:'+tierCol(p.tier)+';letter-spacing:.01em">'+rankStr+'</span><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">'+(p.role||'?')+'</span></div>'
+      +'</button>';
+    }).join('');
     box.__ladderReal=true;
   }
   // Activité (données réelles si dispo)
@@ -12978,17 +12738,6 @@ function vsdRenderHome(){
   try{ if(typeof rsAll==='function') rosters=rsAll().length; }catch(e){}
   var set=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
   set('home-act-scout', scouted); set('home-act-fiches', fiches); set('home-act-rosters', rosters);
-  // Mini-stats des EntryCards (wireframe 01) — valeurs réelles
-  try{
-    var games=0; try{ games=(typeof allMatches!=='undefined'&&Array.isArray(allMatches))?allMatches.length:0; }catch(e){}
-    set('home-ec-games', games||0);
-    var srv=document.getElementById('d-server'); set('home-ec-region', (srv&&srv.value&&REGION_LBL[srv.value])||'—');
-    var crmN=0,essai=0;
-    try{ var pipe=JSON.parse(localStorage.getItem('spes_crm_pipeline')||'[]'); if(Array.isArray(pipe)){ pipe=pipe.filter(function(x){return x.stage!=='ecarte';}); crmN=pipe.length; essai=pipe.filter(function(x){return /essai/i.test(x.stage||'');}).length; } }catch(e){}
-    set('home-ec-crm', crmN); set('home-ec-essai', essai);
-    var slots=0; try{ slots=(typeof analyseSlots!=='undefined'&&Array.isArray(analyseSlots))?analyseSlots.length:0; }catch(e){}
-    set('home-ec-slots', slots+'/5');
-  }catch(e){}
 }
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') vsdToggleDrawer(false); });
 try{ vsdApplyCursor(); }catch(e){}
