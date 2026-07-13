@@ -4262,7 +4262,7 @@ function tmInitAutocomplete() {
     clearTimeout(tmTimer);
     const q = inp.value.trim();
     if (q.length < 3) { tmHideSugg(); return; }
-    tmTimer = setTimeout(() => tmSuggest(q), 450);
+    tmTimer = setTimeout(() => tmSuggest(q), 700);
   });
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') { tmHideSugg(); tmLoadRoster(); } });
   document.addEventListener('click', e => { if (!e.target.closest('#pm-team-sugg') && e.target !== inp) tmHideSugg(); });
@@ -4276,10 +4276,12 @@ async function tmSuggest(q) {
   if (!rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
   const names = rows.map(r => r.title.Name || '').filter(Boolean);
   window._tmSugg = names;
-  const leagues = await tmLeagues(names);   // niveau réel (ligue) par équipe
+  // On affiche la Région (déjà renvoyée par la requête Teams ci-dessus) au lieu de
+  // relancer une requête « ligues » par frappe : ça divisait le rate-limit Leaguepedia
+  // par ~2 et provoquait les « surchargé ». La ligue précise n'est pas indispensable ici.
   box.innerHTML = rows.map((r, i) => {
     const nm = r.title.Name || '';
-    const lvl = leagues[nm] || r.title.Region || '';
+    const lvl = r.title.Region || '';
     return '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(nm) + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(lvl) + '</span></div>';
   }).join('');
   box.style.display = 'block';

@@ -70,10 +70,22 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2) Leaguepedia avec retry serveur sur rate-limit (corps HTTP 200 + {error})
+  // En-têtes exigés par la politique d'API MediaWiki/Fandom. SANS User-Agent
+  // identifiant, Fandom throttle les requêtes en priorité → c'était la cause
+  // principale des « Leaguepedia surchargé ». On ajoute aussi maxlag (étiquette
+  // MediaWiki) pour laisser le serveur nous répondre proprement plutôt que couper.
+  const LP_HEADERS = {
+    'User-Agent': 'VisionScore/1.0 (https://visionscore.gg; contact@visionscore.gg) roster-lookup',
+    'Api-User-Agent': 'VisionScore/1.0 (https://visionscore.gg; contact@visionscore.gg)',
+    'Accept': 'application/json',
+    'Accept-Encoding': 'gzip'
+  };
+  const withMaxlag = clean + (clean.indexOf('?') >= 0 ? '&' : '?') + 'maxlag=5';
+
+  // 2) Leaguepedia avec retry serveur sur rate-limit (HTTP 429/5xx ou corps 200 + {error})
   for (let attempt = 0; attempt < 4; attempt++) {
     try {
-      const lpRes = await fetch(clean);
+      const lpRes = await fetch(withMaxlag, { headers: LP_HEADERS });
       if (lpRes.ok) {
         const data = await lpRes.json();
         if (!data.error) {
@@ -85,8 +97,12 @@ module.exports = async function handler(req, res) {
           return res.status(200).json(data);
         }
       }
+      // Si le serveur indique explicitement un délai (429/503), on le respecte.
+      const ra = parseInt(lpRes.headers.get('retry-after') || '', 10);
+      if (ra > 0 && ra <= 10) { await new Promise(r => setTimeout(r, ra * 1000)); continue; }
     } catch (_) {}
-    await new Promise(r => setTimeout(r, 600 * (attempt + 1)));
+    // Backoff exponentiel + jitter pour ne pas se resynchroniser sur le throttle.
+    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt) + Math.random() * 300));
   }
   res.setHeader('X-VS-Cache', 'FAIL');
   return res.status(503).json({ error: 'Leaguepedia indisponible (rate-limit)' });
