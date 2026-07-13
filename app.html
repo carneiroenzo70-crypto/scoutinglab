@@ -3269,7 +3269,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button onclick="top50Export()" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button onclick="top50ToggleView()" id="t50-view-btn" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vue publique</button>
-              <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
             </div>
           </div>
           <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
@@ -3320,6 +3319,59 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <option value="60">60%</option>
               </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
             </div>
+            <!-- Wireframe 03 : 2e rangée de critères -->
+            <div class="fld">
+              <div class="label" style="font-size:10px">KDA min</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-kda-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="3">3.0</option>
+                <option value="3.5">3.5</option>
+                <option value="4">4.0</option>
+                <option value="5">5.0</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fld">
+              <div class="label" style="font-size:10px">CS/min min</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-csm-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="6">6.0</option>
+                <option value="7">7.0</option>
+                <option value="7.5">7.5</option>
+                <option value="8.5">8.5</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fld">
+              <div class="label" style="font-size:10px">Vision min</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-vis-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="15">15</option>
+                <option value="25">25</option>
+                <option value="35">35</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fld">
+              <div class="label" style="font-size:10px">Taille champ pool</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-pool-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="3">≤ 3</option>
+                <option value="5">≤ 5</option>
+                <option value="8">≤ 8</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+            <div class="fld">
+              <div class="label" style="font-size:10px">VisionScore min</div>
+              <div class="ctrl select" style="height:38px"><select id="t50-score-filter" onchange="top50RenderTable()">
+                <option value="0">Tous</option>
+                <option value="6">6.0</option>
+                <option value="7">7.0</option>
+                <option value="8">8.0</option>
+                <option value="9">9.0</option>
+              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            </div>
+          </div>
+          <div class="between" style="margin-top:14px;flex-wrap:wrap;gap:10px">
+            <span class="faint" style="font-size:12px;font-style:italic">Critères combinables — appliqués en direct sur le classement.</span>
+            <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
           </div>
         </div>
 
@@ -12385,14 +12437,30 @@ function top50RenderTable() {
   const tbody = document.getElementById('t50-tbody');
   if (!tbody) return;
 
-  // Appliquer les filtres rôle et âge
+  // Appliquer les 10 critères combinables (wireframe 03)
   const roleFilter = document.getElementById('t50-role-filter')?.value || 'all';
   const ageFilter  = parseInt(document.getElementById('t50-age-filter')?.value || '0');
   const wrFilter   = parseInt(document.getElementById('t50-wr-filter')?.value || '0');
+  const kdaFilter  = parseFloat(document.getElementById('t50-kda-filter')?.value || '0');
+  const csmFilter  = parseFloat(document.getElementById('t50-csm-filter')?.value || '0');
+  const visFilter  = parseFloat(document.getElementById('t50-vis-filter')?.value || '0');
+  const poolFilter = parseInt(document.getElementById('t50-pool-filter')?.value || '0');
+  const scFilter   = parseFloat(document.getElementById('t50-score-filter')?.value || '0');
   const filteredData = top50Data.filter(p => {
     if (roleFilter !== 'all' && p.role !== roleFilter) return false;
     if (ageFilter > 0 && p.age && parseInt(p.age) > ageFilter) return false;
     if (wrFilter > 0 && parseFloat(p.wr) < wrFilter) return false;
+    if (kdaFilter > 0 && parseFloat(p.kda) < kdaFilter) return false;
+    const _csm = p.csMin ?? p.csm, _vis = p.visAvg ?? p.vision;
+    if (csmFilter > 0 && _csm != null && parseFloat(_csm) < csmFilter) return false;
+    // Vision : le scan réel stocke vision/min (~1-3), la démo un score/partie (~20-60) → seuil adapté à l'échelle
+    if (visFilter > 0 && _vis != null) {
+      const vv = parseFloat(_vis);
+      if ((vv < 10 ? visFilter / 10 : visFilter) > vv) return false;
+    }
+    const _pool = Array.isArray(p.champs) ? p.champs.length : null;
+    if (poolFilter > 0 && _pool != null && _pool > poolFilter) return false;
+    if (scFilter > 0 && parseFloat(p.score) < scFilter) return false;
     return true;
   });
 
