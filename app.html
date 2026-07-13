@@ -264,7 +264,7 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vsd .dim-section .dim-header-score{ font-size:20px !important; font-weight:600 !important; }
 .vsd .dim-section .dim-header{ padding:18px 24px !important; }
 /* Frames D1–D5 agrandies (lisibilité — feedback Enzo) : cadres + contenu plus grands */
-.vsd-dims-grid{ max-width:1200px !important; gap:24px 28px !important; }
+.vsd-dims-grid{ max-width:none !important; gap:24px 28px !important; } /* aligné sur la largeur unifiée du panel (1264px) */
 .vsd .dim-section{ gap:12px; }
 .vsd .dim-section .dim-header-title{ font-size:22px !important; }
 .vsd .dim-section .dim-header-score{ font-size:24px !important; }
@@ -318,6 +318,9 @@ body.map-fullscreen .logo-bg{ display:none; }
    avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
 #playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
+
+/* ════ Largeur unifiée : toutes les pages = 1264px de contenu centré (comme les panels vsd-wrap 1280 − 16 de padding) ════ */
+#panel-scout, #panel-results{ max-width:1264px; margin-left:auto; margin-right:auto; }
 
 /* ════ Sous-header de contexte de page (maquette) : — EYEBROW / TITRE / description ════ */
 .vsd .page-head{ margin-bottom:10px; }
@@ -2375,7 +2378,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
     <div id="panel-welcome" class="panel" style="padding:0">
      <div class="vsd">
-      <div class="vsd-wrap" style="max-width:1180px;margin:0 auto;padding:20px 20px 60px;gap:0">
+      <div class="vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 60px;gap:0">
         <!-- Hero -->
         <div class="hero">
           <div class="eyebrow">Scouting e-sport · League of Legends</div>
