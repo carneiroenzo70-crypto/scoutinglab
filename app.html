@@ -262,7 +262,20 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 /* Titres de dimension plus grands + score plus lisible */
 .vsd .dim-section .dim-header-title{ font-size:19px !important; font-weight:600 !important; letter-spacing:.01em; }
 .vsd .dim-section .dim-header-score{ font-size:20px !important; font-weight:600 !important; }
-.vsd .dim-section .dim-header{ padding:15px 20px !important; }
+.vsd .dim-section .dim-header{ padding:18px 24px !important; }
+/* Frames D1–D5 agrandies (lisibilité — feedback Enzo) : cadres + contenu plus grands */
+.vsd-dims-grid{ max-width:1200px !important; gap:24px 28px !important; }
+.vsd .dim-section{ gap:12px; }
+.vsd .dim-section .dim-header-title{ font-size:22px !important; }
+.vsd .dim-section .dim-header-score{ font-size:24px !important; }
+.vsd .dim-section .dim-body{ padding:18px 24px !important; }
+.vsd .dim-section .dim-row{ padding:12px 0 !important; gap:14px !important; }
+.vsd .dim-section .dim-row-label{ font-size:14.5px !important; }
+.vsd .dim-section .dim-badge{ font-size:10px !important; padding:3px 7px !important; }
+.vsd .dim-section .dim-bar-track{ width:120px !important; height:6px !important; }
+.vsd .dim-section .dim-score{ font-size:17px !important; width:40px !important; }
+.vsd .dim-section .dim-num-input{ width:52px !important; font-size:13px !important; padding:5px 6px !important; }
+.vsd .dim-section .dim-slider{ width:120px !important; }
 /* Relief 3D : léger dégradé vertical + liseré haut lumineux + ombre portée douce */
 body.theme-dark .vsd .dim-section .dim-header,
 body.theme-dark .vsd .dim-section .dim-body{
@@ -2353,7 +2366,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <h1 class="h1" style="font-size:44px;max-width:760px;margin:8px auto 10px">Repère le prochain pro talent.</h1>
           <p class="muted" style="font-size:17px;max-width:520px;margin:0 auto 22px">Scoute, note et compare les joueurs ranked de chaque région.</p>
           <div class="toolbar" style="max-width:720px;margin:0 auto">
-            <div class="ctrl" style="flex:1;height:48px;border:0;background:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Velja #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:16px"/></div>
+            <div class="ctrl" style="flex:1;height:48px;border:0;background:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Caliste #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:16px"/></div>
             <button class="btn btn-cta" onclick="vsdHomeScout()">Scouter</button>
           </div>
         </div>
@@ -2389,7 +2402,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="grid home-prospects" style="grid-template-columns:1fr 1fr;gap:12px" id="home-prospects"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Régions suivies</div><div class="chip-row"><span class="chip on">EUW</span><span class="chip">EUNE</span><span class="chip">KR</span><span class="chip">NA</span><span class="chip">BR</span></div></div>
+            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Régions suivies</div><div class="chip-row" id="home-region-chips"><span class="chip on" data-region="EUW" onclick="vsToggleRegion(this)" style="cursor:pointer">EUW</span><span class="chip on" data-region="EUNE" onclick="vsToggleRegion(this)" style="cursor:pointer">EUNE</span><span class="chip on" data-region="KR" onclick="vsToggleRegion(this)" style="cursor:pointer">KR</span><span class="chip on" data-region="NA" onclick="vsToggleRegion(this)" style="cursor:pointer">NA</span><span class="chip on" data-region="BR" onclick="vsToggleRegion(this)" style="cursor:pointer">BR</span></div></div>
             <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Activité</div>
               <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Joueurs scoutés</span><span class="stat-v" style="font-size:15px" id="home-act-scout">—</span></div>
               <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Fiches SPES</span><span class="stat-v" style="font-size:15px" id="home-act-fiches">—</span></div>
@@ -2477,7 +2490,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <div class="h3" style="font-size:16px">Bienvenue sur VisionScore</div>
               <div class="muted" style="font-size:13px;line-height:1.6;margin:3px 0 12px">Votre outil de scouting LoL. Pour analyser un joueur :</div>
               <div class="chip-row" style="display:flex;gap:8px;flex-wrap:wrap">
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">①</span>&nbsp;Entrez le pseudo <span class="faint">(ex. Velja#EUW9)</span></span>
+                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">①</span>&nbsp;Entrez le pseudo <span class="faint">(ex. Caliste#EUW9)</span></span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">②</span>&nbsp;Sélectionnez le rôle</span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">③</span>&nbsp;Importer</span>
                 <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">④</span>&nbsp;Résultats</span>
@@ -5774,13 +5787,13 @@ function updateVerdict() {
 /* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
 window.vsDemoLoadDossier = function(){
   var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-  setV('d-pseudo','Velja'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','17');
+  setV('d-pseudo','Caliste'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','17');
   setV('d-rank','9');       // Challenger
   setV('d-rank-prev','8');  // Grandmaster il y a 1 an → progression +1
   window.vsRankDetail = { division:'I', lp:842 }; // rang complet démo (Challenger I · 842 LP)
   window.vsProfileIconId = 5427; // icône de profil LoL pour la photo du dossier démo
   if (typeof setRole === 'function') setRole('Jgl');
-  // Stats brutes réalistes (Jungle) — cohérent avec la landing (Velja, VisionScore 88)
+  // Stats brutes réalistes (Jungle) — cohérent avec la landing (Caliste, VisionScore 88)
   Object.assign(rawData, {
     winrate:64.8, kda:4.7, cs_min:6.4, vision:38, vision_min:1.9,
     dmg_share:24, kill_part:68, dpm:560, chal_cs10:62,
@@ -12070,7 +12083,7 @@ function top50LoadLocal() {
 // Top 50 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
 function top50SeedDemo() {
   const D = [
-    { name:'Velja',  tag:'EUW9', server:'euw1', role:'Jgl', tier:'CHALLENGER',  rank:'I', lp:842, age:17, wr:64.8, kda:4.7, csm:6.4, vision:38, vsScore:88, scorePotentiel:9.4 },
+    { name:'Caliste',tag:'EUW9', server:'euw1', role:'Jgl', tier:'CHALLENGER',  rank:'I', lp:842, age:17, wr:64.8, kda:4.7, csm:6.4, vision:38, vsScore:88, scorePotentiel:9.4 },
     { name:'Lyse',   tag:'KR3',  server:'kr',   role:'Mid', tier:'CHALLENGER',  rank:'I', lp:790, age:18, wr:66.2, kda:5.8, csm:9.5, vision:26, vsScore:86, scorePotentiel:9.2 },
     { name:'Noah',   tag:'EUW2', server:'euw1', role:'Mid', tier:'GRANDMASTER', rank:'I', lp:512, age:18, wr:61.6, kda:5.0, csm:9.2, vision:24, vsScore:83, scorePotentiel:9.0 },
     { name:'Kaori',  tag:'EUW7', server:'euw1', role:'ADC', tier:'GRANDMASTER', rank:'I', lp:466, age:19, wr:60.1, kda:4.9, csm:9.8, vision:22, vsScore:80, scorePotentiel:8.6 },
@@ -12644,12 +12657,36 @@ function vsdHomeScout(){
   // l'utilisateur n'a plus qu'à compléter l'âge et le rang d'il y a 1 an.
   if(p && p.value && typeof fetchRiotData==='function'){ setTimeout(function(){ try{ fetchRiotData(); }catch(e){} }, 300); }
 }
+// ── Régions suivies (filtre de l'accueil) ─────────────────────────────────────
+var VS_REGION_MAP={ EUW:['euw1'], EUNE:['eun1'], KR:['kr'], NA:['na1'], BR:['br1'] };
+function vsFollowedRegions(){
+  try{ var s=JSON.parse(localStorage.getItem('vs_regions')||'null'); if(Array.isArray(s)&&s.length) return s; }catch(e){}
+  return ['EUW','EUNE','KR','NA','BR'];
+}
+function vsSyncRegionChips(){
+  var set=vsFollowedRegions();
+  var chips=document.querySelectorAll('#home-region-chips .chip');
+  Array.prototype.forEach.call(chips, function(c){ c.classList.toggle('on', set.indexOf(c.getAttribute('data-region'))>=0); });
+}
+function vsToggleRegion(el){
+  var r=el.getAttribute('data-region'); var set=vsFollowedRegions(); var i=set.indexOf(r);
+  if(i>=0){ if(set.length<=1) return; set.splice(i,1); } else { set.push(r); }
+  try{ localStorage.setItem('vs_regions', JSON.stringify(set)); }catch(e){}
+  vsSyncRegionChips(); try{ vsdRenderHome(); }catch(e){}
+}
 function vsdRenderHome(){
   var box=document.getElementById('home-prospects'); if(!box) return;
+  vsSyncRegionChips();
 
   // Vrai ladder : les meilleurs prospects réellement scannés (Top 50 SPES)
   var data=[];
   try{ if(typeof top50Data!=='undefined' && Array.isArray(top50Data)) data=top50Data.slice(); }catch(e){}
+
+  // Filtre par régions suivies (les chips à droite) — l'accueil bouge selon le ladder suivi
+  var hadData=data.length;
+  var reg=vsFollowedRegions(), okServers={};
+  reg.forEach(function(r){ (VS_REGION_MAP[r]||[]).forEach(function(s){ okServers[s]=1; }); });
+  data=data.filter(function(p){ return !p.server || okServers[p.server]; });
 
   var titleCase=function(s){ s=String(s||'').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1); };
   var tierCol=function(t){ try{ if(typeof TIER_COLOR!=='undefined' && TIER_COLOR[t]) return TIER_COLOR[t]; }catch(e){} return 'var(--vs-fg-2)'; };
@@ -12658,10 +12695,13 @@ function vsdRenderHome(){
   if(!data.length){
     // Pas de fond factice : on invite à lancer le scan Top 50 (véritables joueurs)
     box.style.gridTemplateColumns='1fr';
+    var emptyMsg = hadData
+      ? {t:'Aucun prospect dans ces régions', d:'Aucun joueur scanné pour les régions suivies. Ajoute une région ci-contre ou lance un scan du ladder.'}
+      : {t:'Aucun prospect scanné pour l\'instant', d:'Lance un scan du ladder pour peupler ton Top 50 avec de vrais joueurs, notés par le modèle SPES.'};
     box.innerHTML='<div class="card" style="padding:26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500)">'
       +'<div class="entry-ico" style="width:44px;height:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>'
-      +'<div><div class="h3" style="font-size:16px">Aucun prospect scanné pour l\'instant</div>'
-      +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">Lance un scan du ladder pour peupler ton Top 50 avec de vrais joueurs, notés par le modèle SPES.</div></div>'
+      +'<div><div class="h3" style="font-size:16px">'+emptyMsg.t+'</div>'
+      +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">'+emptyMsg.d+'</div></div>'
       +'<button class="btn btn-cta btn-sm" onclick="vsdGo(\'top50\')" style="margin-top:2px">Générer le Top 50 →</button>'
       +'</div>';
     box.__ladderReal=false;
