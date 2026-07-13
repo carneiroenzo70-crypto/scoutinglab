@@ -3553,19 +3553,39 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted">Structures clientes, suivi des joueurs de « Repéré » à « Signé », candidatures et matching.</p>
         </div>
 
-        <!-- Toolbar : onglets + sync -->
+        <!-- KpiBand — 5 tuiles (wireframe 04) -->
+        <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:16px">
+          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:22px" id="crm-kpi-prospects">0</div></div>
+          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:22px" id="crm-kpi-essai">0</div></div>
+          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Signés (saison)</div><div class="stat-v" style="font-size:22px" id="crm-kpi-signes">0</div></div>
+          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Score moyen</div><div class="stat-v" style="font-size:22px" id="crm-kpi-score">—</div></div>
+          <div class="card" style="padding:12px 14px;background:var(--vs-forest-800)"><div class="label" style="font-size:10px">Structures</div><div class="stat-v" style="font-size:22px" id="crm-kpi-structures">0</div></div>
+        </div>
+
+        <!-- Toolbar — recherche + filtres + actions (wireframe 04) + onglets conservés -->
+        <div class="toolbar" style="align-items:center">
+          <div class="ctrl" style="width:220px;height:38px;border:0;background:transparent"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="crm-pipe-search" placeholder="Chercher un prospect" oninput="crmRenderPipeline()" style="font-size:13px"/></div>
+          <div class="ctrl select" style="width:auto;min-width:92px;height:38px"><select id="crm-pipe-role" onchange="crmRenderPipeline()">
+            <option value="">Rôle</option><option value="Top">Top</option><option value="Jgl">Jungle</option><option value="Mid">Mid</option><option value="ADC">ADC</option><option value="Sup">Support</option>
+          </select><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+          <div class="ctrl select" style="width:auto;min-width:110px;height:38px"><select id="crm-pipe-stage" onchange="crmRenderPipeline()">
+            <option value="">Étape</option><option value="nouveau">Repéré</option><option value="contact">À contacter</option><option value="entretien">En discussion</option><option value="proposition">En essai</option><option value="signe">Validé/Signé</option><option value="ecarte">Écarté</option>
+          </select><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+          <div style="flex:1"></div>
+          <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Importer</button>
+        </div>
+
         <div class="between" style="flex-wrap:wrap;gap:12px">
           <div class="rolepills" id="crm-tabs">
-            <button class="chip on" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
-            <button class="chip" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
+            <button class="chip" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
+            <button class="chip on" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
             <button class="chip" id="crm-tab-candidatures" onclick="crmShowTab('candidatures')">Candidatures</button>
             <button class="chip" id="crm-tab-matching" onclick="crmShowTab('matching')">Matching</button>
           </div>
-          <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures</button>
         </div>
 
         <!-- Tab: Structures -->
-        <div id="crm-tab-structures-content">
+        <div id="crm-tab-structures-content" style="display:none">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
             <div style="font-size:.85rem;color:var(--sub)">Gérez vos contacts dans les structures esport européennes.</div>
             <button onclick="crmAddStructure()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nouvelle structure</button>
@@ -3573,10 +3593,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div id="crm-structures-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
         </div>
 
-        <!-- Tab: Pipeline -->
-        <div id="crm-tab-pipeline-content" style="display:none">
-          <div style="font-size:.85rem;color:var(--sub);margin-bottom:1rem">Suivez l'avancement de vos démarches pour chaque joueur.</div>
-          <div id="crm-pipeline-board" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem"></div>
+        <!-- Tab: Pipeline — ProspectList (1fr) + DetailPanel (320px sticky), wireframe 04 -->
+        <div id="crm-tab-pipeline-content" style="display:block">
+          <div class="grid" id="crm-pipe-layout" style="grid-template-columns:1fr;gap:16px;align-items:start">
+            <div class="card" style="padding:8px 8px 0;overflow-x:auto">
+              <table class="vs-table" id="crm-pipe-table" style="min-width:640px">
+                <thead><tr><th style="width:26px"></th><th>Prospect</th><th style="width:80px">Rôle</th><th style="width:120px">Étape</th><th style="width:64px">Score</th><th style="width:140px">Structure</th></tr></thead>
+                <tbody id="crm-pipe-tbody"></tbody>
+              </table>
+            </div>
+            <div class="card" id="crm-pipe-detail" style="display:none;align-self:start;position:sticky;top:72px;padding:16px;border-color:var(--vs-emerald-500)"></div>
+          </div>
         </div>
 
         <!-- Tab: Candidatures -->
@@ -6594,6 +6621,7 @@ function switchPanel(id) {
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
   if (id === 'prematch') initPrematch();
+  if (id === 'crm') { try { crmRenderKpis(); crmRenderPipeline(); } catch(e) {} }
   // Fil d'ariane « / Page » de la top bar (wireframe 00-07)
   const _crumbs = { welcome:'Accueil', scout:'Scouting', results:'Scouting', top50:'Top 50', crm:'CRM Agent',
                     analyse:'Comparaison', analytics:'Analytics', prematch:'Avant-match', map:'Map LoL',
@@ -8593,13 +8621,15 @@ async function generateOfficialReport() {
 let crmStructures = [];
 let crmPipeline   = [];
 
+// Étapes pipeline — libellés wireframe 04 (Repéré → À contacter → En discussion → En essai → Validé/Signé)
+// Les ids restent inchangés pour ne pas casser les pipelines sauvegardés.
 const CRM_PIPELINE_STAGES = [
-  { id:'nouveau',    label:'Nouveau',    color:'var(--sub)' },
-  { id:'contact',    label:'Contacté',   color:'var(--blue)' },
-  { id:'entretien',  label:'Entretien',  color:'var(--amber)' },
-  { id:'proposition',label:'Proposition',color:'var(--teal)' },
-  { id:'signe',      label:'Signé',      color:'var(--lime)' },
-  { id:'ecarte',     label:'Écarté',     color:'var(--red)' },
+  { id:'nouveau',    label:'Repéré',       color:'var(--sub)' },
+  { id:'contact',    label:'À contacter',  color:'var(--blue)' },
+  { id:'entretien',  label:'En discussion',color:'var(--amber)' },
+  { id:'proposition',label:'En essai',     color:'var(--teal)' },
+  { id:'signe',      label:'Validé/Signé', color:'var(--lime)' },
+  { id:'ecarte',     label:'Écarté',       color:'var(--red)' },
 ];
 
 const CRM_ROLES = ['Top','Jgl','Mid','ADC','Sup'];
@@ -8917,37 +8947,96 @@ async function crmDeletePipeline(id) {
 }
 
 function crmRenderPipeline() {
-  const el = document.getElementById('crm-pipeline-board');
-  if (!el) return;
-  if (!crmPipeline.length) {
-    el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--sub);font-size:.85rem;grid-column:1/-1">Pipeline vide — ajoutez des joueurs depuis la section Structures.</div>';
-    return;
+  // Wireframe 04 : ProspectList (table) + DetailPanel sticky — remplace l'ancien kanban.
+  crmRenderKpis();
+  const tbody = document.getElementById('crm-pipe-tbody'); if (!tbody) return;
+  const q = (document.getElementById('crm-pipe-search')?.value || '').toLowerCase();
+  const roleF  = document.getElementById('crm-pipe-role')?.value  || '';
+  const stageF = document.getElementById('crm-pipe-stage')?.value || '';
+  let rows = crmPipeline.slice();
+  if (q)      rows = rows.filter(p => ((p.playerName||'') + ' ' + (p.structureName||'')).toLowerCase().includes(q));
+  if (roleF)  rows = rows.filter(p => p.role === roleF);
+  if (stageF) rows = rows.filter(p => p.stage === stageF);
+  const stageLbl = id => (CRM_PIPELINE_STAGES.find(s => s.id === id) || {}).label || id;
+  const stageCol = id => (CRM_PIPELINE_STAGES.find(s => s.id === id) || {}).color || 'var(--sub)';
+  if (!rows.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:2rem;text-align:center;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le Scouting, le Top 50 ou les Candidatures.') + '</td></tr>';
+    crmRenderDetail(); return;
   }
-  el.innerHTML = CRM_PIPELINE_STAGES.map(stage => {
-    const players = crmPipeline.filter(p => p.stage === stage.id);
-    const cards = players.map(p => {
-      const today = new Date();
-      const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
-      const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-      return '<div style="background:var(--surf1);border:1px solid ' + (relanceAlert ? 'var(--amber)' : 'var(--border)') + ';border-radius:8px;padding:.75rem;margin-bottom:.5rem">' +
-        '<div style="font-weight:700;font-size:.85rem;margin-bottom:.25rem">' + p.playerName + (p.playerTag ? ' <span style="color:var(--sub);font-size:.7rem">#' + p.playerTag + '</span>' : '') + '</div>' +
-        '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.25rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
-        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:.25rem;color:' + (p.rankMatch ? 'var(--lime)' : 'var(--red)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
-        '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + (p.structureName || 'Sans structure') + '</div>' +
-        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? 'Relance : ' : '') + p.dateRelance + '</div>' : '') +
-        (p.notes ? '<div style="font-size:.7rem;color:var(--sub);font-style:italic;margin-bottom:.5rem">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
-        '<div style="display:flex;gap:.25rem;flex-wrap:wrap">' +
-          (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" style="font-size:.68rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:3px;padding:1px 7px;color:var(--lime);cursor:pointer">→ Suivant</button>' : '') +
-          '<button onclick="crmSetRelance(' + p.id + ')" style="font-size:.68rem;background:var(--surf2);border:1px solid var(--border);border-radius:3px;padding:1px 7px;color:var(--sub);cursor:pointer">Relance</button>' +
-          '<button onclick="crmDeletePipeline(' + p.id + ')" style="font-size:.68rem;background:none;border:1px solid rgba(255,90,74,.25);border-radius:3px;padding:1px 6px;color:var(--red);cursor:pointer">✕</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-    return '<div class="card" style="padding:.875rem">' +
-      '<div style="font-size:.72rem;font-weight:700;color:' + stage.color + ';letter-spacing:.06em;text-transform:uppercase;margin-bottom:.75rem">' + stage.label + ' <span style="color:var(--sub)">' + players.length + '</span></div>' +
-      (cards || '<div style="font-size:.75rem;color:var(--sub);padding:.5rem 0;text-align:center">Vide</div>') +
-    '</div>';
+  tbody.innerHTML = rows.map(p => {
+    const sc = parseFloat(p.score); const hi = !isNaN(sc) && sc >= 8 ? ' hi' : '';
+    const sel = p.id === crmSelectedId ? ' style="background:var(--vs-forest-700);cursor:pointer"' : ' style="cursor:pointer"';
+    return '<tr onclick="crmSelectProspect(' + p.id + ')"' + sel + '>' +
+      '<td><span class="vs-crest" style="width:20px;height:20px">' + (p.playerName||'?').charAt(0).toUpperCase() + '</span></td>' +
+      '<td style="font-weight:700">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:11px">#' + p.playerTag + '</span>' : '') + '</td>' +
+      '<td><span class="chip" style="font-size:10px;padding:3px 8px">' + (p.role||'?') + '</span></td>' +
+      '<td style="color:' + stageCol(p.stage) + ';font-size:12px;font-weight:700">' + stageLbl(p.stage) + '</td>' +
+      '<td>' + (isNaN(sc) ? '<span class="faint">—</span>' : '<span class="vs-pill' + hi + '">' + sc.toFixed(1) + '</span>') + '</td>' +
+      '<td style="color:var(--vs-fg-2);font-size:12px">' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '—') + '</td>' +
+    '</tr>';
   }).join('');
+  crmRenderDetail();
+}
+
+// ── KPIs (wireframe 04) ─────────────────────────────────────
+function crmRenderKpis() {
+  const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+  const pipe = crmPipeline.filter(p => p.stage !== 'ecarte');
+  set('crm-kpi-prospects', pipe.length);
+  set('crm-kpi-essai',  pipe.filter(p => p.stage === 'proposition').length);
+  set('crm-kpi-signes', pipe.filter(p => p.stage === 'signe').length);
+  const scores = pipe.map(p => parseFloat(p.score)).filter(v => !isNaN(v));
+  set('crm-kpi-score', scores.length ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : '—');
+  set('crm-kpi-structures', crmStructures.length);
+}
+
+// ── Panneau détail (wireframe 04) ───────────────────────────
+let crmSelectedId = null;
+function crmSelectProspect(id) { crmSelectedId = (crmSelectedId === id ? null : id); crmRenderPipeline(); }
+function crmRenderDetail() {
+  const box = document.getElementById('crm-pipe-detail'), layout = document.getElementById('crm-pipe-layout');
+  if (!box || !layout) return;
+  const p = crmPipeline.find(x => x.id === crmSelectedId);
+  if (!p) { box.style.display = 'none'; layout.style.gridTemplateColumns = '1fr'; return; }
+  layout.style.gridTemplateColumns = '1fr 320px'; box.style.display = 'block';
+  const today = new Date();
+  const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
+  const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
+  box.innerHTML =
+    '<div class="between"><span class="label">Fiche prospect</span><button onclick="crmSelectProspect(' + p.id + ')" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;font-size:15px;padding:2px 6px">✕</button></div>' +
+    '<div style="display:flex;align-items:center;gap:12px;margin:12px 0">' +
+      '<div class="avatar" style="width:48px;height:48px;font-size:18px">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
+      '<div><div class="h3" style="font-size:16px">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:12px">#' + p.playerTag + '</span>' : '') + '</div>' +
+      '<div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap"><span class="chip on" style="font-size:10px;padding:3px 8px">' + (p.role||'?') + '</span>' + (p.age ? '<span class="chip" style="font-size:10px;padding:3px 8px">' + p.age + ' ans</span>' : '') + (p.score ? '<span class="chip" style="font-size:10px;padding:3px 8px">' + p.score + '/10</span>' : '') + '</div></div>' +
+    '</div>' +
+    (p.verifiedRank ? '<div style="font-size:12px;margin-bottom:8px;color:' + (p.rankMatch ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
+    (p.dateRelance ? '<div style="font-size:12px;color:' + (relanceAlert ? 'var(--amber,#E8A317)' : 'var(--vs-fg-3)') + ';margin-bottom:8px">Relance : ' + p.dateRelance + '</div>' : '') +
+    '<div style="height:1px;background:var(--vs-forest-500);margin:10px 0"></div>' +
+    '<span class="label">Étape pipeline</span>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">' + CRM_PIPELINE_STAGES.map(s => '<button class="chip' + (p.stage === s.id ? ' on' : '') + '" style="font-size:10.5px;padding:4px 9px;cursor:pointer" onclick="crmSetStage(' + p.id + ',\'' + s.id + '\')">' + s.label + '</button>').join('') + '</div>' +
+    '<div style="margin-top:12px"><span class="label">Notes scout</span>' +
+    '<textarea style="width:100%;min-height:70px;margin-top:6px;background:var(--vs-forest-800);border:1px solid var(--vs-forest-500);border-radius:8px;color:var(--vs-fg-1);font:inherit;font-size:12.5px;padding:8px;resize:vertical" placeholder="Champ texte libre…" onchange="crmSaveNotes(' + p.id + ',this.value)">' + (p.notes || '') + '</textarea></div>' +
+    '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+      '<button class="btn btn-secondary btn-sm" onclick="crmOpenDossier(' + p.id + ')">Ouvrir dossier</button>' +
+      '<button class="btn btn-ghost btn-sm" onclick="crmSetRelance(' + p.id + ')">Relance</button>' +
+      '<button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400)" onclick="crmDeletePipeline(' + p.id + ')">✕ Retirer</button>' +
+    '</div>';
+}
+function crmSetStage(id, stage) {
+  const p = crmPipeline.find(x => x.id === id); if (!p) return;
+  p.stage = stage;
+  (p.history = p.history || []).push({ date: new Date().toISOString(), action: 'Étape → ' + stage });
+  crmSave(); crmRenderPipeline();
+}
+function crmSaveNotes(id, val) { const p = crmPipeline.find(x => x.id === id); if (!p) return; p.notes = val; crmSave(); }
+function crmOpenDossier(id) {
+  const p = crmPipeline.find(x => x.id === id); if (!p) return;
+  vsdGo('scout');
+  const el = document.getElementById('d-pseudo'), t = document.getElementById('d-tag');
+  if (el) el.value = p.playerName || '';
+  if (t)  t.value  = p.playerTag  || '';
+  if (p.role && typeof setRole === 'function') { try { setRole(p.role); } catch(e) {} }
+  if (typeof onIdentityChange === 'function') { try { onIdentityChange(); } catch(e) {} }
 }
 
 // ── MATCHING ────────────────────────────────────────────────
