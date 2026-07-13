@@ -3448,17 +3448,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <p class="muted" style="font-size:.85rem;margin:4px 0 0" id="analyse-subtitle">Ajoute jusqu'à 5 fiches — scouting (2-3 joueurs) ou analyse de roster (4-5 joueurs).</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <div id="analyse-slots-bar" style="display:flex;gap:4px">
-              <div id="aslot-1" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">1</div>
-              <div id="aslot-2" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">2</div>
-              <div id="aslot-3" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">3</div>
-              <div id="aslot-4" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">4</div>
-              <div id="aslot-5" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">5</div>
-            </div>
-            <button onclick="analyseAddCurrent()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter fiche actuelle</button>
             <button onclick="analyseClear()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Vider</button>
           </div>
         </div>
+
+        <!-- SlotPicker — wireframe 05 : mini-cartes remplies + emplacement vide pointillé -->
+        <div class="grid" id="analyse-slotpicker" style="grid-template-columns:repeat(5,1fr);gap:12px"></div>
 
         <!-- Mode selector (visible quand ≥1 joueur) -->
         <div id="analyse-mode-bar" style="display:none;gap:8px;margin-bottom:16px">
@@ -6778,24 +6773,22 @@ function buildAnalysePanel() {
   const subtitle= document.getElementById('analyse-subtitle');
   if (!empty || !content) return;
 
-  // Mettre à jour les slots visuels
-  for (let i=1; i<=5; i++) {
-    const el = document.getElementById('aslot-' + i);
-    if (!el) continue;
-    const slot = analyseSlots[i-1];
-    if (slot) {
-      el.style.background = PLAYER_COLORS[i-1];
-      el.style.borderColor = PLAYER_COLORS[i-1];
-      el.style.color = '#000';
-      el.textContent = slot.pseudo.slice(0,2).toUpperCase();
-      el.title = slot.pseudo;
-    } else {
-      el.style.background = 'var(--surf3)';
-      el.style.borderColor = 'var(--border)';
-      el.style.color = 'var(--sub)';
-      el.textContent = i;
-      el.title = '';
+  // SlotPicker (wireframe 05) : mini-cartes remplies (pastille couleur + avatar + nom + ✕)
+  // + 1 emplacement vide pointillé « ＋ ajouter la fiche actuelle »
+  const picker = document.getElementById('analyse-slotpicker');
+  if (picker) {
+    let html = analyseSlots.map((slot, i) =>
+      '<div class="card" style="display:flex;align-items:center;gap:8px;padding:10px;background:var(--vs-forest-800)">' +
+        '<span style="width:12px;height:12px;border-radius:3px;background:' + PLAYER_COLORS[i] + ';flex:none"></span>' +
+        '<div class="avatar" style="width:28px;height:28px;font-size:11px;flex:none">' + (slot.pseudo||'?').charAt(0).toUpperCase() + '</div>' +
+        '<span style="flex:1;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="' + slot.pseudo + '">' + slot.pseudo + '</span>' +
+        '<button onclick="analyseRemove(' + i + ')" title="Retirer" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;font-size:13px;padding:2px 5px;flex:none">✕</button>' +
+      '</div>'
+    ).join('');
+    if (analyseSlots.length < 5) {
+      html += '<button onclick="analyseAddCurrent()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border:1px dashed var(--vs-forest-500);border-radius:12px;background:none;color:var(--vs-fg-3);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;min-height:50px" title="Ajoute le dossier actuellement importé dans le Scouting">＋ ajouter une fiche SPES</button>';
     }
+    picker.innerHTML = html;
   }
 
   if (!analyseSlots.length) {
