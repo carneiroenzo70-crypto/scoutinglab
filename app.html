@@ -374,11 +374,11 @@ body.map-fullscreen .logo-bg{ display:none; }
 .vsd-drawer{ position:fixed; top:0; left:0; width:320px; max-width:86vw; height:100%; background:#0F3A34; border-right:1px solid #245C52; padding:20px; display:flex; flex-direction:column; overflow-y:auto; z-index:9999; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; color:#F0F4F8; transform:translateX(-100%); transition:transform .26s cubic-bezier(.2,.8,.2,1); }
 .vsd-scrim.open .vsd-drawer{ transform:none; }
 .vsd-drawer-label{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#6E8C85; margin:18px 6px 8px; }
-.vsd-drawer-item{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:11px 13px; border-radius:8px; border:0; background:none; color:#A9C4BD; font-weight:600; font-size:15px; cursor:pointer; transition:all .12s; font-family:inherit; }
+.vsd-drawer-item{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; padding:10px 12px; border-radius:10px; border:1px solid transparent; background:none; color:#A9C4BD; font-weight:600; font-size:15px; cursor:pointer; transition:all .12s; font-family:inherit; }
 .vsd-drawer-item:hover{ background:#143F39; color:#F0F4F8; }
-.vsd-drawer-item.on{ background:#143F39; color:#5BE9BE; }
 .vsd-drawer-item.home{ background:rgba(45,212,167,.08); color:#F0F4F8; margin-bottom:4px; }
-.vsd-drawer-item .vsd-ddot{ margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2DD4A7; box-shadow:0 0 10px rgba(45,212,167,.5); }
+.vsd-drawer-item.on{ background:rgba(45,212,167,.10); border-color:rgba(45,212,167,.55); color:#5BE9BE; }
+.vsd-drawer-item.on::after{ content:''; margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2DD4A7; box-shadow:0 0 10px rgba(45,212,167,.55); flex:none; }
 .vsd-drawer-sep{ height:1px; background:#1B4B43; margin:10px 4px; }
 .vsd-cursor-pick{ display:flex; gap:8px; margin:4px 0 6px; }
 .vsd-cursor-opt{ flex:1; display:flex; flex-direction:column; align-items:center; gap:7px; padding:11px 6px; border-radius:10px; background:#0F3A34; border:1px solid #245C52; color:#A9C4BD; cursor:pointer; transition:all .12s; font-family:inherit; }
