@@ -4648,15 +4648,17 @@ function tlRender(match, tl, puuid) {
     ? '<span style="font-size:.72rem;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;background:var(--vs-emerald-500);color:#04231D">VICTOIRE</span>'
     : myWin === false
     ? '<span style="font-size:.72rem;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;background:rgba(255,51,0,.85);color:#fff">DÉFAITE</span>' : '';
-  let html = '<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap">';
-  if (me) html += '<img src="https://cdn.communitydragon.org/latest/champion/' + me.championId + '/square" alt="' + anEsc(me.championName) + '" style="width:52px;height:52px;border-radius:12px;border:2px solid var(--vs-emerald-600);object-fit:cover;flex:none" onerror="this.style.display=\'none\'"/>';
+  const resCol = myWin === true ? 'var(--vs-emerald-500)' : myWin === false ? 'rgba(255,90,51,.6)' : 'var(--vs-forest-500)';
+  const resWord = myWin === true ? '<strong style="color:var(--vs-emerald-300)">Victoire</strong> — ' : myWin === false ? '<strong style="color:var(--vs-red-400)">Défaite</strong> — ' : '';
+  let html = '<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap;border-color:' + resCol + ';border-left:4px solid ' + resCol + '">';
+  if (me) html += '<img src="https://cdn.communitydragon.org/latest/champion/' + me.championId + '/square" alt="' + anEsc(me.championName) + '" style="width:52px;height:52px;border-radius:12px;border:2px solid ' + resCol + ';object-fit:cover;flex:none" onerror="this.style.display=\'none\'"/>';
   html += '<div style="min-width:0">'
     + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' + resBadge
     + (me ? '<span style="font-weight:800;font-size:1.05rem;color:var(--vs-fg-1)">' + anEsc(me.championName) + '</span>' : '')
     + (kda ? '<span class="stat-v" style="font-size:.95rem;color:var(--vs-emerald-300)">' + kda + '</span>' : '')
     + (cs != null ? '<span class="faint" style="font-size:.78rem;font-family:var(--font-mono)">' + cs + ' CS</span>' : '')
     + '</div>'
-    + '<div class="faint" style="font-size:.78rem;margin-top:5px">Dernière partie classée (Solo/Duo) de <strong style="color:var(--vs-fg-1)">' + anEsc(riotId) + '</strong> · ' + serverLbl + ' · ' + durMin + ' min' + (whenStr ? ' · ' + whenStr : '') + '</div>'
+    + '<div class="faint" style="font-size:.78rem;margin-top:5px">' + resWord + 'Dernière partie classée (Solo/Duo) de <strong style="color:var(--vs-fg-1)">' + anEsc(riotId) + '</strong> · ' + serverLbl + ' · ' + durMin + ' min' + (whenStr ? ' · ' + whenStr : '') + '</div>'
     + '</div>';
   html += '<div class="label" style="margin-left:auto">Timeline API Riot</div></div>';
 
