@@ -260,6 +260,9 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 /* ════ Cartes pipeline CRM + lignes roster — charte VisionScore, hover animé ════ */
 .crm-pipe-card{ background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:10px; padding:10px 12px; margin-bottom:8px; transition:transform .18s var(--ease-out), border-color .18s, box-shadow .22s var(--ease-out); }
 .crm-pipe-card:hover{ transform:translateY(-2px); border-color:var(--vs-emerald-500); box-shadow:0 10px 24px -12px rgba(0,0,0,.55); }
+.tl-obj-row{ transition:background .14s var(--ease-out); }
+.tl-obj-row:hover{ background:var(--vs-forest-700); }
+.tl-obj-row + .tl-obj-row{ border-top:1px solid var(--vs-forest-600); }
 .vsd .rs-row{ border-color:var(--vs-forest-500); }
 .vsd .rs-row:hover{ border-color:var(--vs-emerald-500); }
 
@@ -4626,19 +4629,50 @@ function tlRender(match, tl, puuid) {
   }));
   objs.sort((a, b) => a.t - b.t);
   const myWin = me ? me.win : null;
-  const colT = t => t === myTeam ? 'var(--lime)' : 'var(--red)';
-  const sideLbl = t => t === myTeam ? 'Nous' : 'Adversaire';
-  let html = '<div style="font-size:.85rem;color:var(--sub2);margin-bottom:10px">Dernière partie classée · ' +
-    (myWin === true ? '<strong style="color:var(--lime)">Victoire</strong>' : myWin === false ? '<strong style="color:var(--red)">Défaite</strong>' : '—') +
-    ' · ' + Math.floor((match.info.gameDuration || 0) / 60) + ' min' + (me ? ' · ' + anEsc(me.championName) : '') + '</div>';
-  html += '<div style="background:var(--surf1);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;height:220px;margin-bottom:16px"><canvas id="tl-gold-chart"></canvas></div>';
-  html += '<div style="font-size:.7rem;color:var(--sub);text-transform:uppercase;margin-bottom:8px">Objectifs (' + objs.length + ')</div>';
-  html += objs.map(o => '<div style="display:flex;align-items:center;gap:10px;font-size:.82rem;padding:5px 0;border-bottom:1px solid var(--border)">' +
-    '<span style="font-family:monospace;color:var(--sub2);width:48px">' + tlMMSS(o.t) + '</span>' +
-    '<span style="width:9px;height:9px;border-radius:50%;background:' + colT(o.team) + ';flex-shrink:0"></span>' +
-    '<span style="flex:1;color:var(--text)">' + anEsc(o.label) + '</span>' +
-    '<span style="font-size:.72rem;color:' + colT(o.team) + '">' + sideLbl(o.team) + '</span></div>').join('') ||
-    '<div style="color:var(--sub);font-size:.8rem">Aucun objectif détecté.</div>';
+  const colT = t => t === myTeam ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)';
+  const sideChip = t => t === myTeam
+    ? '<span style="font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.3);color:var(--vs-emerald-300)">Nous</span>'
+    : '<span style="font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(255,51,0,.1);border:1px solid rgba(255,90,51,.3);color:var(--vs-red-400)">Eux</span>';
+  // Couleur par type d'objectif (lisibilité de la liste)
+  const objCol = l => /Baron/i.test(l) ? '#C084FC' : /Dragon/i.test(l) ? '#F5A623' : /Herald/i.test(l) ? '#2DD4BF' : /Voidgrub/i.test(l) ? '#4A9EFF' : 'var(--vs-fg-2)';
+
+  // ── En-tête de match explicite : qui, quel champion, quel résultat, quand ──
+  const durMin = Math.floor((match.info.gameDuration || 0) / 60);
+  const kda = me ? me.kills + ' / ' + me.deaths + ' / ' + me.assists : '';
+  const cs = me ? ((me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0)) : null;
+  const when = match.info.gameCreation ? new Date(match.info.gameCreation) : null;
+  const whenStr = when ? when.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) + ' à ' + when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  const riotId = (document.getElementById('tl-id').value || '').trim();
+  const serverLbl = (document.getElementById('tl-server').selectedOptions[0] || {}).textContent || '';
+  const resBadge = myWin === true
+    ? '<span style="font-size:.72rem;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;background:var(--vs-emerald-500);color:#04231D">VICTOIRE</span>'
+    : myWin === false
+    ? '<span style="font-size:.72rem;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;background:rgba(255,51,0,.85);color:#fff">DÉFAITE</span>' : '';
+  let html = '<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:14px;flex-wrap:wrap">';
+  if (me) html += '<img src="https://cdn.communitydragon.org/latest/champion/' + me.championId + '/square" alt="' + anEsc(me.championName) + '" style="width:52px;height:52px;border-radius:12px;border:2px solid var(--vs-emerald-600);object-fit:cover;flex:none" onerror="this.style.display=\'none\'"/>';
+  html += '<div style="min-width:0">'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' + resBadge
+    + (me ? '<span style="font-weight:800;font-size:1.05rem;color:var(--vs-fg-1)">' + anEsc(me.championName) + '</span>' : '')
+    + (kda ? '<span class="stat-v" style="font-size:.95rem;color:var(--vs-emerald-300)">' + kda + '</span>' : '')
+    + (cs != null ? '<span class="faint" style="font-size:.78rem;font-family:var(--font-mono)">' + cs + ' CS</span>' : '')
+    + '</div>'
+    + '<div class="faint" style="font-size:.78rem;margin-top:5px">Dernière partie classée (Solo/Duo) de <strong style="color:var(--vs-fg-1)">' + anEsc(riotId) + '</strong> · ' + serverLbl + ' · ' + durMin + ' min' + (whenStr ? ' · ' + whenStr : '') + '</div>'
+    + '</div>';
+  html += '<div class="label" style="margin-left:auto">Timeline API Riot</div></div>';
+
+  // ── Courbe d'avance d'or ──
+  html += '<div class="card" style="padding:16px 18px;margin-bottom:14px"><div class="between" style="margin-bottom:8px"><span class="label">Avance d\'or — nous vs eux</span><span class="faint" style="font-size:.72rem">au-dessus de 0 = avantage</span></div><div style="height:210px"><canvas id="tl-gold-chart"></canvas></div></div>';
+
+  // ── Objectifs ──
+  html += '<div class="card" style="padding:14px 8px 4px">';
+  html += '<div class="label" style="padding:0 12px;margin-bottom:8px">Objectifs (' + objs.length + ')</div>';
+  html += objs.map(o => '<div class="tl-obj-row" style="display:flex;align-items:center;gap:12px;font-size:.84rem;padding:8px 12px;border-radius:8px">' +
+    '<span style="font-family:var(--font-mono);color:var(--vs-fg-3);width:46px;font-size:.78rem">' + tlMMSS(o.t) + '</span>' +
+    '<span style="width:9px;height:9px;border-radius:50%;background:' + objCol(o.label) + ';flex-shrink:0;box-shadow:0 0 7px ' + objCol(o.label) + '55"></span>' +
+    '<span style="flex:1;color:var(--vs-fg-1);font-weight:600">' + anEsc(o.label) + '</span>' +
+    sideChip(o.team) + '</div>').join('') ||
+    '<div class="faint" style="font-size:.8rem;padding:0 12px 12px">Aucun objectif détecté.</div>';
+  html += '</div>';
   out.innerHTML = html;
   // courbe d'avance d'or (notre équipe - adverse)
   if (window.Chart) {
@@ -4648,7 +4682,7 @@ function tlRender(match, tl, puuid) {
     chartInstances['tl-gold'] = new Chart(document.getElementById('tl-gold-chart'), {
       type: 'line',
       data: { labels, datasets: [{ label: 'Avance d\'or (nous − adversaire)', data: gold, borderColor: '#2DD4A7', backgroundColor: 'rgba(45,212,167,.10)', fill: true, tension: .3, pointRadius: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8A9BB8', maxTicksLimit: 12 }, grid: { display: false } }, y: { ticks: { color: '#8A9BB8' }, grid: { color: 'rgba(120,140,170,.12)' } } } },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#A9C4BD', maxTicksLimit: 12 }, grid: { display: false } }, y: { ticks: { color: '#A9C4BD' }, grid: { color: 'rgba(36,92,82,.35)' } } } },
     });
   }
 }
@@ -8555,13 +8589,14 @@ async function generateOfficialReport() {
 let crmStructures = [];
 let crmPipeline   = [];
 
+// Palette d'étapes moderne — progression neutre → bleu → ambre → violet → émeraude ; écarté en rouge
 const CRM_PIPELINE_STAGES = [
-  { id:'nouveau',    label:'Nouveau',    color:'var(--sub)' },
-  { id:'contact',    label:'Contacté',   color:'var(--blue)' },
-  { id:'entretien',  label:'Entretien',  color:'var(--amber)' },
-  { id:'proposition',label:'Proposition',color:'var(--teal)' },
-  { id:'signe',      label:'Signé',      color:'var(--lime)' },
-  { id:'ecarte',     label:'Écarté',     color:'var(--red)' },
+  { id:'nouveau',    label:'Nouveau',    color:'#9BB3AC' },
+  { id:'contact',    label:'Contacté',   color:'#4A9EFF' },
+  { id:'entretien',  label:'Entretien',  color:'#F5A623' },
+  { id:'proposition',label:'Proposition',color:'#C084FC' },
+  { id:'signe',      label:'Signé',      color:'#2DD4A7' },
+  { id:'ecarte',     label:'Écarté',     color:'#FF5A33' },
 ];
 
 const CRM_ROLES = ['Top','Jgl','Mid','ADC','Sup'];
@@ -8892,14 +8927,14 @@ function crmRenderPipeline() {
       const today = new Date();
       const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
       const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + (relanceAlert ? ';border-color:var(--amber,#E8A317)' : '') + '">' +
+      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + ';border-left:3px solid ' + (relanceAlert ? 'var(--amber,#E8A317)' : stage.color) + '">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
           '<div class="avatar" style="width:26px;height:26px;font-size:11px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
           '<div style="font-weight:700;font-size:.85rem;color:var(--vs-fg-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:.68rem;font-family:var(--font-mono)">#' + p.playerTag + '</span>' : '') + '</div>' +
           (p.score ? '<span class="stat-v" style="margin-left:auto;font-size:.82rem;color:' + anScoreColor(parseFloat(p.score)) + '">' + p.score + '</span>' : '') +
         '</div>' +
-        '<div class="faint" style="font-size:.72rem;margin-bottom:4px">' + (p.role||'?') + (p.age ? ' · ' + p.age + ' ans' : '') + ' · ' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '<span style="opacity:.6">sans structure</span>') + '</div>' +
-        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:4px;color:' + (p.rankMatch ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✓ ' : '⚠ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
+        '<div class="faint" style="font-size:.72rem;margin-bottom:5px">' + (p.role||'?') + (p.age ? ' · ' + p.age + ' ans' : '') + ' · ' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '<span style="opacity:.6">sans structure</span>') + '</div>' +
+        (p.verifiedRank ? '<div style="margin-bottom:5px"><span style="display:inline-flex;align-items:center;gap:4px;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px;background:' + (p.rankMatch ? 'rgba(45,212,167,.1)' : 'rgba(255,51,0,.08)') + ';border:1px solid ' + (p.rankMatch ? 'rgba(45,212,167,.3)' : 'rgba(255,90,51,.3)') + ';color:' + (p.rankMatch ? 'var(--vs-emerald-300)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✓' : '⚠') + ' ' + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</span></div>' : '') +
         (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber,#E8A317)' : 'var(--vs-fg-3)') + ';margin-bottom:4px">Relance : ' + p.dateRelance + '</div>' : '') +
         (p.notes ? '<div class="faint" style="font-size:.7rem;font-style:italic;margin-bottom:6px">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
         '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">' +
@@ -8912,7 +8947,7 @@ function crmRenderPipeline() {
     return '<div class="card m3-enter" style="padding:12px;--m3-i:' + si + '">' +
       '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">' +
         '<span style="width:8px;height:8px;border-radius:50%;background:' + stage.color + ';flex:none;box-shadow:0 0 8px ' + stage.color + '"></span>' +
-        '<span class="label" style="font-size:11px;color:var(--vs-fg-1)">' + stage.label + '</span>' +
+        '<span class="label" style="font-size:11px;color:' + stage.color + '">' + stage.label + '</span>' +
         '<span class="chip" style="margin-left:auto;padding:1px 8px;font-size:10px;font-family:var(--font-mono)">' + players.length + '</span>' +
       '</div>' +
       (cards || '<div class="faint" style="font-size:.75rem;padding:14px 0;text-align:center;border:1px dashed var(--vs-forest-500);border-radius:8px">Vide</div>') +
