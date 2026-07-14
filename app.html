@@ -257,6 +257,12 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vsd .btn-cta:hover{ box-shadow:0 8px 22px -8px rgba(45,212,167,.5); }
 .vsd .dim-header{ transition:background .15s var(--ease-out); }
 
+/* ════ Cartes pipeline CRM + lignes roster — charte VisionScore, hover animé ════ */
+.crm-pipe-card{ background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:10px; padding:10px 12px; margin-bottom:8px; transition:transform .18s var(--ease-out), border-color .18s, box-shadow .22s var(--ease-out); }
+.crm-pipe-card:hover{ transform:translateY(-2px); border-color:var(--vs-emerald-500); box-shadow:0 10px 24px -12px rgba(0,0,0,.55); }
+.vsd .rs-row{ border-color:var(--vs-forest-500); }
+.vsd .rs-row:hover{ border-color:var(--vs-emerald-500); }
+
 /* ════ Micro-interactions Material Design (brief motion : 120–200ms ease-out, pas de rebond) ════ */
 /* Ripple M3 : onde depuis le point de clic, généré en JS (vsRippleInit) */
 .vs-ripple{ position:absolute; border-radius:50%; pointer-events:none; background:currentColor; opacity:.16; transform:scale(0); animation:vs-ripple-anim 420ms var(--ease-out,cubic-bezier(.2,.8,.2,1)) forwards; z-index:0; }
@@ -4037,7 +4043,7 @@ function rsSyncEvoMetricBtns() { document.querySelectorAll('.rs-evo-metric').for
 function rsEvoLabel(iso) { const d = new Date(iso); return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
 function rsEvoHtml(roster) {
   const snaps = rsSnapsGet(roster.id);
-  if (!snaps.length) return '<div class="card faint" style="margin-top:18px;padding:18px;font-size:.82rem">Aucun instantané pour ce roster. Cliquez « 📸 Instantané » pour démarrer le suivi.</div>';
+  if (!snaps.length) return '<div class="card faint" style="margin-top:18px;padding:18px;font-size:.82rem">Aucun instantané pour ce roster. Cliquez « Instantané » pour démarrer le suivi.</div>';
   const metrics = [['score', 'Score SPES'], ['wr', 'Win Rate'], ['lp', 'LP']];
   let h = '<div class="card" style="margin-top:20px;padding:18px 20px"><div class="h3" style="font-size:16px;margin-bottom:10px">Évolution <span class="faint" style="font-weight:400;font-size:.78rem">· ' + snaps.length + ' instantané(s)</span></div>';
   h += '<div class="label" style="font-size:11px;margin-bottom:4px">Score d\'équipe</div>';
@@ -4195,13 +4201,15 @@ async function renderRoster() {
   html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderRoster()">';
   list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
   html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
-  html += '<button onclick="rsUiNew()" class="btn btn-ghost btn-sm">+ Nouveau</button>';
-  html += '<button onclick="rsUiRename()" class="btn btn-ghost btn-sm">Renommer</button>';
-  html += '<button onclick="rsUiDelete()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">Supprimer</button>';
-  html += '<button onclick="rsUiSnapshot()" title="Enregistre les stats du moment pour le suivi" class="btn btn-ghost btn-sm">📸 Instantané</button>';
-  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px">📈 Évolution</button>';
-  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px">⚔️ Comparer</button>';
-  html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" class="btn btn-ghost btn-sm" style="margin-left:auto">↻ Recalculer</button>';
+  // Icônes SVG (charte — pas d'emojis)
+  const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  html += '<button onclick="rsUiNew()" class="btn btn-ghost btn-sm">' + _ic('<path d="M12 5v14M5 12h14"/>') + ' Nouveau</button>';
+  html += '<button onclick="rsUiRename()" class="btn btn-ghost btn-sm">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + ' Renommer</button>';
+  html += '<button onclick="rsUiDelete()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + ' Supprimer</button>';
+  html += '<button onclick="rsUiSnapshot()" title="Enregistre les stats du moment pour le suivi" class="btn btn-ghost btn-sm">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + ' Instantané</button>';
+  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px;display:inline-flex;align-items:center;gap:6px">' + _ic('<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>') + ' Évolution</button>';
+  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px;display:inline-flex;align-items:center;gap:6px">' + _ic('<rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/>') + ' Comparer</button>';
+  html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" class="btn btn-ghost btn-sm" style="margin-left:auto">' + _ic('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>') + ' Recalculer</button>';
   html += '</div>';
 
   box.innerHTML = html + '<div id="rs-body" class="faint" style="font-size:.85rem">Calcul du roster…</div>';
@@ -4210,9 +4218,10 @@ async function renderRoster() {
   const cands = anGatherCandidates();
 
   let body = '';
-  body += '<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:16px">';
-  body += '<div style="width:54px;height:54px;border-radius:50%;flex:none;background:' + (ts.team != null ? anScoreColor(ts.team) : 'var(--vs-forest-600)') + ';display:flex;align-items:center;justify-content:center;color:#06231F;font-family:var(--font-mono);font-weight:700;font-size:1.15rem">' + (ts.team != null ? ts.team.toFixed(1) : '—') + '</div>';
-  body += '<div><div class="h3" style="font-size:16px">Score d\'équipe</div><div class="faint" style="font-size:.78rem">' + (ts.weakest ? 'Maillon faible : <span style="color:var(--rank-gold)">' + ts.weakest + '</span>' : 'Roster incomplet') + '</div></div>';
+  body += '<div class="card" style="display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:16px">';
+  body += rsGauge(ts.team, 64);
+  body += '<div><div class="h3" style="font-size:16px">Score d\'équipe</div><div class="faint" style="font-size:.78rem;margin-top:3px">' + (ts.weakest ? 'Maillon faible : <span style="color:var(--rank-gold);font-weight:700">' + ts.weakest + '</span>' : 'Roster incomplet') + '</div></div>';
+  body += '<div style="margin-left:auto" class="label">VisionScore™ équipe</div>';
   body += '</div>';
 
   for (const role of RS_ROLES) {
@@ -4228,13 +4237,25 @@ async function renderRoster() {
   if (_rsCompare.on) rsRenderCompare();
 }
 
+// Jauge annulaire (conic) — même langage visuel que la gauge VisionScore du dossier
+function rsGauge(score, size) {
+  const has = typeof score === 'number' && !isNaN(score);
+  const pct = has ? Math.round(Math.max(0, Math.min(10, score)) * 10) : 0;
+  const inset = size >= 50 ? 5 : 3;
+  const fs = size >= 50 ? '1.05rem' : size >= 30 ? '.72rem' : '.62rem';
+  const col = has ? anScoreColor(score) : 'var(--vs-forest-500)';
+  return '<div style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;background:conic-gradient(' + col + ' ' + pct + '%, var(--vs-forest-600) 0)">'
+    + '<div style="position:absolute;inset:' + inset + 'px;border-radius:50%;background:var(--vs-forest-800)"></div>'
+    + '<span style="position:relative;font-family:var(--font-mono);font-weight:700;font-size:' + fs + ';color:' + (has ? col : 'var(--vs-fg-3)') + '">' + (has ? score.toFixed(1) : '—') + '</span></div>';
+}
+
 function rsRenderRoleRow(roster, role, slot, pr, cands) {
   const score = pr && pr.score;
   let h = '<div style="margin-bottom:18px">';
   h += '<div class="label" style="font-size:12px;margin-bottom:6px">' + role + '</div>';
-  h += '<div class="card" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:6px;border-color:var(--vs-emerald-600)">';
-  h += '<div style="width:32px;height:32px;border-radius:50%;flex:none;background:' + (typeof score === 'number' ? anScoreColor(score) : 'var(--vs-forest-600)') + ';display:flex;align-items:center;justify-content:center;color:#06231F;font-family:var(--font-mono);font-weight:700;font-size:.8rem">' + (typeof score === 'number' ? score.toFixed(1) : '—') + '</div>';
-  h += '<div style="flex:1;min-width:0"><div style="color:var(--vs-fg-1);font-weight:600;font-size:.86rem">' + (slot ? anEsc(slot.pseudo) + (slot.tag ? '<span class="faint" style="font-size:.7rem;font-family:var(--font-mono)">#' + anEsc(slot.tag) + '</span>' : '') : '<span class="faint">— aucun titulaire —</span>') + (pr && pr.source ? anSourceBadge(pr.source) : '') + '</div><div class="faint" style="font-size:.72rem">' + (pr && pr.rank ? anEsc(pr.rank) : '') + (pr && pr.wr != null ? ' · ' + pr.wr + '% WR' : '') + '</div></div>';
+  h += '<div class="card rs-row" style="display:flex;align-items:center;gap:12px;padding:10px 14px;margin-bottom:6px">';
+  h += rsGauge(typeof score === 'number' ? score : null, 36);
+  h += '<div style="flex:1;min-width:0"><div style="color:var(--vs-fg-1);font-weight:700;font-size:.9rem">' + (slot ? anEsc(slot.pseudo) + (slot.tag ? ' <span class="faint" style="font-size:.7rem;font-family:var(--font-mono)">#' + anEsc(slot.tag) + '</span>' : '') : '<span class="faint">— aucun titulaire —</span>') + (pr && pr.source ? anSourceBadge(pr.source) : '') + '</div><div class="faint" style="font-size:.72rem">' + (pr && pr.rank ? anEsc(pr.rank) : '') + (pr && pr.wr != null ? ' · ' + pr.wr + '% WR' : '') + '</div></div>';
   h += '<button onclick="rsUiPick(\'' + role + '\')" class="btn btn-secondary btn-sm">Changer</button>';
   h += '</div>';
   const better = cands.filter(c => c.role === role && c.score != null && (score == null || c.score > score + 0.05))
@@ -4242,10 +4263,10 @@ function rsRenderRoleRow(roster, role, slot, pr, cands) {
     .sort((a, b) => b.score - a.score).slice(0, 4);
   better.forEach(c => {
     const delta = (typeof score === 'number') ? (c.score - score) : null;
-    h += '<div class="card" style="display:flex;align-items:center;gap:12px;padding:8px 14px;margin-bottom:4px;margin-left:18px;background:rgba(45,212,167,.05)">';
-    h += '<div style="width:26px;height:26px;border-radius:50%;flex:none;background:' + anScoreColor(c.score) + ';display:flex;align-items:center;justify-content:center;color:#06231F;font-family:var(--font-mono);font-weight:700;font-size:.7rem">' + c.score.toFixed(1) + '</div>';
-    h += '<div style="flex:1;min-width:0"><span style="color:var(--vs-fg-1);font-size:.82rem">' + anEsc(c.pseudo) + '</span>' + anSourceBadge(c.source) + '</div>';
-    if (delta != null) h += '<div style="color:var(--vs-emerald-400);font-weight:800;font-size:.78rem">▲ +' + delta.toFixed(1) + '</div>';
+    h += '<div class="card rs-row" style="display:flex;align-items:center;gap:12px;padding:8px 14px;margin-bottom:4px;margin-left:18px;background:rgba(45,212,167,.05)">';
+    h += rsGauge(c.score, 28);
+    h += '<div style="flex:1;min-width:0"><span style="color:var(--vs-fg-1);font-size:.82rem;font-weight:600">' + anEsc(c.pseudo) + '</span>' + anSourceBadge(c.source) + '</div>';
+    if (delta != null) h += '<div class="delta-up" style="font-size:.78rem">▲ +' + delta.toFixed(1) + '</div>';
     h += '<button onclick="rsSimSwap(\'' + role + '\',\'' + encodeURIComponent(c.pseudo) + '\')" class="btn btn-ghost btn-sm">Simuler</button>';
     h += '</div>';
   });
@@ -6584,7 +6605,7 @@ function updateLinks() {
 let analyseSlots = [];
 let analyseMode = 'scout'; // 'scout' ou 'roster'
 
-const PLAYER_COLORS = ['#4A9EFF','#4ADE80','#F5A623','#C084FC','#F87171'];
+const PLAYER_COLORS = ['#4A9EFF','#2DD4A7','#F5A623','#C084FC','#F87171'];
 
 function compareSnapshotCurrent() {
   const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || '—';
@@ -6745,7 +6766,7 @@ function buildAnalysePanel() {
 function scCol(v) {
   const n = parseFloat(v);
   if (isNaN(n)) return 'var(--sub)';
-  return n>=8?'#4ADE80':n>=6.5?'#A78BFA':n>=5?'#FBBF24':'#F87171';
+  return n>=8?'#2DD4A7':n>=6.5?'#A78BFA':n>=5?'#FBBF24':'#F87171';
 }
 function bestIdx(arr) {
   const valid = arr.map((v,i)=>({v:parseFloat(v),i})).filter(x=>!isNaN(x.v));
@@ -6894,7 +6915,7 @@ function buildScoutView(container) {
         background:${isBest?'rgba(74,222,128,.13)':'transparent'};
         border-left:1px solid var(--border)">
         <span style="color:${scCol(parseFloat(v))}">${v}</span>
-        ${isBest?'<div style="font-size:.58rem;color:#4ADE80">▲ BEST</div>':''}
+        ${isBest?'<div style="font-size:.58rem;color:#2DD4A7">▲ BEST</div>':''}
       </td>`;
     }).join('');
     return `<tr${row.big?' style="background:var(--surf2)"':''}>
@@ -7050,7 +7071,7 @@ function buildRosterView(container) {
         const isWeak = v!==null && v < (avg-0.8);
         const isStrong = v!==null && v > (avg+0.8);
         return `<td style="padding:9px 8px;text-align:center;font-size:.8rem;font-family:monospace;border-left:1px solid var(--border);
-          color:${isStrong?'#4ADE80':isWeak?'#F87171':'var(--fg)'};
+          color:${isStrong?'#2DD4A7':isWeak?'#F87171':'var(--fg)'};
           font-weight:${isStrong||isWeak?700:400}">
           ${v!==null?v.toFixed(1):'—'}${isStrong?' ▲':isWeak?' ▼':''}
         </td>`;
@@ -8864,29 +8885,37 @@ function crmRenderPipeline() {
     el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--sub);font-size:.85rem;grid-column:1/-1">Pipeline vide — ajoutez des joueurs depuis la section Structures.</div>';
     return;
   }
-  el.innerHTML = CRM_PIPELINE_STAGES.map(stage => {
+  // Kanban à la charte VisionScore : colonnes .card, pastille d'étape, cartes joueur animées
+  el.innerHTML = CRM_PIPELINE_STAGES.map((stage, si) => {
     const players = crmPipeline.filter(p => p.stage === stage.id);
-    const cards = players.map(p => {
+    const cards = players.map((p, pi) => {
       const today = new Date();
       const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
       const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-      return '<div style="background:var(--surf1);border:1px solid ' + (relanceAlert ? 'var(--amber)' : 'var(--border)') + ';border-radius:8px;padding:.75rem;margin-bottom:.5rem">' +
-        '<div style="font-weight:700;font-size:.85rem;margin-bottom:.25rem">' + p.playerName + (p.playerTag ? ' <span style="color:var(--sub);font-size:.7rem">#' + p.playerTag + '</span>' : '') + '</div>' +
-        '<div style="font-size:.72rem;color:var(--sub2);margin-bottom:.25rem">' + (p.role||'?') + (p.score ? ' · ' + p.score + '/10' : '') + (p.age ? ' · ' + p.age + ' ans' : '') + '</div>' +
-        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:.25rem;color:' + (p.rankMatch ? 'var(--lime)' : 'var(--red)') + '">' + (p.rankMatch ? '✅ ' : '⚠️ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
-        '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.5rem">' + (p.structureName || 'Sans structure') + '</div>' +
-        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber)' : 'var(--sub)') + ';margin-bottom:.375rem">' + (relanceAlert ? 'Relance : ' : '') + p.dateRelance + '</div>' : '') +
-        (p.notes ? '<div style="font-size:.7rem;color:var(--sub);font-style:italic;margin-bottom:.5rem">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
-        '<div style="display:flex;gap:.25rem;flex-wrap:wrap">' +
-          (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" style="font-size:.68rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:3px;padding:1px 7px;color:var(--lime);cursor:pointer">→ Suivant</button>' : '') +
-          '<button onclick="crmSetRelance(' + p.id + ')" style="font-size:.68rem;background:var(--surf2);border:1px solid var(--border);border-radius:3px;padding:1px 7px;color:var(--sub);cursor:pointer">Relance</button>' +
-          '<button onclick="crmDeletePipeline(' + p.id + ')" style="font-size:.68rem;background:none;border:1px solid rgba(255,90,74,.25);border-radius:3px;padding:1px 6px;color:var(--red);cursor:pointer">✕</button>' +
+      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + (relanceAlert ? ';border-color:var(--amber,#E8A317)' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
+          '<div class="avatar" style="width:26px;height:26px;font-size:11px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
+          '<div style="font-weight:700;font-size:.85rem;color:var(--vs-fg-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:.68rem;font-family:var(--font-mono)">#' + p.playerTag + '</span>' : '') + '</div>' +
+          (p.score ? '<span class="stat-v" style="margin-left:auto;font-size:.82rem;color:' + anScoreColor(parseFloat(p.score)) + '">' + p.score + '</span>' : '') +
+        '</div>' +
+        '<div class="faint" style="font-size:.72rem;margin-bottom:4px">' + (p.role||'?') + (p.age ? ' · ' + p.age + ' ans' : '') + ' · ' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '<span style="opacity:.6">sans structure</span>') + '</div>' +
+        (p.verifiedRank ? '<div style="font-size:.7rem;margin-bottom:4px;color:' + (p.rankMatch ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✓ ' : '⚠ ') + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</div>' : '') +
+        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber,#E8A317)' : 'var(--vs-fg-3)') + ';margin-bottom:4px">Relance : ' + p.dateRelance + '</div>' : '') +
+        (p.notes ? '<div class="faint" style="font-size:.7rem;font-style:italic;margin-bottom:6px">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
+        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">' +
+          (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" class="btn btn-secondary btn-sm" style="padding:3px 9px;font-size:.68rem">Suivant →</button>' : '') +
+          '<button onclick="crmSetRelance(' + p.id + ')" class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:.68rem">Relance</button>' +
+          '<button onclick="crmDeletePipeline(' + p.id + ')" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:.68rem;color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">✕</button>' +
         '</div>' +
       '</div>';
     }).join('');
-    return '<div class="card" style="padding:.875rem">' +
-      '<div style="font-size:.72rem;font-weight:700;color:' + stage.color + ';letter-spacing:.06em;text-transform:uppercase;margin-bottom:.75rem">' + stage.label + ' <span style="color:var(--sub)">' + players.length + '</span></div>' +
-      (cards || '<div style="font-size:.75rem;color:var(--sub);padding:.5rem 0;text-align:center">Vide</div>') +
+    return '<div class="card m3-enter" style="padding:12px;--m3-i:' + si + '">' +
+      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">' +
+        '<span style="width:8px;height:8px;border-radius:50%;background:' + stage.color + ';flex:none;box-shadow:0 0 8px ' + stage.color + '"></span>' +
+        '<span class="label" style="font-size:11px;color:var(--vs-fg-1)">' + stage.label + '</span>' +
+        '<span class="chip" style="margin-left:auto;padding:1px 8px;font-size:10px;font-family:var(--font-mono)">' + players.length + '</span>' +
+      '</div>' +
+      (cards || '<div class="faint" style="font-size:.75rem;padding:14px 0;text-align:center;border:1px dashed var(--vs-forest-500);border-radius:8px">Vide</div>') +
     '</div>';
   }).join('');
 }
@@ -9738,7 +9767,7 @@ function buildAdvancedSection(ch, role) {
   body.innerHTML = blocks.map(block => {
     const rows = block.metrics.map(m => {
       const sc = scoreAdv(m.val, m.bad, m.avg, m.good, m.elite);
-      const col = sc === null ? 'var(--sub)' : sc >= 8 ? '#4ADE80' : sc >= 6 ? '#FBBF24' : sc >= 4 ? '#F87171' : '#EF4444';
+      const col = sc === null ? 'var(--sub)' : sc >= 8 ? '#2DD4A7' : sc >= 6 ? '#FBBF24' : sc >= 4 ? '#F87171' : '#EF4444';
       const bar = sc !== null ? Math.round(sc*10) : 0;
       const display = m.val !== null && !isNaN(m.val) ? 
         (m.val >= 10 ? m.val.toFixed(0) : m.val >= 1 ? m.val.toFixed(1) : m.val.toFixed(2)) : '—';
@@ -9756,7 +9785,7 @@ function buildAdvancedSection(ch, role) {
 
     const avgScore = block.metrics.map(m => scoreAdv(m.val, m.bad, m.avg, m.good, m.elite)).filter(s=>s!==null);
     const blockScore = avgScore.length ? (avgScore.reduce((a,b)=>a+b,0)/avgScore.length).toFixed(1) : '—';
-    const blockCol = parseFloat(blockScore) >= 8 ? '#4ADE80' : parseFloat(blockScore) >= 6 ? '#FBBF24' : '#F87171';
+    const blockCol = parseFloat(blockScore) >= 8 ? '#2DD4A7' : parseFloat(blockScore) >= 6 ? '#FBBF24' : '#F87171';
 
     return `
       <div style="background:var(--surf2);border-radius:10px;padding:14px;border:1px solid var(--border)">
