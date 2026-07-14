@@ -257,6 +257,25 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vsd .btn-cta:hover{ box-shadow:0 8px 22px -8px rgba(45,212,167,.5); }
 .vsd .dim-header{ transition:background .15s var(--ease-out); }
 
+/* ════ Micro-interactions Material Design (brief motion : 120–200ms ease-out, pas de rebond) ════ */
+/* Ripple M3 : onde depuis le point de clic, généré en JS (vsRippleInit) */
+.vs-ripple{ position:absolute; border-radius:50%; pointer-events:none; background:currentColor; opacity:.16; transform:scale(0); animation:vs-ripple-anim 420ms var(--ease-out,cubic-bezier(.2,.8,.2,1)) forwards; z-index:0; }
+@keyframes vs-ripple-anim{ to{ transform:scale(2.6); opacity:0; } }
+/* État pressé M3 : léger enfoncement, rapide (120ms) */
+.vsd .btn:active, .vsd .chip:active, .vsd-drawer-item:active, .vsd-burger:active,
+.vsd .entry-card:active, .phase-btn:active, .map-view-btn:active, .view-tab:active, .an-tab:active{
+  transform:scale(.97) !important; transition-duration:80ms !important;
+}
+/* Focus clavier visible (accessibilité M3) */
+.vsd .btn:focus-visible, .vsd .chip:focus-visible, .vsd-drawer-item:focus-visible, .vsd-burger:focus-visible{
+  outline:2px solid var(--vs-emerald-400); outline-offset:2px;
+}
+/* Confort : pas d'animations pour qui les désactive */
+@media (prefers-reduced-motion:reduce){
+  .vs-ripple{ display:none !important; }
+  .vsd .btn, .vsd .chip, .vsd .card, .vsd .entry-card, .vsd .dim-section, .vsd-drawer-item{ transition:none !important; }
+}
+
 /* ════ Notation — largeur réduite, titres plus grands, relief 3D (réf. maquette) ════ */
 .vsd-dims-grid{ max-width:1060px; margin-left:auto; margin-right:auto; gap:20px 22px; }
 /* Titres de dimension plus grands + score plus lisible */
@@ -12674,6 +12693,29 @@ function vsdApplyCursor(){
   if(m && m!=='systeme') document.documentElement.setAttribute('data-cursor', m);
   document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===m); });
 }
+/* ── Ripple Material Design sur les boutons (délégation globale) ──
+   Onde qui part du point de clic — durée 420ms ease-out, pas de rebond (brief motion). */
+(function vsRippleInit(){
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var SEL='.btn, .chip, .vsd-drawer-item, .vsd-burger, .entry-card, .phase-btn, .map-view-btn, .view-tab, .an-tab, .more-menu-item, .hd-nav-item, .vsd-cursor-opt, .pill-toggle';
+  document.addEventListener('pointerdown', function(e){
+    var el=e.target.closest(SEL);
+    if(!el || el.disabled) return;
+    var r=el.getBoundingClientRect();
+    if(!r.width || !r.height) return;
+    var d=Math.max(r.width, r.height)*1.1;
+    var s=document.createElement('span');
+    s.className='vs-ripple';
+    s.style.width=s.style.height=d+'px';
+    s.style.left=(e.clientX-r.left-d/2)+'px';
+    s.style.top =(e.clientY-r.top -d/2)+'px';
+    var cs=getComputedStyle(el);
+    if(cs.position==='static') el.style.position='relative';
+    if(cs.overflow!=='hidden') el.style.overflow='hidden';
+    el.appendChild(s);
+    setTimeout(function(){ try{ s.remove(); }catch(_){} }, 460);
+  }, { passive:true });
+})();
 function vsdHomeScout(){
   var el=document.getElementById('home-search'); var v=(el&&el.value||'').trim();
   vsdGo('scout');
