@@ -260,6 +260,10 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 /* ════ Cartes pipeline CRM + lignes roster — charte VisionScore, hover animé ════ */
 .crm-pipe-card{ background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:10px; padding:10px 12px; margin-bottom:8px; transition:transform .18s var(--ease-out), border-color .18s, box-shadow .22s var(--ease-out); }
 .crm-pipe-card:hover{ transform:translateY(-2px); border-color:var(--vs-emerald-500); box-shadow:0 10px 24px -12px rgba(0,0,0,.55); }
+/* Étoile des boutons CRM : rotation horaire au survol — la pointe basse-gauche (216°) monte au sommet (+144°) */
+.vs-star{ transition:transform .5s cubic-bezier(.2,.8,.2,1); transform-origin:center; }
+button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
+@media (prefers-reduced-motion: reduce){ .vs-star{ transition:none; } }
 .tl-obj-row{ transition:background .14s var(--ease-out); }
 .tl-obj-row:hover{ background:var(--vs-forest-700); }
 .tl-obj-row + .tl-obj-row{ border-top:1px solid var(--vs-forest-600); }
@@ -2980,7 +2984,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
             <div style="margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span id="spes-tier-badge" style="display:none"><span class="spes-tier" id="spes-tier-label">—</span></span>
-              <button class="btn btn-secondary" onclick="addCurrentToCrm()" title="Ajoute ce joueur à la pipeline CRM"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg> Ajouter au CRM</button>
+              <button class="btn btn-secondary" onclick="addCurrentToCrm()" title="Ajoute ce joueur à la pipeline CRM"><svg class="vs-star" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg> Ajouter au CRM</button>
               <button class="btn btn-cta" onclick="generateOfficialReport()" title="Rapport officiel PDF"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Export PDF</button>
             </div>
           </div>
@@ -3389,20 +3393,24 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — onglet du hub Analytics) ══ -->
     <div id="panel-analyse" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-
+        <div class="page-head">
+          <div class="eyebrow">Analytics</div>
+          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
+          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
+        </div>
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
-          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
+          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
         </div>
+        <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
-        <!-- Header dynamique (format sous-header maquette) -->
+        <!-- Header dynamique de l'outil Comparer -->
         <div class="between" style="margin-bottom:4px;flex-wrap:wrap;gap:12px">
-          <div class="page-head" style="margin-bottom:0">
-            <div class="eyebrow">Comparaison</div>
-            <h2 class="h2" id="analyse-title">Comparer des prospects</h2>
-            <p class="muted" id="analyse-subtitle">Jusqu'à 5 fiches SPES côte à côte, radars superposés + détail par dimension. Les fiches viennent du scouting ou du CRM.</p>
+          <div style="min-width:0">
+            <div class="h3" id="analyse-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Comparer des prospects</div>
+            <p class="faint" id="analyse-subtitle" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Jusqu'à 5 fiches SPES côte à côte, radars superposés + détail par dimension. Les fiches viennent du scouting ou du CRM.</p>
           </div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
             <div id="analyse-slots-bar" style="display:flex;gap:4px">
@@ -3570,11 +3578,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
-          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
+          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
         </div>
-        <div id="an-desc" class="faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
+        <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
         <div id="an-view-perf">
           <div id="an-drop" class="vsd-dropzone" style="margin-bottom:18px">
@@ -4156,8 +4164,7 @@ function anSyncTabs(active) {
   document.querySelectorAll('.an-tab').forEach(b => {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
   });
-  const d = document.getElementById('an-desc');
-  if (d) d.textContent = AN_DESC[active] || '';
+  document.querySelectorAll('.an-desc').forEach(d => { d.textContent = AN_DESC[active] || ''; });
 }
 function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
@@ -8929,7 +8936,7 @@ function crmRenderPipeline() {
       const today = new Date();
       const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
       const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + ';border-left:3px solid ' + (relanceAlert ? 'var(--amber,#E8A317)' : stage.color) + '">' +
+      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + '">' +
         '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
           '<div class="avatar" style="width:26px;height:26px;font-size:11px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
           '<div style="font-weight:700;font-size:.85rem;color:var(--vs-fg-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:.68rem;font-family:var(--font-mono)">#' + p.playerTag + '</span>' : '') + '</div>' +
@@ -12547,7 +12554,7 @@ function top50RenderTable() {
       <td style="text-align:center"><span class="stat-v" style="font-weight:800;font-size:19px;color:${vsCol}">${vs}</span></td>
       <td style="text-align:right;white-space:nowrap">
         <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}')" class="btn btn-ghost btn-sm" title="Ajouter au CRM" style="display:inline-flex;align-items:center;gap:5px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> CRM
+          <svg class="vs-star" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> CRM
         </button>
       </td>
     </tr>`;
