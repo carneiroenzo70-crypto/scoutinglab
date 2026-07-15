@@ -52,7 +52,7 @@ document.addEventListener('visibilitychange', function(){ if (!document.hidden) 
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2 };   /* Top 50, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
+window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2, scrimlab:2 };   /* Top 50, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
 function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
@@ -255,6 +255,57 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vs-star{ transition:transform .5s cubic-bezier(.2,.8,.2,1); transform-origin:center; }
 button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 @media (prefers-reduced-motion: reduce){ .vs-star{ transition:none; } }
+
+/* ════ ScrimLab — studio d'analyse vidéo (codage + télestration) ════ */
+.sl-topbar{ display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+.sl-main{ display:grid; grid-template-columns:minmax(0,1fr) 285px; gap:12px; align-items:stretch; }
+@media (max-width:1080px){ .sl-main{ grid-template-columns:1fr; } }
+.sl-video-wrap{ position:relative; background:#03110F; border-radius:12px; overflow:hidden; aspect-ratio:16/9; max-height:64vh; }
+.sl-video-wrap video{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#03110F; }
+.sl-video-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; z-index:3; }
+.sl-video-wrap canvas.drawing{ cursor:crosshair; }
+.sl-video-empty{ position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,18,15,.88); }
+.sl-draw-tools{ position:absolute; top:10px; left:10px; z-index:5; display:flex; flex-direction:column; gap:4px; background:rgba(9,37,32,.82); border:1px solid var(--vs-forest-500); border-radius:10px; padding:5px; }
+.sl-tool{ width:30px; height:30px; border-radius:7px; border:1px solid transparent; background:transparent; color:var(--vs-fg-2); cursor:pointer; display:grid; place-items:center; transition:all .14s var(--ease-out); }
+.sl-tool:hover{ color:var(--vs-fg-1); border-color:var(--vs-forest-500); background:rgba(45,212,167,.06); }
+.sl-tool.on{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.14); }
+.sl-tool-sep{ height:1px; background:var(--vs-forest-500); margin:3px 4px; }
+.sl-tool.sl-color{ position:relative; }
+.sl-tool.sl-color::after{ content:''; width:14px; height:14px; border-radius:50%; background:var(--c); }
+.sl-tool.sl-color.on{ box-shadow:0 0 0 2px var(--c) inset; }
+.sl-transport{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:10px; }
+.sl-time{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-2); margin-left:4px; white-space:nowrap; }
+.sl-code-panel{ overflow-y:auto; max-height:calc(64vh + 66px); }
+.sl-codes{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.sl-code-btn{ position:relative; border:1px solid transparent; border-radius:9px; padding:9px 8px 8px; background:var(--cbg); color:var(--vs-fg-1); font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; text-align:left; transition:transform .12s var(--ease-out), filter .15s; }
+.sl-code-btn:hover{ filter:brightness(1.16); }
+.sl-code-btn:active{ transform:scale(.96); }
+.sl-code-btn .k{ position:absolute; top:5px; right:7px; font-family:var(--font-mono); font-size:9.5px; opacity:.65; }
+.sl-code-btn .n{ display:block; font-family:var(--font-mono); font-weight:600; font-size:10px; opacity:.75; margin-top:2px; }
+.sl-labels{ display:flex; gap:5px; flex-wrap:wrap; }
+.sl-label-chip{ font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:all .13s; font-family:inherit; }
+.sl-label-chip:hover{ border-color:var(--vs-emerald-500); color:var(--vs-fg-1); }
+.sl-label-chip.on{ background:rgba(45,212,167,.14); border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.sl-timeline{ display:flex; flex-direction:column; gap:4px; }
+.sl-tl-row{ display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; }
+.sl-tl-name{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--vs-fg-2); overflow:hidden; white-space:nowrap; }
+.sl-tl-name .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
+.sl-tl-name .c{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--vs-fg-3); }
+.sl-tl-track{ position:relative; height:22px; background:rgba(4,18,15,.55); border:1px solid var(--vs-forest-600); border-radius:5px; overflow:hidden; cursor:pointer; }
+.sl-tl-inst{ position:absolute; top:2px; bottom:2px; border-radius:3px; opacity:.85; min-width:5px; cursor:pointer; transition:opacity .12s, box-shadow .12s; }
+.sl-tl-inst:hover{ opacity:1; }
+.sl-tl-inst.sel{ opacity:1; box-shadow:0 0 0 1.5px #fff inset, 0 0 8px rgba(255,255,255,.35); }
+.sl-tl-inst.star::after{ content:'★'; position:absolute; top:-1px; right:1px; font-size:8px; color:#fff; }
+.sl-tl-playhead{ position:absolute; top:0; bottom:0; width:1.5px; background:var(--vs-fg-1); opacity:.85; pointer-events:none; z-index:2; }
+.sl-matrix-table{ border-collapse:collapse; font-size:12px; min-width:520px; }
+.sl-matrix-table th, .sl-matrix-table td{ border:1px solid var(--vs-forest-600); padding:6px 10px; text-align:center; }
+.sl-matrix-table th{ color:var(--vs-fg-2); font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; background:rgba(4,18,15,.4); }
+.sl-matrix-table th:first-child{ text-align:left; }
+.sl-matrix-table td.hit{ color:var(--vs-emerald-300); font-family:var(--font-mono); font-weight:700; cursor:pointer; }
+.sl-matrix-table td.hit:hover{ background:rgba(45,212,167,.12); }
+.sl-matrix-table td.zero{ color:var(--vs-fg-3); opacity:.4; font-family:var(--font-mono); }
+.sl-hist-row{ display:flex; align-items:center; gap:12px; padding:11px 14px; }
+.sl-hist-row + .sl-hist-row{ border-top:1px solid var(--vs-forest-600); }
 .tl-obj-row{ transition:background .14s var(--ease-out); }
 .tl-obj-row:hover{ background:var(--vs-forest-700); }
 .tl-obj-row + .tl-obj-row{ border-top:1px solid var(--vs-forest-600); }
@@ -3396,7 +3447,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -3575,7 +3626,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -3583,7 +3634,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
         <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
-        <div id="an-view-perf">
+        <!-- ══ Vue Analyse scrim (studio vidéo façon Sportscode/Metrica) ══ -->
+        <div id="an-view-scrim">
+          <div id="scrim-drop" class="vsd-dropzone" style="margin-bottom:18px">
+            <div class="vsd-dz-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
+            <div style="font-weight:900;font-size:18px;margin-bottom:6px;color:var(--vs-fg-1)">Dépose la vidéo de ton scrim ici</div>
+            <p class="muted" style="max-width:460px;margin:0 auto 4px">Glisse l'enregistrement du scrim (ou clique pour parcourir), puis ouvre le studio pour coder les actions, dessiner sur l'image et monter tes clips.</p>
+            <span class="faint" style="font-size:12px">Vidéo · MP4 / WebM / MOV — la vidéo reste sur ton poste, rien n'est envoyé</span>
+            <input type="file" id="scrim-input" accept="video/*,.mp4,.webm,.mov,.mkv" style="display:none"/>
+          </div>
+          <div id="scrim-loaded" class="card" style="display:none;padding:16px 20px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+              <div class="entry-ico" style="width:40px;height:40px;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></div>
+              <div style="flex:1;min-width:220px">
+                <div class="h3" style="font-size:15px" id="scrim-loaded-name">—</div>
+                <div class="faint" style="font-size:12px" id="scrim-loaded-meta">—</div>
+              </div>
+              <button class="btn btn-cta" onclick="slOpenStudio()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Ouvrir le studio d'analyse</button>
+            </div>
+          </div>
+          <div class="between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">
+            <div class="h3" style="font-size:16px">Sessions d'analyse</div>
+            <span class="faint" style="font-size:12px">Le codage est sauvegardé automatiquement — redépose la même vidéo pour reprendre.</span>
+          </div>
+          <div id="scrim-history"></div>
+        </div>
+
+        <div id="an-view-perf" style="display:none">
           <div id="an-drop" class="vsd-dropzone" style="margin-bottom:18px">
             <div class="vsd-dz-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg></div>
             <div style="font-weight:900;font-size:18px;margin-bottom:6px;color:var(--vs-fg-1)">Dépose tes fichiers .rofl ici</div>
@@ -3622,7 +3699,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -3658,6 +3735,116 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div id="pm-dossier" style="margin-top:4px"></div>
       </div>
     </div><!-- /panel-prematch -->
+
+    <!-- ══ PANEL : SCRIMLAB — studio d'analyse vidéo (codage Sportscode + télestration Metrica, adapté LoL) ══ -->
+    <div id="panel-scrimlab" class="panel">
+      <div class="vsd" style="max-width:1780px;margin:0 auto;padding:14px 12px 30px">
+
+        <!-- Barre du studio -->
+        <div class="sl-topbar">
+          <button class="btn btn-ghost btn-sm" onclick="slBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Analyse scrim</button>
+          <div style="min-width:0">
+            <div class="h3" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sl-title">Studio d'analyse</div>
+            <div class="faint" style="font-size:11px" id="sl-subtitle">—</div>
+          </div>
+          <div style="flex:1"></div>
+          <span class="pill pill-emerald" id="sl-count-pill">0 clip</span>
+          <button class="btn btn-ghost btn-sm" id="sl-btn-matrix" onclick="slToggleMatrix()">Matrice</button>
+          <button class="btn btn-ghost btn-sm" id="sl-btn-playlist" onclick="slPlaylistStart()">▶ Playlist</button>
+          <button class="btn btn-ghost btn-sm" onclick="slExport()">Export JSON</button>
+        </div>
+
+        <!-- Zone principale : vidéo + panneau de codage -->
+        <div class="sl-main">
+          <div class="sl-video-zone card" style="padding:10px">
+            <div class="sl-video-wrap" id="sl-video-wrap">
+              <video id="sl-video" playsinline></video>
+              <canvas id="sl-canvas"></canvas>
+              <div class="sl-draw-tools" id="sl-draw-tools">
+                <button class="sl-tool" data-tool="" title="Curseur (échap)" onclick="slSetTool('')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2.5l0 16.5 4.2-4.1 2.5 5.2 2.2-1-2.4-5 5.6 0z"/></svg></button>
+                <button class="sl-tool" data-tool="arrow" title="Flèche (mouvement / rotation)" onclick="slSetTool('arrow')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M9 5h10v10"/></svg></button>
+                <button class="sl-tool" data-tool="spot" title="Spotlight joueur" onclick="slSetTool('spot')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="15" rx="8" ry="4.5"/><path d="M12 3v6" stroke-linecap="round"/></svg></button>
+                <button class="sl-tool" data-tool="zone" title="Zone tactique" onclick="slSetTool('zone')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button>
+                <button class="sl-tool" data-tool="line" title="Ligne de liaison" onclick="slSetTool('line')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20 20 4"/><circle cx="4" cy="20" r="2" fill="currentColor"/><circle cx="20" cy="4" r="2" fill="currentColor"/></svg></button>
+                <button class="sl-tool" data-tool="free" title="Dessin libre" onclick="slSetTool('free')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></button>
+                <button class="sl-tool" data-tool="text" title="Texte" onclick="slSetTool('text')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg></button>
+                <div class="sl-tool-sep"></div>
+                <button class="sl-tool sl-color" data-color="#2DD4A7" style="--c:#2DD4A7" onclick="slSetColor('#2DD4A7')" title="Émeraude"></button>
+                <button class="sl-tool sl-color" data-color="#FF5A33" style="--c:#FF5A33" onclick="slSetColor('#FF5A33')" title="Rouge"></button>
+                <button class="sl-tool sl-color" data-color="#F5A623" style="--c:#F5A623" onclick="slSetColor('#F5A623')" title="Ambre"></button>
+                <button class="sl-tool sl-color" data-color="#4A9EFF" style="--c:#4A9EFF" onclick="slSetColor('#4A9EFF')" title="Bleu"></button>
+                <div class="sl-tool-sep"></div>
+                <button class="sl-tool" title="Effacer les dessins de cet instant" onclick="slClearDrawingsHere()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
+              </div>
+              <div class="sl-video-empty" id="sl-video-empty">
+                <div class="h3" style="font-size:15px;margin-bottom:6px">Aucune vidéo chargée</div>
+                <p class="faint" style="font-size:12px;max-width:300px;text-align:center">Retourne sur l'onglet Analyse scrim et dépose la vidéo du scrim pour commencer.</p>
+              </div>
+            </div>
+            <!-- Transport -->
+            <div class="sl-transport">
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(-10)" title="-10 s (Maj+←)">≪ 10</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(-2)" title="-2 s (←)">‹ 2</button>
+              <button class="btn btn-cta btn-sm" id="sl-play" onclick="slPlayPause()" style="min-width:74px;justify-content:center">Lecture</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(2)" title="+2 s (→)">2 ›</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(10)" title="+10 s (Maj+→)">10 ≫</button>
+              <span class="sl-time" id="sl-time">00:00 / 00:00</span>
+              <div style="flex:1"></div>
+              <span class="faint" style="font-size:11px">Vitesse</span>
+              <div class="rolepills" style="gap:4px">
+                <button class="chip sl-speed" data-s="0.25" onclick="slSetSpeed(0.25)">×0.25</button>
+                <button class="chip sl-speed" data-s="0.5" onclick="slSetSpeed(0.5)">×0.5</button>
+                <button class="chip sl-speed on" data-s="1" onclick="slSetSpeed(1)">×1</button>
+                <button class="chip sl-speed" data-s="1.5" onclick="slSetSpeed(1.5)">×1.5</button>
+                <button class="chip sl-speed" data-s="2" onclick="slSetSpeed(2)">×2</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panneau de codage (fenêtre de codes Sportscode) -->
+          <div class="sl-code-panel card" style="padding:14px">
+            <div class="label" style="font-size:10px;margin-bottom:8px">Codage — clic ou touche 1-0 <span class="faint" style="text-transform:none;letter-spacing:0">(lead/lag auto)</span></div>
+            <div class="sl-codes" id="sl-codes"></div>
+            <div class="label" style="font-size:10px;margin:14px 0 8px">Labels — s'appliquent au clip sélectionné</div>
+            <div class="sl-labels" id="sl-labels"></div>
+            <div class="label" style="font-size:10px;margin:14px 0 6px">Raccourcis</div>
+            <div class="faint" style="font-size:11px;line-height:1.9">Espace lecture/pause · ←/→ ±2 s · Maj+←/→ ±10 s<br>1-0 coder l'action · S favori · Suppr supprimer le clip</div>
+          </div>
+        </div>
+
+        <!-- Timeline de codage (lignes par code, façon Sportscode) -->
+        <div class="card" style="padding:12px;margin-top:12px">
+          <div class="between" style="margin-bottom:8px">
+            <div class="label" style="font-size:10px">Timeline de codage</div>
+            <span class="faint" style="font-size:11px" id="sl-tl-hint">Clique sur un clip pour le rejouer · double-clic = lecture en boucle</span>
+          </div>
+          <div class="sl-timeline" id="sl-timeline"></div>
+        </div>
+
+        <!-- Barre de détail du clip sélectionné -->
+        <div class="card" id="sl-detail" style="display:none;padding:12px 14px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span class="pill pill-emerald" id="sl-detail-code">—</span>
+            <span class="stat-v" style="font-size:13px" id="sl-detail-time">—</span>
+            <div id="sl-detail-labels" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+            <div style="flex:1;min-width:160px"><div class="ctrl" style="height:34px"><input id="sl-detail-note" placeholder="Note du clip…" oninput="slNoteInput(this.value)"></div></div>
+            <button class="btn btn-ghost btn-sm" onclick="slPlaySelected()">▶ Rejouer</button>
+            <button class="btn btn-ghost btn-sm" id="sl-detail-star" onclick="slToggleStar()">☆ Favori</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="slDeleteSelected()">✕ Supprimer</button>
+          </div>
+        </div>
+
+        <!-- Matrice codes × labels (façon Sportscode) -->
+        <div class="card" id="sl-matrix" style="display:none;padding:14px;margin-top:12px">
+          <div class="between" style="margin-bottom:10px">
+            <div class="h3" style="font-size:15px">Matrice — codes × labels</div>
+            <span class="faint" style="font-size:11px">Clique une cellule pour lire les clips correspondants</span>
+          </div>
+          <div id="sl-matrix-body" style="overflow-x:auto"></div>
+        </div>
+
+      </div>
+    </div><!-- /panel-scrimlab -->
 
   </main>
 </div><!-- /shell -->
@@ -4166,13 +4353,14 @@ async function rsRenderCompare() {
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
 /* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
 const AN_DESC = {
+  scrim: 'Studio d\'analyse vidéo de scrims : code les actions en direct (gank, dive, teamfight…), dessine sur l\'image, monte des playlists et lis la matrice — comme les staffs du foot pro.',
   perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
   roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 50) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
   prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif (Leaguepedia), forme récente et menaces à cibler.',
 };
-function anTabRank(tab) { return (tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
 function anSyncTabs(active) {
   document.querySelectorAll('.an-tab').forEach(b => {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
@@ -4183,7 +4371,7 @@ function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
     const t = b.getAttribute('data-tab');
-    if ((t === 'perf' || t === 'roster' || t === 'timeline' || t === 'prematch') && rank < 2 && !b.querySelector('.an-lock')) {
+    if ((t === 'scrim' || t === 'perf' || t === 'roster' || t === 'timeline' || t === 'prematch') && rank < 2 && !b.querySelector('.an-lock')) {
       const s = document.createElement('span');
       s.className = 'an-lock'; s.textContent = 'Pro';
       s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
@@ -4199,18 +4387,19 @@ function anGoTab(tab) {
   switchPanel('analytics');
   anShowView(tab);
 }
-function anShowView(view) {   // 'perf' | 'roster' | 'timeline' (vues internes au panel-analytics)
-  ['perf', 'roster', 'timeline'].forEach(v => {
+function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes au panel-analytics ; 'perf' = dormant)
+  ['scrim', 'perf', 'roster', 'timeline'].forEach(v => {
     const el = document.getElementById('an-view-' + v);
     if (el) el.style.display = (v === view) ? '' : 'none';
   });
   anSyncTabs(view);
   if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
+  if (view === 'scrim' && typeof slUiInit === 'function') { slUiInit(); slRenderHistory(); }
 }
 function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   if (rank < 2) { switchPanel('analyse'); return; }   // Starter : seul Comparer est accessible → on y va directement
-  anShowView('perf');
+  anShowView('scrim');
 }
 let _rsWhatIf = null; // réservé (prévisualisation what-if)
 async function renderRoster() {
@@ -6612,13 +6801,14 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-analytics', scrimlab:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
   if (id === 'prematch') { initPrematch(); if (typeof anSyncTabs === 'function') anSyncTabs('prematch'); }
+  if (id === 'scrimlab' && typeof slOnEnterStudio === 'function') slOnEnterStudio();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
@@ -12770,13 +12960,399 @@ checkBackendStatus();
 </div>
 
 <script>
+/* ════════════════════════════════════════════════════════════════
+   SCRIMLAB — studio d'analyse vidéo pour scrims LoL
+   Décalqué des standards du foot pro :
+   · Hudl Sportscode → fenêtre de codage (boutons + lead/lag + raccourcis),
+     timeline à lignes d'instances, labels, matrice codes×labels cliquable
+   · Metrica Sports → télestration (flèches, spotlights, zones, lignes,
+     dessin libre, texte), playlists de clips
+   La vidéo reste locale (ObjectURL) ; le codage est persisté en
+   localStorage par signature de fichier (nom::taille).
+   ════════════════════════════════════════════════════════════════ */
+var SL = {
+  file:null, url:null, sig:null, dur:0, sel:null, tool:'', color:'#2DD4A7',
+  drawing:null, loop:null, queue:null, qIdx:0, instances:[], drawings:[], raf:0, uiReady:false
+};
+var SL_CODES = [
+  { id:'gank',      label:'Gank',         color:'#1FA97C', lead:8,  lag:6, key:'1' },
+  { id:'dive',      label:'Dive',         color:'#C2410C', lead:6,  lag:6, key:'2' },
+  { id:'teamfight', label:'Teamfight',    color:'#7C3AED', lead:10, lag:8, key:'3' },
+  { id:'skirmish',  label:'Skirmish',     color:'#B45309', lead:6,  lag:6, key:'4' },
+  { id:'objectif',  label:'Objectif',     color:'#1D6FD1', lead:12, lag:8, key:'5' },
+  { id:'rotation',  label:'Rotation',     color:'#0F766E', lead:8,  lag:5, key:'6' },
+  { id:'vision',    label:'Vision',       color:'#52706A', lead:5,  lag:4, key:'7' },
+  { id:'pick',      label:'Pick',         color:'#A16207', lead:6,  lag:5, key:'8' },
+  { id:'erreur',    label:'Erreur macro', color:'#BE123C', lead:8,  lag:5, key:'9' },
+  { id:'reset',     label:'Reset / Tempo',color:'#3F5EA8', lead:5,  lag:5, key:'0' }
+];
+var SL_LABELS = ['TOP','JGL','MID','ADC','SUP','Nous','Eux','Réussi','Raté','Early','Mid game','Late game'];
+
+function slFmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=Math.floor(t%60); return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
+function slVideo(){ return document.getElementById('sl-video'); }
+function slCodeOf(id){ return SL_CODES.find(function(c){return c.id===id;}) || SL_CODES[0]; }
+
+/* ── Persistance ── */
+function slSessions(){ try{ return JSON.parse(localStorage.getItem('vs_scrim_sessions')||'[]'); }catch(e){ return []; } }
+function slSaveSessions(list){ try{ localStorage.setItem('vs_scrim_sessions', JSON.stringify(list.slice(0,40))); }catch(e){} }
+function slSave(){
+  if (!SL.sig) return;
+  try{ localStorage.setItem('vs_scrim_data::'+SL.sig, JSON.stringify({ instances:SL.instances, drawings:SL.drawings })); }catch(e){}
+  var list = slSessions();
+  var i = list.findIndex(function(s){ return s.sig===SL.sig; });
+  var meta = { sig:SL.sig, name:(SL.file&&SL.file.name)||(i>=0?list[i].name:'Vidéo'), size:SL.file?SL.file.size:(i>=0?list[i].size:0),
+               dur:SL.dur||((i>=0&&list[i].dur)||0), clips:SL.instances.length, updated:Date.now(), created:(i>=0?list[i].created:Date.now()) };
+  if (i>=0) list[i]=meta; else list.unshift(meta);
+  slSaveSessions(list);
+  var pill=document.getElementById('sl-count-pill'); if(pill) pill.textContent = SL.instances.length+' clip'+(SL.instances.length>1?'s':'');
+}
+function slLoadData(sig){
+  try{ var d=JSON.parse(localStorage.getItem('vs_scrim_data::'+sig)||'null'); if(d){ SL.instances=d.instances||[]; SL.drawings=d.drawings||[]; return true; } }catch(e){}
+  SL.instances=[]; SL.drawings=[]; return false;
+}
+function slDeleteSession(sig){
+  if(!confirm('Supprimer cette session d\'analyse (codage + dessins) ?')) return;
+  try{ localStorage.removeItem('vs_scrim_data::'+sig); }catch(e){}
+  slSaveSessions(slSessions().filter(function(s){ return s.sig!==sig; }));
+  slRenderHistory();
+}
+
+/* ── Vue Analyse scrim (hub Analytics) ── */
+function slUiInit(){
+  if (SL.uiReady) return; SL.uiReady = true;
+  var drop=document.getElementById('scrim-drop'), input=document.getElementById('scrim-input');
+  if (!drop || !input) return;
+  drop.addEventListener('click', function(){ input.click(); });
+  input.addEventListener('change', function(){ if(input.files && input.files[0]) slLoadFile(input.files[0]); input.value=''; });
+  ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.style.borderColor='var(--vs-emerald-500)'; }); });
+  ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.style.borderColor=''; }); });
+  drop.addEventListener('drop', function(e){ var f=e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(f) slLoadFile(f); });
+}
+function slLoadFile(f){
+  if (!/^video\//.test(f.type) && !/\.(mp4|webm|mov|mkv)$/i.test(f.name)) { if(typeof showToast==='function') showToast('Format non reconnu — dépose une vidéo (mp4, webm…)','error'); return; }
+  if (SL.url) { try{ URL.revokeObjectURL(SL.url); }catch(e){} }
+  SL.file=f; SL.url=URL.createObjectURL(f); SL.sig=f.name+'::'+f.size; SL.sel=null; SL.loop=null; SL.queue=null;
+  var had=slLoadData(SL.sig);
+  var v=slVideo(); if(v){ v.src=SL.url; v.playbackRate=1; }
+  var lc=document.getElementById('scrim-loaded'); if(lc) lc.style.display='';
+  var n=document.getElementById('scrim-loaded-name'); if(n) n.textContent=f.name;
+  var m=document.getElementById('scrim-loaded-meta'); if(m) m.textContent=(f.size/1048576).toFixed(1)+' Mo · '+(had? SL.instances.length+' clip(s) retrouvés — session reprise':'nouvelle session');
+  slSave(); slRenderHistory();
+}
+function slRenderHistory(){
+  var el=document.getElementById('scrim-history'); if(!el) return;
+  var list=slSessions();
+  if(!list.length){ el.innerHTML='<div class="card faint" style="text-align:center;padding:26px;font-size:13px">Aucune session pour l\'instant — dépose une première vidéo de scrim ci-dessus.</div>'; return; }
+  el.innerHTML='<div class="card" style="padding:2px 0">'+list.map(function(s){
+    var cur=(SL.sig===s.sig);
+    return '<div class="sl-hist-row">'+
+      '<div class="entry-ico" style="width:34px;height:34px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>'+
+      '<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;color:var(--vs-fg-1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+s.name+'</div>'+
+      '<div class="faint" style="font-size:11.5px">'+new Date(s.updated).toLocaleDateString('fr-FR')+' · '+(s.dur?slFmt(s.dur)+' · ':'')+s.clips+' clip'+(s.clips>1?'s':'')+(cur?' · <span style="color:var(--vs-emerald-300)">chargée</span>':'')+'</div></div>'+
+      (cur? '<button class="btn btn-cta btn-sm" onclick="slOpenStudio()">Ouvrir le studio</button>'
+          : '<button class="btn btn-secondary btn-sm" onclick="slResume(\''+s.sig.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">Reprendre</button>')+
+      '<button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="slDeleteSession(\''+s.sig.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">✕</button>'+
+    '</div>';
+  }).join('')+'</div>';
+}
+function slResume(sig){
+  if(typeof showToast==='function') showToast('Redépose la vidéo « '+sig.split('::')[0]+' » pour reprendre cette session (le codage est déjà sauvegardé).','info');
+  var input=document.getElementById('scrim-input'); if(input) input.click();
+}
+
+/* ── Studio ── */
+function slOpenStudio(){
+  if(!SL.url){ if(typeof showToast==='function') showToast('Dépose d\'abord une vidéo de scrim.','error'); return; }
+  switchPanel('scrimlab');
+}
+function slBackToHub(){ var v=slVideo(); if(v) v.pause(); switchPanel('analytics'); }
+function slOnEnterStudio(){
+  var t=document.getElementById('sl-title'); if(t) t.textContent = SL.file ? SL.file.name : 'Studio d\'analyse';
+  var empty=document.getElementById('sl-video-empty'); if(empty) empty.style.display = SL.url ? 'none' : 'flex';
+  slBuildCodes(); slBuildLabels(); slRenderTimeline(); slRenderDetail(); slSave();
+  var sub=document.getElementById('sl-subtitle'); if(sub) sub.textContent = SL.instances.length+' clip(s) · codage auto-sauvegardé';
+  slResizeCanvas();
+  if (!SL.raf) slTick();
+}
+function slBuildCodes(){
+  var el=document.getElementById('sl-codes'); if(!el || el.childNodes.length) return;
+  el.innerHTML = SL_CODES.map(function(c){
+    return '<button class="sl-code-btn" style="--cbg:'+c.color+'" onclick="slCode(\''+c.id+'\')" title="lead '+c.lead+'s · lag '+c.lag+'s">'+
+      '<span class="k">'+c.key+'</span>'+c.label+'<span class="n">-'+c.lead+'s / +'+c.lag+'s</span></button>';
+  }).join('');
+}
+function slBuildLabels(){
+  var el=document.getElementById('sl-labels'); if(!el || el.childNodes.length) return;
+  el.innerHTML = SL_LABELS.map(function(l){ return '<button class="sl-label-chip" data-l="'+l+'" onclick="slToggleLabel(\''+l+'\')">'+l+'</button>'; }).join('');
+}
+
+/* ── Codage (Sportscode : bouton → instance avec lead/lag) ── */
+function slCode(codeId){
+  var v=slVideo(); if(!v || !SL.url) return;
+  var c=slCodeOf(codeId), t=v.currentTime;
+  var end=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? Math.min(SL.dur, t+c.lag) : (t+c.lag);
+  var inst={ id:Date.now()+Math.random().toString(36).slice(2,6), code:codeId, t0:Math.max(0,t-c.lead), t1:end, labels:[], note:'', star:false };
+  SL.instances.push(inst); SL.sel=inst.id;
+  slRenderTimeline(); slRenderDetail(); slSave();
+  if(typeof showToast==='function') showToast(c.label+' codé à '+slFmt(t),'success');
+}
+function slSelInst(){ return SL.instances.find(function(i){ return i.id===SL.sel; }) || null; }
+function slSelect(id, loop){
+  SL.sel=id; var i=slSelInst(); if(!i) return;
+  var v=slVideo(); if(v){ v.currentTime=i.t0; v.play(); }
+  SL.queue=null; SL.loop={ t0:i.t0, t1:i.t1, repeat:!!loop };
+  slRenderTimeline(); slRenderDetail();
+}
+function slToggleLabel(l){
+  var i=slSelInst(); if(!i){ if(typeof showToast==='function') showToast('Sélectionne d\'abord un clip dans la timeline.','info'); return; }
+  var k=i.labels.indexOf(l); if(k>=0) i.labels.splice(k,1); else i.labels.push(l);
+  slRenderDetail(); slSave(); slSyncLabelChips();
+}
+function slSyncLabelChips(){
+  var i=slSelInst();
+  document.querySelectorAll('.sl-label-chip').forEach(function(b){ b.classList.toggle('on', !!(i && i.labels.indexOf(b.getAttribute('data-l'))>=0)); });
+}
+function slNoteInput(vl){ var i=slSelInst(); if(i){ i.note=vl; slSave(); } }
+function slToggleStar(){ var i=slSelInst(); if(i){ i.star=!i.star; slRenderTimeline(); slRenderDetail(); slSave(); } }
+function slDeleteSelected(){
+  var i=slSelInst(); if(!i) return;
+  SL.instances=SL.instances.filter(function(x){ return x.id!==i.id; }); SL.sel=null; SL.loop=null;
+  slRenderTimeline(); slRenderDetail(); slSave();
+}
+function slPlaySelected(){ if(SL.sel) slSelect(SL.sel,false); }
+
+/* ── Timeline (lignes par code) ── */
+function slRenderTimeline(){
+  var el=document.getElementById('sl-timeline'); if(!el) return;
+  var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
+  el.innerHTML = SL_CODES.map(function(c){
+    var list=SL.instances.filter(function(i){ return i.code===c.id; });
+    return '<div class="sl-tl-row"><div class="sl-tl-name"><span class="dot" style="background:'+c.color+'"></span>'+c.label+'<span class="c">'+list.length+'</span></div>'+
+      '<div class="sl-tl-track" data-code="'+c.id+'" onclick="slTrackClick(event)">'+
+        list.map(function(i){
+          var l=(i.t0/dur*100), w=Math.max(.5,(i.t1-i.t0)/dur*100);
+          return '<span class="sl-tl-inst'+(SL.sel===i.id?' sel':'')+(i.star?' star':'')+'" style="left:'+l+'%;width:'+w+'%;background:'+c.color+'" '+
+            'onclick="event.stopPropagation();slSelect(\''+i.id+'\',false)" ondblclick="event.stopPropagation();slSelect(\''+i.id+'\',true)" title="'+c.label+' '+slFmt(i.t0)+'–'+slFmt(i.t1)+(i.labels.length?' · '+i.labels.join(', '):'')+'"></span>';
+        }).join('')+
+        '<span class="sl-tl-playhead" data-ph style="left:0%"></span>'+
+      '</div></div>';
+  }).join('');
+  var sub=document.getElementById('sl-subtitle'); if(sub) sub.textContent = SL.instances.length+' clip(s) · codage auto-sauvegardé';
+}
+function slTrackClick(e){
+  var v=slVideo(); if(!v) return;
+  var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
+  var r=e.currentTarget.getBoundingClientRect();
+  v.currentTime = Math.max(0, (e.clientX-r.left)/r.width*dur);
+  SL.loop=null; SL.queue=null;
+}
+function slRenderDetail(){
+  var el=document.getElementById('sl-detail'); if(!el) return;
+  var i=slSelInst();
+  if(!i){ el.style.display='none'; slSyncLabelChips(); return; }
+  el.style.display='';
+  var c=slCodeOf(i.code);
+  var pc=document.getElementById('sl-detail-code'); if(pc){ pc.textContent=c.label; pc.style.background=c.color; pc.style.borderColor=c.color; pc.style.color='#fff'; }
+  var pt=document.getElementById('sl-detail-time'); if(pt) pt.textContent=slFmt(i.t0)+' → '+slFmt(i.t1);
+  var pl=document.getElementById('sl-detail-labels'); if(pl) pl.innerHTML=i.labels.map(function(l){ return '<span class="pill pill-emerald" style="font-size:10.5px">'+l+'</span>'; }).join('')||'<span class="faint" style="font-size:11px">aucun label</span>';
+  var pn=document.getElementById('sl-detail-note'); if(pn && pn.value!==i.note) pn.value=i.note||'';
+  var ps=document.getElementById('sl-detail-star'); if(ps) ps.textContent=(i.star?'★ Favori':'☆ Favori');
+  slSyncLabelChips();
+}
+
+/* ── Transport ── */
+function slPlayPause(){ var v=slVideo(); if(!v||!SL.url) return; if(v.paused) v.play(); else v.pause(); }
+function slSeek(dt){ var v=slVideo(); if(!v||!SL.url) return; v.currentTime=Math.max(0,Math.min(SL.dur||1e9, v.currentTime+dt)); SL.loop=null; SL.queue=null; }
+function slSetSpeed(s){ var v=slVideo(); if(v) v.playbackRate=s; document.querySelectorAll('.sl-speed').forEach(function(b){ b.classList.toggle('on', parseFloat(b.getAttribute('data-s'))===s); }); }
+function slTick(){
+  SL.raf=requestAnimationFrame(slTick);
+  var v=slVideo(); if(!v) return;
+  var panel=document.getElementById('panel-scrimlab'); if(!panel || !panel.classList.contains('active')) return;
+  var t=v.currentTime;
+  var tm=document.getElementById('sl-time'); if(tm) tm.textContent=slFmt(t)+' / '+slFmt(SL.dur);
+  var pb=document.getElementById('sl-play'); if(pb) pb.textContent=(v.paused?'Lecture':'Pause');
+  var pct=(SL.dur? t/SL.dur*100 : 0);
+  document.querySelectorAll('[data-ph]').forEach(function(p){ p.style.left=pct+'%'; });
+  if (SL.loop && t>=SL.loop.t1-.02){
+    if (SL.loop.repeat){ v.currentTime=SL.loop.t0; }
+    else if (SL.queue){ slQueueNext(); }
+    else { v.pause(); SL.loop=null; }
+  }
+  slDrawFrame(t, v.paused);
+}
+
+/* ── Playlist (clips favoris, sinon tous) ── */
+function slPlaylistStart(){
+  var list=SL.instances.filter(function(i){ return i.star; });
+  if(!list.length) list=SL.instances.slice();
+  if(!list.length){ if(typeof showToast==='function') showToast('Aucun clip codé pour l\'instant.','info'); return; }
+  list.sort(function(a,b){ return a.t0-b.t0; });
+  SL.queue=list.map(function(i){ return i.id; }); SL.qIdx=-1; slQueueNext();
+}
+function slQueueNext(){
+  SL.qIdx++;
+  if(!SL.queue || SL.qIdx>=SL.queue.length){ SL.queue=null; SL.loop=null; var v=slVideo(); if(v) v.pause(); if(typeof showToast==='function') showToast('Playlist terminée.','success'); return; }
+  var id=SL.queue[SL.qIdx], i=SL.instances.find(function(x){ return x.id===id; });
+  if(!i){ slQueueNext(); return; }
+  SL.sel=id; var v=slVideo(); if(v){ v.currentTime=i.t0; v.play(); }
+  SL.loop={ t0:i.t0, t1:i.t1, repeat:false };
+  slRenderTimeline(); slRenderDetail();
+}
+
+/* ── Matrice codes × labels (Sportscode) ── */
+function slToggleMatrix(){
+  var el=document.getElementById('sl-matrix'); if(!el) return;
+  if(el.style.display!=='none'){ el.style.display='none'; return; }
+  var html='<table class="sl-matrix-table"><tr><th>Code</th>'+SL_LABELS.map(function(l){ return '<th>'+l+'</th>'; }).join('')+'<th>Total</th></tr>';
+  SL_CODES.forEach(function(c){
+    var list=SL.instances.filter(function(i){ return i.code===c.id; });
+    html+='<tr><th style="color:'+c.color+'">'+c.label+'</th>'+SL_LABELS.map(function(l){
+      var n=list.filter(function(i){ return i.labels.indexOf(l)>=0; }).length;
+      return n? '<td class="hit" onclick="slPlayFilter(\''+c.id+'\',\''+l+'\')">'+n+'</td>' : '<td class="zero">·</td>';
+    }).join('')+(list.length? '<td class="hit" onclick="slPlayFilter(\''+c.id+'\',null)">'+list.length+'</td>':'<td class="zero">·</td>')+'</tr>';
+  });
+  el.querySelector('#sl-matrix-body').innerHTML=html+'</table>';
+  el.style.display='';
+}
+function slPlayFilter(codeId, label){
+  var list=SL.instances.filter(function(i){ return i.code===codeId && (!label || i.labels.indexOf(label)>=0); });
+  if(!list.length) return;
+  list.sort(function(a,b){ return a.t0-b.t0; });
+  SL.queue=list.map(function(i){ return i.id; }); SL.qIdx=-1; slQueueNext();
+}
+
+/* ── Télestration (Metrica : dessins ancrés au temps) ── */
+function slSetTool(t){
+  SL.tool=t;
+  document.querySelectorAll('.sl-tool[data-tool]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tool')===t); });
+  var cv=document.getElementById('sl-canvas'); if(cv) cv.classList.toggle('drawing', !!t);
+  var v=slVideo(); if(t && v && !v.paused) v.pause();
+}
+function slSetColor(c){ SL.color=c; document.querySelectorAll('.sl-color').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-color')===c); }); }
+function slResizeCanvas(){
+  var cv=document.getElementById('sl-canvas'), wrap=document.getElementById('sl-video-wrap'); if(!cv||!wrap) return;
+  var r=wrap.getBoundingClientRect(); cv.width=Math.max(2,Math.round(r.width)); cv.height=Math.max(2,Math.round(r.height));
+}
+function slNearDrawings(t){ return SL.drawings.filter(function(d){ return Math.abs(d.t-t)<.6; }); }
+function slClearDrawingsHere(){
+  var v=slVideo(); if(!v) return;
+  var t=v.currentTime, n=SL.drawings.length;
+  SL.drawings=SL.drawings.filter(function(d){ return Math.abs(d.t-t)>=.6; });
+  if(SL.drawings.length<n){ slSave(); if(typeof showToast==='function') showToast('Dessins effacés à '+slFmt(t),'success'); }
+}
+function slDrawFrame(t, paused){
+  var cv=document.getElementById('sl-canvas'); if(!cv) return;
+  var ctx=cv.getContext('2d'); ctx.clearRect(0,0,cv.width,cv.height);
+  var list=slNearDrawings(t); if(SL.drawing) list=list.concat([SL.drawing]);
+  list.forEach(function(d){ slPaint(ctx,cv,d); });
+}
+function slPaint(ctx,cv,d){
+  var W=cv.width,H=cv.height;
+  ctx.strokeStyle=d.color; ctx.fillStyle=d.color; ctx.lineWidth=3; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.shadowColor='rgba(0,0,0,.55)'; ctx.shadowBlur=4;
+  var p=d.pts.map(function(q){ return [q[0]*W,q[1]*H]; });
+  if(d.tool==='free'){ ctx.beginPath(); p.forEach(function(q,i){ i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]); }); ctx.stroke(); }
+  else if(d.tool==='line'){ ctx.beginPath(); ctx.moveTo(p[0][0],p[0][1]); ctx.lineTo(p[1][0],p[1][1]); ctx.stroke(); ctx.beginPath(); ctx.arc(p[0][0],p[0][1],4,0,7); ctx.arc(p[1][0],p[1][1],4,0,7); ctx.fill(); }
+  else if(d.tool==='arrow'){
+    var a=p[0],b=p[1]; ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    var ang=Math.atan2(b[1]-a[1],b[0]-a[0]);
+    ctx.beginPath(); ctx.moveTo(b[0],b[1]);
+    ctx.lineTo(b[0]-13*Math.cos(ang-.45), b[1]-13*Math.sin(ang-.45));
+    ctx.lineTo(b[0]-13*Math.cos(ang+.45), b[1]-13*Math.sin(ang+.45));
+    ctx.closePath(); ctx.fill();
+  }
+  else if(d.tool==='spot'){
+    var a2=p[0],b2=p[1]; var rx=Math.max(14,Math.abs(b2[0]-a2[0])), ry=Math.max(9,Math.abs(b2[1]-a2[1])*.6);
+    ctx.beginPath(); ctx.ellipse(a2[0],a2[1],rx,ry,0,0,7); ctx.stroke();
+    ctx.globalAlpha=.16; ctx.fill(); ctx.globalAlpha=1;
+  }
+  else if(d.tool==='zone'){
+    var x=Math.min(p[0][0],p[1][0]), y=Math.min(p[0][1],p[1][1]), w=Math.abs(p[1][0]-p[0][0]), h=Math.abs(p[1][1]-p[0][1]);
+    ctx.setLineDash([7,5]); ctx.strokeRect(x,y,w,h); ctx.setLineDash([]);
+    ctx.globalAlpha=.12; ctx.fillRect(x,y,w,h); ctx.globalAlpha=1;
+  }
+  else if(d.tool==='text'){ ctx.font='700 16px Helvetica,Arial,sans-serif'; ctx.fillText(d.text||'', p[0][0], p[0][1]); }
+  ctx.shadowBlur=0;
+}
+function slCanvasInit(){
+  var cv=document.getElementById('sl-canvas'); if(!cv || cv._slInit) return; cv._slInit=true;
+  function norm(e){ var r=cv.getBoundingClientRect(); return [(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]; }
+  cv.addEventListener('pointerdown', function(e){
+    if(!SL.tool || !SL.url) return;
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    var v=slVideo(), q=norm(e);
+    if(SL.tool==='text'){
+      var txt=prompt('Texte de l\'annotation :'); if(!txt) return;
+      SL.drawings.push({ t:v.currentTime, tool:'text', color:SL.color, pts:[q], text:txt }); slSave(); return;
+    }
+    SL.drawing={ t:v.currentTime, tool:SL.tool, color:SL.color, pts:(SL.tool==='free'?[q]:[q,q]) };
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(!SL.drawing) return;
+    var q=norm(e);
+    if(SL.drawing.tool==='free') SL.drawing.pts.push(q); else SL.drawing.pts[1]=q;
+  });
+  cv.addEventListener('pointerup', function(){
+    if(!SL.drawing) return;
+    SL.drawings.push(SL.drawing); SL.drawing=null; slSave();
+  });
+}
+
+/* ── Export ── */
+function slExport(){
+  var data={ app:'VisionScore ScrimLab', video:SL.file?SL.file.name:'', dur:SL.dur, exported:new Date().toISOString(),
+             codes:SL_CODES, instances:SL.instances, drawings:SL.drawings };
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
+  a.download='scrimlab-'+((SL.file&&SL.file.name)||'session').replace(/\.[^.]+$/,'')+'.json';
+  a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); },2000);
+}
+
+/* ── Clavier ── */
+document.addEventListener('keydown', function(e){
+  var panel=document.getElementById('panel-scrimlab');
+  if(!panel || !panel.classList.contains('active')) return;
+  if(/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||'')) return;
+  if(e.key===' '){ e.preventDefault(); slPlayPause(); }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); slSeek(e.shiftKey?-10:-2); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); slSeek(e.shiftKey?10:2); }
+  else if(e.key==='Escape'){ slSetTool(''); }
+  else if(e.key==='s'||e.key==='S'){ slToggleStar(); }
+  else if(e.key==='Delete'||e.key==='Backspace'){ slDeleteSelected(); }
+  else { var c=SL_CODES.find(function(x){ return x.key===e.key; }); if(c && SL.url) slCode(c.id); }
+});
+
+/* ── Branchements vidéo (une fois le DOM prêt) ── */
+(function slBoot(){
+  function wire(){
+    var v=slVideo(); if(!v) return;
+    function slMeta(){
+      var m=document.getElementById('scrim-loaded-meta');
+      if(m && SL.file) m.textContent=(SL.file.size/1048576).toFixed(1)+' Mo · '+slFmt(SL.dur)+' · '+SL.instances.length+' clip(s)';
+    }
+    v.addEventListener('loadedmetadata', function(){
+      SL.dur=(isFinite(v.duration) && v.duration>0)? v.duration : 0;
+      if(!SL.dur){ // webm MediaRecorder/OBS : durée absente → on force le calcul en cherchant la fin
+        var fix=function(){ if(isFinite(v.duration) && v.duration>0){ SL.dur=v.duration; v.currentTime=0; slRenderTimeline(); slMeta(); slSave(); v.removeEventListener('durationchange', fix); } };
+        v.addEventListener('durationchange', fix);
+        try{ v.currentTime=1e7; }catch(e){}
+      }
+      slResizeCanvas(); slRenderTimeline(); slMeta(); slSave();
+    });
+    window.addEventListener('resize', slResizeCanvas);
+    slCanvasInit(); slSetColor(SL.color);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', wire); else wire();
+})();
+</script>
+<script>
 /* ════ Menu latéral (drawer) + curseur LoL + accueil ludique ════ */
 function vsdToggleDrawer(open){
   var s=document.getElementById('vsd-scrim'); if(!s) return;
   s.classList.toggle('open', !!open);
   if(open){
     var act=((document.querySelector('.panel.active')||{}).id||'').replace('panel-','');
-    var actParent={ graphs:'scout', map:'scout', results:'scout', prematch:'analytics', analyse:'analytics' }[act] || act;
+    var actParent={ graphs:'scout', map:'scout', results:'scout', prematch:'analytics', analyse:'analytics', scrimlab:'analytics' }[act] || act;
     document.querySelectorAll('.vsd-drawer-item[data-nav]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-nav')===actParent); });
     var cm=document.documentElement.getAttribute('data-cursor')||'systeme';
     document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===cm); });
