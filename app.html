@@ -267,7 +267,7 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 @keyframes vs-ripple-anim{ to{ transform:scale(2.6); opacity:0; } }
 /* État pressé M3 : léger enfoncement, rapide (120ms) */
 .vsd .btn:active, .vsd .chip:active, .vsd-drawer-item:active, .vsd-burger:active,
-.vsd .entry-card:active, .phase-btn:active, .map-view-btn:active, .view-tab:active, .an-tab:active{
+.vsd .entry-card:active, .phase-btn:active, .map-view-btn:active, .view-tab:active, .an-tab:active, .sc-tab:active{
   transform:scale(.97) !important; transition-duration:80ms !important;
 }
 /* Focus clavier visible (accessibilité M3) */
@@ -2197,10 +2197,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 50</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
     <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
-    <button class="vsd-drawer-item" data-nav="prematch" onclick="vsdDrawerGo('prematch')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg><span>Avant-match</span></button>
-    <div class="vsd-drawer-label">Outils</div>
-    <button class="vsd-drawer-item" data-nav="map" onclick="vsdDrawerGo('map')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg><span>Map LoL</span></button>
-    <button class="vsd-drawer-item" data-nav="graphs" onclick="vsdDrawerGo('graphs')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Graphiques</span></button>
     <div style="flex:1"></div>
     <div class="vsd-drawer-sep"></div>
     <div class="vsd-drawer-label" style="display:flex;align-items:center;gap:6px">Curseur <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg></div>
@@ -2219,9 +2215,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-  <button class="more-menu-item" onclick="switchPanel('prematch');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg> Avant-match</button>
-  <button class="more-menu-item" onclick="switchPanel('graphs');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Graphiques</button>
-  <button class="more-menu-item" onclick="switchPanel('map');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg> Carte</button>
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
 </div>
 
@@ -2528,6 +2521,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="eyebrow">Scouting</div>
           <h2 class="h2">Scouter un joueur</h2>
           <p class="muted">Renseigne le joueur, importe 50 · 100 · 200 parties, puis lis sa note SPES, son pentagone, son champion pool et ses stats.</p>
+        </div>
+        <div class="rolepills sc-tabbar" style="margin-bottom:18px">
+          <button class="sc-tab chip on" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
+          <button class="sc-tab chip" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
+          <button class="sc-tab chip" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
         </div>
       </div>
 
@@ -3045,9 +3043,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       <!-- Page head -->
       <div class="page-head">
-        <div class="eyebrow">Graphiques</div>
+        <div class="eyebrow">Scouting</div>
         <h2 class="h2">Évolution & tendances</h2>
         <p class="muted">Courbes de performance, progression de rang et rythme de jeu, à partir des parties importées.</p>
+      </div>
+      <div class="rolepills sc-tabbar" style="margin-bottom:16px">
+        <button class="sc-tab chip" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
+        <button class="sc-tab chip on" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
+        <button class="sc-tab chip" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
       </div>
 
       <!-- Empty state -->
@@ -3394,6 +3397,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
+          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
         </div>
         <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -3572,6 +3576,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
+          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
         </div>
         <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -3609,9 +3614,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <div id="panel-prematch" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <div class="page-head">
-          <div class="eyebrow">Avant-match</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Dossier d'avant-match <span class="pill pill-emerald">API Riot · Leaguepedia</span></h2>
-          <p class="muted">Saisis le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition (Leaguepedia), utile quand le smurf soloq diffère du nom pro. Les deux champs sont indépendants.</p>
+          <div class="eyebrow">Analytics</div>
+          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
+          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
+        </div>
+        <div class="rolepills an-tabbar">
+          <button class="an-tab chip" data-tab="perf" onclick="anGoTab('perf')">Performance</button>
+          <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
+          <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
+          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
+          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
+        </div>
+        <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
+
+        <div style="margin-bottom:2px">
+          <div class="h3" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:19px">Dossier d'avant-match <span class="pill pill-emerald">API Riot · Leaguepedia</span></div>
+          <p class="faint" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Saisis le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition (Leaguepedia), utile quand le smurf soloq diffère du nom pro. Les deux champs sont indépendants.</p>
         </div>
 
         <div class="card" style="padding:18px 20px">
@@ -4149,8 +4167,9 @@ const AN_DESC = {
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
   roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 50) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
+  prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif (Leaguepedia), forme récente et menaces à cibler.',
 };
-function anTabRank(tab) { return (tab === 'perf' || tab === 'roster' || tab === 'timeline') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
 function anSyncTabs(active) {
   document.querySelectorAll('.an-tab').forEach(b => {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
@@ -4161,7 +4180,7 @@ function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
     const t = b.getAttribute('data-tab');
-    if ((t === 'perf' || t === 'roster') && rank < 2 && !b.querySelector('.an-lock')) {
+    if ((t === 'perf' || t === 'roster' || t === 'timeline' || t === 'prematch') && rank < 2 && !b.querySelector('.an-lock')) {
       const s = document.createElement('span');
       s.className = 'an-lock'; s.textContent = 'Pro';
       s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
@@ -4173,6 +4192,7 @@ function anGoTab(tab) {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   if (anTabRank(tab) > rank) { vsUpsell('analytics'); return; }
   if (tab === 'comparer') { switchPanel('analyse'); return; }   // le handler de 'analyse' resynchronise les onglets
+  if (tab === 'prematch') { switchPanel('prematch'); return; }  // Avant-match = panneau dédié, resynchronisé par switchPanel
   switchPanel('analytics');
   anShowView(tab);
 }
@@ -6589,16 +6609,37 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   const _navMap = { scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-more', graphs:'nav-more', map:'nav-more', history:'nav-more' };
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
-  if (id === 'prematch') initPrematch();
+  if (id === 'prematch') { initPrematch(); if (typeof anSyncTabs === 'function') anSyncTabs('prematch'); }
+  // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
+  if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
   document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
 }
+/* Sous-onglets du Scouting : Fiche joueur / Graphiques / Carte (Carte = Pro+) */
+function scoutDecorateTabs() {
+  const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
+  document.querySelectorAll('.sc-tab').forEach(b => {
+    const t = b.getAttribute('data-tab');
+    const need = (window.VS_PANEL_MINRANK[t] || 1);
+    if (need > rank && !b.querySelector('.sc-lock')) {
+      const s = document.createElement('span');
+      s.className = 'sc-lock'; s.textContent = 'Pro';
+      s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
+      b.appendChild(s);
+    }
+  });
+}
+function scoutSyncTabs(active) {
+  scoutDecorateTabs();
+  document.querySelectorAll('.sc-tab').forEach(b => b.classList.toggle('on', b.getAttribute('data-tab') === active));
+}
+function scoutGoTab(tab) { switchPanel(tab); }
 function setSbActive(btn) {
   document.querySelectorAll('.sb-item').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -12732,7 +12773,8 @@ function vsdToggleDrawer(open){
   s.classList.toggle('open', !!open);
   if(open){
     var act=((document.querySelector('.panel.active')||{}).id||'').replace('panel-','');
-    document.querySelectorAll('.vsd-drawer-item[data-nav]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-nav')===act); });
+    var actParent={ graphs:'scout', map:'scout', results:'scout', prematch:'analytics', analyse:'analytics' }[act] || act;
+    document.querySelectorAll('.vsd-drawer-item[data-nav]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-nav')===actParent); });
     var cm=document.documentElement.getAttribute('data-cursor')||'systeme';
     document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===cm); });
   }
@@ -12761,7 +12803,7 @@ function vsdApplyCursor(){
    Onde qui part du point de clic — durée 420ms ease-out, pas de rebond (brief motion). */
 (function vsRippleInit(){
   if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  var SEL='.btn, .chip, .vsd-drawer-item, .vsd-burger, .entry-card, .phase-btn, .map-view-btn, .view-tab, .an-tab, .more-menu-item, .hd-nav-item, .vsd-cursor-opt, .pill-toggle';
+  var SEL='.btn, .chip, .vsd-drawer-item, .vsd-burger, .entry-card, .phase-btn, .map-view-btn, .view-tab, .an-tab, .sc-tab, .more-menu-item, .hd-nav-item, .vsd-cursor-opt, .pill-toggle';
   document.addEventListener('pointerdown', function(e){
     var el=e.target.closest(SEL);
     if(!el || el.disabled) return;
