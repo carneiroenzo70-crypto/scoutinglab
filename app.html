@@ -256,16 +256,37 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 @media (prefers-reduced-motion: reduce){ .vs-star{ transition:none; } }
 
-/* ════ ScrimLab — studio d'analyse vidéo (codage + télestration) ════ */
-.sl-topbar{ display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
-.sl-main{ display:grid; grid-template-columns:minmax(0,1fr) 285px; gap:12px; align-items:stretch; }
-@media (max-width:1080px){ .sl-main{ grid-template-columns:1fr; } }
-.sl-video-wrap{ position:relative; background:#03110F; border-radius:12px; overflow:hidden; aspect-ratio:16/9; max-height:64vh; }
+/* ════ ScrimLab — studio d'analyse vidéo (codage + télestration) ════
+   Règle anti-débordement systématique : tout élément grid/flex qui contient
+   du texte non-coupable reçoit min-width:0 (sinon son min-content force la
+   piste — même une piste en px fixe — à dépasser sa taille et pousse toute
+   la page en scroll horizontal). C'était le bug remonté par Enzo. */
+.sl-topbar{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; min-width:0; }
+.sl-topbar-title{ min-width:0; flex:1 1 160px; }
+.sl-topbar-title .h3{ font-size:15.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.sl-saved{ display:inline-flex; align-items:center; gap:4px; color:var(--vs-emerald-400); }
+.sl-topbar-actions{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
+.sl-main{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,300px); gap:14px; align-items:start; min-width:0; }
+@media (max-width:1040px){ .sl-main{ grid-template-columns:minmax(0,1fr); } }
+
+/* ── Zone vidéo ── */
+.sl-video-zone{ min-width:0; }
+.sl-video-wrap{ position:relative; background:#03110F; border-radius:12px; overflow:hidden; aspect-ratio:16/9; max-height:62vh; }
 .sl-video-wrap video{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; background:#03110F; }
 .sl-video-wrap canvas{ position:absolute; inset:0; width:100%; height:100%; z-index:3; }
 .sl-video-wrap canvas.drawing{ cursor:crosshair; }
-.sl-video-empty{ position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,18,15,.88); }
-.sl-draw-tools{ position:absolute; top:10px; left:10px; z-index:5; display:flex; flex-direction:column; gap:4px; background:rgba(9,37,32,.82); border:1px solid var(--vs-forest-500); border-radius:10px; padding:5px; }
+.sl-video-empty{ position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(4,18,15,.88); text-align:center; padding:20px; }
+.sl-video-click{ position:absolute; inset:0; z-index:2; cursor:pointer; background:transparent; border:0; padding:0; }
+.sl-play-ghost{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(.8); z-index:2; width:64px; height:64px; border-radius:50%; background:rgba(4,18,15,.55); border:1.5px solid rgba(255,255,255,.25); display:grid; place-items:center; color:#fff; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; }
+.sl-video-wrap.show-ghost .sl-play-ghost{ opacity:1; transform:translate(-50%,-50%) scale(1); }
+/* ── Bandeau d'alerte codec (image noire mais son OK) ── */
+.sl-codec-warn{ position:absolute; left:10px; right:10px; top:10px; z-index:6; display:none; gap:10px; align-items:flex-start; background:rgba(190,18,60,.14); border:1px solid rgba(255,90,51,.45); border-radius:10px; padding:10px 12px; -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.sl-codec-warn.show{ display:flex; }
+.sl-codec-warn svg{ color:var(--vs-red-400); flex:none; margin-top:1px; }
+.sl-codec-warn b{ color:#fff; }
+.sl-codec-warn p{ margin:3px 0 0; font-size:11.5px; line-height:1.55; color:rgba(255,255,255,.82); }
+/* ── Palette de dessin ── */
+.sl-draw-tools{ position:absolute; top:10px; left:10px; z-index:5; display:flex; flex-direction:column; gap:4px; background:rgba(9,37,32,.86); border:1px solid var(--vs-forest-500); border-radius:10px; padding:5px; box-shadow:0 10px 24px -12px rgba(0,0,0,.6); }
 .sl-tool{ width:30px; height:30px; border-radius:7px; border:1px solid transparent; background:transparent; color:var(--vs-fg-2); cursor:pointer; display:grid; place-items:center; transition:all .14s var(--ease-out); }
 .sl-tool:hover{ color:var(--vs-fg-1); border-color:var(--vs-forest-500); background:rgba(45,212,167,.06); }
 .sl-tool.on{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.14); }
@@ -273,25 +294,56 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-tool.sl-color{ position:relative; }
 .sl-tool.sl-color::after{ content:''; width:14px; height:14px; border-radius:50%; background:var(--c); }
 .sl-tool.sl-color.on{ box-shadow:0 0 0 2px var(--c) inset; }
-.sl-transport{ display:flex; align-items:center; gap:7px; flex-wrap:wrap; margin-top:10px; }
-.sl-time{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-2); margin-left:4px; white-space:nowrap; }
-.sl-code-panel{ overflow-y:auto; max-height:calc(64vh + 66px); }
-.sl-codes{ display:grid; grid-template-columns:1fr 1fr; gap:7px; }
-.sl-code-btn{ position:relative; border:1px solid transparent; border-radius:9px; padding:9px 8px 8px; background:var(--cbg); color:var(--vs-fg-1); font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; text-align:left; transition:transform .12s var(--ease-out), filter .15s; }
-.sl-code-btn:hover{ filter:brightness(1.16); }
+.sl-tool-label{ position:absolute; top:10px; right:10px; z-index:5; font-size:10.5px; font-weight:700; color:var(--vs-emerald-300); background:rgba(9,37,32,.86); border:1px solid var(--vs-emerald-600); border-radius:7px; padding:5px 10px; display:none; }
+.sl-tool-label.show{ display:block; }
+/* ── Scrub bar overlay (façon lecteur pro) ── */
+.sl-scrub{ position:absolute; left:0; right:0; bottom:0; z-index:5; padding:16px 12px 8px; background:linear-gradient(180deg,transparent,rgba(1,8,7,.82) 70%); }
+.sl-scrub-track{ position:relative; height:5px; border-radius:3px; background:rgba(255,255,255,.16); cursor:pointer; }
+.sl-scrub-fill{ position:absolute; top:0; left:0; bottom:0; width:0; border-radius:3px; background:var(--vs-emerald-400); pointer-events:none; }
+.sl-scrub-track:hover .sl-scrub-fill, .sl-scrub-track.dragging .sl-scrub-fill{ background:var(--vs-emerald-300); }
+.sl-scrub-mark{ position:absolute; top:-4px; width:3px; height:13px; border-radius:1.5px; opacity:.9; pointer-events:none; transform:translateX(-1.5px); }
+.sl-scrub-handle{ position:absolute; top:50%; width:12px; height:12px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.5); transform:translate(-50%,-50%); left:0; opacity:0; transition:opacity .12s; pointer-events:none; }
+.sl-scrub-track:hover .sl-scrub-handle, .sl-scrub-track.dragging .sl-scrub-handle{ opacity:1; }
+/* ── Transport ── */
+.sl-transport{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; min-width:0; }
+.sl-transport-sep{ width:1px; align-self:stretch; background:var(--vs-forest-500); margin:2px 2px; flex:none; }
+.sl-time{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-2); margin-left:2px; white-space:nowrap; }
+.sl-iconbtn{ width:32px; height:32px; border-radius:8px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; display:grid; place-items:center; transition:all .14s var(--ease-out); flex:none; }
+.sl-iconbtn:hover{ color:var(--vs-fg-1); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.08); }
+.sl-iconbtn.on{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.14); }
+.sl-vol{ display:flex; align-items:center; gap:6px; }
+.sl-vol input[type=range]{ width:70px; accent-color:var(--vs-emerald-400); cursor:pointer; }
+/* ── Panneau de codage ── */
+.sl-code-panel{ min-width:0; overflow-y:auto; max-height:calc(62vh + 78px); }
+.sl-panel-label{ font-size:10.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); margin-bottom:9px; display:flex; align-items:center; gap:6px; }
+.sl-panel-label .hint{ font-weight:500; letter-spacing:0; text-transform:none; color:var(--vs-fg-3); opacity:.85; }
+.sl-codes{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:7px; }
+.sl-code-btn{ position:relative; min-width:0; border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:9px 10px 8px; background:var(--cbg); color:#fff; font-family:inherit; font-weight:700; font-size:12.5px; cursor:pointer; text-align:left; transition:transform .12s var(--ease-out), filter .15s, box-shadow .15s; box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 6px 14px -8px rgba(0,0,0,.6); }
+.sl-code-btn:hover{ filter:brightness(1.14); box-shadow:0 1px 0 rgba(255,255,255,.1) inset, 0 8px 18px -8px rgba(0,0,0,.65); }
 .sl-code-btn:active{ transform:scale(.96); }
-.sl-code-btn .k{ position:absolute; top:5px; right:7px; font-family:var(--font-mono); font-size:9.5px; opacity:.65; }
-.sl-code-btn .n{ display:block; font-family:var(--font-mono); font-weight:600; font-size:10px; opacity:.75; margin-top:2px; }
-.sl-labels{ display:flex; gap:5px; flex-wrap:wrap; }
-.sl-label-chip{ font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:all .13s; font-family:inherit; }
+.sl-code-btn .lbl{ display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sl-code-btn .k{ position:absolute; top:6px; right:7px; font-family:var(--font-mono); font-size:9.5px; opacity:.7; background:rgba(0,0,0,.22); border-radius:4px; padding:0 4px; }
+.sl-code-btn .n{ display:block; font-family:var(--font-mono); font-weight:600; font-size:9.5px; opacity:.8; margin-top:3px; }
+.sl-code-btn .cnt{ position:absolute; bottom:6px; right:7px; font-family:var(--font-mono); font-weight:800; font-size:10.5px; opacity:0; transition:opacity .15s; }
+.sl-code-btn .cnt.show{ opacity:.9; }
+.sl-label-group + .sl-label-group{ margin-top:10px; }
+.sl-label-group-t{ font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); margin-bottom:5px; }
+.sl-labels{ display:flex; gap:5px; flex-wrap:wrap; min-width:0; }
+.sl-label-chip{ font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:all .13s; font-family:inherit; white-space:nowrap; }
 .sl-label-chip:hover{ border-color:var(--vs-emerald-500); color:var(--vs-fg-1); }
 .sl-label-chip.on{ background:rgba(45,212,167,.14); border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
-.sl-timeline{ display:flex; flex-direction:column; gap:4px; }
-.sl-tl-row{ display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; }
-.sl-tl-name{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--vs-fg-2); overflow:hidden; white-space:nowrap; }
+.sl-label-chip:disabled{ opacity:.4; cursor:not-allowed; }
+.sl-kbd-grid{ display:grid; grid-template-columns:auto minmax(0,1fr); gap:5px 9px; font-size:11px; }
+.sl-kbd-grid kbd{ font-family:var(--font-mono); font-size:10px; font-weight:700; background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:4px; padding:1px 6px; color:var(--vs-fg-2); white-space:nowrap; justify-self:start; }
+.sl-kbd-grid span{ color:var(--vs-fg-3); min-width:0; }
+/* ── Timeline ── */
+.sl-timeline{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+.sl-tl-row{ display:grid; grid-template-columns:minmax(0,124px) minmax(0,1fr); gap:8px; align-items:center; min-width:0; }
+.sl-tl-name{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--vs-fg-2); overflow:hidden; white-space:nowrap; min-width:0; }
+.sl-tl-name .lbl{ overflow:hidden; text-overflow:ellipsis; min-width:0; }
 .sl-tl-name .dot{ width:8px; height:8px; border-radius:50%; flex:none; }
-.sl-tl-name .c{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--vs-fg-3); }
-.sl-tl-track{ position:relative; height:22px; background:rgba(4,18,15,.55); border:1px solid var(--vs-forest-600); border-radius:5px; overflow:hidden; cursor:pointer; }
+.sl-tl-name .c{ margin-left:auto; font-family:var(--font-mono); font-size:10px; color:var(--vs-fg-3); flex:none; }
+.sl-tl-track{ position:relative; height:22px; background:rgba(4,18,15,.55); border:1px solid var(--vs-forest-600); border-radius:5px; overflow:hidden; cursor:pointer; min-width:0; }
 .sl-tl-inst{ position:absolute; top:2px; bottom:2px; border-radius:3px; opacity:.85; min-width:5px; cursor:pointer; transition:opacity .12s, box-shadow .12s; }
 .sl-tl-inst:hover{ opacity:1; }
 .sl-tl-inst.sel{ opacity:1; box-shadow:0 0 0 1.5px #fff inset, 0 0 8px rgba(255,255,255,.35); }
@@ -304,7 +356,7 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-matrix-table td.hit{ color:var(--vs-emerald-300); font-family:var(--font-mono); font-weight:700; cursor:pointer; }
 .sl-matrix-table td.hit:hover{ background:rgba(45,212,167,.12); }
 .sl-matrix-table td.zero{ color:var(--vs-fg-3); opacity:.4; font-family:var(--font-mono); }
-.sl-hist-row{ display:flex; align-items:center; gap:12px; padding:11px 14px; }
+.sl-hist-row{ display:flex; align-items:center; gap:12px; padding:11px 14px; min-width:0; }
 .sl-hist-row + .sl-hist-row{ border-top:1px solid var(--vs-forest-600); }
 .tl-obj-row{ transition:background .14s var(--ease-out); }
 .tl-obj-row:hover{ background:var(--vs-forest-700); }
@@ -3743,15 +3795,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <!-- Barre du studio -->
         <div class="sl-topbar">
           <button class="btn btn-ghost btn-sm" onclick="slBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Analyse scrim</button>
-          <div style="min-width:0">
-            <div class="h3" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sl-title">Studio d'analyse</div>
+          <div class="sl-topbar-title">
+            <div class="h3" id="sl-title">Studio d'analyse</div>
             <div class="faint" style="font-size:11px" id="sl-subtitle">—</div>
           </div>
-          <div style="flex:1"></div>
-          <span class="pill pill-emerald" id="sl-count-pill">0 clip</span>
-          <button class="btn btn-ghost btn-sm" id="sl-btn-matrix" onclick="slToggleMatrix()">Matrice</button>
-          <button class="btn btn-ghost btn-sm" id="sl-btn-playlist" onclick="slPlaylistStart()">▶ Playlist</button>
-          <button class="btn btn-ghost btn-sm" onclick="slExport()">Export JSON</button>
+          <div style="flex:1;min-width:8px"></div>
+          <div class="sl-topbar-actions">
+            <span class="sl-saved" id="sl-saved" style="font-size:10.5px;font-weight:700"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sauvegardé</span>
+            <span class="pill pill-emerald" id="sl-count-pill">0 clip</span>
+            <button class="btn btn-ghost btn-sm" id="sl-btn-matrix" onclick="slToggleMatrix()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> Matrice</button>
+            <button class="btn btn-ghost btn-sm" id="sl-btn-playlist" onclick="slPlaylistStart()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Playlist</button>
+            <button class="btn btn-ghost btn-sm" onclick="slExport()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Export</button>
+          </div>
         </div>
 
         <!-- Zone principale : vidéo + panneau de codage -->
@@ -3760,8 +3815,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="sl-video-wrap" id="sl-video-wrap">
               <video id="sl-video" playsinline></video>
               <canvas id="sl-canvas"></canvas>
+              <button type="button" class="sl-video-click" id="sl-video-click" onclick="slPlayPause()" title="Lecture / Pause (Espace)"></button>
+              <div class="sl-play-ghost" id="sl-play-ghost"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 21 12 6 21 6 3"/></svg></div>
+
+              <div class="sl-codec-warn" id="sl-codec-warn">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <div><b>Image noire, son OK ?</b>
+                <p>Ce fichier utilise probablement un codec vidéo que ton navigateur ne sait pas décoder (HEVC/H.265, fréquent sur les .MOV de caméra/téléphone) — l'audio (AAC) passe, pas l'image. Convertis le fichier en <b>MP4 (H.264)</b> avec HandBrake ou VLC (Fichier ▸ Convertir), puis redépose-le.</p></div>
+              </div>
+
               <div class="sl-draw-tools" id="sl-draw-tools">
-                <button class="sl-tool" data-tool="" title="Curseur (échap)" onclick="slSetTool('')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2.5l0 16.5 4.2-4.1 2.5 5.2 2.2-1-2.4-5 5.6 0z"/></svg></button>
+                <button class="sl-tool on" data-tool="" title="Curseur (échap)" onclick="slSetTool('')"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2.5l0 16.5 4.2-4.1 2.5 5.2 2.2-1-2.4-5 5.6 0z"/></svg></button>
                 <button class="sl-tool" data-tool="arrow" title="Flèche (mouvement / rotation)" onclick="slSetTool('arrow')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M9 5h10v10"/></svg></button>
                 <button class="sl-tool" data-tool="spot" title="Spotlight joueur" onclick="slSetTool('spot')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="15" rx="8" ry="4.5"/><path d="M12 3v6" stroke-linecap="round"/></svg></button>
                 <button class="sl-tool" data-tool="zone" title="Zone tactique" onclick="slSetTool('zone')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 3"><rect x="4" y="6" width="16" height="12" rx="2"/></svg></button>
@@ -3769,28 +3833,48 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <button class="sl-tool" data-tool="free" title="Dessin libre" onclick="slSetTool('free')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg></button>
                 <button class="sl-tool" data-tool="text" title="Texte" onclick="slSetTool('text')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg></button>
                 <div class="sl-tool-sep"></div>
-                <button class="sl-tool sl-color" data-color="#2DD4A7" style="--c:#2DD4A7" onclick="slSetColor('#2DD4A7')" title="Émeraude"></button>
+                <button class="sl-tool sl-color on" data-color="#2DD4A7" style="--c:#2DD4A7" onclick="slSetColor('#2DD4A7')" title="Émeraude"></button>
                 <button class="sl-tool sl-color" data-color="#FF5A33" style="--c:#FF5A33" onclick="slSetColor('#FF5A33')" title="Rouge"></button>
                 <button class="sl-tool sl-color" data-color="#F5A623" style="--c:#F5A623" onclick="slSetColor('#F5A623')" title="Ambre"></button>
                 <button class="sl-tool sl-color" data-color="#4A9EFF" style="--c:#4A9EFF" onclick="slSetColor('#4A9EFF')" title="Bleu"></button>
                 <div class="sl-tool-sep"></div>
                 <button class="sl-tool" title="Effacer les dessins de cet instant" onclick="slClearDrawingsHere()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></button>
               </div>
+              <div class="sl-tool-label" id="sl-tool-label">—</div>
+
               <div class="sl-video-empty" id="sl-video-empty">
+                <div class="entry-ico" style="width:40px;height:40px;margin:0 auto 12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
                 <div class="h3" style="font-size:15px;margin-bottom:6px">Aucune vidéo chargée</div>
-                <p class="faint" style="font-size:12px;max-width:300px;text-align:center">Retourne sur l'onglet Analyse scrim et dépose la vidéo du scrim pour commencer.</p>
+                <p class="faint" style="font-size:12px;max-width:300px">Retourne sur l'onglet Analyse scrim et dépose la vidéo du scrim pour commencer.</p>
+              </div>
+
+              <!-- Scrub bar overlay -->
+              <div class="sl-scrub" id="sl-scrub">
+                <div class="sl-scrub-track" id="sl-scrub-track">
+                  <div class="sl-scrub-fill" id="sl-scrub-fill"></div>
+                  <div id="sl-scrub-marks"></div>
+                  <div class="sl-scrub-handle" id="sl-scrub-handle"></div>
+                </div>
               </div>
             </div>
             <!-- Transport -->
             <div class="sl-transport">
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(-10)" title="-10 s (Maj+←)">≪ 10</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(-2)" title="-2 s (←)">‹ 2</button>
-              <button class="btn btn-cta btn-sm" id="sl-play" onclick="slPlayPause()" style="min-width:74px;justify-content:center">Lecture</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(2)" title="+2 s (→)">2 ›</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(10)" title="+10 s (Maj+→)">10 ≫</button>
+              <button class="sl-iconbtn" onclick="slPlayPause()" id="sl-play-btn" title="Lecture / Pause (Espace)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" id="sl-play-icon"><polygon points="6 3 21 12 6 21 6 3"/></svg></button>
+              <div class="sl-transport-sep"></div>
+              <button class="sl-iconbtn" onclick="slStepFrame(-1)" title="Image précédente (,)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(-2)" title="-2 s (←)">‹2s</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(-10)" title="-10 s (Maj+←)">‹10s</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(10)" title="+10 s (Maj+→)">10s›</button>
+              <button class="btn btn-ghost btn-sm" onclick="slSeek(2)" title="+2 s (→)">2s›</button>
+              <button class="sl-iconbtn" onclick="slStepFrame(1)" title="Image suivante (.)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
               <span class="sl-time" id="sl-time">00:00 / 00:00</span>
-              <div style="flex:1"></div>
-              <span class="faint" style="font-size:11px">Vitesse</span>
+              <div style="flex:1;min-width:6px"></div>
+              <div class="sl-vol">
+                <button class="sl-iconbtn" id="sl-mute-btn" onclick="slToggleMute()" title="Muet (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sl-vol-icon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
+                <input type="range" id="sl-vol-slider" min="0" max="1" step="0.05" value="1" oninput="slSetVolume(this.value)">
+              </div>
+              <div class="sl-transport-sep"></div>
+              <span class="faint" style="font-size:10.5px">Vitesse</span>
               <div class="rolepills" style="gap:4px">
                 <button class="chip sl-speed" data-s="0.25" onclick="slSetSpeed(0.25)">×0.25</button>
                 <button class="chip sl-speed" data-s="0.5" onclick="slSetSpeed(0.5)">×0.5</button>
@@ -3798,17 +3882,29 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <button class="chip sl-speed" data-s="1.5" onclick="slSetSpeed(1.5)">×1.5</button>
                 <button class="chip sl-speed" data-s="2" onclick="slSetSpeed(2)">×2</button>
               </div>
+              <div class="sl-transport-sep"></div>
+              <button class="sl-iconbtn" onclick="slToggleFullscreen()" id="sl-fs-btn" title="Plein écran (F)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
             </div>
           </div>
 
           <!-- Panneau de codage (fenêtre de codes Sportscode) -->
           <div class="sl-code-panel card" style="padding:14px">
-            <div class="label" style="font-size:10px;margin-bottom:8px">Codage — clic ou touche 1-0 <span class="faint" style="text-transform:none;letter-spacing:0">(lead/lag auto)</span></div>
+            <div class="sl-panel-label">Codage <span class="hint">— clic ou touche 1-0, lead/lag auto</span></div>
             <div class="sl-codes" id="sl-codes"></div>
-            <div class="label" style="font-size:10px;margin:14px 0 8px">Labels — s'appliquent au clip sélectionné</div>
-            <div class="sl-labels" id="sl-labels"></div>
-            <div class="label" style="font-size:10px;margin:14px 0 6px">Raccourcis</div>
-            <div class="faint" style="font-size:11px;line-height:1.9">Espace lecture/pause · ←/→ ±2 s · Maj+←/→ ±10 s<br>1-0 coder l'action · S favori · Suppr supprimer le clip</div>
+            <div class="sl-panel-label" style="margin-top:16px">Labels <span class="hint">— clip sélectionné</span></div>
+            <div id="sl-labels"></div>
+            <div class="sl-panel-label" style="margin-top:16px">Raccourcis</div>
+            <div class="sl-kbd-grid">
+              <kbd>Espace</kbd><span>Lecture / pause</span>
+              <kbd>←/→</kbd><span>±2 s</span>
+              <kbd>Maj+←/→</kbd><span>±10 s</span>
+              <kbd>,/.</kbd><span>Image préc. / suiv.</span>
+              <kbd>1-0</kbd><span>Coder l'action</span>
+              <kbd>S</kbd><span>Marquer favori</span>
+              <kbd>M</kbd><span>Couper le son</span>
+              <kbd>F</kbd><span>Plein écran</span>
+              <kbd>Suppr</kbd><span>Supprimer le clip</span>
+            </div>
           </div>
         </div>
 
@@ -12986,7 +13082,13 @@ var SL_CODES = [
   { id:'erreur',    label:'Erreur macro', color:'#BE123C', lead:8,  lag:5, key:'9' },
   { id:'reset',     label:'Reset / Tempo',color:'#3F5EA8', lead:5,  lag:5, key:'0' }
 ];
-var SL_LABELS = ['TOP','JGL','MID','ADC','SUP','Nous','Eux','Réussi','Raté','Early','Mid game','Late game'];
+var SL_LABEL_GROUPS = [
+  { t:'Rôle',    items:['TOP','JGL','MID','ADC','SUP'] },
+  { t:'Camp',    items:['Nous','Eux'] },
+  { t:'Issue',   items:['Réussi','Raté'] },
+  { t:'Phase',   items:['Early','Mid game','Late game'] }
+];
+var SL_LABELS = SL_LABEL_GROUPS.reduce(function(a,g){ return a.concat(g.items); },[]);
 
 function slFmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=Math.floor(t%60); return (m<10?'0':'')+m+':'+(s<10?'0':'')+s; }
 function slVideo(){ return document.getElementById('sl-video'); }
@@ -13005,6 +13107,7 @@ function slSave(){
   if (i>=0) list[i]=meta; else list.unshift(meta);
   slSaveSessions(list);
   var pill=document.getElementById('sl-count-pill'); if(pill) pill.textContent = SL.instances.length+' clip'+(SL.instances.length>1?'s':'');
+  slUpdateCodeCounts(); slRenderScrubMarks();
 }
 function slLoadData(sig){
   try{ var d=JSON.parse(localStorage.getItem('vs_scrim_data::'+sig)||'null'); if(d){ SL.instances=d.instances||[]; SL.drawings=d.drawings||[]; return true; } }catch(e){}
@@ -13032,12 +13135,14 @@ function slLoadFile(f){
   if (!/^video\//.test(f.type) && !/\.(mp4|webm|mov|mkv)$/i.test(f.name)) { if(typeof showToast==='function') showToast('Format non reconnu — dépose une vidéo (mp4, webm…)','error'); return; }
   if (SL.url) { try{ URL.revokeObjectURL(SL.url); }catch(e){} }
   SL.file=f; SL.url=URL.createObjectURL(f); SL.sig=f.name+'::'+f.size; SL.sel=null; SL.loop=null; SL.queue=null;
+  if(typeof slHideCodecWarn==='function') slHideCodecWarn();
   var had=slLoadData(SL.sig);
-  var v=slVideo(); if(v){ v.src=SL.url; v.playbackRate=1; }
+  var v=slVideo(); if(v){ v.src=SL.url; v.playbackRate=1; v.load(); }
   var lc=document.getElementById('scrim-loaded'); if(lc) lc.style.display='';
   var n=document.getElementById('scrim-loaded-name'); if(n) n.textContent=f.name;
   var m=document.getElementById('scrim-loaded-meta'); if(m) m.textContent=(f.size/1048576).toFixed(1)+' Mo · '+(had? SL.instances.length+' clip(s) retrouvés — session reprise':'nouvelle session');
   slSave(); slRenderHistory();
+  slOpenStudio();   // le dépôt lance directement le studio — pas de clic supplémentaire
 }
 function slRenderHistory(){
   var el=document.getElementById('scrim-history'); if(!el) return;
@@ -13071,19 +13176,32 @@ function slOnEnterStudio(){
   var empty=document.getElementById('sl-video-empty'); if(empty) empty.style.display = SL.url ? 'none' : 'flex';
   slBuildCodes(); slBuildLabels(); slRenderTimeline(); slRenderDetail(); slSave();
   var sub=document.getElementById('sl-subtitle'); if(sub) sub.textContent = SL.instances.length+' clip(s) · codage auto-sauvegardé';
-  slResizeCanvas();
+  slResizeCanvas(); slUpdateCodeCounts(); slUpdateVolumeUi();
+  slHideCodecWarn();
   if (!SL.raf) slTick();
 }
 function slBuildCodes(){
   var el=document.getElementById('sl-codes'); if(!el || el.childNodes.length) return;
   el.innerHTML = SL_CODES.map(function(c){
-    return '<button class="sl-code-btn" style="--cbg:'+c.color+'" onclick="slCode(\''+c.id+'\')" title="lead '+c.lead+'s · lag '+c.lag+'s">'+
-      '<span class="k">'+c.key+'</span>'+c.label+'<span class="n">-'+c.lead+'s / +'+c.lag+'s</span></button>';
+    return '<button class="sl-code-btn" id="sl-code-'+c.id+'" style="--cbg:'+c.color+'" onclick="slCode(\''+c.id+'\')" title="lead '+c.lead+'s · lag '+c.lag+'s">'+
+      '<span class="k">'+c.key+'</span><span class="lbl">'+c.label+'</span><span class="n">-'+c.lead+'s / +'+c.lag+'s</span><span class="cnt" id="sl-cnt-'+c.id+'">0</span></button>';
   }).join('');
 }
 function slBuildLabels(){
   var el=document.getElementById('sl-labels'); if(!el || el.childNodes.length) return;
-  el.innerHTML = SL_LABELS.map(function(l){ return '<button class="sl-label-chip" data-l="'+l+'" onclick="slToggleLabel(\''+l+'\')">'+l+'</button>'; }).join('');
+  el.innerHTML = SL_LABEL_GROUPS.map(function(g){
+    return '<div class="sl-label-group"><div class="sl-label-group-t">'+g.t+'</div><div class="sl-labels">'+
+      g.items.map(function(l){ return '<button class="sl-label-chip" data-l="'+l+'" onclick="slToggleLabel(\''+l+'\')">'+l+'</button>'; }).join('')+
+    '</div></div>';
+  }).join('');
+}
+function slUpdateCodeCounts(){
+  var counts={};
+  SL.instances.forEach(function(i){ counts[i.code]=(counts[i.code]||0)+1; });
+  SL_CODES.forEach(function(c){
+    var el=document.getElementById('sl-cnt-'+c.id); if(!el) return;
+    var n=counts[c.id]||0; el.textContent=n; el.classList.toggle('show', n>0);
+  });
 }
 
 /* ── Codage (Sportscode : bouton → instance avec lead/lag) ── */
@@ -13161,25 +13279,105 @@ function slRenderDetail(){
 }
 
 /* ── Transport ── */
-function slPlayPause(){ var v=slVideo(); if(!v||!SL.url) return; if(v.paused) v.play(); else v.pause(); }
+var SL_ICO_PLAY='<polygon points="6 3 21 12 6 21 6 3"/>';
+var SL_ICO_PAUSE='<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+var SL_FRAME=1/30; // pas approximatif d'une image (30 i/s) — .rofl/replays n'exposent pas le vrai frame rate
+function slPlayPause(){ var v=slVideo(); if(!v||!SL.url) return; if(v.ended) v.currentTime=0; if(v.paused) v.play(); else v.pause(); slSyncPlayUi(); }
+function slSyncPlayUi(){
+  var v=slVideo(); if(!v) return;
+  var icon=document.getElementById('sl-play-icon'); if(icon) icon.innerHTML = v.paused ? SL_ICO_PLAY : SL_ICO_PAUSE;
+  var btn=document.getElementById('sl-play-btn'); if(btn) btn.classList.toggle('on', !v.paused);
+  var wrap=document.getElementById('sl-video-wrap'); if(wrap) wrap.classList.toggle('show-ghost', v.paused && !!SL.url);
+}
+function slStepFrame(dir){
+  var v=slVideo(); if(!v||!SL.url) return;
+  v.pause(); v.currentTime=Math.max(0,Math.min(SL.dur||1e9, v.currentTime + dir*SL_FRAME));
+  SL.loop=null; SL.queue=null; slSyncPlayUi();
+}
 function slSeek(dt){ var v=slVideo(); if(!v||!SL.url) return; v.currentTime=Math.max(0,Math.min(SL.dur||1e9, v.currentTime+dt)); SL.loop=null; SL.queue=null; }
 function slSetSpeed(s){ var v=slVideo(); if(v) v.playbackRate=s; document.querySelectorAll('.sl-speed').forEach(function(b){ b.classList.toggle('on', parseFloat(b.getAttribute('data-s'))===s); }); }
+function slSetVolume(v2){ var v=slVideo(); if(!v) return; v.volume=parseFloat(v2); v.muted=(v.volume===0); slUpdateVolumeUi(); try{ localStorage.setItem('vs_scrim_vol', v.volume); }catch(e){} }
+function slToggleMute(){ var v=slVideo(); if(!v) return; v.muted=!v.muted; if(!v.muted && v.volume===0) v.volume=.6; slUpdateVolumeUi(); }
+function slUpdateVolumeUi(){
+  var v=slVideo(); var slider=document.getElementById('sl-vol-slider'); var icon=document.getElementById('sl-vol-icon'); var btn=document.getElementById('sl-mute-btn');
+  var muted = v ? (v.muted || v.volume===0) : false;
+  if(slider) slider.value = v ? (muted?0:v.volume) : 1;
+  if(btn) btn.classList.toggle('on', muted);
+  if(icon) icon.innerHTML = muted
+    ? '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>'
+    : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>';
+}
+function slToggleFullscreen(){
+  var wrap=document.getElementById('sl-video-wrap'); if(!wrap) return;
+  if(document.fullscreenElement){ document.exitFullscreen(); }
+  else if(wrap.requestFullscreen){ wrap.requestFullscreen(); }
+}
 function slTick(){
   SL.raf=requestAnimationFrame(slTick);
   var v=slVideo(); if(!v) return;
   var panel=document.getElementById('panel-scrimlab'); if(!panel || !panel.classList.contains('active')) return;
   var t=v.currentTime;
   var tm=document.getElementById('sl-time'); if(tm) tm.textContent=slFmt(t)+' / '+slFmt(SL.dur);
-  var pb=document.getElementById('sl-play'); if(pb) pb.textContent=(v.paused?'Lecture':'Pause');
-  var pct=(SL.dur? t/SL.dur*100 : 0);
+  slSyncPlayUi();
+  var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
+  var pct=(dur? Math.min(100,t/dur*100) : 0);
   document.querySelectorAll('[data-ph]').forEach(function(p){ p.style.left=pct+'%'; });
+  var sf=document.getElementById('sl-scrub-fill'); if(sf) sf.style.width=pct+'%';
+  var sh=document.getElementById('sl-scrub-handle'); if(sh) sh.style.left=pct+'%';
   if (SL.loop && t>=SL.loop.t1-.02){
     if (SL.loop.repeat){ v.currentTime=SL.loop.t0; }
     else if (SL.queue){ slQueueNext(); }
-    else { v.pause(); SL.loop=null; }
+    else { v.pause(); SL.loop=null; slSyncPlayUi(); }
   }
   slDrawFrame(t, v.paused);
+  slCodecProbe(v, t);
 }
+/* ── Barre de progression (scrub) : clic + glisser pour naviguer, repères par clip ── */
+function slRenderScrubMarks(){
+  var el=document.getElementById('sl-scrub-marks'); if(!el) return;
+  var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
+  el.innerHTML = SL.instances.map(function(i){
+    var c=slCodeOf(i.code);
+    return '<div class="sl-scrub-mark" style="left:'+(i.t0/dur*100)+'%;background:'+c.color+'"></div>';
+  }).join('');
+}
+(function slScrubInit(){
+  function wire(){
+    var track=document.getElementById('sl-scrub-track'); if(!track || track._wired) return; track._wired=true;
+    var dragging=false;
+    function seekFromEvent(e){
+      var v=slVideo(); if(!v) return;
+      var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
+      var r=track.getBoundingClientRect();
+      var pct=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+      v.currentTime=pct*dur; SL.loop=null; SL.queue=null;
+    }
+    track.addEventListener('pointerdown', function(e){ if(!SL.url) return; dragging=true; track.classList.add('dragging'); track.setPointerCapture(e.pointerId); seekFromEvent(e); });
+    track.addEventListener('pointermove', function(e){ if(dragging) seekFromEvent(e); });
+    track.addEventListener('pointerup', function(){ dragging=false; track.classList.remove('dragging'); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', wire); else wire();
+  document.addEventListener('DOMContentLoaded', wire);
+})();
+/* ── Détection codec : image qui reste noire pendant que le temps avance (son OK, vidéo indécodable) ── */
+function slCodecProbe(v, t){
+  if(!SL.url || v.paused || v.videoWidth<2){ return; }
+  var now=performance.now();
+  if(SL._probeAt && now - SL._probeAt < 900) return; // échantillonne ~1x/s
+  SL._probeAt = now;
+  try{
+    var c=SL._probeCanvas || (SL._probeCanvas=document.createElement('canvas'));
+    c.width=16; c.height=9;
+    var cx=c.getContext('2d'); cx.drawImage(v,0,0,16,9);
+    var d=cx.getImageData(0,0,16,9).data, sum=0;
+    for(var i=0;i<d.length;i+=4) sum+=d[i]+d[i+1]+d[i+2];
+    var bright=sum/(d.length/4)/3;
+    SL._darkStreak = (bright<2) ? (SL._darkStreak||0)+1 : 0;
+    if(SL._darkStreak>=3) slShowCodecWarn(); else if(bright>=2) slHideCodecWarn();
+  }catch(e){ /* frame pas encore décodable, ignore */ }
+}
+function slShowCodecWarn(){ var el=document.getElementById('sl-codec-warn'); if(el) el.classList.add('show'); }
+function slHideCodecWarn(){ var el=document.getElementById('sl-codec-warn'); if(el) el.classList.remove('show'); SL._darkStreak=0; }
 
 /* ── Playlist (clips favoris, sinon tous) ── */
 function slPlaylistStart(){
@@ -13222,11 +13420,14 @@ function slPlayFilter(codeId, label){
 }
 
 /* ── Télestration (Metrica : dessins ancrés au temps) ── */
+var SL_TOOL_NAMES = { '':'Curseur', arrow:'Flèche', spot:'Spotlight', zone:'Zone tactique', line:'Ligne de liaison', free:'Dessin libre', text:'Texte' };
 function slSetTool(t){
   SL.tool=t;
   document.querySelectorAll('.sl-tool[data-tool]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-tool')===t); });
   var cv=document.getElementById('sl-canvas'); if(cv) cv.classList.toggle('drawing', !!t);
   var v=slVideo(); if(t && v && !v.paused) v.pause();
+  var lbl=document.getElementById('sl-tool-label'); if(lbl){ lbl.textContent='Outil : '+(SL_TOOL_NAMES[t]||t); lbl.classList.toggle('show', !!t); }
+  slSyncPlayUi();
 }
 function slSetColor(c){ SL.color=c; document.querySelectorAll('.sl-color').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-color')===c); }); }
 function slResizeCanvas(){
@@ -13316,6 +13517,10 @@ document.addEventListener('keydown', function(e){
   if(e.key===' '){ e.preventDefault(); slPlayPause(); }
   else if(e.key==='ArrowLeft'){ e.preventDefault(); slSeek(e.shiftKey?-10:-2); }
   else if(e.key==='ArrowRight'){ e.preventDefault(); slSeek(e.shiftKey?10:2); }
+  else if(e.key===','){ slStepFrame(-1); }
+  else if(e.key==='.'){ slStepFrame(1); }
+  else if(e.key==='m'||e.key==='M'){ slToggleMute(); }
+  else if(e.key==='f'||e.key==='F'){ slToggleFullscreen(); }
   else if(e.key==='Escape'){ slSetTool(''); }
   else if(e.key==='s'||e.key==='S'){ slToggleStar(); }
   else if(e.key==='Delete'||e.key==='Backspace'){ slDeleteSelected(); }
@@ -13330,17 +13535,35 @@ document.addEventListener('keydown', function(e){
       var m=document.getElementById('scrim-loaded-meta');
       if(m && SL.file) m.textContent=(SL.file.size/1048576).toFixed(1)+' Mo · '+slFmt(SL.dur)+' · '+SL.instances.length+' clip(s)';
     }
+    function slRefineDuration(){
+      // webm issus de MediaRecorder (extensions d'enregistrement navigateur) n'ont souvent
+      // pas de durée fiable dans les métadonnées (v.duration reste Infinity/NaN, ou un seek
+      // vers une position lointaine peut faire lire une durée quasi nulle). On affine donc
+      // en continu avec la plage réellement bufferisée, qui ne peut que grandir — jamais de
+      // valeur aberrante, jamais de seek destructeur sur le playhead.
+      if(isFinite(v.duration) && v.duration>0 && v.duration<1e6){ if(v.duration>SL.dur) SL.dur=v.duration; }
+      if(v.buffered && v.buffered.length){ var end=v.buffered.end(v.buffered.length-1); if(end>SL.dur) SL.dur=end; }
+    }
     v.addEventListener('loadedmetadata', function(){
-      SL.dur=(isFinite(v.duration) && v.duration>0)? v.duration : 0;
-      if(!SL.dur){ // webm MediaRecorder/OBS : durée absente → on force le calcul en cherchant la fin
-        var fix=function(){ if(isFinite(v.duration) && v.duration>0){ SL.dur=v.duration; v.currentTime=0; slRenderTimeline(); slMeta(); slSave(); v.removeEventListener('durationchange', fix); } };
-        v.addEventListener('durationchange', fix);
-        try{ v.currentTime=1e7; }catch(e){}
-      }
-      slResizeCanvas(); slRenderTimeline(); slMeta(); slSave();
+      slRefineDuration();
+      slResizeCanvas(); slRenderTimeline(); slRenderScrubMarks(); slMeta(); slSave();
+      slHideCodecWarn(); slSyncPlayUi();
     });
+    ['progress','durationchange','timeupdate'].forEach(function(ev){
+      v.addEventListener(ev, function(){ var prev=SL.dur; slRefineDuration(); if(SL.dur!==prev){ slRenderTimeline(); slRenderScrubMarks(); slMeta(); } });
+    });
+    v.addEventListener('play', slSyncPlayUi);
+    v.addEventListener('pause', slSyncPlayUi);
+    v.addEventListener('ended', slSyncPlayUi);
+    v.addEventListener('volumechange', slUpdateVolumeUi);
+    try{ var savedVol=parseFloat(localStorage.getItem('vs_scrim_vol')); if(!isNaN(savedVol)) v.volume=savedVol; }catch(e){}
     window.addEventListener('resize', slResizeCanvas);
-    slCanvasInit(); slSetColor(SL.color);
+    document.addEventListener('fullscreenchange', function(){
+      var fs=!!document.fullscreenElement;
+      var b=document.getElementById('sl-fs-btn'); if(b) b.classList.toggle('on', fs);
+      var w=document.getElementById('sl-video-wrap'); if(w) w.style.borderRadius = fs ? '0' : '';
+    });
+    slCanvasInit(); slSetColor(SL.color); slUpdateVolumeUi();
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 })();
