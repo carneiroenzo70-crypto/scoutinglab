@@ -374,6 +374,27 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-riot-match{ display:flex; align-items:center; gap:9px; padding:9px 12px; cursor:pointer; min-width:0; transition:background .13s; }
 .sl-riot-match:hover{ background:rgba(45,212,167,.07); }
 .sl-riot-match + .sl-riot-match{ border-top:1px solid var(--vs-forest-600); }
+/* Timeline officielle Riot : liste d'événements cliquable (façon fenêtre d'events Sportcode) */
+.sl-riot-feed{ max-height:340px; overflow-y:auto; border:1px solid var(--vs-forest-500); border-radius:10px; }
+.sl-ev-row{ display:flex; align-items:center; gap:10px; padding:7px 12px; cursor:pointer; min-width:0; border-left:3px solid transparent; transition:background .12s; }
+.sl-ev-row:hover{ background:rgba(45,212,167,.08); }
+.sl-ev-row + .sl-ev-row{ border-top:1px solid var(--vs-forest-600); }
+.sl-ev-row.blue{ border-left-color:#3B82F6; }
+.sl-ev-row.red{ border-left-color:var(--vs-red-400); }
+.sl-ev-t{ font-family:var(--font-mono); font-size:11.5px; color:var(--vs-emerald-300); flex:none; width:46px; }
+.sl-ev-ico{ width:18px; text-align:center; flex:none; font-size:13px; }
+.sl-ev-txt{ font-size:12.5px; color:var(--vs-fg-1); flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sl-ev-jump{ font-size:10px; color:var(--vs-emerald-300); opacity:0; flex:none; transition:opacity .12s; }
+.sl-ev-row:hover .sl-ev-jump{ opacity:1; }
+/* Bouton « Voir en 3D » : n'apparaît que si le pont local (vs-replay) tourne */
+.sl-ev-3d{ flex:none; font-size:9.5px; font-weight:800; letter-spacing:.04em; padding:2px 7px; border-radius:5px; cursor:pointer;
+  background:rgba(45,212,167,.12); border:1px solid rgba(45,212,167,.4); color:var(--vs-emerald-300);
+  transition:background .13s var(--ease-out), transform .13s var(--ease-out); }
+.sl-ev-3d:hover{ background:var(--vs-emerald-400); color:#04211C; border-color:var(--vs-emerald-400); transform:scale(1.08); }
+.sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
+.sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
+.sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
+.btn-xs{ height:26px; padding:0 10px; font-size:11px; }
 /* Guide replay (details) : chevron qui tourne, pas de marqueur natif */
 #an-view-scrim details summary::-webkit-details-marker{ display:none; }
 #an-view-scrim details[open] summary > svg:last-child{ transform:rotate(180deg); }
@@ -4016,6 +4037,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           </div>
           <div id="sl-riot-status" class="faint" style="display:none;font-size:12px;margin-top:10px"></div>
           <div id="sl-riot-list" style="margin-top:10px"></div>
+          <!-- Timeline officielle du match : liste d'événements individuels cliquable (le "player intelligent" du constat) -->
+          <div id="sl-riot-feed-wrap" style="display:none;margin-top:16px">
+            <div class="between" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+              <div class="h3" style="font-size:13px">Timeline officielle du match <span class="faint" style="font-weight:400;font-size:11px">— clique un événement pour y sauter dans la vidéo</span></div>
+              <div style="display:flex;gap:6px" id="sl-riot-feed-filters">
+                <button class="btn btn-ghost btn-xs on" data-f="all" onclick="slRiotFeedFilter('all')">Tout</button>
+                <button class="btn btn-ghost btn-xs" data-f="fight" onclick="slRiotFeedFilter('fight')">Kills</button>
+                <button class="btn btn-ghost btn-xs" data-f="obj" onclick="slRiotFeedFilter('obj')">Objectifs</button>
+              </div>
+            </div>
+            <div id="sl-riot-feed" class="sl-riot-feed"></div>
+          </div>
         </div>
 
         <!-- Matrice codes × labels (façon Sportscode) -->
@@ -13705,9 +13738,125 @@ async function slRiotPick(matchId, puuid, regional){
     var match=await riotFetch('https://'+regional+'.api.riotgames.com/lol/match/v5/matches/'+matchId);
     var tl=await riotFetch('https://'+regional+'.api.riotgames.com/lol/match/v5/matches/'+matchId+'/timeline');
     var n=slRiotGenerate(match, tl, puuid);
+    var m=slRiotBuildFeed(match, tl, puuid);
     slRiotStatus(null);
-    if(typeof showToast==='function') showToast(n+' clips auto-codés depuis les données Riot ✔','success');
+    if(typeof showToast==='function') showToast(n+' clips auto-codés · '+m+' événements dans la timeline officielle ✔','success');
   }catch(err){ slRiotStatus((err&&err.message)||'Erreur timeline'); }
+}
+/* ── Timeline officielle du match : liste d'événements cliquable (Étape 1+3 du constat) ── */
+function slPretty(name){ return String(name||'').replace(/([a-z])([A-Z])/g,'$1 $2'); }
+function slRiotBuildFeed(match, tl, puuid){
+  var parts=((match.info||{}).participants||[]);
+  var champ={}, pidTeam={};
+  parts.forEach(function(p){ champ[p.participantId]=slPretty(p.championName); pidTeam[p.participantId]=p.teamId; });
+  var me=parts.find(function(p){ return p.puuid===puuid; }); var myTeam=me?me.teamId:100;
+  var frames=((tl.info||{}).frames)||[];
+  var feed=[];
+  // `pos` (coordonnées carte) est ce qui alimente le bouton « Voir en 3D » :
+  // le pont local les envoie au client LoL pour y téléporter la caméra.
+  function P(e){ return e.position ? { x:e.position.x, y:e.position.y } : null; }
+  frames.forEach(function(fr){ (fr.events||[]).forEach(function(e){
+    var t=e.timestamp/1000;
+    if(e.type==='CHAMPION_KILL'){
+      var kt=pidTeam[e.killerId] || (pidTeam[e.victimId]===100?200:100);
+      var killer=champ[e.killerId]||'Exécution', victim=champ[e.victimId]||'?';
+      var as=(e.assistingParticipantIds||[]).length;
+      feed.push({ t:t, cat:'fight', icon:'⚔️', mine:(kt===myTeam), pos:P(e), text:killer+' tue '+victim+(as?' (+'+as+' assist'+(as>1?'s':'')+')':'') });
+    } else if(e.type==='CHAMPION_SPECIAL_KILL' && e.killType==='KILL_FIRST_BLOOD'){
+      feed.push({ t:t, cat:'fight', icon:'🩸', mine:(pidTeam[e.killerId]===myTeam), pos:P(e), text:'Premier sang — '+(champ[e.killerId]||'?') });
+    } else if(e.type==='ELITE_MONSTER_KILL'){
+      var mt=e.monsterType, lbl, ic;
+      if(mt==='DRAGON'){ lbl='Dragon'+(e.monsterSubType?' '+e.monsterSubType.replace('_DRAGON','').toLowerCase():''); ic='🐉'; }
+      else if(mt==='BARON_NASHOR'){ lbl='Baron Nashor'; ic='👑'; }
+      else if(mt==='RIFTHERALD'){ lbl='Héraut'; ic='🐌'; }
+      else if(mt==='HORDE'){ lbl='Voidgrub'; ic='🪱'; }
+      else { lbl=mt||'Objectif'; ic='🎯'; }
+      feed.push({ t:t, cat:'obj', icon:ic, mine:(e.killerTeamId===myTeam), pos:P(e), text:lbl+' sécurisé' });
+    } else if(e.type==='BUILDING_KILL'){
+      var destroyer=(e.teamId===100?200:100); // e.teamId = équipe qui PERD le bâtiment
+      if(e.buildingType==='TOWER_BUILDING'){
+        var lane=String(e.laneType||'').replace('_LANE','').toLowerCase();
+        var laneFr={top:'top',mid:'mid',middle:'mid',bot:'bot',bottom:'bot'}[lane]||lane;
+        feed.push({ t:t, cat:'obj', icon:'🏰', mine:(destroyer===myTeam), pos:P(e), text:'Tour '+laneFr+' détruite' });
+      } else if(e.buildingType==='INHIBITOR_BUILDING'){
+        feed.push({ t:t, cat:'obj', icon:'💎', mine:(destroyer===myTeam), pos:P(e), text:'Inhibiteur détruit' });
+      }
+    }
+  }); });
+  feed.sort(function(a,b){ return a.t-b.t; });
+  SL.riotFeed=feed; SL.riotFeedFilter='all';
+  var fb=document.getElementById('sl-riot-feed-filters');
+  if(fb) fb.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-f')==='all'); });
+  var wrap=document.getElementById('sl-riot-feed-wrap'); if(wrap) wrap.style.display='';
+  slRenderRiotFeed();
+  // Le pont est optionnel : on re-rend si on le trouve, sans bloquer l'affichage.
+  slBridgeCheck().then(function(up){ if(up) slRenderRiotFeed(); });
+  return feed.length;
+}
+function slRenderRiotFeed(){
+  var el=document.getElementById('sl-riot-feed'); if(!el) return;
+  var f=SL.riotFeedFilter||'all';
+  var rows=(SL.riotFeed||[]).map(function(ev,idx){ return { ev:ev, idx:idx }; })
+    .filter(function(o){ return f==='all' || o.ev.cat===f; });
+  if(!rows.length){ el.innerHTML='<div class="faint" style="padding:14px;text-align:center;font-size:12px">Aucun événement pour ce filtre.</div>'; return; }
+  el.innerHTML=rows.map(function(o){
+    var ev=o.ev, side=ev.mine?'blue':'red';
+    // Le bouton 3D n'apparaît que si le pont local tourne ET que l'event est géolocalisé.
+    var btn3d = (SL.bridge && ev.pos)
+      ? '<button class="sl-ev-3d" onclick="event.stopPropagation();slRiotGo3D('+o.idx+')" title="Ouvrir ce moment dans le client LoL, caméra sur l\'action">3D</button>'
+      : '';
+    return '<div class="sl-ev-row '+side+'" onclick="slRiotSeekEvent('+o.idx+')" title="Sauter à '+slFmt(ev.t)+' de jeu dans la vidéo">'+
+      '<span class="sl-ev-t">'+slFmt(ev.t)+'</span>'+
+      '<span class="sl-ev-ico">'+ev.icon+'</span>'+
+      '<span class="sl-ev-txt">'+ev.text+'</span>'+
+      '<span class="sl-ev-badge '+side+'">'+(ev.mine?'NOUS':'EUX')+'</span>'+
+      btn3d+
+      '<span class="sl-ev-jump">▶ sauter</span>'+
+    '</div>';
+  }).join('');
+}
+/* ── Pont 3D : dialogue avec vs-replay (helper local) ──
+   Le navigateur ne peut pas joindre le client LoL (127.0.0.1:2999, cert auto-signé).
+   Il passe donc par le pont HTTP local exposé par `node replay.js bridge`. */
+var SL_BRIDGE_URL='http://127.0.0.1:3131';
+function slBridgeCheck(){
+  // Timeout court : si le pont n'est pas lancé, on n'attend pas.
+  var ctl=new AbortController(); var to=setTimeout(function(){ ctl.abort(); },1200);
+  return fetch(SL_BRIDGE_URL+'/vs/health',{signal:ctl.signal})
+    .then(function(r){ return r.json(); })
+    .then(function(j){ clearTimeout(to); SL.bridge=!!(j&&j.ok); return SL.bridge; })
+    .catch(function(){ clearTimeout(to); SL.bridge=false; return false; });
+}
+function slRiotGo3D(idx){
+  var ev=(SL.riotFeed||[])[idx]; if(!ev||!ev.pos) return;
+  fetch(SL_BRIDGE_URL+'/vs/goto',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({ t:ev.t, x:ev.pos.x, y:ev.pos.y, label:ev.text })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(j){
+    if(j&&j.ok){ if(typeof showToast==='function') showToast('Client LoL : caméra placée sur « '+ev.text+' » à '+slFmt(ev.t)+' ✔','success'); }
+    else if(typeof showToast==='function') showToast((j&&j.error)||'Le pont n\'a pas pu placer la caméra.','warning');
+  })
+  .catch(function(){
+    SL.bridge=false; slRenderRiotFeed();
+    if(typeof showToast==='function') showToast('Pont 3D injoignable. Lance « node replay.js bridge ».','warning');
+  });
+}
+function slRiotFeedFilter(f){
+  SL.riotFeedFilter=f;
+  var fb=document.getElementById('sl-riot-feed-filters');
+  if(fb) fb.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-f')===f); });
+  slRenderRiotFeed();
+}
+function slRiotSeekEvent(idx){
+  var ev=(SL.riotFeed||[])[idx]; if(!ev) return;
+  var v=slVideo();
+  if(!v || !SL.url){ if(typeof showToast==='function') showToast('Charge d\'abord ta vidéo dans le studio pour sauter aux événements.','info'); return; }
+  var off=slParseOffset();
+  v.currentTime=Math.max(0, Math.min((SL.dur||1e9), off+ev.t));
+  v.play(); SL.loop=null; SL.queue=null;
+  if(typeof slSyncPlayUi==='function') slSyncPlayUi();
 }
 function slRiotGenerate(match, tl, puuid){
   var offset=slParseOffset();
