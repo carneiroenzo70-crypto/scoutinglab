@@ -397,6 +397,26 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-map2d-legend{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:11px; color:var(--vs-fg-2); }
 .sl-map2d-legend span{ display:inline-flex; align-items:center; gap:5px; }
 .sl-map2d-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
+/* Panneau « Piloter un replay en direct » (agent local vs-studio) */
+.vslive-dot{ width:10px; height:10px; border-radius:50%; background:#666; flex:none; transition:.2s; }
+.vslive-dot.on{ background:var(--vs-emerald-400); box-shadow:0 0 9px var(--vs-emerald-400); }
+.vslive-dot.off{ background:var(--vs-red-400); }
+.vsl-match{ display:flex; align-items:center; gap:9px; padding:8px 6px; border-radius:8px; }
+.vsl-match+.vsl-match{ border-top:1px solid var(--vs-forest-600); }
+.vsl-match:hover{ background:rgba(45,212,167,.05); }
+.vsl-tag{ font-size:9px; font-weight:800; padding:1px 6px; border-radius:4px; flex:none; }
+.vsl-tag.watch{ background:rgba(45,212,167,.16); color:var(--vs-emerald-300); }
+.vsl-tag.incompatible,.vsl-tag.unknown{ background:rgba(255,90,51,.13); color:var(--vs-red-400); }
+.vsl-transport{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0; }
+.vsl-transport input[type=range]{ flex:1; min-width:150px; accent-color:var(--vs-emerald-400); }
+.vsl-time{ font-family:var(--font-mono); font-size:13px; color:var(--vs-emerald-300); min-width:104px; }
+.vsl-note{ display:flex; gap:9px; align-items:flex-start; padding:7px 8px; border-radius:7px; cursor:pointer; border-left:3px solid var(--vs-emerald-400); }
+.vsl-note+.vsl-note{ border-top:1px solid var(--vs-forest-600); }
+.vsl-note:hover{ background:rgba(45,212,167,.06); }
+.vsl-note .t{ font-family:var(--font-mono); font-size:12px; color:var(--vs-emerald-300); flex:none; }
+.vsl-note .x{ flex:1; min-width:0; font-size:12.5px; }
+.vsl-note .d{ color:var(--vs-red-400); opacity:0; background:none; border:none; cursor:pointer; flex:none; }
+.vsl-note:hover .d{ opacity:1; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -3752,25 +3772,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <button class="btn btn-cta" onclick="slOpenStudio()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Ouvrir le studio d'analyse</button>
             </div>
           </div>
-          <details class="card" style="padding:0;margin-bottom:18px;overflow:hidden">
-            <summary style="padding:14px 20px;cursor:pointer;display:flex;align-items:center;gap:10px;list-style:none">
-              <div class="entry-ico" style="width:32px;height:32px;flex:none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg></div>
+          <!-- Pilotage de replay EN DIRECT via l'agent local vs-studio (sans vidéo). -->
+          <div class="card" id="scrim-live" style="padding:0;margin-bottom:18px;overflow:hidden">
+            <div style="padding:13px 20px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--vs-forest-600)">
+              <span class="vslive-dot" id="vslive-dot"></span>
               <div style="flex:1;min-width:0">
-                <div class="h3" style="font-size:14.5px">Analyser un replay Riot (SoloQ, scrim…)</div>
-                <div class="faint" style="font-size:11.5px">Caméra libre, vue joueur, brouillard de guerre — puis auto-codage depuis les données officielles</div>
+                <div class="h3" style="font-size:14.5px">Piloter un replay en direct <span class="faint" style="font-weight:400;font-size:11px">— le jeu répond directement, sans passer par une vidéo</span></div>
+                <div class="faint" style="font-size:11.5px" id="vslive-status">Recherche de l'agent local…</div>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3);flex:none"><path d="m6 9 6 6 6-6"/></svg>
-            </summary>
-            <div style="padding:4px 20px 18px;border-top:1px solid var(--vs-forest-600)">
-              <p class="muted" style="font-size:12.5px;line-height:1.7;margin:12px 0 14px">Le replay Riot n'est pas une vidéo : seul le client LoL sait l'afficher. Le workflow des staffs pro (même au foot avec Metrica/Sportscode) : <strong>piloter le replay dans le client, enregistrer l'écran, analyser la vidéo ici</strong>.</p>
-              <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px">
-                <div style="border:1px solid var(--vs-forest-500);border-radius:10px;padding:12px 14px"><div style="font-weight:800;color:var(--vs-emerald-300);font-size:12px;margin-bottom:5px">1 · Télécharge le replay</div><div class="faint" style="font-size:11.5px;line-height:1.6">Client LoL → Profil → Historique → icône <strong>télécharger</strong> sur la partie, puis <strong>Regarder</strong>. (Replay lisible uniquement sur le patch en cours.)</div></div>
-                <div style="border:1px solid var(--vs-forest-500);border-radius:10px;padding:12px 14px"><div style="font-weight:800;color:var(--vs-emerald-300);font-size:12px;margin-bottom:5px">2 · Pilote la caméra</div><div class="faint" style="font-size:11.5px;line-height:1.6">Dans le replay : vue par joueur, caméra libre, <strong>brouillard de guerre</strong> (vision équipe bleue / rouge / tout) via l'interface replay — montre les espaces avec et sans vision.</div></div>
-                <div style="border:1px solid var(--vs-forest-500);border-radius:10px;padding:12px 14px"><div style="font-weight:800;color:var(--vs-emerald-300);font-size:12px;margin-bottom:5px">3 · Enregistre avec OBS</div><div class="faint" style="font-size:11.5px;line-height:1.6">Enregistre l'écran pendant que tu pilotes (OBS sort du MP4/H.264 → lisible ici directement). Astuce : ×2/×4 dans le replay pour couvrir la game vite.</div></div>
-                <div style="border:1px solid var(--vs-forest-500);border-radius:10px;padding:12px 14px"><div style="font-weight:800;color:var(--vs-emerald-300);font-size:12px;margin-bottom:5px">4 · Dépose + auto-code</div><div class="faint" style="font-size:11.5px;line-height:1.6">Dépose la vidéo ci-dessus, puis bouton <strong>⚡ Riot</strong> dans le studio : kills, teamfights, objectifs et wards sont codés automatiquement depuis les données officielles du match.</div></div>
-              </div>
+              <button class="btn btn-ghost btn-sm" onclick="vsliveInit()" title="Reconnecter">↻</button>
             </div>
-          </details>
+            <div id="vslive-body" style="padding:16px 20px"><div class="faint" style="font-size:12px">Connexion…</div></div>
+          </div>
 
           <div class="between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">
             <div class="h3" style="font-size:16px">Sessions d'analyse</div>
@@ -4636,7 +4649,7 @@ function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes 
   });
   anSyncTabs(view);
   if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
-  if (view === 'scrim' && typeof slUiInit === 'function') { slUiInit(); slRenderHistory(); }
+  if (view === 'scrim' && typeof slUiInit === 'function') { slUiInit(); slRenderHistory(); if (typeof vsliveInit === 'function') vsliveInit(); }
 }
 function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
@@ -13967,6 +13980,153 @@ function slMap2dToggle(){
   if(b) b.textContent=hidden?'Masquer':'Afficher';
   if(hidden) slMap2dSync();
 }
+
+/* ── Replay en direct : pilotage de l'agent local vs-studio (port 4747) ──
+   Le site déployé (HTTPS) appelle le serveur local du coach ; celui-ci parle au
+   client League. CORS + Private Network Access ouverts côté agent. Aucune vidéo. */
+var VSL_BASE = 'http://127.0.0.1:4747';
+var VSL = { gameId:null, length:0, time:0, paused:true, poll:null };
+function vslEl(id){ return document.getElementById(id); }
+function vslFetch(path, opts){ return fetch(VSL_BASE+path, Object.assign({ }, opts)).then(function(r){ return r.json(); }); }
+async function vsliveInit(){
+  var dot=vslEl('vslive-dot'), st=vslEl('vslive-status'), body=vslEl('vslive-body');
+  if(!dot) return;
+  dot.className='vslive-dot'; st.textContent='Recherche de l\'agent local…';
+  try{
+    var s=await Promise.race([ vslFetch('/api/status'), new Promise(function(_,x){ setTimeout(function(){x(new Error('timeout'));},1500); }) ]);
+    if(!s.client){ dot.className='vslive-dot off'; st.textContent='Agent détecté, mais client League fermé'; vsliveOffline(body,'Ouvre le client League et connecte-toi.'); return; }
+    if(!s.loggedIn){ dot.className='vslive-dot off'; st.textContent='Client ouvert, pas connecté'; vsliveOffline(body,'Connecte-toi dans le client League.'); return; }
+    dot.className='vslive-dot on'; st.textContent='Connecté · '+s.summoner.name+'#'+s.summoner.tag+' · patch '+String(s.version||'').split('.').slice(0,2).join('.');
+    // Un replay tourne déjà ? → ouvre direct les contrôles.
+    var h=await vslFetch('/api/ingame/health');
+    if(h.live && h.gameId){ vsliveControls(h.gameId); }
+    else vsliveMatches();
+  }catch(e){
+    dot.className='vslive-dot off'; st.textContent='Agent local introuvable';
+    vsliveOffline(body, null);
+  }
+}
+function vsliveOffline(body, msg){
+  body.innerHTML='<div style="font-size:12.5px;line-height:1.7">'+
+    '<p class="muted" style="margin:0 0 10px">'+(msg||'Pour piloter un replay depuis le site, lance l\'agent local sur ton poste :')+'</p>'+
+    (msg?'':'<pre style="background:#04120F;border:1px solid var(--vs-forest-500);border-radius:8px;padding:10px 12px;overflow-x:auto;font-size:12px;color:var(--vs-emerald-300)">cd C:\\Users\\carne\\vs-studio\nnpm start</pre>'+
+      '<p class="faint" style="margin:8px 0 0;font-size:11.5px">L\'agent tourne en local, parle au client League, et ne sort jamais de ton poste. Clique ↻ une fois lancé.</p>')+
+  '</div>';
+}
+async function vsliveMatches(){
+  var body=vslEl('vslive-body'); body.innerHTML='<div class="faint" style="font-size:12px">Chargement des parties…</div>';
+  try{
+    var r=await vslFetch('/api/matches');
+    if(!r.ok){ body.innerHTML='<div class="faint" style="font-size:12px">'+(r.error==='CLIENT_CLOSED'?'Client League fermé.':'Erreur : '+r.error)+'</div>'; return; }
+    var rows=r.matches.map(function(m){
+      var can=(m.replayState==='watch'||m.replayState==='download'||m.replayState==='unknown');
+      var kda=(m.kills!=null)?m.kills+'/'+m.deaths+'/'+m.assists:'';
+      return '<div class="vsl-match">'+
+        '<span class="vsl-tag '+m.replayState+'">'+({watch:'OK',incompatible:'PÉRIMÉ',download:'DL',unknown:'?'}[m.replayState]||m.replayState)+'</span>'+
+        '<b style="font-size:13px">'+(m.championName||'?')+'</b>'+
+        '<span style="color:'+(m.win?'var(--vs-emerald-300)':'var(--vs-red-400)')+';font-weight:700">'+(m.win?'V':'D')+'</span>'+
+        '<span style="font-family:var(--font-mono);font-size:12px">'+kda+'</span>'+
+        '<span class="faint" style="font-size:11px">'+m.queue+' · '+vslFmt(m.durationSec)+' · v'+m.patch+'</span>'+
+        '<span style="flex:1"></span>'+
+        (can?'<button class="btn btn-cta btn-sm" onclick="vsliveLaunch(\''+m.gameId+'\')">Lancer</button>'
+            :'<span class="faint" style="font-size:11px" title="Replay d\'un ancien patch">périmé</span>')+
+      '</div>';
+    }).join('');
+    body.innerHTML='<div class="between" style="margin-bottom:8px"><div class="faint" style="font-size:11.5px">'+r.matches.filter(function(m){return m.replayState==='watch';}).length+'/'+r.matches.length+' regardables (patch '+r.summonerPatch+')</div><button class="btn btn-ghost btn-sm" onclick="vsliveMatches()">↻</button></div>'+rows;
+  }catch(e){ body.innerHTML='<div class="faint" style="font-size:12px">Agent injoignable.</div>'; }
+}
+async function vsliveLaunch(gameId){
+  var body=vslEl('vslive-body');
+  body.innerHTML='<div class="faint" id="vsl-launch-msg" style="font-size:12.5px">Préparation du replay…</div>';
+  try{
+    var resp=await fetch(VSL_BASE+'/api/replay/'+gameId+'/launch',{ method:'POST' });
+    var reader=resp.body.getReader(), dec=new TextDecoder(), buf='';
+    while(true){
+      var r=await reader.read(); if(r.done) break;
+      buf+=dec.decode(r.value,{stream:true}); var idx;
+      while((idx=buf.indexOf('\n\n'))>=0){
+        var line=buf.slice(0,idx).trim(); buf=buf.slice(idx+2);
+        if(!line.startsWith('data:')) continue;
+        var ev=JSON.parse(line.slice(5).trim());
+        var m=vslEl('vsl-launch-msg');
+        if(ev.step==='error'){ if(m) m.textContent='Erreur : '+vslErr(ev.error); return; }
+        if(ev.msg && m) m.textContent=ev.msg;
+        if(ev.step==='download' && ev.state && m) m.textContent='Téléchargement… ('+ev.state+(ev.prog?' '+ev.prog+'%':'')+')';
+        if(ev.step==='ready'){ vsliveControls(gameId); return; }
+      }
+    }
+  }catch(e){ var m=vslEl('vsl-launch-msg'); if(m) m.textContent='Agent injoignable pendant le lancement.'; }
+}
+function vslErr(e){ return ({REPLAY_INCOMPATIBLE:'replay d\'un patch antérieur, illisible (limite Riot).',DOWNLOAD_TIMEOUT:'téléchargement expiré.',WATCH_REFUSED:'le client a refusé.',GAME_NOT_STARTED:'le jeu ne s\'est pas lancé (vérifie Vanguard / vgc).',CLIENT_CLOSED:'client fermé.'}[e]||e); }
+function vsliveControls(gameId){
+  VSL.gameId=gameId;
+  var body=vslEl('vslive-body');
+  body.innerHTML=
+    '<div class="vsl-time" id="vsl-time">—</div>'+
+    '<div class="vsl-transport">'+
+      '<button class="btn btn-ghost btn-sm" id="vsl-play" onclick="vslivePlay()">▶</button>'+
+      '<input type="range" id="vsl-scrub" min="0" max="1000" value="0" oninput="vsliveScrub(this.value)">'+
+    '</div>'+
+    '<div class="vsl-transport"><span class="faint" style="font-size:11px">Vitesse</span>'+
+      [0.5,1,2,4,8].map(function(s){ return '<button class="btn btn-ghost btn-sm vsl-sp" data-sp="'+s+'" onclick="vsliveSpeed('+s+')">'+s+'×</button>'; }).join('')+
+    '</div>'+
+    '<div class="vsl-transport"><span class="faint" style="font-size:11px">Caméra</span>'+
+      '<button class="btn btn-ghost btn-sm vsl-cam" data-cam="top" onclick="vsliveCam(\'top\')">Dessus</button>'+
+      '<button class="btn btn-ghost btn-sm vsl-cam" data-cam="fps" onclick="vsliveCam(\'fps\')">Libre</button>'+
+      '<span style="width:8px"></span>'+
+      '<button class="btn btn-ghost btn-sm" id="vsl-fog" onclick="vsliveFog()">Fog: —</button>'+
+      '<button class="btn btn-ghost btn-sm" id="vsl-hud" onclick="vsliveHud()">HUD: —</button>'+
+    '</div>'+
+    '<div style="border-top:1px solid var(--vs-forest-600);margin:14px 0 12px"></div>'+
+    '<div class="between" style="margin-bottom:8px"><div class="h3" style="font-size:13px">Notes d\'analyse</div><span class="faint" style="font-size:11px">#'+gameId+'</span></div>'+
+    '<div class="vsl-transport"><input type="text" id="vsl-note-text" placeholder="Ex: mauvais recall du jungler…" style="flex:1;min-width:120px;background:#04120F;border:1px solid var(--vs-forest-500);border-radius:8px;color:var(--vs-fg-1);padding:8px 10px;font-size:12.5px" onkeydown="if(event.key===\'Enter\')vsliveAddNote()">'+
+      '<button class="btn btn-cta btn-sm" onclick="vsliveAddNote()">+ Note à l\'instant</button></div>'+
+    '<div id="vsl-notes" style="margin-top:8px"></div>';
+  vsliveLoadNotes(gameId);
+  vsliveSyncRender();
+  if(VSL.poll) clearInterval(VSL.poll);
+  VSL.poll=setInterval(vslivePollHealth, 500);
+}
+async function vslivePollHealth(){
+  if(!VSL.gameId) return;
+  try{
+    var h=await vslFetch('/api/ingame/health');
+    if(!h.live){ return; }
+    var p=h.playback||{}; VSL.time=p.time||0; VSL.length=p.length||0; VSL.paused=!!p.paused;
+    var tl=vslEl('vsl-time'); if(tl) tl.textContent=vslFmt(VSL.time)+' / '+vslFmt(VSL.length);
+    var pb=vslEl('vsl-play'); if(pb) pb.textContent=VSL.paused?'▶':'⏸';
+    var sc=vslEl('vsl-scrub'); if(sc && document.activeElement!==sc && VSL.length) sc.value=(VSL.time/VSL.length)*1000;
+  }catch(e){}
+}
+function vslivePost(path, body){ return fetch(VSL_BASE+path,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{}) }).then(function(r){return r.json();}).catch(function(){ if(typeof showToast==='function') showToast('Agent local injoignable.','warning'); }); }
+function vslivePlay(){ vslivePost('/api/playback',{ paused:!VSL.paused }); }
+function vsliveScrub(v){ if(VSL.length) vslivePost('/api/playback',{ time:(v/1000)*VSL.length }); }
+function vsliveSpeed(s){ vslivePost('/api/playback',{ speed:s }); document.querySelectorAll('.vsl-sp').forEach(function(b){ b.classList.toggle('btn-cta', +b.dataset.sp===s); }); }
+function vsliveCam(m){ vslivePost('/api/render',{ cameraMode:m }); document.querySelectorAll('.vsl-cam').forEach(function(b){ b.classList.toggle('btn-cta', b.dataset.cam===m); }); }
+async function vsliveFog(){ var on=vslEl('vsl-fog').textContent.includes('ON'); await vslivePost('/api/render',{ fogOfWar:!on }); vsliveSyncRender(); }
+async function vsliveHud(){ var on=vslEl('vsl-hud').textContent.includes('ON'); await vslivePost('/api/render',{ interfaceAll:!on }); vsliveSyncRender(); }
+async function vsliveSyncRender(){
+  try{ var h=await vslFetch('/api/ingame/health'); if(h.live && h.render){
+    var f=vslEl('vsl-fog'); if(f) f.textContent='Fog: '+(h.render.fogOfWar?'ON':'OFF');
+    var u=vslEl('vsl-hud'); if(u) u.textContent='HUD: '+(h.render.interfaceAll?'ON':'OFF');
+    document.querySelectorAll('.vsl-cam').forEach(function(b){ b.classList.toggle('btn-cta', b.dataset.cam===h.render.cameraMode); });
+  }}catch(e){}
+}
+async function vsliveLoadNotes(gameId){ try{ var r=await vslFetch('/api/notes/'+gameId); vsliveRenderNotes(r.notes||[]); }catch(e){} }
+function vsliveRenderNotes(notes){
+  var el=vslEl('vsl-notes'); if(!el) return;
+  if(!notes.length){ el.innerHTML='<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune note. Clique « + Note à l\'instant » pendant la lecture.</div>'; return; }
+  el.innerHTML=notes.map(function(n){ return '<div class="vsl-note" onclick="vsliveSeekTo('+n.t+')"><span class="t">'+vslFmt(n.t)+'</span><span class="x">'+vslEsc(n.text||'(sans texte)')+'</span><button class="d" onclick="event.stopPropagation();vsliveDelNote(\''+n.id+'\')">✕</button></div>'; }).join('');
+}
+async function vsliveAddNote(){
+  if(!VSL.gameId) return; var inp=vslEl('vsl-note-text'); var text=(inp&&inp.value||'').trim();
+  var r=await vslivePost('/api/notes/'+VSL.gameId,{ t:VSL.time, text:text });
+  if(r&&r.ok){ if(inp) inp.value=''; vsliveRenderNotes(r.notes); }
+}
+async function vsliveDelNote(id){ var r=await fetch(VSL_BASE+'/api/notes/'+VSL.gameId+'/'+id,{ method:'DELETE' }).then(function(x){return x.json();}); if(r&&r.ok) vsliveRenderNotes(r.notes); }
+function vsliveSeekTo(t){ vslivePost('/api/playback',{ time:t, paused:false }); }
+function vslFmt(s){ s=Math.max(0,s||0); var m=Math.floor(s/60); return m+':'+String(Math.floor(s%60)).padStart(2,'0'); }
+function vslEsc(s){ return String(s).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];}); }
 
 /* ── Pont 3D : dialogue avec vs-replay (helper local) ──
    Le navigateur ne peut pas joindre le client LoL (127.0.0.1:2999, cert auto-signé).
