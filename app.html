@@ -391,6 +391,12 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
   background:rgba(45,212,167,.12); border:1px solid rgba(45,212,167,.4); color:var(--vs-emerald-300);
   transition:background .13s var(--ease-out), transform .13s var(--ease-out); }
 .sl-ev-3d:hover{ background:var(--vs-emerald-400); color:#04211C; border-color:var(--vs-emerald-400); transform:scale(1.08); }
+/* Vue 2D tactique (modèle Metrica) : carte reconstruite dans le navigateur */
+.sl-map2d-box{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px; background:rgba(4,20,17,.4); display:flex; flex-direction:column; align-items:center; gap:10px; }
+#sl-map2d{ width:100%; max-width:520px; height:auto; aspect-ratio:1/1; border-radius:8px; display:block; }
+.sl-map2d-legend{ display:flex; gap:14px; align-items:center; flex-wrap:wrap; font-size:11px; color:var(--vs-fg-2); }
+.sl-map2d-legend span{ display:inline-flex; align-items:center; gap:5px; }
+.sl-map2d-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; flex:none; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -4048,6 +4054,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               </div>
             </div>
             <div id="sl-riot-feed" class="sl-riot-feed"></div>
+          </div>
+          <!-- Vue 2D tactique : reconstruction de la Faille dans le navigateur (modèle Metrica),
+               synchronisée à la vidéo. Aucun client LoL requis. -->
+          <div id="sl-map2d-wrap" style="display:none;margin-top:16px">
+            <div class="between" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+              <div class="h3" style="font-size:13px">Vue 2D tactique <span class="faint" style="font-weight:400;font-size:11px">— suit la vidéo en direct</span></div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="faint" id="sl-map2d-time" style="font-size:11px;font-family:var(--font-mono)">—</span>
+                <button class="btn btn-ghost btn-xs" onclick="slMap2dToggle()" id="sl-map2d-btn">Masquer</button>
+              </div>
+            </div>
+            <div class="sl-map2d-box">
+              <canvas id="sl-map2d" width="520" height="520"></canvas>
+              <div class="sl-map2d-legend">
+                <span><i style="background:#3B82F6"></i>Nous</span>
+                <span><i style="background:#FF5A33"></i>Eux</span>
+                <span class="faint">positions relevées chaque minute (limite Match-v5)</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -13521,6 +13546,8 @@ function slTick(){
   var t=v.currentTime;
   var tm=document.getElementById('sl-time'); if(tm) tm.textContent=slFmt(t)+' / '+slFmt(SL.dur);
   slSyncPlayUi();
+  // Vue 2D : ~6 rafraîchissements/s suffisent (les positions bougent lentement).
+  if(SL.riotFrames && (!SL._m2dLast || t-SL._m2dLast>0.16 || t<SL._m2dLast)){ SL._m2dLast=t; slMap2dSync(); }
   var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
   var pct=(dur? Math.min(100,t/dur*100) : 0);
   document.querySelectorAll('[data-ph]').forEach(function(p){ p.style.left=pct+'%'; });
@@ -13785,12 +13812,34 @@ function slRiotBuildFeed(match, tl, puuid){
   }); });
   feed.sort(function(a,b){ return a.t-b.t; });
   SL.riotFeed=feed; SL.riotFeedFilter='all';
+
+  // Positions des joueurs pour la vue 2D. Match-v5 ne les donne qu'une fois par
+  // minute (participantFrames) → on interpole entre deux frames à l'affichage.
+  var pf=[];
+  frames.forEach(function(fr){
+    var ps=[];
+    var d=fr.participantFrames||{};
+    Object.keys(d).forEach(function(k){
+      var p=d[k];
+      if(p && p.position) ps.push({ pid:p.participantId||Number(k), x:p.position.x, y:p.position.y });
+    });
+    if(ps.length) pf.push({ t:(fr.timestamp||0)/1000, ps:ps });
+  });
+  pf.sort(function(a,b){ return a.t-b.t; });
+  SL.riotFrames=pf;
+  SL.riotChamp=champ; SL.riotPidTeam=pidTeam; SL.riotMyTeam=myTeam;
   var fb=document.getElementById('sl-riot-feed-filters');
   if(fb) fb.querySelectorAll('.btn').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-f')==='all'); });
   var wrap=document.getElementById('sl-riot-feed-wrap'); if(wrap) wrap.style.display='';
   slRenderRiotFeed();
   // Le pont est optionnel : on re-rend si on le trouve, sans bloquer l'affichage.
   slBridgeCheck().then(function(up){ if(up) slRenderRiotFeed(); });
+  // Vue 2D : ne s'affiche que si Match-v5 a bien renvoyé des positions.
+  var m2=document.getElementById('sl-map2d-wrap');
+  if(m2){
+    if(pf.length){ m2.style.display=''; slMap2dLoadImg().then(function(){ slMap2dSync(); slRenderMap2d(0); }); }
+    else m2.style.display='none';
+  }
   return feed.length;
 }
 function slRenderRiotFeed(){
@@ -13815,6 +13864,110 @@ function slRenderRiotFeed(){
     '</div>';
   }).join('');
 }
+/* ── Vue 2D tactique ──────────────────────────────────────────────────────
+   Reconstruit la Faille dans le navigateur et y place les joueurs à l'instant
+   courant de la vidéo (modèle Metrica : vue tactique 2D à côté de la vidéo).
+   Match-v5 ne donne les positions qu'une fois par minute → on interpole. */
+var SL_MAP2D_IMG=null, SL_MAP2D_TRIED=false;
+function slMap2dLoadImg(){
+  if(SL_MAP2D_IMG || SL_MAP2D_TRIED) return Promise.resolve(SL_MAP2D_IMG);
+  SL_MAP2D_TRIED=true;
+  // On réutilise l'image déjà chargée par la page Carte si elle est là.
+  if(window._mapImg){ SL_MAP2D_IMG=window._mapImg; return Promise.resolve(SL_MAP2D_IMG); }
+  var urls=['./assets/map/rift-minimap.webp','https://ddragon.leagueoflegends.com/cdn/13.24.1/img/map/map11.png'];
+  return new Promise(function(res){
+    var i=0;
+    function next(){
+      if(i>=urls.length){ res(null); return; }
+      var img=new Image(); img.crossOrigin='anonymous';
+      img.onload=function(){ SL_MAP2D_IMG=img; res(img); };
+      img.onerror=function(){ i++; next(); };
+      img.src=urls[i];
+    }
+    next();
+  });
+}
+// Position interpolée d'un joueur au temps t (entre deux relevés d'une minute).
+function slMap2dPosAt(pid, t){
+  var F=SL.riotFrames||[]; if(!F.length) return null;
+  var prev=null, next=null;
+  for(var i=0;i<F.length;i++){
+    if(F[i].t<=t) prev=F[i];
+    if(F[i].t>t){ next=F[i]; break; }
+  }
+  function find(fr){ if(!fr) return null; for(var j=0;j<fr.ps.length;j++) if(fr.ps[j].pid===pid) return fr.ps[j]; return null; }
+  var a=find(prev), b=find(next);
+  if(!a) return b?{x:b.x,y:b.y}:null;
+  if(!b) return {x:a.x,y:a.y};
+  var span=next.t-prev.t; if(span<=0) return {x:a.x,y:a.y};
+  var k=Math.max(0,Math.min(1,(t-prev.t)/span));
+  return { x:a.x+(b.x-a.x)*k, y:a.y+(b.y-a.y)*k };
+}
+function slRenderMap2d(t){
+  var cv=document.getElementById('sl-map2d'); if(!cv || !SL.riotFrames) return;
+  var ctx=cv.getContext('2d'), S=cv.width;
+  ctx.clearRect(0,0,S,S);
+  if(SL_MAP2D_IMG){
+    var iw=SL_MAP2D_IMG.naturalWidth, ih=SL_MAP2D_IMG.naturalHeight;
+    var sc=Math.max(S/iw,S/ih);
+    ctx.drawImage(SL_MAP2D_IMG,(S-iw*sc)/2,(S-ih*sc)/2,iw*sc,ih*sc);
+    ctx.fillStyle='rgba(0,0,0,.18)'; ctx.fillRect(0,0,S,S);
+  } else { ctx.fillStyle='#071A05'; ctx.fillRect(0,0,S,S); }
+
+  function toPx(x,y){
+    // Même convention que la page Carte : y du jeu est inversé par rapport au canvas.
+    if(typeof mapCoordToCanvas==='function' && typeof MAP_SIZE!=='undefined') return mapCoordToCanvas(x,y,S);
+    var M=14870; return [x/M*S, S-(y/M*S)];
+  }
+
+  // Événements proches de l'instant courant (±25 s) — halo sur l'action.
+  (SL.riotFeed||[]).forEach(function(ev){
+    if(!ev.pos) return;
+    var dt=Math.abs(ev.t-t); if(dt>25) return;
+    var p=toPx(ev.pos.x,ev.pos.y);
+    var alpha=1-(dt/25);
+    ctx.beginPath(); ctx.arc(p[0],p[1],14*alpha+5,0,7);
+    ctx.fillStyle=(ev.mine?'rgba(59,130,246,':'rgba(255,90,51,')+(0.16*alpha)+')';
+    ctx.fill();
+    ctx.beginPath(); ctx.arc(p[0],p[1],4,0,7);
+    ctx.fillStyle=ev.mine?'#3B82F6':'#FF5A33'; ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.7)'; ctx.lineWidth=1; ctx.stroke();
+  });
+
+  // Les 10 joueurs à l'instant courant.
+  var champ=SL.riotChamp||{}, teams=SL.riotPidTeam||{}, mine=SL.riotMyTeam||100;
+  Object.keys(teams).forEach(function(k){
+    var pid=Number(k), pos=slMap2dPosAt(pid,t); if(!pos) return;
+    var p=toPx(pos.x,pos.y), isMine=(teams[pid]===mine);
+    ctx.beginPath(); ctx.arc(p[0],p[1],7,0,7);
+    ctx.fillStyle=isMine?'#3B82F6':'#FF5A33';
+    ctx.shadowColor='rgba(0,0,0,.8)'; ctx.shadowBlur=4; ctx.fill(); ctx.shadowBlur=0;
+    ctx.strokeStyle='rgba(255,255,255,.85)'; ctx.lineWidth=1.5; ctx.stroke();
+    var name=(champ[pid]||'').slice(0,4);
+    if(name){ ctx.font='700 9px system-ui'; ctx.textAlign='center';
+      ctx.fillStyle='rgba(0,0,0,.75)'; ctx.fillText(name,p[0]+1,p[1]-10+1);
+      ctx.fillStyle='#fff'; ctx.fillText(name,p[0],p[1]-10); }
+  });
+
+  var lbl=document.getElementById('sl-map2d-time');
+  if(lbl) lbl.textContent='temps de jeu '+slFmt(t);
+}
+// Rafraîchi par slTick pendant la lecture : temps de jeu = temps vidéo − offset.
+function slMap2dSync(){
+  var wrap=document.getElementById('sl-map2d-wrap');
+  if(!wrap || wrap.style.display==='none' || !SL.riotFrames) return;
+  var v=slVideo(); if(!v) return;
+  slRenderMap2d(Math.max(0, v.currentTime - slParseOffset()));
+}
+function slMap2dToggle(){
+  var box=document.querySelector('.sl-map2d-box'), b=document.getElementById('sl-map2d-btn');
+  if(!box) return;
+  var hidden=box.style.display==='none';
+  box.style.display=hidden?'':'none';
+  if(b) b.textContent=hidden?'Masquer':'Afficher';
+  if(hidden) slMap2dSync();
+}
+
 /* ── Pont 3D : dialogue avec vs-replay (helper local) ──
    Le navigateur ne peut pas joindre le client LoL (127.0.0.1:2999, cert auto-signé).
    Il passe donc par le pont HTTP local exposé par `node replay.js bridge`. */
