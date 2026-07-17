@@ -14062,6 +14062,7 @@ function vsliveControls(gameId){
   VSL.gameId=gameId;
   var body=vslEl('vslive-body');
   body.innerHTML=
+    '<div class="between" style="margin-bottom:10px"><button class="btn btn-ghost btn-sm" onclick="vsliveBackToList()">← Autres parties</button><span class="faint" style="font-size:11px">replay en cours</span></div>'+
     '<div class="vsl-time" id="vsl-time">—</div>'+
     '<div class="vsl-transport">'+
       '<button class="btn btn-ghost btn-sm" id="vsl-play" onclick="vslivePlay()">▶</button>'+
@@ -14087,6 +14088,7 @@ function vsliveControls(gameId){
   if(VSL.poll) clearInterval(VSL.poll);
   VSL.poll=setInterval(vslivePollHealth, 500);
 }
+async function vsliveBackToList(){ if(VSL.poll){ clearInterval(VSL.poll); VSL.poll=null; } VSL.gameId=null; vsliveMatches(); }
 async function vslivePollHealth(){
   if(!VSL.gameId) return;
   try{
