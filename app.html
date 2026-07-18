@@ -457,6 +457,24 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .crm-fiche-stages .st:hover{ border-color:var(--vs-emerald-400); }
 .crm-fiche-stages .st.on{ background:var(--vs-emerald-400); border-color:var(--vs-emerald-400); color:#04211C; }
 .crm-fiche textarea{ width:100%; min-height:64px; background:#04120F; border:1px solid var(--vs-forest-500); border-radius:8px; color:var(--vs-fg-1); padding:8px 10px; font-size:12px; font-family:inherit; resize:vertical; }
+/* ── Comparer (maquette 05) : cartes de fiches + radar superposé ── */
+.an-slotcards{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+.an-slotcard{ display:flex; align-items:center; gap:11px; padding:13px 16px; border:1px solid var(--vs-forest-500); border-radius:14px; background:rgba(9,37,32,.45); min-width:0; }
+.an-slotcard .av{ width:36px; height:36px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:14px; color:#04211C; }
+.an-slotcard .nm{ font-weight:800; font-size:14px; color:var(--vs-fg-1); }
+.an-slotcard .sub{ font-size:11px; color:var(--vs-fg-3); }
+.an-slotcard .rm{ margin-left:auto; background:none; border:none; color:var(--vs-fg-3); cursor:pointer; font-size:14px; flex:none; transition:color .12s; }
+.an-slotcard .rm:hover{ color:var(--vs-red-400); }
+.an-slotcard.add{ border-style:dashed; justify-content:center; cursor:pointer; color:var(--vs-fg-3); font-size:13px; font-weight:600; transition:border-color .14s, color .14s; }
+.an-slotcard.add:hover{ border-color:var(--vs-emerald-400); color:var(--vs-emerald-300); }
+.an-radarcard{ display:grid; grid-template-columns:minmax(260px,380px) minmax(0,1fr); gap:22px; align-items:center; }
+@media(max-width:860px){ .an-radarcard{ grid-template-columns:1fr; } }
+.an-radar-rows{ display:flex; flex-direction:column; gap:10px; min-width:0; }
+.an-radar-row{ display:flex; align-items:center; gap:12px; padding:12px 16px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.35); min-width:0; }
+.an-radar-row .av{ width:40px; height:40px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; background:var(--vs-forest-700); border:2px solid; color:var(--vs-fg-1); }
+.an-radar-row .sc{ margin-left:auto; text-align:right; flex:none; }
+.an-radar-row .sc b{ font-family:var(--font-mono); font-size:22px; font-weight:800; display:block; line-height:1; }
+.an-radar-row .sc span{ font-size:8.5px; letter-spacing:.1em; color:var(--vs-fg-3); }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -3617,31 +3635,21 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
         </div>
-        <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
+        <!-- Head Comparaison (maquette 05) + export -->
+        <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
+          <div class="page-head" style="min-width:0">
+            <div class="eyebrow">Comparaison</div>
+            <h2 class="h2">Comparer des prospects</h2>
+            <p class="muted" id="analyse-subtitle">Jusqu'à 5 fiches SPES côte à côte. Radars pentagonaux superposés + détail par dimension.</p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button onclick="analyseClear()" class="btn btn-ghost btn-sm" title="Vider la comparaison" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Vider</button>
+            <button onclick="exportComparaison()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Export comparaison</button>
+          </div>
         </div>
-        <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
-        <!-- Header dynamique de l'outil Comparer -->
-        <div class="between" style="margin-bottom:4px;flex-wrap:wrap;gap:12px">
-          <div style="min-width:0">
-            <div class="h3" id="analyse-title" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Comparer des prospects</div>
-            <p class="faint" id="analyse-subtitle" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Jusqu'à 5 fiches SPES côte à côte, radars superposés + détail par dimension. Les fiches viennent du scouting ou du CRM.</p>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <div id="analyse-slots-bar" style="display:flex;gap:4px">
-              <div id="aslot-1" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">1</div>
-              <div id="aslot-2" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">2</div>
-              <div id="aslot-3" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">3</div>
-              <div id="aslot-4" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">4</div>
-              <div id="aslot-5" style="width:28px;height:28px;border-radius:50%;background:var(--vs-forest-600);border:2px solid var(--vs-forest-500);display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--vs-fg-3)">5</div>
-            </div>
-            <button onclick="analyseAddCurrent()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter fiche actuelle</button>
-            <button onclick="analyseClear()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Vider</button>
-          </div>
-        </div>
+        <!-- Fiches en comparaison (cartes) + carte pointillée d'ajout -->
+        <div id="analyse-slotcards" class="an-slotcards"></div>
 
         <!-- Mode selector (visible quand ≥1 joueur) -->
         <div id="analyse-mode-bar" style="display:none;gap:8px;margin-bottom:16px">
@@ -7323,6 +7331,119 @@ function compareClear() { analyseClear(); }
 function teamAddCurrent() { analyseAddCurrent(); }
 function teamClear() { analyseClear(); }
 
+/* ── Comparer (maquette 05) : cartes de fiches, radar superposé, export ── */
+const AN_SRV_REGION = { euw1:'EUW', eun1:'EUNE', na1:'NA', kr:'KR', br1:'BR', la1:'LAN', la2:'LAS', tr1:'TR', oc1:'OCE', jp1:'JP', ru:'RU' };
+function anScore100(s){ const n = parseFloat(s.global); return isFinite(n) ? Math.round(n <= 10 ? n * 10 : n) : null; }
+function analyseRenderSlotCards() {
+  const el = document.getElementById('analyse-slotcards');
+  if (!el) return;
+  const cards = analyseSlots.map((s, i) =>
+    '<div class="an-slotcard">' +
+      '<div class="av" style="background:' + PLAYER_COLORS[i] + '">' + (s.pseudo||'?').charAt(0).toUpperCase() + '</div>' +
+      '<div style="min-width:0"><div class="nm">' + anEsc(s.pseudo||'?') + '</div>' +
+        '<div class="sub">' + anEsc(s.role||'?') + ' · ' + (AN_SRV_REGION[s.server] || (s.tag||'').toUpperCase() || '—') + '</div></div>' +
+      '<button class="rm" onclick="analyseRemove(' + i + ')" title="Retirer">✕</button>' +
+    '</div>');
+  if (analyseSlots.length < 5) {
+    cards.push('<div class="an-slotcard add" onclick="analyseAddPrompt()">+ Ajouter une fiche SPES</div>');
+  }
+  el.innerHTML = cards.join('');
+}
+function analyseAddPrompt() {
+  // Une fiche scouting est-elle chargée ? → on l'ajoute directement.
+  const pseudo = document.getElementById('d-pseudo')?.value?.trim();
+  if (pseudo) { analyseAddCurrent(); return; }
+  showToast('Importe d\'abord une fiche dans le Scouting (ou envoie un prospect depuis le CRM).', 'info');
+  switchPanel('scout');
+}
+function buildCompareRadar(cols) {
+  // Radar SPES superposé (D1..D5 sur 0-10) + lignes joueurs façon maquette.
+  const S = 340, cx = S/2, cy = S/2 + 6, R = S/2 - 44;
+  const labels = ['Stats','Objectifs','Impact','Progression','Discipline'];
+  const pt = (i, r) => { const a = -Math.PI/2 + i*2*Math.PI/5; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; };
+  const ring = (f) => Array.from({length:5}, (_, i) => pt(i, R*f).map(n => n.toFixed(1)).join(',')).join(' ');
+  const axes = Array.from({length:5}, (_, i) => { const [x,y] = pt(i, R); return '<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--vs-forest-500)" stroke-width="1"/>'; }).join('');
+  const texts = labels.map((l, i) => { const [x,y] = pt(i, R+20); return '<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="10" fill="var(--vs-fg-3)" style="text-transform:uppercase;letter-spacing:.06em">'+l+'</text>'; }).join('');
+  const polys = cols.map((s, i) => {
+    const d = s.dimScores || {};
+    const g100 = anScore100(s);
+    const vals = ['d1','d2','d3','d4','d5'].map(k => {
+      const v = parseFloat(d[k]);
+      if (isFinite(v)) return Math.max(0, Math.min(1, v/10));
+      return g100 != null ? Math.max(0, Math.min(1, g100/100)) : 0.3;
+    });
+    const p = vals.map((v, j) => pt(j, R*v).map(n => n.toFixed(1)).join(',')).join(' ');
+    return '<polygon points="'+p+'" fill="'+PLAYER_COLORS[i]+'22" stroke="'+PLAYER_COLORS[i]+'" stroke-width="1.8" stroke-linejoin="round"/>';
+  }).join('');
+  const rows = cols.map((s, i) => {
+    const g = anScore100(s);
+    const tier = (String(s.rankLbl||'').match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
+    const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
+    const tierColor = (typeof CRM_TIER_COLOR !== 'undefined' && CRM_TIER_COLOR[t]) || 'var(--vs-fg-2)';
+    return '<div class="an-radar-row">' +
+      '<div class="av" style="border-color:' + PLAYER_COLORS[i] + '">' + (s.pseudo||'?').charAt(0).toUpperCase() + '</div>' +
+      '<div style="min-width:0"><div style="font-weight:800;font-size:15px;color:var(--vs-fg-1)">' + anEsc(s.pseudo||'?') +
+        (s.tag && s.tag !== '—' ? ' <span class="faint" style="font-size:10.5px;font-family:var(--font-mono);font-weight:400">#' + anEsc(s.tag) + '</span>' : '') + '</div>' +
+        '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:4px">' +
+          (t ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:' + tierColor + '">' + (typeof rankIcon === 'function' ? rankIcon(t, 'rank-icon-sm') : '') + anEsc(s.rankLbl) + '</span>' : '') +
+          '<span class="chip" style="padding:1px 9px;font-size:10px">' + anEsc(s.role||'?') + '</span>' +
+        '</div></div>' +
+      '<div class="sc"><b style="color:' + (g != null && typeof anScoreColor === 'function' ? anScoreColor(g) : 'var(--vs-fg-1)') + '">' + (g != null ? g : '—') + '</b><span>VISIONSCORE</span></div>' +
+    '</div>';
+  }).join('');
+  const roles = [...new Set(cols.map(c => c.role))];
+  return '<div class="card" style="padding:20px 22px;margin-bottom:16px">' +
+    '<div class="label" style="font-size:10.5px;margin-bottom:6px">Radar SPES superposé · ' + (roles.length === 1 ? anEsc(roles[0]) : 'multi-rôles') + '</div>' +
+    '<div class="an-radarcard">' +
+      '<svg width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '" style="max-width:100%;height:auto;justify-self:center">' +
+        [1,.75,.5,.25].map(f => '<polygon points="'+ring(f)+'" fill="none" stroke="var(--vs-forest-500)" stroke-width="1" opacity="'+(f===1?1:.55)+'"/>').join('') +
+        axes + polys + texts +
+      '</svg>' +
+      '<div class="an-radar-rows">' + rows + '</div>' +
+    '</div></div>';
+}
+async function exportComparaison() {
+  if (!analyseSlots.length) { showToast('Ajoute au moins une fiche avant d\'exporter.', 'info'); return; }
+  if (!window.jspdf) { showToast('Librairie PDF non chargée — vérifie ta connexion.', 'error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const em = [45, 212, 167];
+  doc.setFillColor(11, 47, 42); doc.rect(0, 0, 210, 30, 'F');
+  doc.setTextColor(...em); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
+  doc.text('VisionScore — Comparaison de prospects', 14, 13);
+  doc.setTextColor(220, 235, 230); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+  doc.text(new Date().toLocaleDateString('fr-FR') + ' · ' + analyseSlots.length + ' joueur(s)', 14, 21);
+  let y = 42;
+  const dimLbls = ['Stats pures', 'Objectifs', 'Impact carte', 'Progression', 'Discipline'];
+  analyseSlots.forEach((s, i) => {
+    const g = anScore100(s);
+    doc.setDrawColor(200, 210, 205); doc.roundedRect(14, y - 6, 182, 34, 2, 2);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20, 40, 35);
+    doc.text(s.pseudo + (s.tag && s.tag !== '—' ? ' #' + s.tag : ''), 20, y + 1);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 105, 100);
+    doc.text((s.role || '?') + ' · ' + (s.rankLbl || '—') + (s.age && s.age !== '—' ? ' · ' + s.age + ' ans' : ''), 20, y + 7);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...(g >= 70 ? em : g >= 50 ? [230, 180, 88] : [255, 90, 51]));
+    doc.text(String(g != null ? g : '—'), 186, y + 3, { align: 'right' });
+    doc.setFontSize(6.5); doc.setTextColor(120, 135, 130); doc.text('VISIONSCORE', 186, y + 8, { align: 'right' });
+    // Dimensions D1..D5
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    ['d1','d2','d3','d4','d5'].forEach((k, j) => {
+      const v = parseFloat((s.dimScores || {})[k]);
+      const x = 20 + j * 35;
+      doc.setTextColor(120, 135, 130); doc.text(dimLbls[j], x, y + 16);
+      doc.setTextColor(20, 40, 35); doc.setFont('helvetica', 'bold');
+      doc.text(isFinite(v) ? v.toFixed(1) + '/10' : '—', x, y + 22);
+      doc.setFont('helvetica', 'normal');
+    });
+    y += 42;
+    if (y > 250 && i < analyseSlots.length - 1) { doc.addPage(); y = 20; }
+  });
+  doc.setFontSize(7.5); doc.setTextColor(150, 160, 155);
+  doc.text('Généré par VisionScore — visionscore.gg — données API Riot Games', 14, 288);
+  doc.save('visionscore-comparaison.pdf');
+  showToast('PDF de comparaison exporté ✔', 'success');
+}
+
 function buildAnalysePanel() {
   const empty   = document.getElementById('analyse-empty');
   const content = document.getElementById('analyse-content');
@@ -7331,25 +7452,8 @@ function buildAnalysePanel() {
   const subtitle= document.getElementById('analyse-subtitle');
   if (!empty || !content) return;
 
-  // Mettre à jour les slots visuels
-  for (let i=1; i<=5; i++) {
-    const el = document.getElementById('aslot-' + i);
-    if (!el) continue;
-    const slot = analyseSlots[i-1];
-    if (slot) {
-      el.style.background = PLAYER_COLORS[i-1];
-      el.style.borderColor = PLAYER_COLORS[i-1];
-      el.style.color = '#000';
-      el.textContent = slot.pseudo.slice(0,2).toUpperCase();
-      el.title = slot.pseudo;
-    } else {
-      el.style.background = 'var(--surf3)';
-      el.style.borderColor = 'var(--border)';
-      el.style.color = 'var(--sub)';
-      el.textContent = i;
-      el.title = '';
-    }
-  }
+  // Cartes de fiches (maquette 05) : une carte par joueur + carte pointillée d'ajout
+  analyseRenderSlotCards();
 
   if (!analyseSlots.length) {
     empty.style.display = 'block';
@@ -7557,6 +7661,7 @@ function buildScoutView(container) {
   const verdictHTML = buildRecruitVerdict(cols);
 
   container.innerHTML =
+    buildCompareRadar(cols) +
     sameRoleBanner +
     (verdictHTML ? '<div style="background:rgba(45,212,167,.06);border:1px solid rgba(45,212,167,.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;color:var(--sub2);line-height:1.7">◆ <strong style="color:var(--lime)">Recommandation SPES</strong> · ' + verdictHTML + '</div>' : '') +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' + playerCards + '</div>' +
