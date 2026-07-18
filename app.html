@@ -435,6 +435,28 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .vsl-chip{ font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:.12s; }
 .vsl-chip:hover{ border-color:var(--vs-emerald-400); }
 .vsl-chip.on{ background:var(--vs-emerald-400); color:#04211C; border-color:var(--vs-emerald-400); font-weight:700; }
+/* ── CRM · Pipeline des prospects (wireframe 04) ── */
+.crm-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+.crm-kpi{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px 16px; background:rgba(9,37,32,.35); }
+.crm-kpi .k{ font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--vs-fg-3); margin-bottom:4px; }
+.crm-kpi .v{ font-size:22px; font-weight:800; color:var(--vs-fg-1); font-family:var(--font-mono); }
+.crm-pipe-layout{ display:grid; grid-template-columns:minmax(0,1fr) 300px; gap:14px; align-items:start; }
+@media(max-width:980px){ .crm-pipe-layout{ grid-template-columns:1fr; } }
+.crm-table{ width:100%; border-collapse:collapse; font-size:13px; }
+.crm-table th{ text-align:left; padding:10px 12px; font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--vs-fg-3); border-bottom:1px solid var(--vs-forest-500); white-space:nowrap; }
+.crm-table td{ padding:9px 12px; border-bottom:1px solid var(--vs-forest-600); vertical-align:middle; white-space:nowrap; }
+.crm-table tbody tr{ cursor:pointer; transition:background .12s; }
+.crm-table tbody tr:hover{ background:rgba(45,212,167,.05); }
+.crm-table tbody tr.sel{ background:rgba(45,212,167,.10); box-shadow:inset 3px 0 0 var(--vs-emerald-400); }
+.crm-stage-chip{ display:inline-block; font-size:10px; font-weight:700; padding:2px 9px; border-radius:999px; border:1px solid; background:transparent; letter-spacing:.02em; }
+.crm-stage-chip.filled{ color:#04211C !important; }
+.crm-fiche{ padding:16px; position:sticky; top:80px; }
+.crm-fiche .radar-wrap{ display:flex; justify-content:center; margin:12px 0; }
+.crm-fiche-stages{ display:flex; flex-wrap:wrap; gap:6px; }
+.crm-fiche-stages .st{ font-size:10.5px; font-weight:700; padding:4px 10px; border-radius:999px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:.12s; }
+.crm-fiche-stages .st:hover{ border-color:var(--vs-emerald-400); }
+.crm-fiche-stages .st.on{ background:var(--vs-emerald-400); border-color:var(--vs-emerald-400); color:#04211C; }
+.crm-fiche textarea{ width:100%; min-height:64px; background:#04120F; border:1px solid var(--vs-forest-500); border-radius:8px; color:var(--vs-fg-1); padding:8px 10px; font-size:12px; font-family:inherit; resize:vertical; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -3724,10 +3746,30 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div id="crm-structures-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
         </div>
 
-        <!-- Tab: Pipeline -->
+        <!-- Tab: Pipeline (wireframe 04 : table + fiche latérale) -->
         <div id="crm-tab-pipeline-content" style="display:none">
-          <div style="font-size:.85rem;color:var(--sub);margin-bottom:1rem">Suivez l'avancement de vos démarches pour chaque joueur.</div>
-          <div id="crm-pipeline-board" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem"></div>
+          <!-- KPIs -->
+          <div id="crm-kpis" class="crm-kpis"></div>
+          <!-- Toolbar : recherche + filtres + actions -->
+          <div class="card" style="padding:10px 12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0">
+            <div class="ctrl" style="height:36px;flex:1;min-width:170px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3);margin-left:8px;flex:none"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg><input id="crm-q" placeholder="Chercher un prospect" oninput="crmRenderPipeline()"></div>
+            <div class="ctrl select" style="height:36px;width:auto;min-width:110px"><select id="crm-f-role" onchange="crmRenderPipeline()"><option value="">Rôle</option><option>Top</option><option>Jgl</option><option>Mid</option><option>ADC</option><option>Sup</option></select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            <div class="ctrl select" style="height:36px;width:auto;min-width:120px"><select id="crm-f-stage" onchange="crmRenderPipeline()"><option value="">Étape</option></select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+            <span style="flex:1"></span>
+            <input type="file" id="crm-csv-input" accept=".csv" style="display:none" onchange="crmImportCsvFile(this.files[0]);this.value=''">
+            <button class="btn btn-ghost btn-sm" onclick="crmImportMenu()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importer (CSV / scouting)</button>
+            <button class="btn btn-cta btn-sm" onclick="crmNewFiche()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nouvelle fiche</button>
+          </div>
+          <!-- Table + fiche latérale -->
+          <div class="crm-pipe-layout">
+            <div class="card" style="padding:0;overflow:hidden;min-width:0">
+              <div style="overflow-x:auto"><table class="crm-table" id="crm-table">
+                <thead><tr><th>Prospect</th><th>Rôle</th><th>Rang</th><th>Étape</th><th>Région</th><th>Âge</th><th>VisionScore™</th><th></th></tr></thead>
+                <tbody id="crm-tbody"></tbody>
+              </table></div>
+            </div>
+            <aside class="card crm-fiche" id="crm-fiche" style="display:none"></aside>
+          </div>
         </div>
 
         <!-- Tab: Candidatures -->
@@ -9098,13 +9140,15 @@ let crmPipeline   = [];
 
 // Palette d'étapes moderne — progression neutre → bleu → ambre → violet → émeraude ; écarté en rouge
 const CRM_PIPELINE_STAGES = [
-  { id:'nouveau',    label:'Nouveau',    color:'#9BB3AC' },
-  { id:'contact',    label:'Contacté',   color:'#4A9EFF' },
-  { id:'entretien',  label:'Entretien',  color:'#F5A623' },
-  { id:'proposition',label:'Proposition',color:'#C084FC' },
-  { id:'signe',      label:'Signé',      color:'#2DD4A7' },
-  { id:'ecarte',     label:'Écarté',     color:'#FF5A33' },
+  { id:'repere',     label:'Repéré',         color:'#9BB3AC' },
+  { id:'contacter',  label:'À contacter',    color:'#F5A623' },
+  { id:'discussion', label:'En discussion',  color:'#4A9EFF' },
+  { id:'essai',      label:'En essai',       color:'#2DD4A7' },
+  { id:'signe',      label:'Validé / Signé', color:'#2DD4A7' },
+  { id:'ecarte',     label:'Écarté',         color:'#FF5A33' },
 ];
+// Anciennes étapes (kanban v1) → étapes wireframe. Appliqué au chargement.
+const CRM_STAGE_MIGRATE = { nouveau:'repere', contact:'contacter', entretien:'discussion', proposition:'essai' };
 
 const CRM_ROLES = ['Top','Jgl','Mid','ADC','Sup'];
 const CRM_TIERS = ['LFL','LFL2','NLC','Prime League','Div1','Semi-pro','Amateur'];
@@ -9122,6 +9166,10 @@ function crmLoad() {
     const p = localStorage.getItem('spes_crm_pipeline');
     if (s) crmStructures = JSON.parse(s);
     if (p) crmPipeline   = JSON.parse(p);
+    // Migration des étapes v1 (kanban) vers les étapes wireframe.
+    let migrated = false;
+    crmPipeline.forEach(x => { if (CRM_STAGE_MIGRATE[x.stage]) { x.stage = CRM_STAGE_MIGRATE[x.stage]; migrated = true; } });
+    if (migrated) crmSave();
   } catch(e) {}
 }
 
@@ -9377,7 +9425,7 @@ function crmConfirmAddPlayer(structureId) {
   crmPipeline.push({
     id: Date.now(), structureId, structureName: struct.nom,
     playerName: cleanName, playerTag: tag, role, score, age,
-    stage: 'nouveau', notes, dateRelance: '',
+    stage: 'repere', notes, dateRelance: '',
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté au pipeline' }],
   });
@@ -9420,46 +9468,222 @@ async function crmDeletePipeline(id) {
   showToast('Joueur retiré du pipeline', 'info');
 }
 
+/* ── Pipeline des prospects : table + fiche latérale (wireframe 04) ── */
+let crmSelId = null;
+const CRM_TIER_COLOR = { Iron:'#8A8F98', Bronze:'#A9756B', Silver:'#AFBBC4', Gold:'#E6B458', Platinum:'var(--rank-platinum)', Emerald:'var(--rank-emerald)', Diamond:'var(--rank-diamond)', Master:'var(--rank-master)', Grandmaster:'var(--rank-grandmaster)', Challenger:'var(--rank-challenger)' };
+function crmStageOf(id){ return CRM_PIPELINE_STAGES.find(s => s.id === id) || CRM_PIPELINE_STAGES[0]; }
+function crmRankOf(p){
+  // rankLbl (snapshot scouting) prioritaire, sinon verifiedRank ("Diamond I"), sinon rien.
+  const raw = p.rankLbl || p.verifiedRank || '';
+  const tier = (raw.match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
+  const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
+  return { label: raw || '—', tier: t, color: CRM_TIER_COLOR[t] || 'var(--vs-fg-2)' };
+}
+function crmRegionOf(p){
+  if (p.region) return p.region;
+  const SRV = { euw1:'EUW', eun1:'EUNE', na1:'NA', kr:'KR', br1:'BR', la1:'LAN', la2:'LAS', tr1:'TR', oc1:'OCE', jp1:'JP', ru:'RU' };
+  return SRV[p.server] || '—';
+}
+function crmScoreNum(p){ const n = parseFloat(p.score); return isFinite(n) ? (n <= 10 ? n * 10 : n) : null; }
+function crmFiltered(){
+  const q = (document.getElementById('crm-q')?.value || '').trim().toLowerCase();
+  const fr = document.getElementById('crm-f-role')?.value || '';
+  const fs = document.getElementById('crm-f-stage')?.value || '';
+  return crmPipeline.filter(p =>
+    (!q || (p.playerName||'').toLowerCase().includes(q)) &&
+    (!fr || p.role === fr) &&
+    (!fs || p.stage === fs));
+}
 function crmRenderPipeline() {
-  const el = document.getElementById('crm-pipeline-board');
-  if (!el) return;
-  if (!crmPipeline.length) {
-    el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--sub);font-size:.85rem;grid-column:1/-1">Pipeline vide — ajoutez des joueurs depuis la section Structures.</div>';
+  const tb = document.getElementById('crm-tbody');
+  if (!tb) return;
+  // Options du filtre Étape (une fois)
+  const fsel = document.getElementById('crm-f-stage');
+  if (fsel && fsel.options.length <= 1) CRM_PIPELINE_STAGES.forEach(s => { const o = document.createElement('option'); o.value = s.id; o.textContent = s.label; fsel.appendChild(o); });
+  // KPIs (sur l'ensemble, pas le filtre)
+  const act = crmPipeline.filter(p => p.stage !== 'ecarte');
+  const scores = act.map(crmScoreNum).filter(n => n != null);
+  const regions = [...new Set(act.map(crmRegionOf).filter(r => r !== '—'))];
+  const kp = document.getElementById('crm-kpis');
+  if (kp) kp.innerHTML = [
+    ['Prospects', act.length], ['En essai', act.filter(p => p.stage === 'essai').length],
+    ['Signés (saison)', act.filter(p => p.stage === 'signe').length],
+    ['Score moyen', scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : '—'],
+    ['Régions', regions.length],
+  ].map(([k,v]) => '<div class="crm-kpi"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('');
+  // Table
+  const list = crmFiltered();
+  if (!list.length) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le scouting (bouton ⭐), le Top 50, ou « Nouvelle fiche ».') + '</td></tr>';
+    document.getElementById('crm-fiche').style.display = 'none';
     return;
   }
-  // Kanban à la charte VisionScore : colonnes .card, pastille d'étape, cartes joueur animées
-  el.innerHTML = CRM_PIPELINE_STAGES.map((stage, si) => {
-    const players = crmPipeline.filter(p => p.stage === stage.id);
-    const cards = players.map((p, pi) => {
-      const today = new Date();
-      const relanceDate = p.dateRelance ? new Date(p.dateRelance.split('/').reverse().join('-')) : null;
-      const relanceAlert = relanceDate && relanceDate <= today && p.stage !== 'signe' && p.stage !== 'ecarte';
-      return '<div class="crm-pipe-card m3-enter" style="--m3-i:' + Math.min(pi, 6) + '">' +
-        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">' +
-          '<div class="avatar" style="width:26px;height:26px;font-size:11px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
-          '<div style="font-weight:700;font-size:.85rem;color:var(--vs-fg-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + p.playerName + (p.playerTag ? ' <span class="faint" style="font-size:.68rem;font-family:var(--font-mono)">#' + p.playerTag + '</span>' : '') + '</div>' +
-          (p.score ? '<span class="stat-v" style="margin-left:auto;font-size:.82rem;color:' + anScoreColor(parseFloat(p.score)) + '">' + p.score + '</span>' : '') +
-        '</div>' +
-        '<div class="faint" style="font-size:.72rem;margin-bottom:5px">' + (p.role||'?') + (p.age ? ' · ' + p.age + ' ans' : '') + ' · ' + (p.structureName && p.structureName !== 'Sans structure' ? p.structureName : '<span style="opacity:.6">sans structure</span>') + '</div>' +
-        (p.verifiedRank ? '<div style="margin-bottom:5px"><span style="display:inline-flex;align-items:center;gap:4px;font-size:.66rem;font-weight:700;padding:2px 8px;border-radius:999px;background:' + (p.rankMatch ? 'rgba(45,212,167,.1)' : 'rgba(255,51,0,.08)') + ';border:1px solid ' + (p.rankMatch ? 'rgba(45,212,167,.3)' : 'rgba(255,90,51,.3)') + ';color:' + (p.rankMatch ? 'var(--vs-emerald-300)' : 'var(--vs-red-400)') + '">' + (p.rankMatch ? '✓' : '⚠') + ' ' + p.verifiedRank + (p.wins !== undefined ? ' · ' + p.wins + 'W/' + p.losses + 'L' : '') + '</span></div>' : '') +
-        (p.dateRelance ? '<div style="font-size:.7rem;color:' + (relanceAlert ? 'var(--amber,#E8A317)' : 'var(--vs-fg-3)') + ';margin-bottom:4px">Relance : ' + p.dateRelance + '</div>' : '') +
-        (p.notes ? '<div class="faint" style="font-size:.7rem;font-style:italic;margin-bottom:6px">' + p.notes.slice(0,60) + (p.notes.length>60?'…':'') + '</div>' : '') +
-        '<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:7px">' +
-          (stage.id !== 'signe' && stage.id !== 'ecarte' ? '<button onclick="crmNextStage(' + p.id + ')" class="btn btn-secondary btn-sm" style="padding:3px 9px;font-size:.68rem">Suivant →</button>' : '') +
-          '<button onclick="crmSetRelance(' + p.id + ')" class="btn btn-ghost btn-sm" style="padding:3px 9px;font-size:.68rem">Relance</button>' +
-          '<button onclick="crmDeletePipeline(' + p.id + ')" class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:.68rem;color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">✕</button>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-    return '<div class="card m3-enter" style="padding:12px;--m3-i:' + si + '">' +
-      '<div style="display:flex;align-items:center;gap:7px;margin-bottom:10px">' +
-        '<span style="width:8px;height:8px;border-radius:50%;background:' + stage.color + ';flex:none;box-shadow:0 0 8px ' + stage.color + '"></span>' +
-        '<span class="label" style="font-size:11px;color:' + stage.color + '">' + stage.label + '</span>' +
-        '<span class="chip" style="margin-left:auto;padding:1px 8px;font-size:10px;font-family:var(--font-mono)">' + players.length + '</span>' +
-      '</div>' +
-      (cards || '<div class="faint" style="font-size:.75rem;padding:14px 0;text-align:center;border:1px dashed var(--vs-forest-500);border-radius:8px">Vide</div>') +
-    '</div>';
+  tb.innerHTML = list.map(p => {
+    const st = crmStageOf(p.stage), rk = crmRankOf(p), sc = crmScoreNum(p);
+    const filled = (p.stage === 'signe');
+    return '<tr class="' + (crmSelId === p.id ? 'sel' : '') + '" onclick="crmSelectProspect(' + p.id + ')">' +
+      '<td><div style="display:flex;align-items:center;gap:9px"><div class="avatar" style="width:28px;height:28px;font-size:12px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div><div style="min-width:0"><div style="font-weight:700;color:var(--vs-fg-1)">' + anEsc(p.playerName||'?') + '</div>' + (p.playerTag ? '<div class="faint" style="font-size:10px;font-family:var(--font-mono)">#' + anEsc(p.playerTag) + '</div>' : '') + '</div></div></td>' +
+      '<td><span class="chip" style="padding:2px 10px;font-size:10.5px">' + anEsc(p.role||'?') + '</span></td>' +
+      '<td>' + (rk.tier ? '<span style="display:inline-flex;align-items:center;gap:6px">' + (typeof rankIcon === 'function' ? rankIcon(rk.tier, 'rank-icon-sm') : '') + '<span style="font-weight:700;color:' + rk.color + ';font-size:12px">' + anEsc(rk.label) + '</span></span>' : '<span class="faint">—</span>') + '</td>' +
+      '<td><span class="crm-stage-chip' + (filled ? ' filled' : '') + '" style="color:' + st.color + ';border-color:' + st.color + (filled ? ';background:' + st.color : '') + '">' + st.label + '</span></td>' +
+      '<td class="faint" style="font-size:12px">' + crmRegionOf(p) + '</td>' +
+      '<td class="faint" style="font-size:12px">' + (p.age || '—') + '</td>' +
+      '<td><span style="font-family:var(--font-mono);font-weight:800;font-size:14px;color:' + (sc != null ? anScoreColor(sc) : 'var(--vs-fg-3)') + '">' + (sc != null ? sc : '—') + '</span></td>' +
+      '<td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="m9 18 6-6-6-6"/></svg></td>' +
+    '</tr>';
   }).join('');
+  crmRenderFiche();
+}
+function crmSelectProspect(id){
+  crmSelId = (crmSelId === id) ? null : id;
+  crmRenderPipeline();
+}
+function crmRadarSvg(p, size){
+  // Pentagone : dims du scouting si dispo (0-10), sinon pentagone plat basé sur le score.
+  const S = size || 190, cx = S/2, cy = S/2 + 4, R = S/2 - 26;
+  const labels = ['Stats','Objectifs','Impact','Progression','Discipline'];
+  const dims = p.dims || {};
+  const sc = crmScoreNum(p);
+  const vals = ['d1','d2','d3','d4','d5'].map(k => {
+    const v = dims[k];
+    if (v != null && isFinite(v)) return Math.max(0, Math.min(1, v/10));
+    return sc != null ? Math.max(0, Math.min(1, sc/100)) : 0.35;
+  });
+  const pt = (i, r) => { const a = -Math.PI/2 + i*2*Math.PI/5; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; };
+  const ring = (f) => Array.from({length:5}, (_, i) => pt(i, R*f).map(n => n.toFixed(1)).join(',')).join(' ');
+  const valPoly = vals.map((v, i) => pt(i, R*v).map(n => n.toFixed(1)).join(',')).join(' ');
+  const axes = Array.from({length:5}, (_, i) => { const [x,y] = pt(i, R); return '<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--vs-forest-500)" stroke-width="1"/>'; }).join('');
+  const texts = labels.map((l, i) => { const [x,y] = pt(i, R+15); return '<text x="'+x.toFixed(1)+'" y="'+(y+3).toFixed(1)+'" text-anchor="middle" font-size="8.5" fill="var(--vs-fg-3)" style="text-transform:uppercase;letter-spacing:.05em">'+l+'</text>'; }).join('');
+  return '<svg width="'+S+'" height="'+S+'" viewBox="0 0 '+S+' '+S+'">' +
+    [1,.75,.5,.25].map(f => '<polygon points="'+ring(f)+'" fill="none" stroke="var(--vs-forest-500)" stroke-width="1" opacity="'+(f===1?1:.55)+'"/>').join('') +
+    axes +
+    '<polygon points="'+valPoly+'" fill="rgba(45,212,167,.18)" stroke="var(--vs-emerald-400)" stroke-width="1.6" stroke-linejoin="round"/>' +
+    texts + '</svg>';
+}
+function crmRenderFiche(){
+  const el = document.getElementById('crm-fiche');
+  if (!el) return;
+  const p = crmPipeline.find(x => x.id === crmSelId);
+  if (!p) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const rk = crmRankOf(p), sc = crmScoreNum(p);
+  el.innerHTML =
+    '<div class="between" style="margin-bottom:12px"><div class="label" style="font-size:10px">Fiche prospect</div><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="crmSelectProspect(' + p.id + ')">✕</button></div>' +
+    '<div style="display:flex;align-items:flex-start;gap:11px">' +
+      '<div class="avatar" style="width:38px;height:38px;font-size:15px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
+      '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:16px;color:var(--vs-fg-1)">' + anEsc(p.playerName||'?') + '</div>' +
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">' +
+          (rk.tier ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:' + rk.color + '">' + (typeof rankIcon === 'function' ? rankIcon(rk.tier, 'rank-icon-sm') : '') + anEsc(rk.label) + '</span>' : '') +
+          '<span class="chip" style="padding:1px 9px;font-size:10px">' + anEsc(p.role||'?') + '</span></div></div>' +
+      (sc != null ? '<div style="text-align:right;flex:none"><div style="font-family:var(--font-mono);font-weight:800;font-size:22px;color:' + anScoreColor(sc) + '">' + sc + '</div><div class="faint" style="font-size:8.5px;letter-spacing:.08em">SCORE</div></div>' : '') +
+    '</div>' +
+    '<div class="radar-wrap">' + crmRadarSvg(p) + '</div>' +
+    '<div style="border-top:1px solid var(--vs-forest-600);padding-top:12px;margin-bottom:12px">' +
+      '<div class="label" style="font-size:10px;margin-bottom:8px">Étape pipeline</div>' +
+      '<div class="crm-fiche-stages">' + CRM_PIPELINE_STAGES.map(s => '<button class="st' + (p.stage === s.id ? ' on' : '') + '" onclick="crmFicheSetStage(' + p.id + ',\'' + s.id + '\')">' + s.label + '</button>').join('') + '</div></div>' +
+    '<div style="margin-bottom:14px"><div class="label" style="font-size:10px;margin-bottom:6px">Notes scout</div>' +
+      '<textarea id="crm-fiche-notes" placeholder="Bon tempo early, à confirmer en teamfight…" oninput="crmFicheNotes(' + p.id + ', this.value)">' + anEsc(p.notes||'') + '</textarea></div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-ghost btn-sm" style="flex:1" onclick="crmOpenDossier(' + p.id + ')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Ouvrir dossier</button>' +
+      '<button class="btn btn-cta btn-sm" style="flex:1" onclick="crmSendToCompare(' + p.id + ')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg> Comparer</button>' +
+      '<button class="btn btn-ghost btn-sm" style="width:100%;color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="crmDeletePipeline(' + p.id + ')">Retirer du pipeline</button>' +
+    '</div>';
+}
+function crmFicheSetStage(id, stageId){
+  const p = crmPipeline.find(x => x.id === id); if (!p || p.stage === stageId) return;
+  p.stage = stageId;
+  p.history = p.history || [];
+  p.history.push({ date: new Date().toISOString(), action: 'Passage à : ' + crmStageOf(stageId).label });
+  crmSave(); crmRenderPipeline();
+}
+let _crmNotesTimer = null;
+function crmFicheNotes(id, val){
+  const p = crmPipeline.find(x => x.id === id); if (!p) return;
+  p.notes = val;
+  clearTimeout(_crmNotesTimer); _crmNotesTimer = setTimeout(crmSave, 500);
+}
+function crmOpenDossier(id){
+  const p = crmPipeline.find(x => x.id === id); if (!p) return;
+  switchPanel('scout');
+  const ps = document.getElementById('d-pseudo'); if (ps) ps.value = p.playerName || '';
+  const tg = document.getElementById('d-tag');   if (tg) tg.value = p.playerTag || '';
+  const sv = document.getElementById('d-server'); if (sv && p.server) sv.value = p.server;
+  if (p.role && typeof setRole === 'function') { try { currentRole = p.role; } catch(e) {} }
+  if (p.playerName && p.playerTag && typeof fetchRiotData === 'function') fetchRiotData();
+  else if (typeof showToast === 'function') showToast('Fiche préremplie — complète le tag Riot puis lance l\'import.', 'info');
+}
+function crmSendToCompare(id){
+  const p = crmPipeline.find(x => x.id === id); if (!p) return;
+  if (typeof analyseSlots === 'undefined') { showToast('Outil Comparer indisponible', 'error'); return; }
+  if (analyseSlots.length >= 5) { showToast('Maximum 5 joueurs dans le comparateur — retire-en un.', 'warning'); return; }
+  if (analyseSlots.find(s => (s.pseudo||'').toLowerCase() === (p.playerName||'').toLowerCase())) { showToast(p.playerName + ' est déjà dans le comparateur', 'info'); switchPanel('analyse'); return; }
+  const sc = crmScoreNum(p);
+  analyseSlots.push({
+    pseudo: p.playerName, tag: p.playerTag || 'EUW', server: p.server || 'euw1',
+    age: p.age || '—', rankLbl: crmRankOf(p).tier || 'Diamond', rankIdx: (p.rankIdx != null ? p.rankIdx : 6),
+    role: p.role || 'Mid', global: sc,
+    dimScores: p.dims || { d1:null, d2:null, d3:null, d4:null, d5:null },
+    stats: {}, adv: {}, champs: [], date: new Date().toISOString(),
+  });
+  analyseMode = analyseSlots.length >= 4 ? 'roster' : 'scout';
+  showToast(p.playerName + ' envoyé dans le comparateur (' + analyseSlots.length + '/5)', 'success');
+  switchPanel('analyse');
+}
+/* Nouvelle fiche manuelle + imports */
+async function crmNewFiche(){
+  const name = await spesPrompt('Pseudo du joueur (ou "Pseudo #TAG") :', '', 'ex: Faker #KR1');
+  if (!name) return;
+  const tagMatch = name.match(/#([^\s]+)$/);
+  crmPipeline.push({
+    id: Date.now(), structureId: null, structureName: 'Sans structure',
+    playerName: tagMatch ? name.slice(0, tagMatch.index).trim() : name.trim(),
+    playerTag: tagMatch ? tagMatch[1] : '', role: 'Mid', score: '', age: '',
+    stage: 'repere', notes: '', dateRelance: '',
+    addedAt: new Date().toISOString(),
+    history: [{ date: new Date().toISOString(), action: 'Fiche créée manuellement' }],
+  });
+  crmSave(); crmSelId = crmPipeline[crmPipeline.length-1].id; crmRenderPipeline();
+}
+function crmImportMenu(){
+  // CSV : fichier avec en-têtes pseudo,tag,role,score,age,region,rank (souples).
+  // Scouting : rappel du flux bouton ⭐ sur la fiche.
+  document.getElementById('crm-csv-input')?.click();
+  if (typeof showToast === 'function') showToast('Choisis un CSV (pseudo, tag, role, score, age, region, rank) — ou utilise ⭐ « Ajouter au CRM » depuis une fiche scouting.', 'info');
+}
+function crmImportCsvFile(file){
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const lines = String(reader.result).split(/\r?\n/).filter(l => l.trim());
+      const sep = (lines[0].includes(';') && !lines[0].includes(',')) ? ';' : ',';
+      const head = lines[0].split(sep).map(h => h.trim().toLowerCase());
+      const col = (names) => head.findIndex(h => names.includes(h));
+      const ci = { pseudo: col(['pseudo','name','joueur','player']), tag: col(['tag']), role: col(['role','rôle','poste']),
+                   score: col(['score','visionscore']), age: col(['age','âge']), region: col(['region','région','serveur']), rank: col(['rank','rang']) };
+      if (ci.pseudo < 0) { showToast('CSV : colonne "pseudo" introuvable.', 'error'); return; }
+      let added = 0;
+      lines.slice(1).forEach(l => {
+        const c = l.split(sep).map(x => x.trim());
+        const pseudo = c[ci.pseudo]; if (!pseudo) return;
+        if (crmPipeline.find(p => (p.playerName||'').toLowerCase() === pseudo.toLowerCase())) return;
+        crmPipeline.push({
+          id: Date.now() + added, structureId: null, structureName: 'Sans structure',
+          playerName: pseudo, playerTag: ci.tag >= 0 ? (c[ci.tag]||'') : '',
+          role: ci.role >= 0 ? (c[ci.role]||'Mid') : 'Mid', score: ci.score >= 0 ? (c[ci.score]||'') : '',
+          age: ci.age >= 0 ? (c[ci.age]||'') : '', region: ci.region >= 0 ? (c[ci.region]||'') : '',
+          verifiedRank: ci.rank >= 0 ? (c[ci.rank]||'') : '',
+          stage: 'repere', notes: '', dateRelance: '',
+          addedAt: new Date().toISOString(),
+          history: [{ date: new Date().toISOString(), action: 'Importé depuis CSV' }],
+        });
+        added++;
+      });
+      crmSave(); crmRenderPipeline();
+      showToast(added + ' prospect(s) importé(s) depuis le CSV.', added ? 'success' : 'info');
+    } catch(e) { showToast('CSV illisible : ' + e.message, 'error'); }
+  };
+  reader.readAsText(file);
 }
 
 // ── MATCHING ────────────────────────────────────────────────
@@ -9536,7 +9760,7 @@ function crmImportCandidate(idx) {
     score: '',
     age: c.age || '',
     notes: c.experience || '',
-    stage: 'nouveau',
+    stage: 'repere',
     dateRelance: '',
     addedAt: c.addedAt || new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Candidature importée depuis Google Form' }]
@@ -9789,10 +10013,19 @@ function addCurrentToCrm() {
   const tag = document.getElementById('d-tag')?.value?.trim() || '';
   const age = document.getElementById('d-age')?.value || '';
   const score = (typeof globalScore === 'function') ? globalScore() : '';
+  // Snapshot complet de la fiche : dims (radar), serveur, rang — pour la fiche
+  // prospect du pipeline et l'envoi direct vers l'outil Comparer.
+  let snap = null;
+  try { snap = (typeof compareSnapshotCurrent === 'function') ? compareSnapshotCurrent() : null; } catch(e) {}
+  const SRV_REGION = { euw1:'EUW', eun1:'EUNE', na1:'NA', kr:'KR', br1:'BR', la1:'LAN', la2:'LAS', tr1:'TR', oc1:'OCE', jp1:'JP', ru:'RU' };
   crmPipeline.push({
     id: Date.now(), structureId: null, structureName: 'Sans structure',
     playerName: pseudo, playerTag: tag, role, score: (score != null ? String(score) : ''), age,
-    stage: 'nouveau', notes: '', dateRelance: '',
+    stage: 'repere', notes: '', dateRelance: '',
+    server: snap ? snap.server : (document.getElementById('d-server')?.value || ''),
+    region: SRV_REGION[snap ? snap.server : document.getElementById('d-server')?.value] || '',
+    rankLbl: snap ? snap.rankLbl : '', rankIdx: snap ? snap.rankIdx : null,
+    dims: snap ? snap.dimScores : null,
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté depuis la fiche' }]
   });
@@ -12938,7 +13171,7 @@ function top50AddCrm(name, tag, role, score, age) {
   crmPipeline.push({
     id: Date.now(), structureId: null, structureName: 'Sans structure',
     playerName: name, playerTag: tag || '', role: rk, score: (score != null ? String(score) : ''), age: age || '',
-    stage: 'nouveau', notes: '', dateRelance: '',
+    stage: 'repere', notes: '', dateRelance: '',
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté depuis le Top 50' }]
   });
