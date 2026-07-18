@@ -678,6 +678,15 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
 .vsd .chip.on{ background:rgba(45,212,167,.12); border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
 .vsd .rolepills{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
 .vsd .rolepills .chip{ padding:8px 14px; }
+/* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
+.vsd .an-tabbar{ position:relative; display:inline-flex; gap:0; flex-wrap:nowrap; align-items:stretch; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; max-width:100%; scrollbar-width:none; }
+.vsd .an-tabbar::-webkit-scrollbar{ display:none; }
+.vsd .an-tabbar .an-tab{ position:relative; z-index:1; border:none !important; background:transparent !important; border-radius:8px; padding:9px 18px; font-family:var(--font-display); font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--vs-fg-2); white-space:nowrap; transition:color .22s var(--ease-out), transform .14s var(--ease-out); }
+.vsd .an-tabbar .an-tab:hover{ color:var(--vs-fg-1); }
+.vsd .an-tabbar .an-tab.on{ color:#04211C !important; }
+.vsd .an-tabbar .an-tab.on .an-lock{ background:rgba(4,33,28,.18) !important; color:#04211C !important; border-color:rgba(4,33,28,.3) !important; }
+.vsd .an-tabbar .an-ind{ position:absolute; top:5px; bottom:5px; left:0; width:0; border-radius:8px; background:linear-gradient(180deg,#35E0B2,#23BE93); box-shadow:0 2px 10px rgba(45,212,167,.35); z-index:0; pointer-events:none; }
+.vsd .an-tabbar .an-ind.anim{ transition:left .28s var(--ease-out), width .28s var(--ease-out); }
 
 /* Segmented */
 .vsd .seg{ display:inline-flex; position:relative; background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:8px; padding:3px; gap:3px; }
@@ -4681,7 +4690,29 @@ function anSyncTabs(active) {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
   });
   document.querySelectorAll('.an-desc').forEach(d => { d.textContent = AN_DESC[active] || ''; });
+  anSegSlide();
 }
+// Pilule émeraude glissante des barres segmentées (maquette). Positionnée en JS
+// car elle doit suivre l'onglet actif ; l'animation n'est activée qu'après le
+// premier placement (sinon elle glisserait depuis 0 à l'ouverture du panneau).
+function anSegSlide() {
+  // setTimeout plutôt que requestAnimationFrame : rAF peut ne pas se déclencher
+  // (onglet en arrière-plan) et la pilule ne serait jamais posée.
+  setTimeout(() => {
+    document.querySelectorAll('.an-tabbar').forEach(bar => {
+      const on = bar.querySelector('.an-tab.on');
+      let ind = bar.querySelector('.an-ind');
+      if (!ind) { ind = document.createElement('span'); ind.className = 'an-ind'; bar.prepend(ind); }
+      if (!on || !bar.offsetParent || !on.offsetWidth) return;   // panneau masqué : on repositionnera à l'activation
+      ind.style.left = on.offsetLeft + 'px';
+      ind.style.width = on.offsetWidth + 'px';
+      if (!ind.classList.contains('anim')) setTimeout(() => ind.classList.add('anim'), 60);
+      // Garde l'onglet actif visible si la barre défile (petits écrans)
+      if (bar.scrollWidth > bar.clientWidth) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+  }, 0);
+}
+window.addEventListener('resize', () => { document.querySelectorAll('.an-tabbar .an-ind').forEach(i => i.classList.remove('anim')); anSegSlide(); });
 function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
