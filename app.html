@@ -417,6 +417,24 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .vsl-note .x{ flex:1; min-width:0; font-size:12.5px; }
 .vsl-note .d{ color:var(--vs-red-400); opacity:0; background:none; border:none; cursor:pointer; flex:none; }
 .vsl-note:hover .d{ opacity:1; }
+.vsl-note-row{ display:flex; gap:9px; align-items:center; padding:7px 8px; cursor:pointer; }
+.vsl-note.sel{ background:rgba(45,212,167,.07); border-radius:8px; }
+.vsl-note .dot{ width:9px; height:9px; border-radius:50%; flex:none; }
+.vsl-lbls{ display:flex; gap:4px; flex-wrap:wrap; }
+.vsl-lbls i{ font-style:normal; font-size:9.5px; font-weight:700; padding:1px 6px; border-radius:4px; background:rgba(45,212,167,.14); color:var(--vs-emerald-300); }
+/* Grille de codes (comme le studio vidéo) */
+.vsl-codes{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:7px; }
+.vsl-code{ display:flex; justify-content:space-between; align-items:center; gap:6px; border:none; border-radius:8px; padding:9px 11px; color:#fff; font-weight:800; font-size:12.5px; cursor:pointer; text-shadow:0 1px 2px rgba(0,0,0,.4); transition:transform .1s, filter .1s; }
+.vsl-code:hover{ transform:translateY(-1px); filter:brightness(1.1); }
+.vsl-code:active{ transform:translateY(0); }
+.vsl-code .k{ font-family:var(--font-mono); font-size:10px; opacity:.75; background:rgba(0,0,0,.25); border-radius:4px; padding:0 5px; }
+/* Chips de labels (Rôle / Camp / Issue / Phase) */
+.vsl-chipwrap{ padding:2px 8px 10px; }
+.vsl-chiprow{ display:flex; gap:5px; align-items:center; flex-wrap:wrap; margin-top:6px; }
+.vsl-chiprow .gl{ font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--vs-fg-3); width:42px; flex:none; }
+.vsl-chip{ font-size:11px; padding:3px 9px; border-radius:20px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; transition:.12s; }
+.vsl-chip:hover{ border-color:var(--vs-emerald-400); }
+.vsl-chip.on{ background:var(--vs-emerald-400); color:#04211C; border-color:var(--vs-emerald-400); font-weight:700; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -14079,14 +14097,50 @@ function vsliveControls(gameId){
       '<button class="btn btn-ghost btn-sm" id="vsl-hud" onclick="vsliveHud()">HUD: —</button>'+
     '</div>'+
     '<div style="border-top:1px solid var(--vs-forest-600);margin:14px 0 12px"></div>'+
-    '<div class="between" style="margin-bottom:8px"><div class="h3" style="font-size:13px">Notes d\'analyse</div><span class="faint" style="font-size:11px">#'+gameId+'</span></div>'+
-    '<div class="vsl-transport"><input type="text" id="vsl-note-text" placeholder="Ex: mauvais recall du jungler…" style="flex:1;min-width:120px;background:#04120F;border:1px solid var(--vs-forest-500);border-radius:8px;color:var(--vs-fg-1);padding:8px 10px;font-size:12.5px" onkeydown="if(event.key===\'Enter\')vsliveAddNote()">'+
-      '<button class="btn btn-cta btn-sm" onclick="vsliveAddNote()">+ Note à l\'instant</button></div>'+
+    '<div class="between" style="margin-bottom:8px"><div class="h3" style="font-size:13px">Codage <span class="faint" style="font-weight:400;font-size:11px">— clic ou touche 1-0, pose un moment à l\'instant</span></div></div>'+
+    '<div id="vsl-codes" class="vsl-codes"></div>'+
+    '<div style="border-top:1px solid var(--vs-forest-600);margin:14px 0 12px"></div>'+
+    '<div class="between" style="margin-bottom:8px"><div class="h3" style="font-size:13px">Moments & notes</div><span class="faint" style="font-size:11px">#'+gameId+'</span></div>'+
+    '<div class="vsl-transport"><input type="text" id="vsl-note-text" placeholder="Note libre…" style="flex:1;min-width:120px;background:#04120F;border:1px solid var(--vs-forest-500);border-radius:8px;color:var(--vs-fg-1);padding:8px 10px;font-size:12.5px" onkeydown="if(event.key===\'Enter\')vsliveAddNote()">'+
+      '<button class="btn btn-cta btn-sm" onclick="vsliveAddNote()">+ Note</button></div>'+
     '<div id="vsl-notes" style="margin-top:8px"></div>';
+  vsliveRenderCodes();
   vsliveLoadNotes(gameId);
   vsliveSyncRender();
   if(VSL.poll) clearInterval(VSL.poll);
   VSL.poll=setInterval(vslivePollHealth, 500);
+  vsliveBindKeys();
+}
+function vslCodes(){ return (typeof SL_CODES!=='undefined' && SL_CODES && SL_CODES.length) ? SL_CODES : (typeof SL_DEFAULT_CODES!=='undefined'?SL_DEFAULT_CODES:[]); }
+function vslCodeOf(id){ return vslCodes().filter(function(c){return c.id===id;})[0]||{id:id,label:id,color:'#2DD4A7',lead:5,lag:5}; }
+function vsliveRenderCodes(){
+  var el=vslEl('vsl-codes'); if(!el) return;
+  el.innerHTML=vslCodes().map(function(c){
+    return '<button class="vsl-code" style="background:'+c.color+'" onclick="vsliveCode(\''+c.id+'\')" title="'+c.label+' (touche '+(c.key||'')+')"><span>'+c.label+'</span><span class="k">'+(c.key||'')+'</span></button>';
+  }).join('');
+}
+async function vsliveCode(codeId){
+  if(!VSL.gameId) return;
+  var c=vslCodeOf(codeId);
+  var r=await vslivePost('/api/notes/'+VSL.gameId,{ t:VSL.time, code:codeId, labels:[], text:'' });
+  if(r&&r.ok){
+    VSL.sel=r.note&&r.note.id;   // sélectionne le moment créé pour taguer aussitôt
+    vsliveRenderNotes(r.notes);
+    if(typeof showToast==='function') showToast(c.label+' codé à '+vslFmt(VSL.time),'success');
+  }
+}
+var VSL_KEYS_BOUND=false;
+function vsliveBindKeys(){
+  if(VSL_KEYS_BOUND) return; VSL_KEYS_BOUND=true;
+  document.addEventListener('keydown', function(e){
+    if(!VSL.gameId) return;
+    var scrim=document.getElementById('an-view-scrim');
+    if(!scrim || scrim.style.display==='none') return;              // seulement sur la vue Analyse scrim
+    if(/input|textarea|select/i.test((e.target.tagName||''))) return; // pas pendant la saisie d'une note
+    var c=vslCodes().filter(function(x){return String(x.key)===e.key;})[0];
+    if(c){ e.preventDefault(); vsliveCode(c.id); }
+    else if(e.key===' '){ e.preventDefault(); vslivePlay(); }        // espace = play/pause
+  });
 }
 async function vsliveBackToList(){ if(VSL.poll){ clearInterval(VSL.poll); VSL.poll=null; } VSL.gameId=null; vsliveMatches(); }
 async function vslivePollHealth(){
@@ -14117,8 +14171,46 @@ async function vsliveSyncRender(){
 async function vsliveLoadNotes(gameId){ try{ var r=await vslFetch('/api/notes/'+gameId); vsliveRenderNotes(r.notes||[]); }catch(e){} }
 function vsliveRenderNotes(notes){
   var el=vslEl('vsl-notes'); if(!el) return;
-  if(!notes.length){ el.innerHTML='<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune note. Clique « + Note à l\'instant » pendant la lecture.</div>'; return; }
-  el.innerHTML=notes.map(function(n){ return '<div class="vsl-note" onclick="vsliveSeekTo('+n.t+')"><span class="t">'+vslFmt(n.t)+'</span><span class="x">'+vslEsc(n.text||'(sans texte)')+'</span><button class="d" onclick="event.stopPropagation();vsliveDelNote(\''+n.id+'\')">✕</button></div>'; }).join('');
+  VSL.notes=notes||[];
+  if(!notes.length){ el.innerHTML='<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucun moment. Code avec les boutons (ou touches 1-0), ou ajoute une note libre.</div>'; return; }
+  el.innerHTML=notes.map(function(n){
+    var c=n.code?vslCodeOf(n.code):null;
+    var sel=(VSL.sel===n.id);
+    var head=c
+      ? '<span class="dot" style="background:'+c.color+'"></span><span class="x" style="font-weight:700">'+c.label+'</span>'
+      : '<span class="x">'+vslEsc(n.text||'(note)')+'</span>';
+    var labels=(n.labels&&n.labels.length)?'<span class="vsl-lbls">'+n.labels.map(function(l){return '<i>'+vslEsc(l)+'</i>';}).join('')+'</span>':'';
+    var chips=sel?vsliveLabelChips(n):'';
+    return '<div class="vsl-note'+(sel?' sel':'')+'">'+
+      '<div class="vsl-note-row" onclick="vsliveSelectMoment(\''+n.id+'\')">'+
+        '<span class="t">'+vslFmt(n.t)+'</span>'+head+labels+
+        '<button class="d" onclick="event.stopPropagation();vsliveDelNote(\''+n.id+'\')">✕</button>'+
+      '</div>'+chips+
+    '</div>';
+  }).join('');
+}
+function vsliveLabelChips(n){
+  var groups=(typeof SL_LABEL_GROUPS!=='undefined')?SL_LABEL_GROUPS:[];
+  var cur=n.labels||[];
+  return '<div class="vsl-chipwrap">'+groups.map(function(g){
+    return '<div class="vsl-chiprow"><span class="gl">'+g.t+'</span>'+g.items.map(function(it){
+      var on=cur.indexOf(it)>=0;
+      return '<button class="vsl-chip'+(on?' on':'')+'" onclick="event.stopPropagation();vsliveToggleLabel(\''+n.id+'\',\''+vslEsc(it)+'\')">'+it+'</button>';
+    }).join('')+'</div>';
+  }).join('')+'</div>';
+}
+function vsliveSelectMoment(id){
+  VSL.sel=(VSL.sel===id)?null:id;         // re-clic = déplie/replie les labels
+  var n=(VSL.notes||[]).filter(function(x){return x.id===id;})[0];
+  if(n){ var c=n.code?vslCodeOf(n.code):null; var lead=c?(c.lead||0):0; vsliveSeekTo(Math.max(0,n.t-lead)); }
+  vsliveRenderNotes(VSL.notes);
+}
+async function vsliveToggleLabel(id, label){
+  var n=(VSL.notes||[]).filter(function(x){return x.id===id;})[0]; if(!n) return;
+  var labels=(n.labels||[]).slice();
+  var k=labels.indexOf(label); if(k>=0) labels.splice(k,1); else labels.push(label);
+  var r=await fetch(VSL_BASE+'/api/notes/'+VSL.gameId+'/'+id,{ method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({labels:labels}) }).then(function(x){return x.json();}).catch(function(){});
+  if(r&&r.ok) vsliveRenderNotes(r.notes);
 }
 async function vsliveAddNote(){
   if(!VSL.gameId) return; var inp=vslEl('vsl-note-text'); var text=(inp&&inp.value||'').trim();
