@@ -3609,17 +3609,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — onglet du hub Analytics) ══ -->
     <div id="panel-analyse" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
-        </div>
+        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
+        </div>
+        <div class="page-head">
+          <div class="eyebrow">Analytics</div>
+          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
+          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -3728,22 +3729,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <div id="panel-crm" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
 
+        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
+        <div class="rolepills an-tabbar" id="crm-tabs">
+          <button class="an-tab chip on" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
+          <button class="an-tab chip" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
+          <button class="an-tab chip" id="crm-tab-candidatures" onclick="crmShowTab('candidatures')">Candidatures</button>
+          <button class="an-tab chip" id="crm-tab-matching" onclick="crmShowTab('matching')">Matching</button>
+        </div>
+
         <!-- Page head -->
         <div class="page-head">
           <div class="eyebrow">CRM Agent</div>
           <h2 class="h2">Pipeline des prospects</h2>
           <p class="muted">Structures clientes, suivi des joueurs de « Repéré » à « Signé », candidatures et matching.</p>
-        </div>
-
-        <!-- Toolbar : onglets + sync -->
-        <div class="between" style="flex-wrap:wrap;gap:12px">
-          <div class="rolepills" id="crm-tabs">
-            <button class="chip on" id="crm-tab-structures" onclick="crmShowTab('structures')">Structures</button>
-            <button class="chip" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
-            <button class="chip" id="crm-tab-candidatures" onclick="crmShowTab('candidatures')">Candidatures</button>
-            <button class="chip" id="crm-tab-matching" onclick="crmShowTab('matching')">Matching</button>
-          </div>
-          <button onclick="crmSyncCandidatures()" id="btn-sync-candidatures" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures</button>
         </div>
 
         <!-- Tab: Structures -->
@@ -3808,17 +3806,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- ══ PANEL : ANALYTICS ══ -->
     <div id="panel-analytics" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
-        </div>
+        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
+        </div>
+        <div class="page-head">
+          <div class="eyebrow">Analytics</div>
+          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
+          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -3894,17 +3893,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- ══ PANEL : AVANT-MATCH (dossier adversaire) ══ -->
     <div id="panel-prematch" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
-        </div>
+        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
           <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
+        </div>
+        <div class="page-head">
+          <div class="eyebrow">Analytics</div>
+          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
+          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
         </div>
         <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -4686,7 +4686,9 @@ const AN_DESC = {
 };
 function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
 function anSyncTabs(active) {
-  document.querySelectorAll('.an-tab').forEach(b => {
+  // [data-tab] : ne toucher que les onglets Analytics — les barres segmentées
+  // d'autres panneaux (CRM…) gèrent leur état actif elles-mêmes.
+  document.querySelectorAll('.an-tab[data-tab]').forEach(b => {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
   });
   document.querySelectorAll('.an-desc').forEach(d => { d.textContent = AN_DESC[active] || ''; });
@@ -6702,7 +6704,8 @@ function setRole(role, btn) {
   document.querySelectorAll('.role-pill').forEach(b => b.classList.remove('active'));
   if (btn && btn.classList.contains('role-pill')) btn.classList.add('active');
   // Sync les chips de rôle du bloc scouting redesign
-  document.querySelectorAll('.vsd .rolepills .chip').forEach(c => c.classList.toggle('on', c.dataset.role === role));
+  // [data-role] : ne toucher que les pilules de rôle — pas les barres d'onglets (CRM…)
+  document.querySelectorAll('.vsd .rolepills .chip[data-role]').forEach(c => c.classList.toggle('on', c.dataset.role === role));
   if (typeof vsdSetRoleBg === 'function') vsdSetRoleBg(role);
   buildAllDims();
   buildStatsGrid();
@@ -7159,6 +7162,8 @@ function switchPanel(id) {
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
   document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
+  // Barres segmentées : repositionne la pilule du panneau qui vient de devenir visible
+  if (typeof anSegSlide === 'function') anSegSlide();
 }
 /* Sous-onglets du Scouting : Fiche joueur / Graphiques / Carte (Carte = Pro+) */
 function scoutDecorateTabs() {
@@ -9214,6 +9219,7 @@ function crmShowTab(tab) {
   if (tab === 'structures') crmRenderStructures();
   if (tab === 'pipeline')   crmRenderPipeline();
   if (tab === 'matching' && typeof crmRunMatching === 'function') crmRunMatching();
+  if (typeof anSegSlide === 'function') anSegSlide();   // pilule glissante (barre segmentée)
 }
 
 // ── STRUCTURES ──────────────────────────────────────────────
