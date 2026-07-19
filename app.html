@@ -29,7 +29,11 @@ window.VS_DEMO = /[?&]demo=1(?:&|$)/.test(location.search);
 })();
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
-function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/'); }
+function vsLogout(){ try{
+  ['vs_token','vs_user','spes_history','vs_rosters','vs_active_roster','spes_crm_pipeline','spes_crm_structures'].forEach(function(k){ localStorage.removeItem(k); });
+  Object.keys(localStorage).forEach(function(k){ if(k.indexOf('vs_candidates')===0 || k.indexOf('vs_migrated:')===0) localStorage.removeItem(k); });
+  sessionStorage.removeItem('vs_token');
+}catch(e){} location.replace('/'); }
 /* Nom de compte extrait du token (payload.u) — pour préfixer les drapeaux locaux. */
 function vsAccount(){ try{ var s=vsToken().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; return (JSON.parse(atob(s)).u)||''; }catch(_){ return ''; } }
 /* ══ vsStore — synchro des données par compte (cache localStorage + serveur) ══
@@ -4515,7 +4519,7 @@ function anGatherCandidates() {
 /* ─── Store des rosters nommés (Phase 1 Roster) ─── */
 const RS_ROLES = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
 function rsAll() { try { return JSON.parse(localStorage.getItem('vs_rosters') || '[]'); } catch (_) { return []; } }
-function rsSaveAll(list) { localStorage.setItem('vs_rosters', JSON.stringify(list)); if (typeof rsSyncTrack === 'function') rsSyncTrack(); }
+function rsSaveAll(list) { localStorage.setItem('vs_rosters', JSON.stringify(list)); if (typeof rsSyncTrack === 'function') rsSyncTrack(); if (typeof vsStore !== 'undefined') vsStore.save('rosters'); }
 let _rsTrackTimer = null;
 function rsSyncTrack() {   // pousse les rosters suivis au serveur (pour le cron) — débouncé, best-effort
   clearTimeout(_rsTrackTimer);
@@ -4527,7 +4531,7 @@ function rsSyncTrack() {   // pousse les rosters suivis au serveur (pour le cron
   }, 800);
 }
 function rsActiveId() { return parseInt(localStorage.getItem('vs_active_roster') || '0') || null; }
-function rsSetActive(id) { localStorage.setItem('vs_active_roster', String(id)); }
+function rsSetActive(id) { localStorage.setItem('vs_active_roster', String(id)); if (typeof vsStore !== 'undefined') vsStore.save('rosters'); }
 function rsGet(id) { return rsAll().find(r => r.id === id) || null; }
 function rsActive() { return rsGet(rsActiveId()) || rsAll()[0] || null; }
 function rsCreate(name) {
@@ -9499,6 +9503,7 @@ function crmSave() {
     localStorage.setItem('spes_crm_structures', JSON.stringify(crmStructures));
     localStorage.setItem('spes_crm_pipeline',   JSON.stringify(crmPipeline));
   } catch(e) {}
+  if (typeof vsStore !== 'undefined') { vsStore.save('structures'); vsStore.save('crm'); }
 }
 
 function crmLoad() {
@@ -10293,6 +10298,17 @@ function crmRunMatching() {
 
 // Init CRM
 crmLoad();
+/* Synchro serveur : le cache local a déjà peint ; on recharge depuis le serveur
+   (source de vérité) puis on rafraîchit les vues concernées. */
+document.addEventListener('DOMContentLoaded', function () {
+  if (window.VS_DEMO) return;
+  vsStore.loadAll().then(function () {
+    if (typeof crmLoad === 'function') crmLoad();
+    if (typeof renderRoster === 'function' && document.getElementById('an-view-roster') && document.getElementById('an-view-roster').style.display !== 'none') renderRoster();
+    var cp = document.getElementById('panel-crm');
+    if (cp && cp.classList.contains('active') && typeof crmRenderPipeline === 'function') crmRenderPipeline();
+  });
+});
 
 // ── Init au démarrage ─────────────────────────────────────
 (function initApp() {
@@ -10339,6 +10355,7 @@ function recomputeAllScores() {
   if (elAge && savedAge != null) elAge.value = savedAge;
   if (elPrev && savedPrev != null) elPrev.value = savedPrev;
   localStorage.setItem('spes_history', JSON.stringify(hist));
+  if (typeof vsStore !== 'undefined') vsStore.save('fiches');
   showToast(n + ' fiche(s) recalculée(s) avec le nouveau barème', 'success');
   if (typeof renderRoster === 'function') renderRoster();
 }
@@ -10419,6 +10436,7 @@ function saveToHistory() {
   history.unshift(snapshot);
   if (history.length > 30) history = history.slice(0, 30);
   localStorage.setItem('spes_history', JSON.stringify(history));
+  if (typeof vsStore !== 'undefined') vsStore.save('fiches');
 
   showToast(`Fiche "${pseudo} · ${currentRole}" sauvegardée`, 'success');
   renderHistory();
@@ -10509,6 +10527,7 @@ function deleteHistorySnapshot(idx) {
   try { history = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch(_) {}
   history.splice(idx, 1);
   localStorage.setItem('spes_history', JSON.stringify(history));
+  if (typeof vsStore !== 'undefined') vsStore.save('fiches');
   renderHistory();
 }
 
