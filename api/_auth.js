@@ -47,6 +47,12 @@ function getBearer(req) {
   return h.startsWith('Bearer ') ? h.slice(7) : null;
 }
 
+// ── Code d'ingestion candidatures : stable, non devinable, dérivé du secret ─
+function ingestKey(username) {
+  const SESSION_SECRET = process.env.SESSION_SECRET || '';
+  return crypto.createHmac('sha256', SESSION_SECRET).update('ingest:' + username).digest('hex').slice(0, 16);
+}
+
 // ── Commande Upstash Redis via REST (POST single-command) ─
 async function upstash(cmd) {
   const { UPSTASH_URL, UPSTASH_TOKEN } = process.env;
@@ -60,4 +66,4 @@ async function upstash(cmd) {
   return res.json();
 }
 
-module.exports = { hashPassword, verifyPassword, signToken, verifyToken, getBearer, upstash };
+module.exports = { hashPassword, verifyPassword, signToken, verifyToken, getBearer, upstash, ingestKey };
