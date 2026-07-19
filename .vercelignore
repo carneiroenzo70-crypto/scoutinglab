@@ -1,0 +1,25 @@
+# Fichiers versionnés dans git mais JAMAIS téléversés sur Vercel
+# → ils restent disponibles pour l'équipe, mais ne sont pas accessibles
+#   publiquement sur visionscore.gg.
+#
+# ⚠️ Ne jamais ajouter ici : api/, assets/, les pages .html servies,
+#    robots.txt, sitemap.xml, vercel.json, google*.html, riot.txt
+
+# Contexte projet & documentation interne
+CLAUDE.md
+docs/
+
+# Tests (exécutés en local / CI, inutiles en production)
+test/
+
+# Documents commerciaux internes
+commercial/
+
+# Sources de build de la vitrine (index.html est GÉNÉRÉ à partir d'elles)
+_design_ref.html
+_landing_markup.html
+_assemble_index.js
+_maquette.html
+_landing.css
+_scope_landing.js
+VisionScore - Standalone.html
