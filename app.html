@@ -30,6 +30,76 @@ window.VS_DEMO = /[?&]demo=1(?:&|$)/.test(location.search);
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
 function vsLogout(){ try{ localStorage.removeItem('vs_token'); sessionStorage.removeItem('vs_token'); localStorage.removeItem('vs_user'); }catch(e){} location.replace('/'); }
+/* Nom de compte extrait du token (payload.u) — pour préfixer les drapeaux locaux. */
+function vsAccount(){ try{ var s=vsToken().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; return (JSON.parse(atob(s)).u)||''; }catch(_){ return ''; } }
+/* ══ vsStore — synchro des données par compte (cache localStorage + serveur) ══
+   Domaines mappés vers leurs clés localStorage. Le PUT lit le cache local courant
+   (les fonctions de save écrivent déjà le localStorage, puis appellent vsStore.save). */
+const VS_STORE_DOMAINS = {
+  fiches:     ['spes_history'],
+  rosters:    ['vs_rosters', 'vs_active_roster'],
+  crm:        ['spes_crm_pipeline'],
+  structures: ['spes_crm_structures'],
+};
+const vsStore = (function () {
+  const timers = {};
+  function pack(domain) {
+    const out = {};
+    VS_STORE_DOMAINS[domain].forEach(k => {
+      const raw = localStorage.getItem(k);
+      try { out[k] = raw != null ? JSON.parse(raw) : null; } catch (_) { out[k] = null; }
+    });
+    return out;
+  }
+  function unpack(domain, data) {
+    if (!data) return;
+    VS_STORE_DOMAINS[domain].forEach(k => {
+      if (data[k] == null) return;
+      try { localStorage.setItem(k, JSON.stringify(data[k])); } catch (_) {}
+    });
+  }
+  function isEmpty(domain) {
+    return VS_STORE_DOMAINS[domain].every(k => {
+      const v = localStorage.getItem(k);
+      return v == null || v === '' || v === '[]' || v === '{}' || v === 'null';
+    });
+  }
+  async function put(domain) {
+    try {
+      await fetch('/api/store', {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
+        body: JSON.stringify({ domain, data: pack(domain) })
+      });
+    } catch (_) { /* réseau : le cache local garde la modif, repartira au prochain save */ }
+  }
+  function save(domain) {
+    if (window.VS_DEMO || !VS_STORE_DOMAINS[domain]) return;
+    clearTimeout(timers[domain]);
+    timers[domain] = setTimeout(() => put(domain), 1000); // débounce ~1 s
+  }
+  async function loadAll() {
+    if (window.VS_DEMO) return;
+    const domains = Object.keys(VS_STORE_DOMAINS);
+    let server = {};
+    try {
+      const r = await fetch('/api/store?domains=' + domains.join(','), { headers: vsAuthHeaders() });
+      if (r.ok) server = await r.json();
+    } catch (_) { return; /* Upstash indispo → on garde le cache local (mode dégradé) */ }
+    const migratedFlag = 'vs_migrated:' + vsAccount();
+    let migratedAny = false;
+    domains.forEach(d => {
+      if (server[d] != null) {
+        unpack(d, server[d]);                    // le serveur gagne
+      } else if (!isEmpty(d) && !localStorage.getItem(migratedFlag)) {
+        put(d);                                   // migration douce : pousse le local
+        migratedAny = true;
+      }
+    });
+    if (migratedAny) { try { localStorage.setItem(migratedFlag, '1'); } catch (_) {} }
+  }
+  return { save, loadAll, _pack: pack, _isEmpty: isEmpty };
+})();
 /* ── Heartbeat de session : applique une désactivation de compte même si le token
    est encore valide. Ne déconnecte QUE sur un refus explicite (401/403), jamais
    sur une erreur réseau/serveur (évite les faux positifs). ── */
