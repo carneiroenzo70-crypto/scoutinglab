@@ -73,9 +73,12 @@ PUT  /api/store
 
 - `GET /api/candidates` : ne lit plus le pot commun `vs_candidates`, mais
   `vs_candidates:<compte>` (liste du compte connecté). Auth déjà en place.
-- `POST /api/candidate` (ingestion depuis le Google Form d'une structure) : accepte
+- `POST /api/candidates` (ingestion depuis le Google Form d'une structure) : accepte
   un paramètre `to=<ingestKey>` (query ou body). La candidature est poussée dans
   `vs_candidates:<compte>` du compte correspondant. Sans `to` valide → 400.
+  (GET liste + POST ingestion sont **une seule fonction** `candidates.js`, branchée
+  sur la méthode — l'ancien `/api/candidate` est fusionné dedans pour rester sous la
+  limite de 12 Serverless Functions du plan Vercel Hobby.)
 - **Code d'ingestion** : chaque compte a un `ingestKey` stable, dérivé de façon
   déterministe et non devinable : `HMAC-SHA256(SESSION_SECRET, "ingest:"+username)`
   tronqué (ex. 16 hex). Résolution `ingestKey → username` via une clé de correspondance
@@ -130,7 +133,7 @@ Aucune perte de données pour les comptes actuellement en service.
 calcule `ingestKey = HMAC(SESSION_SECRET, "ingest:"+username)` tronqué, garantit la
 correspondance `vs_ingest:<ingestKey> = <username>` en base (`SET` idempotent), et
 renvoie `ingestKey` dans sa réponse. L'app affiche alors, dans l'onglet Candidatures,
-le lien d'ingestion (`/api/candidate?to=<ingestKey>`) + la marche à suivre pour y
+le lien d'ingestion (`/api/candidates?to=<ingestKey>`) + la marche à suivre pour y
 connecter un Google Form. Aucun appel supplémentaire.
 
 ### 4.5 Déconnexion
