@@ -117,6 +117,8 @@ async function vsCheckSession(){
       try { var d = await res.json(); if (d && d.error) msg = d.error; } catch(e){}
       try { alert(msg); } catch(e){}
       vsLogout();
+    } else if (res.ok) {
+      try { var ok = await res.json(); if (ok && ok.ingestKey) { window.VS_INGEST_KEY = ok.ingestKey; if (typeof crmRenderIngestLink === 'function') crmRenderIngestLink(); } } catch(e){}
     }
   } catch(e) { /* réseau indispo → on ne déconnecte pas */ }
 }
@@ -3908,6 +3910,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
         <!-- Tab: Candidatures -->
         <div id="crm-tab-candidatures-content" style="display:none">
+          <div id="crm-ingest-slot"></div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
             <div>
               <div style="font-size:.85rem;color:var(--sub)">Candidatures reçues via Google Form — joueurs ayant postulé pour être scoutés.</div>
@@ -9531,6 +9534,7 @@ function crmShowTab(tab) {
   if (tab === 'matching' && typeof crmRunMatching === 'function') crmRunMatching();
   // Candidatures : chargement automatique à l'ouverture (plus de clic requis)
   if (tab === 'candidatures' && typeof window._crmCandidates === 'undefined') crmSyncCandidatures();
+  if (tab === 'candidatures' && typeof crmRenderIngestLink === 'function') crmRenderIngestLink();
   if (typeof anSegSlide === 'function') anSegSlide();   // pilule glissante (barre segmentée)
 }
 
@@ -10036,6 +10040,21 @@ function crmImportCsvFile(file){
 }
 
 // ── MATCHING ────────────────────────────────────────────────
+// Encart « Recevoir des candidatures » : lien propre à la structure à brancher sur son Google Form.
+function crmRenderIngestLink() {
+  const host = document.getElementById('crm-ingest-slot');
+  if (!host || !window.VS_INGEST_KEY) return;
+  const url = location.origin + '/api/candidate?to=' + window.VS_INGEST_KEY;
+  host.innerHTML =
+    '<div class="card" style="padding:14px 18px;margin-bottom:14px">' +
+      '<div class="h3" style="font-size:14px;margin-bottom:4px">Recevoir des candidatures</div>' +
+      '<div class="faint" style="font-size:12px;margin-bottom:8px">Branche ce lien sur ton Google Form (via Apps Script) : chaque candidature n\'arrivera que dans <strong>ta</strong> session.</div>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<code style="flex:1;min-width:220px;overflow:auto;background:#04120F;border:1px solid var(--vs-forest-500);border-radius:8px;padding:8px 10px;font-size:11.5px;color:var(--vs-fg-2)">' + anEsc(url) + '</code>' +
+        '<button class="btn btn-ghost btn-sm" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + url + '\');showToast&&showToast(\'Lien copié\',\'success\')">Copier</button>' +
+      '</div>' +
+    '</div>';
+}
 async function crmSyncCandidatures() {
   const btn = document.getElementById('btn-sync-candidatures');
   const statusEl = document.getElementById('crm-cand-status');
