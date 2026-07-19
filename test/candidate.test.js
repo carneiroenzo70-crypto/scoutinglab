@@ -6,8 +6,10 @@ process.env.UPSTASH_URL = 'https://mock';
 process.env.UPSTASH_TOKEN = 'mock';
 
 const { signToken, ingestKey } = require('../api/_auth');
-const ingest = require('../api/candidate');
-const list = require('../api/candidates');
+// candidate + candidates fusionnés dans un seul handler (GET liste / POST ingestion)
+const handler = require('../api/candidates');
+const ingest = handler;
+const list = handler;
 
 function mockRes() {
   return { _status: 0, _json: null, setHeader() {}, status(c){ this._status=c; return this; }, json(o){ this._json=o; return this; }, end(){ return this; }, send(t){ this._json=t; return this; } };
