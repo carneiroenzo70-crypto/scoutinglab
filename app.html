@@ -30,7 +30,7 @@ window.VS_DEMO = /[?&]demo=1(?:&|$)/.test(location.search);
 function vsToken(){ return localStorage.getItem('vs_token') || sessionStorage.getItem('vs_token') || ''; }
 function vsAuthHeaders(){ var t=vsToken(); return t ? {'Authorization':'Bearer '+t} : {}; }
 function vsLogout(){ try{
-  ['vs_token','vs_user','spes_history','vs_rosters','vs_active_roster','spes_crm_pipeline','spes_crm_structures'].forEach(function(k){ localStorage.removeItem(k); });
+  ['vs_token','vs_user','vs_cache_owner','spes_history','vs_rosters','vs_active_roster','spes_crm_pipeline','spes_crm_structures'].forEach(function(k){ localStorage.removeItem(k); });
   Object.keys(localStorage).forEach(function(k){ if(k.indexOf('vs_candidates')===0 || k.indexOf('vs_migrated:')===0) localStorage.removeItem(k); });
   sessionStorage.removeItem('vs_token');
 }catch(e){} location.replace('/'); }
@@ -85,6 +85,18 @@ const vsStore = (function () {
   async function loadAll() {
     if (window.VS_DEMO) return;
     const domains = Object.keys(VS_STORE_DOMAINS);
+    // Garde-fou : si le cache local appartient à un AUTRE compte (déconnexion non
+    // faite sur un navigateur partagé), on le purge AVANT tout — sinon la migration
+    // douce pousserait les données de ce compte-là dans le compte courant.
+    const me = vsAccount();
+    try {
+      const owner = localStorage.getItem('vs_cache_owner');
+      if (owner && me && owner !== me) {
+        domains.forEach(d => VS_STORE_DOMAINS[d].forEach(k => localStorage.removeItem(k)));
+        Object.keys(localStorage).forEach(k => { if (k.indexOf('vs_migrated:') === 0) localStorage.removeItem(k); });
+      }
+      if (me) localStorage.setItem('vs_cache_owner', me);
+    } catch (_) {}
     let server = {};
     try {
       const r = await fetch('/api/store?domains=' + domains.join(','), { headers: vsAuthHeaders() });
