@@ -475,6 +475,28 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .an-radar-row .sc{ margin-left:auto; text-align:right; flex:none; }
 .an-radar-row .sc b{ font-family:var(--font-mono); font-size:22px; font-weight:800; display:block; line-height:1; }
 .an-radar-row .sc span{ font-size:8.5px; letter-spacing:.1em; color:var(--vs-fg-3); }
+.an-radar-row{ cursor:pointer; transition:border-color .15s, background .15s, transform .15s var(--ease-out); }
+.an-radar-row:hover{ border-color:var(--vs-emerald-500); background:rgba(45,212,167,.05); transform:translateX(3px); }
+.an-radar-row .medal{ flex:none; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; font-family:var(--font-mono); background:var(--vs-forest-600); color:var(--vs-fg-3); }
+.an-radar-row .medal.m1{ background:linear-gradient(135deg,#F5D77A,#C9A23F); color:#3B2F08; }
+.an-radar-row .medal.m2{ background:linear-gradient(135deg,#D9E2E8,#9FB0BC); color:#2B3540; }
+.an-radar-row .medal.m3{ background:linear-gradient(135deg,#E2A16E,#A96B3C); color:#3D2410; }
+.an-cmp-radar polygon.pl{ transition:opacity .22s var(--ease-out); }
+.an-cmp-radar.hovering polygon.pl{ opacity:.12; }
+.an-cmp-radar.hovering polygon.pl.hot{ opacity:1; }
+.an-cmp-radar circle.vx{ transition:opacity .22s var(--ease-out); }
+.an-cmp-radar.hovering circle.vx{ opacity:.1; }
+.an-cmp-radar.hovering circle.vx.hot{ opacity:1; }
+/* Barres par dimension (détail graphique) */
+.an-dimbars{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:16px 22px; }
+.an-dimbar .t{ font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--vs-fg-3); margin-bottom:8px; font-weight:700; }
+.an-dimbar .row{ display:flex; align-items:center; gap:8px; margin-top:6px; }
+.an-dimbar .nm{ width:64px; flex:none; font-size:11px; font-weight:700; color:var(--vs-fg-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.an-dimbar .tr{ flex:1; height:8px; border-radius:99px; background:var(--vs-forest-600); overflow:hidden; }
+.an-dimbar .fl{ height:100%; border-radius:99px; width:0; transition:width .7s var(--ease-out); }
+.an-dimbar .v{ width:30px; flex:none; text-align:right; font-family:var(--font-mono); font-size:11px; font-weight:700; }
+/* Cartes candidature */
+.cand-card{ padding:14px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -3797,7 +3819,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <button onclick="crmSyncCandidatures()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualiser</button>
           </div>
           <div id="crm-candidatures-list" style="display:flex;flex-direction:column;gap:.75rem">
-            <div style="text-align:center;padding:2rem;color:var(--sub);font-size:.85rem">Cliquez sur "Sync candidatures" pour charger les candidatures reçues.</div>
+            <div class="faint" style="text-align:center;padding:2rem;font-size:.85rem">Chargement des candidatures…</div>
           </div>
         </div>
 
@@ -7356,51 +7378,96 @@ function analyseAddPrompt() {
   showToast('Importe d\'abord une fiche dans le Scouting (ou envoie un prospect depuis le CRM).', 'info');
   switchPanel('scout');
 }
+function anDimVals(s) {
+  // Valeurs 0-1 des 5 dimensions (fallback : score global si dims absentes).
+  const d = s.dimScores || {}, g100 = anScore100(s);
+  return ['d1','d2','d3','d4','d5'].map(k => {
+    const v = parseFloat(d[k]);
+    if (isFinite(v)) return Math.max(0, Math.min(1, v/10));
+    return g100 != null ? Math.max(0, Math.min(1, g100/100)) : 0.3;
+  });
+}
+function anRadarHover(idx, on) {
+  // Survol d'une ligne joueur → son polygone reste net, les autres s'estompent.
+  const svg = document.getElementById('an-cmp-radar'); if (!svg) return;
+  svg.classList.toggle('hovering', on);
+  svg.querySelectorAll('.pl,.vx').forEach(el => el.classList.toggle('hot', on && el.getAttribute('data-idx') == idx));
+}
 function buildCompareRadar(cols) {
-  // Radar SPES superposé (D1..D5 sur 0-10) + lignes joueurs façon maquette.
-  const S = 340, cx = S/2, cy = S/2 + 6, R = S/2 - 44;
+  const S = 360, cx = S/2, cy = S/2 + 6, R = S/2 - 48;
   const labels = ['Stats','Objectifs','Impact','Progression','Discipline'];
   const pt = (i, r) => { const a = -Math.PI/2 + i*2*Math.PI/5; return [cx + r*Math.cos(a), cy + r*Math.sin(a)]; };
   const ring = (f) => Array.from({length:5}, (_, i) => pt(i, R*f).map(n => n.toFixed(1)).join(',')).join(' ');
   const axes = Array.from({length:5}, (_, i) => { const [x,y] = pt(i, R); return '<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--vs-forest-500)" stroke-width="1"/>'; }).join('');
-  const texts = labels.map((l, i) => { const [x,y] = pt(i, R+20); return '<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="10" fill="var(--vs-fg-3)" style="text-transform:uppercase;letter-spacing:.06em">'+l+'</text>'; }).join('');
-  const polys = cols.map((s, i) => {
-    const d = s.dimScores || {};
-    const g100 = anScore100(s);
-    const vals = ['d1','d2','d3','d4','d5'].map(k => {
-      const v = parseFloat(d[k]);
-      if (isFinite(v)) return Math.max(0, Math.min(1, v/10));
-      return g100 != null ? Math.max(0, Math.min(1, g100/100)) : 0.3;
-    });
-    const p = vals.map((v, j) => pt(j, R*v).map(n => n.toFixed(1)).join(',')).join(' ');
-    return '<polygon points="'+p+'" fill="'+PLAYER_COLORS[i]+'22" stroke="'+PLAYER_COLORS[i]+'" stroke-width="1.8" stroke-linejoin="round"/>';
-  }).join('');
-  const rows = cols.map((s, i) => {
-    const g = anScore100(s);
+  const texts = labels.map((l, i) => { const [x,y] = pt(i, R+22); return '<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--vs-fg-3)" style="text-transform:uppercase;letter-spacing:.07em">'+l+'</text>'; }).join('');
+  // Polygones + points aux sommets, avec halo lumineux
+  let polys = '', dots = '';
+  cols.forEach((s, i) => {
+    const vals = anDimVals(s);
+    const pts = vals.map((v, j) => pt(j, R*v));
+    polys += '<polygon class="pl" data-idx="'+i+'" points="'+pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' ')+'" fill="'+PLAYER_COLORS[i]+'26" stroke="'+PLAYER_COLORS[i]+'" stroke-width="2" stroke-linejoin="round" filter="url(#an-glow)"/>';
+    dots += pts.map(p => '<circle class="vx" data-idx="'+i+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.2" fill="'+PLAYER_COLORS[i]+'" stroke="rgba(4,18,15,.9)" stroke-width="1.4"/>').join('');
+  });
+  // Lignes joueurs classées par score, médailles ① ② ③, anneau de score
+  const order = cols.map((s, i) => ({ s, i, g: anScore100(s) ?? -1 })).sort((a, b) => b.g - a.g);
+  const rows = order.map((o, rankPos) => {
+    const { s, i } = o; const g = o.g >= 0 ? o.g : null;
     const tier = (String(s.rankLbl||'').match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
     const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
     const tierColor = (typeof CRM_TIER_COLOR !== 'undefined' && CRM_TIER_COLOR[t]) || 'var(--vs-fg-2)';
-    return '<div class="an-radar-row">' +
+    const scColor = (g != null && typeof anScoreColor === 'function') ? anScoreColor(g) : 'var(--vs-fg-1)';
+    // Anneau de score : cercle SVG dont l'arc = score/100
+    const rr = 20, circ = 2*Math.PI*rr, off = g != null ? circ*(1 - g/100) : circ;
+    const gauge = '<svg width="52" height="52" viewBox="0 0 52 52" style="flex:none">' +
+      '<circle cx="26" cy="26" r="'+rr+'" fill="none" stroke="var(--vs-forest-600)" stroke-width="4"/>' +
+      '<circle cx="26" cy="26" r="'+rr+'" fill="none" stroke="'+scColor+'" stroke-width="4" stroke-linecap="round" stroke-dasharray="'+circ.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 26 26)"/>' +
+      '<text x="26" y="30" text-anchor="middle" font-size="14" font-weight="800" fill="'+scColor+'" font-family="var(--font-mono)">'+(g != null ? g : '—')+'</text>' +
+    '</svg>';
+    return '<div class="an-radar-row" onmouseenter="anRadarHover('+i+',true)" onmouseleave="anRadarHover('+i+',false)" onclick="anRadarHover('+i+',true)">' +
+      '<span class="medal m'+(rankPos+1)+'">'+(rankPos+1)+'</span>' +
       '<div class="av" style="border-color:' + PLAYER_COLORS[i] + '">' + (s.pseudo||'?').charAt(0).toUpperCase() + '</div>' +
-      '<div style="min-width:0"><div style="font-weight:800;font-size:15px;color:var(--vs-fg-1)">' + anEsc(s.pseudo||'?') +
+      '<div style="min-width:0;flex:1"><div style="font-weight:800;font-size:15px;color:var(--vs-fg-1)">' + anEsc(s.pseudo||'?') +
         (s.tag && s.tag !== '—' ? ' <span class="faint" style="font-size:10.5px;font-family:var(--font-mono);font-weight:400">#' + anEsc(s.tag) + '</span>' : '') + '</div>' +
         '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:4px">' +
           (t ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:' + tierColor + '">' + (typeof rankIcon === 'function' ? rankIcon(t, 'rank-icon-sm') : '') + anEsc(s.rankLbl) + '</span>' : '') +
           '<span class="chip" style="padding:1px 9px;font-size:10px">' + anEsc(s.role||'?') + '</span>' +
         '</div></div>' +
-      '<div class="sc"><b style="color:' + (g != null && typeof anScoreColor === 'function' ? anScoreColor(g) : 'var(--vs-fg-1)') + '">' + (g != null ? g : '—') + '</b><span>VISIONSCORE</span></div>' +
+      gauge +
     '</div>';
   }).join('');
   const roles = [...new Set(cols.map(c => c.role))];
   return '<div class="card" style="padding:20px 22px;margin-bottom:16px">' +
-    '<div class="label" style="font-size:10.5px;margin-bottom:6px">Radar SPES superposé · ' + (roles.length === 1 ? anEsc(roles[0]) : 'multi-rôles') + '</div>' +
+    '<div class="between" style="margin-bottom:6px;flex-wrap:wrap;gap:8px">' +
+      '<div class="label" style="font-size:10.5px">Radar SPES superposé · ' + (roles.length === 1 ? anEsc(roles[0]) : 'multi-rôles') + '</div>' +
+      '<span class="faint" style="font-size:10.5px">survole un joueur pour isoler son profil</span></div>' +
     '<div class="an-radarcard">' +
-      '<svg width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '" style="max-width:100%;height:auto;justify-self:center">' +
+      '<svg id="an-cmp-radar" class="an-cmp-radar" width="' + S + '" height="' + S + '" viewBox="0 0 ' + S + ' ' + S + '" style="max-width:100%;height:auto;justify-self:center">' +
+        '<defs><filter id="an-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>' +
         [1,.75,.5,.25].map(f => '<polygon points="'+ring(f)+'" fill="none" stroke="var(--vs-forest-500)" stroke-width="1" opacity="'+(f===1?1:.55)+'"/>').join('') +
-        axes + polys + texts +
+        axes + polys + dots + texts +
       '</svg>' +
       '<div class="an-radar-rows">' + rows + '</div>' +
     '</div></div>';
+}
+function buildDimBars(cols) {
+  // Détail par dimension : barres horizontales colorées par joueur (lisible d'un œil).
+  const dims = [['d1','Stats pures'],['d2','Objectifs'],['d3','Impact carte'],['d4','Progression'],['d5','Discipline']];
+  const blocks = dims.map(([k, lbl]) => {
+    const vals = cols.map(s => { const v = parseFloat((s.dimScores||{})[k]); return isFinite(v) ? v : null; });
+    const best = Math.max(...vals.map(v => v == null ? -1 : v));
+    const rows = cols.map((s, i) => {
+      const v = vals[i];
+      return '<div class="row">' +
+        '<span class="nm" title="'+anEsc(s.pseudo||'?')+'">'+anEsc(s.pseudo||'?')+'</span>' +
+        '<div class="tr"><div class="fl an-fl" style="background:'+PLAYER_COLORS[i]+';--w:'+(v != null ? (v*10).toFixed(0) : 0)+'%"></div></div>' +
+        '<span class="v" style="color:'+(v != null && v === best ? PLAYER_COLORS[i] : 'var(--vs-fg-3)')+'">'+(v != null ? v.toFixed(1) : '—')+'</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="an-dimbar"><div class="t">'+lbl+'</div>'+rows+'</div>';
+  }).join('');
+  return '<div class="card" style="padding:20px 22px;margin-bottom:16px">' +
+    '<div class="label" style="font-size:10.5px;margin-bottom:14px">Détail par dimension <span class="faint" style="font-weight:400;text-transform:none;letter-spacing:0">— sur 10, meilleur en couleur</span></div>' +
+    '<div class="an-dimbars">'+blocks+'</div></div>';
 }
 async function exportComparaison() {
   if (!analyseSlots.length) { showToast('Ajoute au moins une fiche avant d\'exporter.', 'info'); return; }
@@ -7615,11 +7682,6 @@ function buildScoutView(container) {
   // Table comparative
   const rows = [
     { lbl:'Score SPES', vals:cols.map(s=>s.global?.toFixed(2)||'—'), big:true },
-    { lbl:'D1 Stats pures',  vals:cols.map(s=>fmtVal(s.dimScores?.d1)) },
-    { lbl:'D2 Objectifs',    vals:cols.map(s=>fmtVal(s.dimScores?.d2)) },
-    { lbl:'D3 Impact',       vals:cols.map(s=>fmtVal(s.dimScores?.d3)) },
-    { lbl:'D4 Progression',  vals:cols.map(s=>fmtVal(s.dimScores?.d4)) },
-    { lbl:'D5 Discipline',   vals:cols.map(s=>fmtVal(s.dimScores?.d5)) },
     { lbl:'KDA',             vals:cols.map(s=>fmtVal(s.stats?.kda,2)) },
     { lbl:'Win Rate',        vals:cols.map(s=>s.stats?.winrate!=null?fmtVal(s.stats.winrate)+'%':'—') },
     { lbl:'CS/min',          vals:cols.map(s=>fmtVal(s.stats?.cs_min,2)) },
@@ -7662,6 +7724,7 @@ function buildScoutView(container) {
 
   container.innerHTML =
     buildCompareRadar(cols) +
+    buildDimBars(cols) +
     sameRoleBanner +
     (verdictHTML ? '<div style="background:rgba(45,212,167,.06);border:1px solid rgba(45,212,167,.22);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:.85rem;color:var(--sub2);line-height:1.7">◆ <strong style="color:var(--lime)">Recommandation SPES</strong> · ' + verdictHTML + '</div>' : '') +
     '<div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">' + playerCards + '</div>' +
@@ -7673,6 +7736,8 @@ function buildScoutView(container) {
     '<div class="faint" style="font-size:.75rem;padding:8px 4px">' +
       'Les métriques exclusives VisionScore ne sont pas disponibles sur OP.GG ou DPM.' +
     '</div>';
+  // Anime les barres par dimension (largeur 0 → valeur, transition CSS)
+  setTimeout(() => container.querySelectorAll('.an-fl').forEach(el => { el.style.width = el.style.getPropertyValue('--w'); }), 60);
 }
 
 // ── MODE ROSTER (4-5 joueurs) ─────────────────────────────────
@@ -9324,6 +9389,8 @@ function crmShowTab(tab) {
   if (tab === 'structures') crmRenderStructures();
   if (tab === 'pipeline')   crmRenderPipeline();
   if (tab === 'matching' && typeof crmRunMatching === 'function') crmRunMatching();
+  // Candidatures : chargement automatique à l'ouverture (plus de clic requis)
+  if (tab === 'candidatures' && typeof window._crmCandidates === 'undefined') crmSyncCandidatures();
   if (typeof anSegSlide === 'function') anSegSlide();   // pilule glissante (barre segmentée)
 }
 
@@ -9842,32 +9909,47 @@ async function crmSyncCandidatures() {
     const candidates = await res.json();
 
     if (!Array.isArray(candidates) || !candidates.length) {
-      if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--sub);font-size:.85rem">Aucune candidature reçue pour le moment.</div>';
-      if (statusEl) statusEl.textContent = '0 candidature';
+      if (listEl) listEl.innerHTML =
+        '<div class="card" style="text-align:center;padding:44px 20px">' +
+          '<div style="display:flex;justify-content:center;margin-bottom:12px"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg></div>' +
+          '<div class="h3" style="font-size:15px;margin-bottom:6px">Aucune candidature pour le moment</div>' +
+          '<p class="muted" style="font-size:12.5px;max-width:420px;margin:0 auto;line-height:1.7">Les joueurs qui remplissent ton formulaire de candidature apparaîtront ici automatiquement, avec vérification du rang en un clic et envoi direct dans le pipeline.</p>' +
+        '</div>';
+      if (statusEl) statusEl.textContent = '';
+      window._crmCandidates = [];
       return;
     }
 
     if (statusEl) statusEl.textContent = candidates.length + ' candidature' + (candidates.length > 1 ? 's' : '') + ' reçue' + (candidates.length > 1 ? 's' : '');
 
     if (listEl) {
+      const TIER_C = (typeof CRM_TIER_COLOR !== 'undefined') ? CRM_TIER_COLOR : {};
       listEl.innerHTML = candidates.map((c, i) => {
-        const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '?';
-        const ageStr = c.age ? c.age + ' ans' : '?';
-        const rankColor = (c.rank||'').includes('Diamond')||(c.rank||'').includes('Master')||(c.rank||'').includes('Grandmaster')||(c.rank||'').includes('Challenger') ? 'var(--lime)' : 'var(--sub2)';
-        return `<div class="card" style="padding:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
-          <div style="flex:1;min-width:180px">
-            <div class="h3" style="font-weight:700;font-size:.95rem">${c.pseudo}<span class="faint" style="font-weight:400;font-size:.8rem"> #${c.tag||'?'}</span></div>
-            <div style="font-size:.75rem;color:var(--sub);margin-top:2px">${c.role||'?'} · ${ageStr} · ${c.pays||'?'}</div>
+        const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '';
+        const tier = (String(c.rank||'').match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
+        const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
+        const rankColor = TIER_C[t] || 'var(--vs-fg-2)';
+        return `<div class="card cand-card">
+          <div class="avatar" style="width:38px;height:38px;font-size:15px;flex:none">${(c.pseudo||'?').charAt(0).toUpperCase()}</div>
+          <div style="flex:1;min-width:170px">
+            <div style="font-weight:800;font-size:14.5px;color:var(--vs-fg-1)">${c.pseudo}<span class="faint" style="font-weight:400;font-size:11px;font-family:var(--font-mono)"> #${c.tag||'?'}</span></div>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px">
+              <span class="chip" style="padding:1px 9px;font-size:10px">${c.role||'?'}</span>
+              ${c.age ? '<span class="faint" style="font-size:11px">'+c.age+' ans</span>' : ''}
+              ${c.pays ? '<span class="faint" style="font-size:11px">· '+c.pays+'</span>' : ''}
+              ${t ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:'+rankColor+'">'+(typeof rankIcon==='function'?rankIcon(t,'rank-icon-sm'):'')+c.rank+'</span>' : ''}
+            </div>
           </div>
-          <div style="font-size:.82rem;color:${rankColor};font-family:monospace;font-weight:600">${c.rank||'?'}</div>
-          <div style="font-size:.78rem;color:var(--sub);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.experience||''}">${c.experience||'—'}</div>
-          <div style="font-size:.75rem;color:var(--teal)">${c.contact||'—'}</div>
-          <div style="font-size:.7rem;color:var(--sub)">${dateStr}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
-            <button id="vrfy-${c.id}" onclick="crmVerifyRank('${c.pseudo}','${c.tag||'EUW'}','${(c.rank||'').replace(/'/g,'')}','${c.id}')" style="background:var(--surf2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--sub);cursor:pointer">🔍 Vérifier rang</button>
-            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" style="background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:5px;padding:3px 10px;font-size:.75rem;color:var(--lime);cursor:pointer">→ Pipeline</button>
+          <div style="min-width:0;max-width:230px;flex:1">
+            ${c.experience ? '<div class="faint" style="font-size:11.5px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical" title="'+String(c.experience).replace(/"/g,'&quot;')+'">'+c.experience+'</div>' : ''}
+            ${c.contact ? '<div style="font-size:11.5px;color:var(--vs-emerald-300);margin-top:3px">'+c.contact+'</div>' : ''}
           </div>
-          <div id="vrfy-out-${c.id}" style="width:100%;margin-top:.25rem"></div>
+          <div class="faint" style="font-size:10.5px;flex:none">${dateStr}</div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:none">
+            <button id="vrfy-${c.id}" onclick="crmVerifyRank('${c.pseudo}','${c.tag||'EUW'}','${(c.rank||'').replace(/'/g,'')}','${c.id}')" class="btn btn-ghost btn-sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Vérifier rang</button>
+            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" class="btn btn-cta btn-sm">→ Pipeline</button>
+          </div>
+          <div id="vrfy-out-${c.id}" style="width:100%"></div>
         </div>`;
       }).join('');
       window._crmCandidates = candidates;
