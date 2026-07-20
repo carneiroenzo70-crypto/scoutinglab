@@ -39,9 +39,18 @@ Vérifier le statut d'un build via l'API GitHub :
 `https://api.github.com/repos/carneiroenzo70-crypto/scoutinglab/commits/<sha>/status`.
 
 ### 5. Clé API Riot = clé **Personnelle** (100 req / 2 min)
-Plafond dur. Un import de 100 parties inédites ne peut PAS être rapide tant que Riot
-n'accorde pas une clé Production (demande en cours). Le `429` qui « fait buguer » les
-imports vient de là, pas du code.
+Plafond dur. Un import de 100 parties **inédites** ne peut PAS être rapide tant que Riot
+n'accorde pas une clé Production (demande en cours).
+
+**Cache des matchs (2026-07-19)** : `api/riot.js` met en cache Upstash les ressources
+**immuables** (`/lol/match/v5/matches/<id>` et `/timeline` → clé `vs_match:<id>[:tl]`,
+TTL 30 j). Un match servi depuis le cache **ne consomme aucun quota Riot** → les
+ré-imports sont quasi instantanés (mesuré : 20 matchs en 6 ms contre 4 236 ms).
+⚠️ **Ne jamais cacher** les données mouvantes (liste d'IDs `/ids`, entrées de ligue,
+compte) — le proxy les marque `X-VS-Cache: bypass`.
+Sur `429`, le proxy relaie le `Retry-After` réel de Riot et le client attend ce
+délai-là ; `fetchMatchesInBatches` saute sa pause quand tout le lot vient du cache
+(compteur `_vsCacheHits`).
 
 ---
 
@@ -118,9 +127,10 @@ Spec détaillée : `docs/superpowers/specs/2026-07-19-multitenant-storage-design
 | Analyse vidéo / scrim | 🔴 **en pause** — non vendable en l'état, Enzo explore la question avec Riot. Ne pas relancer ce chantier sans demande explicite. |
 | Stripe / paiement | ⚪ scaffold dormant (facturation manuelle) — cf. `docs/STRIPE_SETUP.md` |
 
-**Chantier suivant identifié** : vitesse d'import Riot (cache serveur des matchs
-`vs_match:<id>` — données immuables — + back-off propre sur 429). Diagnostic en annexe de
-`docs/superpowers/specs/2026-07-19-multitenant-storage-design.md`.
+**Vitesse d'import (fait le 19/07/2026)** : cache serveur des matchs + back-off honnête
+sur 429 — voir piège n°5. **Reste** : quand Riot accordera la clé **Production**, retirer
+la pause de 1400 ms dans `fetchMatchesInBatches` (`app.html`) → les imports de 100/200
+parties passeront de ~2 min à quelques secondes.
 
 ---
 
