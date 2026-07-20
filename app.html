@@ -11100,6 +11100,9 @@ function dbgLog(msg) {
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+/* Nombre de réponses servies par le cache serveur (matchs immuables). Sert à
+   savoir si un lot n'a coûté aucun quota Riot → dans ce cas, pas besoin de pause. */
+let _vsCacheHits = 0;
 
 async function riotFetch(url, apiKey) {
   const BACKEND = '';
@@ -11115,14 +11118,21 @@ async function riotFetch(url, apiKey) {
 
     // Si le backend répond correctement
     if (res.ok) {
+      // Match servi depuis le cache serveur → n'a coûté aucun quota Riot.
+      // Le compteur permet à fetchMatchesInBatches de sauter sa pause.
+      if (res.headers.get('X-VS-Cache') === 'hit') _vsCacheHits++;
       try { return JSON.parse(body); } catch(_) { throw new Error('JSON invalide'); }
     }
 
-    // 429 : rate limit → retry après 15s
+    // 429 : rate limit → on attend le délai RÉEL annoncé par Riot (relayé par le
+    // proxy), pas un délai fixe au hasard. Évite de re-cogner la limite en boucle.
     if (res.status === 429) {
-      dbgLog('⏳ Limite Riot atteinte — pause 15s et reprise automatique…');
-      setProgress(_progressLastPct, '⏳ Trop de requêtes — reprise automatique dans 15s…');
-      await sleep(15000);
+      var wait = parseInt(res.headers.get('Retry-After'), 10);
+      if (!wait) { try { wait = (JSON.parse(body) || {}).retryAfter; } catch(_) {} }
+      wait = Math.min(Math.max(wait || 10, 1), 130);   // borné : 1 s … 130 s
+      dbgLog('⏳ Limite Riot atteinte — reprise dans ' + wait + 's');
+      setProgress(_progressLastPct, '⏳ Limite Riot atteinte — reprise automatique dans ' + wait + ' s…');
+      await sleep(wait * 1000);
       return riotFetch(url, apiKey);
     }
 
@@ -11162,14 +11172,21 @@ async function riotFetch(url, apiKey) {
 async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
   const matches = [];
   const BATCH = 5;
+  let echecs = 0;
   for (let i = 0; i < ids.length; i += BATCH) {
     const batch = ids.slice(i, i + BATCH);
+    const avantCache = _vsCacheHits;
     const results = await Promise.allSettled(batch.map(id => riotFetch(`https://${regional}.api.riotgames.com/lol/match/v5/matches/${id}`, apiKey)));
-    results.forEach(r => { if (r.status === 'fulfilled') matches.push(r.value); });
+    results.forEach(r => { if (r.status === 'fulfilled' && r.value) matches.push(r.value); else echecs++; });
+    const depuisCache = _vsCacheHits - avantCache;
     const pct = 35 + Math.round((i+BATCH)/ids.length*50);
-    onProgress(Math.min(85, pct), `Analyse des parties ${Math.min(i+BATCH,ids.length)}/${ids.length}…`);
-    if (i + BATCH < ids.length) await sleep(1400);
+    const fait = Math.min(i+BATCH, ids.length);
+    onProgress(Math.min(85, pct), `Analyse des parties ${fait}/${ids.length}…` + (depuisCache ? ' (en cache)' : ''));
+    // Le lot venait entièrement du cache → aucun quota Riot consommé, aucune raison
+    // d'attendre. C'est ce qui rend les ré-imports quasi instantanés.
+    if (i + BATCH < ids.length && depuisCache < batch.length) await sleep(1400);
   }
+  if (echecs) dbgLog('⚠ ' + echecs + ' partie(s) non récupérée(s) sur ' + ids.length);
   return matches;
 }
 
