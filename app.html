@@ -2395,6 +2395,23 @@ body.theme-dark #panel-scout .dim-header:hover {
     0 26px 58px -22px rgba(0,0,0,.75),
     0 8px 22px -10px rgba(0,0,0,.6) !important;
 }
+/* Champs de saisie : verre translucide au lieu des tuiles forêt opaques.
+   Repris de « .vit-signin .auth-input.ctrl » (maquette), qui résout exactement
+   ce problème — sur des cartes en verre, un champ opaque se lit comme un trou
+   sombre. */
+body.theme-dark #panel-scout .ctrl,
+body.theme-dark #panel-scout .seg {
+  background:rgba(255,255,255,.05);
+  border-color:rgba(255,255,255,.10);
+  -webkit-backdrop-filter:blur(3px);
+          backdrop-filter:blur(3px);
+}
+/* Indispensable : la règle ci-dessus porte un ID et l'emporte donc sur
+   « .vsd .ctrl:focus-within ». Sans ce rappel, la bordure resterait blanche
+   à la saisie et le repère de focus émeraude serait perdu. */
+body.theme-dark #panel-scout .ctrl:focus-within {
+  border-color:var(--vs-emerald-500);
+}
 .card-title {
   font-size:9.5px;
   letter-spacing:.14em;
