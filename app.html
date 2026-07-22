@@ -1390,6 +1390,11 @@ button, .btn, select,
   border:2px solid; margin-bottom:10px;
   text-transform:uppercase; transition:all .25s;
 }
+/* Dans la barre d'actions de la fiche, la pastille est alignée horizontalement
+   avec « Ajouter au CRM » / « Export PDF » : la marge basse de 10px (héritée
+   d'une mise en page empilée) décalait son centre de 5px vers le haut. */
+#spes-tier-badge { align-items:center; }
+#spes-tier-badge .spes-tier { margin-bottom:0; }
 .spes-tier.tier-s  { color:#F5A623; border-color:#F5A623; background:rgba(245,166,35,.12); box-shadow:0 0 18px rgba(245,166,35,.25); }
 .spes-tier.tier-ap { color:#00C27A; border-color:#00C27A; background:rgba(0,194,122,.10); box-shadow:0 0 14px rgba(0,194,122,.20); }
 .spes-tier.tier-a  { color:#2DD4A7; border-color:#2DD4A7; background:rgba(45,212,167,.10); }
@@ -6548,7 +6553,10 @@ function updateGlobal() {
     const tier = TIERS.find(t => g >= t.min);
     tierBadgeLabel.className = 'spes-tier ' + tier.cls;
     tierBadgeLabel.textContent = tier.lbl;
-    tierBadgeWrap.style.display = 'block';
+    // 'flex' et non 'block' : en block, le conteneur prenait 46px de haut (line-height)
+    // autour d'une pastille de 36px, qui se calait en haut. Le conteneur était donc
+    // bien centré sur les boutons voisins, mais son contenu visible non — 5px trop haut.
+    tierBadgeWrap.style.display = 'flex';
   } else if (tierBadgeWrap && g === null) {
     tierBadgeWrap.style.display = 'none';
   }
