@@ -294,6 +294,12 @@ body.rolebg-on .role-bg{ opacity:1; }
   transition:transform .7s cubic-bezier(.05,.7,.1,1), opacity .5s cubic-bezier(.2,0,0,1); will-change:transform;
 }
 .role-bg-icon.echo{ top:auto; bottom:-4%; left:-1%; right:auto; width:min(62vh,640px); opacity:.22; transform:translateY(0) scale(1.1) rotate(-6deg); }
+/* Mid est le seul rôle sans rotation : sa boîte englobante est plus étroite,
+   il restait donc ~120px plus écarté que les autres. On le rentre davantage.
+   Contrepartie assumée : il ne déborde plus du bord droit, contrairement aux
+   autres rôles — sa silhouette irrégulière fait qu'il se lit quand même
+   comme un fond et non comme un objet posé. */
+.role-bg-layer[data-role="Mid"] .role-bg-icon:not(.echo){ right:3%; }
 .role-bg-layer.on .role-bg-icon{ transform:translateY(-50%) scale(1) rotate(0deg); }
 .role-bg-layer.on:not([data-role="Mid"]) .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-45deg); }
 .role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
