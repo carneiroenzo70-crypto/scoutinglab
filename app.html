@@ -2343,7 +2343,7 @@ body.landing-active #panel-landing.active { display:block !important; }
       « body:not(.theme-dark) .vsd .card » et casserait le mode clair.
    2. background et box-shadow en !important : les cadres de stats sont posés
       en !important plus haut (règle « relief 3D », l.664-668).
-   3. Flou et reflets volontairement plus faibles que la maquette (6px contre
+   3. Flou et reflets volontairement plus faibles que la maquette (3px contre
       22px, valeurs blanches divisées par deux) : son rendu, calibré pour une
       carte isolée, était trop brutal répété sur autant de cadres. */
 body.theme-dark #panel-scout .card,
@@ -2355,8 +2355,8 @@ body.theme-dark #panel-scout .dim-body {
     linear-gradient(150deg, rgba(255,255,255,.045), rgba(255,255,255,.012) 42%, rgba(7,32,28,.12)),
     rgba(6,30,26,.10) !important;
   border:1px solid rgba(255,255,255,.04);
-  -webkit-backdrop-filter:blur(6px) saturate(155%) brightness(1.04);
-          backdrop-filter:blur(6px) saturate(155%) brightness(1.04);
+  -webkit-backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
+          backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,.05),
     inset 0 1px 1px rgba(255,255,255,.035),
