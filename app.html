@@ -845,6 +845,40 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
 .vsd .chip.on{ background:rgba(45,212,167,.12); border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
 .vsd .rolepills{ display:flex; gap:7px; flex-wrap:wrap; align-items:center; }
 .vsd .rolepills .chip{ padding:8px 14px; }
+
+/* ── .rolepills-anim : ressort élastique MD3 sur les pastilles de rôle ──
+   Pas de pilule glissante ici, contrairement au sélecteur de parties, pour
+   deux raisons structurelles :
+     - .rolepills est en flex-wrap : sur écran étroit les pastilles passent à
+       la ligne, un indicateur unique sauterait d'une ligne à l'autre ;
+     - chaque pastille porte sa propre bordure, qu'un indicateur glissant
+       derrière ne saurait pas reproduire.
+   MD3 traite ce cas comme des « filter chips » : ressort sur la puce
+   sélectionnée, sans indicateur commun. Même vocabulaire de mouvement que la
+   pilule du sélecteur — étirement/écrasement à volume constant, rebond
+   amorti — appliqué à la puce elle-même.
+   Les transitions de couleur passent aussi en « emphasized » 400ms : le
+   transition:all 120ms hérité de .chip donnait un changement sec. */
+.vsd .rolepills-anim .chip{
+  transition:background 400ms cubic-bezier(.2,0,0,1),
+             border-color 400ms cubic-bezier(.2,0,0,1),
+             color 400ms cubic-bezier(.2,0,0,1);
+}
+@keyframes chipPop{
+  0%   { transform:scaleX(1)    scaleY(1); }
+  20%  { transform:scaleX(1.12) scaleY(.90); }
+  46%  { transform:scaleX(.95)  scaleY(1.08); }
+  70%  { transform:scaleX(1.03) scaleY(.98); }
+  88%  { transform:scaleX(.99)  scaleY(1.01); }
+  100% { transform:scaleX(1)    scaleY(1); }
+}
+.vsd .rolepills-anim .chip.pop{
+  animation:chipPop 560ms cubic-bezier(.2,0,0,1);
+  transform-origin:center center;
+}
+@media (prefers-reduced-motion: reduce){
+  .vsd .rolepills-anim .chip.pop{ animation:none; }
+}
 /* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
 .vsd .an-tabbar{ position:relative; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; width:fit-content; max-width:100%; margin-left:auto; margin-right:auto; align-self:center; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; scrollbar-width:none; }
 .vsd .an-tabbar::-webkit-scrollbar{ display:none; }
@@ -3209,7 +3243,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
           </div>
 
-          <div class="rolepills" style="margin-top:14px">
+          <div class="rolepills rolepills-anim" style="margin-top:14px">
             <span class="label" style="align-self:center;margin-right:4px">Rôle</span>
             <button type="button" class="chip" data-role="Top" onclick="vsdScoutRole(this,'Top')">Top</button>
             <button type="button" class="chip" data-role="Jgl" onclick="vsdScoutRole(this,'Jgl')">Jungle</button>
@@ -3262,6 +3296,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         var p = btn.parentNode;
         p.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('on'); });
         btn.classList.add('on');
+        // Ressort sur la puce choisie. Rejoué même si on reclique la puce déjà
+        // active : retrait + reflow forcé, sinon le navigateur ne relance pas
+        // l'animation (même mécanique que .moving sur la pilule du sélecteur).
+        if (p.classList.contains('rolepills-anim')) {
+          btn.classList.remove('pop');
+          void btn.offsetWidth;
+          btn.classList.add('pop');
+        }
         vsdSetRoleBg(role);
         // setRole() met à jour la vraie variable currentRole + recalcule les dimensions
         if (typeof setRole === 'function') setRole(role);
