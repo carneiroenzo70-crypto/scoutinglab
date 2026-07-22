@@ -2395,6 +2395,21 @@ body.theme-dark #panel-scout .dim-header:hover {
     0 26px 58px -22px rgba(0,0,0,.75),
     0 8px 22px -10px rgba(0,0,0,.6) !important;
 }
+/* ════ Rythme vertical du scouting ════
+   L'espacement reposait sur des margin-bottom posés bloc par bloc (20/18/16/12px,
+   hors échelle), et les deux sections majeures n'en avaient aucune : elles
+   touchaient le bloc précédent (0px). L'intertitre « Dossier joueur » se
+   retrouvait collé à la carte du dessus et détaché de celle qu'il annonce —
+   loi de proximité inversée, il se rattachait visuellement au mauvais bloc.
+
+   Paliers retenus (échelle 8px) :
+     40px  rupture entre sections majeures
+     16px  entre cartes d'une même section (déjà en place, conservé)
+     16px  intertitre → son contenu (déjà en place, conservé)
+   Le rapport 40/16 fait que l'intertitre appartient sans ambiguïté à ce qui suit. */
+#panel-scout > #scout-dossier,
+#panel-scout > #scout-notation { margin-top:40px; }
+
 /* Champs de saisie : verre translucide au lieu des tuiles forêt opaques.
    Repris de « .vit-signin .auth-input.ctrl » (maquette), qui résout exactement
    ce problème — sur des cartes en verre, un champ opaque se lit comme un trou
