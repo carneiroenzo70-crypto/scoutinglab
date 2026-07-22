@@ -2438,6 +2438,23 @@ body.theme-dark #panel-scout .seg {
 body.theme-dark #panel-scout .ctrl:focus-within {
   border-color:var(--vs-emerald-500);
 }
+/* Autofill Chrome/Edge sur les champs en verre.
+   La règle générale (plus haut) peint --vs-forest-800 en dur : c'était la
+   couleur des anciens champs opaques, et depuis leur passage en verre elle
+   apparaît comme un rectangle sombre dès que Chrome remplit un champ.
+   Chrome impose son propre fond sur :-webkit-autofill et la seule parade est
+   de le masquer par une ombre interne opaque — on ne peut donc pas rester
+   translucide. On remplace la couleur par l'équivalent composité du champ :
+   fond de page rgb(11,47,42) + voile de carte rgba(6,30,26,.10) + reflet
+   blanc + rgba(255,255,255,.05) du champ ≈ rgb(27,60,56). */
+body.theme-dark #panel-scout .ctrl input:-webkit-autofill,
+body.theme-dark #panel-scout .ctrl input:-webkit-autofill:hover,
+body.theme-dark #panel-scout .ctrl input:-webkit-autofill:focus,
+body.theme-dark #panel-scout .ctrl input:-webkit-autofill:active,
+body.theme-dark #panel-scout .ctrl.select select:-webkit-autofill {
+  -webkit-box-shadow:0 0 0 60px rgb(27,60,56) inset !important;
+          box-shadow:0 0 0 60px rgb(27,60,56) inset !important;
+}
 .card-title {
   font-size:9.5px;
   letter-spacing:.14em;
