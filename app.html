@@ -639,9 +639,19 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 /* Ripple M3 : onde depuis le point de clic, généré en JS (vsRippleInit) */
 .vs-ripple{ position:absolute; border-radius:50%; pointer-events:none; background:currentColor; opacity:.16; transform:scale(0); animation:vs-ripple-anim 420ms var(--ease-out,cubic-bezier(.2,.8,.2,1)) forwards; z-index:0; }
 @keyframes vs-ripple-anim{ to{ transform:scale(2.6); opacity:0; } }
-/* État pressé M3 : léger enfoncement, rapide (120ms) */
-.vsd .btn:active, .vsd .chip:active, .vsd-drawer-item:active, .vsd-burger:active,
-.vsd .entry-card:active, .phase-btn:active, .map-view-btn:active, .view-tab:active, .an-tab:active, .sc-tab:active{
+/* État pressé M3 : léger enfoncement, rapide (120ms).
+   :not(.vs-pressed) est indispensable — sans lui, cet enfoncement statique
+   ANNULE les ressorts au clic. Dans la cascade CSS, une déclaration
+   « !important » d'auteur passe AVANT les animations : tant que le doigt
+   reste appuyé, ce scale(.97) écrasait chipPop et btnPress, qui ne
+   redevenaient visibles qu'au relâchement, déjà à moitié joués.
+   Les boutons qui portent un ressort n'ont de toute façon pas besoin de cet
+   enfoncement : leur keyframe assure déjà le retour visuel à l'appui. */
+.vsd .btn:active:not(.vs-pressed), .vsd .chip:active:not(.vs-pressed),
+.vsd-drawer-item:active:not(.vs-pressed), .vsd-burger:active:not(.vs-pressed),
+.vsd .entry-card:active:not(.vs-pressed), .phase-btn:active:not(.vs-pressed),
+.map-view-btn:active:not(.vs-pressed), .view-tab:active:not(.vs-pressed),
+.an-tab:active:not(.vs-pressed), .sc-tab:active:not(.vs-pressed){
   transform:scale(.97) !important; transition-duration:80ms !important;
 }
 /* Focus clavier visible (accessibilité M3) */
@@ -972,6 +982,27 @@ button:has(.vs-star).vs-pressed{
 }
 @media (prefers-reduced-motion: reduce){
   button:has(.vs-star).vs-pressed{ animation:none; }
+}
+/* Accueil : le ressort sur TOUS les boutons, cartes de module et cartes
+   joueur comprises (l'écouteur global les excluait, cf. son commentaire).
+   animation-composition:add est la clé : les cartes de module montent de
+   translateY(-3px) au survol, or chipPop n'anime que « transform ». Sans
+   composition, l'animation remplacerait ce soulèvement — la carte
+   retomberait au clic puis resauterait à la fin. En mode « add »,
+   l'écrasement s'ADDITIONNE à la valeur sous-jacente : la carte reste haute
+   pendant qu'elle se comprime. Et si elle n'est pas survolée (tactile), la
+   valeur sous-jacente est nulle et le rendu reste juste — un seul jeu de
+   règles couvre les deux cas.
+   Volontairement limité à l'accueil : le menu burger a été essayé avec le même
+   traitement et le rendu était moins bon — ses entrées gardent le ressort
+   discret (btnPress) et naviguent sans attendre. */
+#panel-welcome button.vs-pressed{
+  animation:chipPop 560ms cubic-bezier(.2,0,0,1);
+  animation-composition:add;
+  transform-origin:center center;
+}
+@media (prefers-reduced-motion: reduce){
+  #panel-welcome button.vs-pressed{ animation:none; }
 }
 /* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
 .vsd .an-tabbar{ position:relative; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; width:fit-content; max-width:100%; margin-left:auto; margin-right:auto; align-self:center; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; scrollbar-width:none; }
@@ -3584,10 +3615,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         // Onglets du header exclus aussi : leur retour visuel, c'est le
         // soulignement qui glisse (.hd-nav-ind). Deux mouvements simultanés
         // sur le même clic se parasiteraient.
-        if (b.closest('.entry-card') || b.classList.contains('card') ||
-            b.classList.contains('entry-card') || b.classList.contains('wq') ||
-            b.classList.contains('hd-nav-item') ||
-            b.closest('.rolepills-anim')) return;
+        if (b.classList.contains('hd-nav-item') || b.closest('.rolepills-anim')) return;
+        // Les boutons-cartes sont écartés partout SAUF sur l'accueil, dont
+        // les dix cartes doivent aussi répondre au clic. Leur soulèvement au
+        // survol n'est plus un obstacle : la règle #panel-welcome utilise
+        // animation-composition:add, qui compose au lieu d'écraser.
+        if (!b.closest('#panel-welcome') &&
+            (b.closest('.entry-card') || b.classList.contains('card') ||
+             b.classList.contains('entry-card') || b.classList.contains('wq'))) return;
         b.classList.remove('vs-pressed');
         void b.offsetWidth;                 // reflow forcé, sinon pas de rejeu
         b.classList.add('vs-pressed');
@@ -3596,6 +3631,28 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         // chipPop aussi : les .btn-pop rejouent ce keyframe-là au clic.
         if (e.animationName === 'btnPress' || e.animationName === 'chipPop') e.target.classList.remove('vs-pressed');
       });
+
+      // Accueil : laisser le ressort s'achever AVANT de changer de page.
+      // Sans ça, switchPanel masque #panel-welcome pendant l'animation et le
+      // mouvement est tranché net — le bouton disparaît en pleine compression.
+      // Écouteur en phase de CAPTURE : il s'exécute avant le onclick inline du
+      // bouton, qu'on suspend le temps de l'animation. On se raccroche à la
+      // promesse « finished » et non à un délai figé : si l'animation est
+      // interrompue (elle rejette alors), la navigation part quand même —
+      // mieux vaut un mouvement écourté qu'un bouton qui ne répond plus.
+      // Limité à l'accueil. Le menu burger a été essayé avec cette attente et
+      // le rendu était moins bon : ses entrées repartent sans délai.
+      document.addEventListener('click', function(e){
+        var b = e.target.closest('button');
+        if (!b || !b.closest('#panel-welcome')) return;
+        if (b.dataset.vsDiffere === '1') { delete b.dataset.vsDiffere; return; }  // second passage : on laisse filer
+        var anim = b.getAnimations().find(function(a){ return a.animationName === 'chipPop'; });
+        if (!anim || anim.playState === 'finished') return;
+        e.preventDefault();
+        e.stopPropagation();
+        var relancer = function(){ b.dataset.vsDiffere = '1'; b.click(); };
+        anim.finished.then(relancer, relancer);
+      }, true);
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ vsdSegSlide(); hdNavSlide(); });
       else { vsdSegSlide(); hdNavSlide(); }
       function vsdStep(id, d){
