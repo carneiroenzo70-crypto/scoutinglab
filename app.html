@@ -903,6 +903,21 @@ button.vs-pressed{ animation:btnPress 380ms cubic-bezier(.34,1.5,.6,1); }
 @media (prefers-reduced-motion: reduce){
   .vsd .rolepills-anim .chip.pop{ animation:none; }
 }
+
+/* ── .btn-pop : le ressort des pastilles de rôle porté sur un bouton d'action ──
+   Même keyframe chipPop, donc exactement le même vocabulaire de mouvement —
+   écrasement puis étirement à volume constant, rebond amorti — mais déclenché
+   au pointerdown par l'écouteur délégué (.vs-pressed) et non à la sélection :
+   un bouton d'action n'a pas d'état « choisi » à célébrer, il répond au doigt.
+   Placé APRÈS la règle button.vs-pressed pour la supplanter à spécificité
+   supérieure (deux classes contre une). */
+button.btn-pop.vs-pressed{
+  animation:chipPop 560ms cubic-bezier(.2,0,0,1);
+  transform-origin:center center;
+}
+@media (prefers-reduced-motion: reduce){
+  button.btn-pop.vs-pressed{ animation:none; }
+}
 /* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
 .vsd .an-tabbar{ position:relative; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; width:fit-content; max-width:100%; margin-left:auto; margin-right:auto; align-self:center; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; scrollbar-width:none; }
 .vsd .an-tabbar::-webkit-scrollbar{ display:none; }
@@ -911,7 +926,39 @@ button.vs-pressed{ animation:btnPress 380ms cubic-bezier(.34,1.5,.6,1); }
 .vsd .an-tabbar .an-tab.on{ color:#04211C !important; }
 .vsd .an-tabbar .an-tab.on .an-lock{ background:rgba(4,33,28,.18) !important; color:#04211C !important; border-color:rgba(4,33,28,.3) !important; }
 .vsd .an-tabbar .an-ind{ position:absolute; top:5px; bottom:5px; left:0; width:0; border-radius:8px; background:linear-gradient(180deg,#35E0B2,#23BE93); box-shadow:0 2px 10px rgba(45,212,167,.35); z-index:0; pointer-events:none; }
-.vsd .an-tabbar .an-ind.anim{ transition:left .28s var(--ease-out), width .28s var(--ease-out); }
+/* ── Ressort MD3 sur la pilule des barres d'onglets (Analytics + CRM) ──
+   Mêmes jetons de mouvement que le sélecteur de parties (.seg-anim) : courbes
+   qui dépassent 1 pour le rebond, et left/width désynchronisés en durée comme
+   en dépassement pour que la pilule s'étire en chemin puis se resserre.
+   Une différence avec .seg-anim, qui justifie une keyframe à part : là-bas les
+   trois boutons font presque la même largeur, la désynchronisation ne
+   produisait qu'1px de distorsion et tout l'étirement horizontal devait être
+   porté par la keyframe. Ici les onglets ont des largeurs très inégales
+   (ANALYSE SCRIM contre ROSTER, STRUCTURES contre MATCHING) : l'étirement naît
+   déjà du désaccord entre les deux bords. Reprendre le scaleX(1.16) de
+   segSquash par-dessus le cumulerait et donnerait un effet caoutchouteux — la
+   keyframe ci-dessous garde donc le même profil VERTICAL, signature de
+   l'impact, avec un scaleX réduit à l'appoint. */
+.vsd .an-tabbar .an-ind.anim{
+  transition:left 520ms cubic-bezier(.34,1.45,.58,1),
+             width 620ms cubic-bezier(.28,1.75,.44,1);
+}
+@keyframes tabSquash{
+  0%   { transform:scaleX(1)    scaleY(1); }
+  18%  { transform:scaleX(1.04) scaleY(.86); }   /* aplatissement au départ */
+  45%  { transform:scaleX(.98)  scaleY(1.10); }  /* détente à l'impact */
+  70%  { transform:scaleX(1.01) scaleY(.97); }   /* rebond secondaire, amorti */
+  88%  { transform:scaleX(.997) scaleY(1.01); }
+  100% { transform:scaleX(1)    scaleY(1); }
+}
+.vsd .an-tabbar .an-ind.moving{
+  animation:tabSquash 560ms cubic-bezier(.2,0,0,1);
+  transform-origin:center center;
+}
+@media (prefers-reduced-motion: reduce){
+  .vsd .an-tabbar .an-ind.anim{ transition:none; }
+  .vsd .an-tabbar .an-ind.moving{ animation:none; }
+}
 
 /* Segmented */
 .vsd .seg{ display:inline-flex; position:relative; background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:8px; padding:3px; gap:3px; }
@@ -2284,6 +2331,24 @@ body.landing-active #panel-landing.active { display:block !important; }
 /* ── Top 50 table ── */
 #t50-table tr:hover td { background:rgba(255,255,255,.02); }
 #t50-table thead th { position:sticky; top:0; background:var(--surf2); z-index:2; }
+/* En-tête de colonnes : aucun fond au repos (thème sombre).
+   Le fond --surf2 d'origine est opaque et tranchait comme un bandeau sombre
+   depuis que la carte est passée en verre. Il ne servait qu'au cas collant :
+   la carte est son propre conteneur défilant (overflow-y:auto), donc à partir
+   d'une cinquantaine de lignes l'en-tête reste en haut pendant que le corps
+   défile — sans fond, les lignes traverseraient le texte des colonnes.
+   Ce fond n'est donc posé QUE lorsque l'en-tête colle vraiment (classe
+   .thead-collee, mise par le JS sur scrollTop > 0). Tant que rien n'a défilé,
+   l'en-tête est parfaitement transparent et se fond dans la carte. */
+body.theme-dark #t50-table thead th {
+  background:transparent;
+}
+body.theme-dark #t50-table.thead-collee thead th {
+  background:rgba(9,40,35,.72);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);
+          backdrop-filter:blur(12px) saturate(140%);
+  transition:background .18s linear;
+}
 
 /* ── CRM Pipeline ── */
 .crm-stage-col {
@@ -2457,6 +2522,36 @@ body.landing-active #panel-landing.active { display:block !important; }
 /* Icônes retirées de la barre : la wireframe est purement textuelle */
 .hd-nav-item svg { display:none; }
 
+/* ── Indicateur glissant de la nav (MD3 « sliding tab indicator ») ──
+   Une barre UNIQUE dans la nav, à la place du ::after que portait chaque
+   onglet : un pseudo-élément appartient à son bouton et ne peut pas voyager
+   d'un onglet à l'autre, il ne sait qu'apparaître et disparaître.
+   Les deux bords sont animés séparément (left / right) et non left+width :
+   le bord avant part immédiatement, le bord arrière avec 70 ms de retard
+   (posé en JS selon le sens du trajet). La barre s'étire donc pendant le
+   déplacement puis se resserre en arrivant — c'est précisément ce qui
+   distingue le mouvement MD3 d'un simple glissement à largeur constante. */
+.hd-nav { position:relative; }
+.hd-nav-ind {
+  position:absolute; bottom:-1px; height:2px;
+  left:0; right:100%;
+  background:var(--lime); border-radius:2px;
+  box-shadow:0 0 8px rgba(45,212,167,.35);
+  opacity:0; pointer-events:none;
+}
+.hd-nav-ind.on { opacity:1; }
+.hd-nav-ind.anim {
+  transition:left  460ms cubic-bezier(.2,0,0,1) var(--hd-ind-ld,0ms),
+             right 460ms cubic-bezier(.2,0,0,1) var(--hd-ind-rd,0ms),
+             opacity 180ms linear;
+}
+/* Le soulignement par onglet n'est neutralisé qu'une fois l'indicateur
+   commun réellement posé : si le JS échoue, l'ancien repère subsiste. */
+.hd-nav[data-nav-ready] .hd-nav-item.active::after { display:none; }
+@media (prefers-reduced-motion: reduce){
+  .hd-nav-ind.anim { transition:opacity 180ms linear; }
+}
+
 /* ── Cards ultra pro ── */
 .card {
   background:var(--surf1);
@@ -2469,10 +2564,10 @@ body.landing-active #panel-landing.active { display:block !important; }
   box-shadow:0 6px 28px rgba(0,0,0,.35);
 }
 
-/* ════ Cadres du scouting : traitement « verre » de la carte de connexion ════
+/* ════ Cadres en « verre » — Scouting + Top 50 ════
    Reprend .vit-signin (maquette vitrine) : fond multi-couches, flou
    d'arrière-plan, liseré périmétrique et ombres internes. Appliqué aux cartes
-   ET aux cadres de stats (.dim-header / .dim-body).
+   ET aux cadres de stats (.dim-header / .dim-body, propres au scouting).
 
    Trois contraintes qui expliquent l'écriture :
    1. Portée au thème sombre uniquement — sans ça, le sélecteur à ID écraserait
@@ -2481,8 +2576,12 @@ body.landing-active #panel-landing.active { display:block !important; }
       en !important plus haut (règle « relief 3D », l.664-668).
    3. Flou et reflets volontairement bien plus faibles que la maquette (3px
       contre 22px, valeurs blanches divisées par quatre) : son rendu, calibré
-      pour une carte isolée, était trop brutal répété sur autant de cadres. */
-body.theme-dark #panel-scout .card,
+      pour une carte isolée, était trop brutal répété sur autant de cadres.
+
+   :is() plutôt que de dupliquer chaque sélecteur : sa spécificité est celle de
+   son argument le plus fort, donc identique à l'ID d'origine — la cascade est
+   inchangée — et étendre le traitement à une page de plus tient en un mot. */
+body.theme-dark :is(#panel-scout, #panel-top50) .card,
 body.theme-dark #panel-scout .dim-header,
 body.theme-dark #panel-scout .dim-body {
   position:relative;
@@ -2502,7 +2601,7 @@ body.theme-dark #panel-scout .dim-body {
     0 6px 18px -10px rgba(0,0,0,.55) !important;
 }
 /* liseré de périmètre uniforme + reflet directionnel */
-body.theme-dark #panel-scout .card::before,
+body.theme-dark :is(#panel-scout, #panel-top50) .card::before,
 body.theme-dark #panel-scout .dim-header::before,
 body.theme-dark #panel-scout .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
@@ -2516,11 +2615,11 @@ body.theme-dark #panel-scout .dim-body::before {
           mask-composite:exclude;
   z-index:2;
 }
-body.theme-dark #panel-scout .card > *,
+body.theme-dark :is(#panel-scout, #panel-top50) .card > *,
 body.theme-dark #panel-scout .dim-header > *,
 body.theme-dark #panel-scout .dim-body > * { position:relative; z-index:1; }
 /* le survol doit rester perceptible malgré les ombres du verre */
-body.theme-dark #panel-scout .card:hover,
+body.theme-dark :is(#panel-scout, #panel-top50) .card:hover,
 body.theme-dark #panel-scout .dim-header:hover {
   border-color:rgba(255,255,255,.045);
   box-shadow:
@@ -2550,8 +2649,8 @@ body.theme-dark #panel-scout .dim-header:hover {
    Repris de « .vit-signin .auth-input.ctrl » (maquette), qui résout exactement
    ce problème — sur des cartes en verre, un champ opaque se lit comme un trou
    sombre. */
-body.theme-dark #panel-scout .ctrl,
-body.theme-dark #panel-scout .seg {
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl,
+body.theme-dark :is(#panel-scout, #panel-top50) .seg {
   background:rgba(255,255,255,.05);
   border-color:rgba(255,255,255,.10);
   -webkit-backdrop-filter:blur(3px);
@@ -2560,7 +2659,7 @@ body.theme-dark #panel-scout .seg {
 /* Indispensable : la règle ci-dessus porte un ID et l'emporte donc sur
    « .vsd .ctrl:focus-within ». Sans ce rappel, la bordure resterait blanche
    à la saisie et le repère de focus émeraude serait perdu. */
-body.theme-dark #panel-scout .ctrl:focus-within {
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl:focus-within {
   border-color:var(--vs-emerald-500);
 }
 /* Autofill Chrome/Edge sur les champs en verre.
@@ -2572,11 +2671,11 @@ body.theme-dark #panel-scout .ctrl:focus-within {
    translucide. On remplace la couleur par l'équivalent composité du champ :
    fond de page rgb(11,47,42) + voile de carte rgba(6,30,26,.10) + reflet
    blanc + rgba(255,255,255,.05) du champ ≈ rgb(27,60,56). */
-body.theme-dark #panel-scout .ctrl input:-webkit-autofill,
-body.theme-dark #panel-scout .ctrl input:-webkit-autofill:hover,
-body.theme-dark #panel-scout .ctrl input:-webkit-autofill:focus,
-body.theme-dark #panel-scout .ctrl input:-webkit-autofill:active,
-body.theme-dark #panel-scout .ctrl.select select:-webkit-autofill {
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl input:-webkit-autofill,
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl input:-webkit-autofill:hover,
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl input:-webkit-autofill:focus,
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl input:-webkit-autofill:active,
+body.theme-dark :is(#panel-scout, #panel-top50) .ctrl.select select:-webkit-autofill {
   -webkit-box-shadow:0 0 0 60px rgb(27,60,56) inset !important;
           box-shadow:0 0 0 60px rgb(27,60,56) inset !important;
 }
@@ -2779,6 +2878,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     </button>
   </div>
   <nav class="hd-nav" id="hd-nav-main">
+    <span class="hd-nav-ind" aria-hidden="true"></span>
     <div class="hd-sep" aria-hidden="true"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouting</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
@@ -3292,7 +3392,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <option value="200">200</option>
               </select>
             </div>
-            <button class="btn btn-cta" id="btn-fetch" onclick="fetchRiotData()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importer &amp; analyser</button>
+            <button class="btn btn-cta btn-pop" id="btn-fetch" onclick="fetchRiotData()"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importer &amp; analyser</button>
           </div>
 
           <div id="api-progress" style="display:none;margin-top:16px" class="prog-wrap">
@@ -3372,9 +3472,50 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           });
         }, 0);
       }
+      // Indicateur glissant de la nav du header. Même mécanique de mesure que
+      // vsdSegSlide(), mais on pilote les deux bords séparément pour obtenir
+      // l'étirement MD3 (cf. le commentaire CSS de .hd-nav-ind).
+      function hdNavSlide(){
+        setTimeout(function(){
+          var nav = document.getElementById('hd-nav-main');
+          if (!nav) return;
+          var ind = nav.querySelector('.hd-nav-ind');
+          if (!ind) return;
+          var on = nav.querySelector('.hd-nav-item.active');
+          // Nav masquée (accueil) ou aucun onglet actif : on efface la barre
+          // au lieu de la déplacer — sinon elle resterait sous le dernier
+          // onglet visité, ce que fait justement l'ancien ::after.
+          if (!on || !nav.offsetParent || !on.offsetWidth) { ind.classList.remove('on'); return; }
+          // Cale la barre sur le texte et non sur le padding. Lu sur l'élément
+          // plutôt que codé en dur : le padding tombe à 9px sous le point de
+          // rupture mobile, une valeur figée y décalerait le soulignement.
+          var INSET = parseFloat(getComputedStyle(on).paddingLeft) || 14;
+          var l = on.offsetLeft + INSET;
+          var r = nav.clientWidth - (on.offsetLeft + on.offsetWidth) + INSET;
+          var avant = parseFloat(ind.style.left);
+          var versDroite = isNaN(avant) ? true : (l > avant);
+          // Le bord AVANT du trajet part sans retard, le bord arrière traîne.
+          ind.style.setProperty('--hd-ind-ld', versDroite ? '70ms' : '0ms');
+          ind.style.setProperty('--hd-ind-rd', versDroite ? '0ms' : '70ms');
+          ind.style.left  = l + 'px';
+          ind.style.right = r + 'px';
+          ind.classList.add('on');
+          nav.setAttribute('data-nav-ready','');
+          // .anim posée après le premier placement, sinon la barre glisserait
+          // depuis le bord gauche au chargement.
+          if (!ind.classList.contains('anim')) setTimeout(function(){ ind.classList.add('anim'); }, 60);
+        }, 0);
+      }
+      window.hdNavSlide = hdNavSlide;
+
       window.addEventListener('resize', function(){
         document.querySelectorAll('.seg.seg-anim .seg-ind').forEach(function(i){ i.classList.remove('anim'); });
         vsdSegSlide();
+        // Repositionnement sec au resize : pas d'animation sur un simple
+        // changement de largeur de fenêtre.
+        var _i = document.querySelector('.hd-nav-ind');
+        if (_i) _i.classList.remove('anim');
+        hdNavSlide();
       });
 
       // Retour élastique au clic sur tous les boutons (cf. @keyframes btnPress).
@@ -3385,18 +3526,23 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         if (!b || b.disabled) return;
         // Exclusions : boutons-cartes qui pilotent déjà leur propre transform au
         // survol, et pastilles de rôle qui ont leur ressort de sélection (chipPop).
+        // Onglets du header exclus aussi : leur retour visuel, c'est le
+        // soulignement qui glisse (.hd-nav-ind). Deux mouvements simultanés
+        // sur le même clic se parasiteraient.
         if (b.closest('.entry-card') || b.classList.contains('card') ||
             b.classList.contains('entry-card') || b.classList.contains('wq') ||
+            b.classList.contains('hd-nav-item') ||
             b.closest('.rolepills-anim')) return;
         b.classList.remove('vs-pressed');
         void b.offsetWidth;                 // reflow forcé, sinon pas de rejeu
         b.classList.add('vs-pressed');
       }, { passive: true });
       document.addEventListener('animationend', function(e){
-        if (e.animationName === 'btnPress') e.target.classList.remove('vs-pressed');
+        // chipPop aussi : les .btn-pop rejouent ce keyframe-là au clic.
+        if (e.animationName === 'btnPress' || e.animationName === 'chipPop') e.target.classList.remove('vs-pressed');
       });
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vsdSegSlide);
-      else vsdSegSlide();
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ vsdSegSlide(); hdNavSlide(); });
+      else { vsdSegSlide(); hdNavSlide(); }
       function vsdStep(id, d){
         var el = document.getElementById(id);
         if (!el) return;
@@ -4226,7 +4372,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="ctrl select" style="height:36px;width:auto;min-width:120px"><select id="crm-f-stage" onchange="crmRenderPipeline()"><option value="">Étape</option></select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
             <span style="flex:1"></span>
             <input type="file" id="crm-csv-input" accept=".csv" style="display:none" onchange="crmImportCsvFile(this.files[0]);this.value=''">
-            <button class="btn btn-ghost btn-sm" onclick="crmImportMenu()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importer (CSV / scouting)</button>
+            <button class="btn btn-ghost btn-sm btn-pop" onclick="crmImportMenu()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg> Importer (CSV / scouting)</button>
             <button class="btn btn-cta btn-sm" onclick="crmNewFiche()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg> Nouvelle fiche</button>
           </div>
           <!-- Table + fiche latérale -->
@@ -5161,6 +5307,11 @@ function anSyncTabs(active) {
 // car elle doit suivre l'onglet actif ; l'animation n'est activée qu'après le
 // premier placement (sinon elle glisserait depuis 0 à l'ouverture du panneau).
 function anSegSlide() {
+  // Mémoire de la dernière position VUE, portée par la fonction elle-même :
+  // une variable de module risquerait d'être lue avant son initialisation par
+  // l'un des appels précoces à anSegSlide().
+  if (!anSegSlide.memo) anSegSlide.memo = new Map();
+  const anIndMemo = anSegSlide.memo;
   // setTimeout plutôt que requestAnimationFrame : rAF peut ne pas se déclencher
   // (onglet en arrière-plan) et la pilule ne serait jamais posée.
   setTimeout(() => {
@@ -5169,8 +5320,40 @@ function anSegSlide() {
       let ind = bar.querySelector('.an-ind');
       if (!ind) { ind = document.createElement('span'); ind.className = 'an-ind'; bar.prepend(ind); }
       if (!on || !bar.offsetParent || !on.offsetWidth) return;   // panneau masqué : on repositionnera à l'activation
+      // Clé = jeu d'onglets. Les trois barres Analytics (hub / Comparer /
+      // Avant-match) sont jumelles et partagent donc la même mémoire ; la barre
+      // CRM, qui a d'autres onglets, garde la sienne.
+      const cle = [...bar.querySelectorAll('.an-tab')]
+        .map(t => t.getAttribute('data-tab') || t.textContent.trim()).join('|');
+      const memo = anIndMemo.get(cle);
+      let avant = ind.dataset.pos || '';
+      const apres = on.offsetLeft + ':' + on.offsetWidth;
+      // RELAIS entre barres jumelles. Comparer et Avant-match sont des panneaux
+      // distincts, chacun avec sa propre barre : la barre regardée disparaît et
+      // une autre la remplace, pilule déjà garée à destination — d'où le saut.
+      // On repose donc la pilule entrante, sans transition, exactement là où la
+      // sortante était visible, puis on la laisse rejoindre sa cible. À l'écran
+      // les deux barres n'en font qu'une et le glissement est continu.
+      if (memo && memo !== avant && memo !== apres) {
+        const [ml, mw] = memo.split(':');
+        ind.classList.remove('anim');
+        ind.style.left = ml + 'px';
+        ind.style.width = mw + 'px';
+        void ind.offsetWidth;          // fige ce point de départ avant d'animer
+        ind.classList.add('anim');
+        avant = memo;
+      }
       ind.style.left = on.offsetLeft + 'px';
       ind.style.width = on.offsetWidth + 'px';
+      ind.dataset.pos = apres;
+      anIndMemo.set(cle, apres);
+      // Écrasement vertical : seulement sur un vrai déplacement — ni au premier
+      // placement, ni sur un resize qui ne change pas la cible.
+      if (ind.classList.contains('anim') && avant && avant !== apres) {
+        ind.classList.remove('moving');
+        void ind.offsetWidth;          // reflow forcé, sinon l'animation ne rejoue pas
+        ind.classList.add('moving');
+      }
       if (!ind.classList.contains('anim')) setTimeout(() => ind.classList.add('anim'), 60);
       // Garde l'onglet actif visible si la barre défile (petits écrans)
       if (bar.scrollWidth > bar.clientWidth) on.scrollIntoView({ block: 'nearest', inline: 'nearest' });
@@ -7673,6 +7856,8 @@ function switchPanel(id) {
   // Barres segmentées : repositionne la pilule du panneau qui vient de devenir visible
   if (typeof anSegSlide === 'function') anSegSlide();
   if (typeof vsdSegSlide === 'function') vsdSegSlide();
+  // Soulignement de la nav : glisse vers l'onglet qui vient de devenir actif
+  if (typeof hdNavSlide === 'function') hdNavSlide();
 }
 /* Sous-onglets du Scouting : Fiche joueur / Graphiques / Carte (Carte = Pro+) */
 function scoutDecorateTabs() {
@@ -10679,6 +10864,7 @@ document.addEventListener('DOMContentLoaded', function () {
     else { p.classList.remove('active'); }
   });
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
+  if (typeof hdNavSlide === 'function') hdNavSlide();   // plus d'onglet actif → barre effacée
 })();
 
 // Recalcule toutes les fiches sauvegardées avec le barème actuel.
@@ -13929,9 +14115,27 @@ function top50AddCrm(name, tag, role, score, age) {
   if (typeof crmSave === 'function') crmSave();
   showToast(name + ' ajouté au CRM · ' + rk, 'success');
 }
+// L'en-tête du tableau n'a de fond que lorsqu'il colle réellement (cf. la règle
+// « .thead-collee » dans le CSS). La carte étant son propre conteneur défilant,
+// scrollTop > 0 suffit à détecter l'état collé — pas besoin de sentinelle ni
+// d'IntersectionObserver. Liaison une seule fois, gardée par un data-attribut.
+function t50BindStickyHeader() {
+  const tbl = document.getElementById('t50-table');
+  const box = tbl && tbl.closest('.card');
+  if (!box || box.dataset.stickyLie) return;
+  box.dataset.stickyLie = '1';
+  const maj = () => {
+    const t = document.getElementById('t50-table');
+    if (t) t.classList.toggle('thead-collee', box.scrollTop > 0);
+  };
+  box.addEventListener('scroll', maj, { passive: true });
+  maj();
+}
+
 function top50RenderTable() {
   const tbody = document.getElementById('t50-tbody');
   if (!tbody) return;
+  t50BindStickyHeader();
 
   // Appliquer les filtres rôle et âge
   const roleFilter = document.getElementById('t50-role-filter')?.value || 'all';
