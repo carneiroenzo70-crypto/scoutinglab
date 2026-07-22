@@ -879,13 +879,43 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
   position:absolute; z-index:0; top:3px; bottom:3px; left:0; width:0;
   background:var(--vs-emerald-500); border-radius:6px; pointer-events:none;
 }
+/* Rebond + distorsion (MD3 Expressive, ressorts spatiaux).
+   Trois effets combinés :
+   1. REBOND — les courbes dépassent 1 (ex. 1.45), la pilule franchit sa cible
+      puis revient. C'est l'amortissement d'un ressort, pas un ease-out.
+   2. DISTORSION HORIZONTALE — left et width n'ont NI la même durée NI le même
+      dépassement. Les deux bords se désynchronisent donc en chemin : la pilule
+      s'étire pendant le trajet et se resserre à l'arrivée. L'étirement naît de
+      la physique, il n'est pas scripté image par image.
+   3. ÉCRASEMENT VERTICAL — la keyframe segSquash aplatit puis rebondit la
+      pilule à l'impact, comme une masse qui encaisse sa décélération. */
 .vsd .seg.seg-anim > .seg-ind.anim{
-  transition:left 400ms cubic-bezier(.2,0,0,1), width 400ms cubic-bezier(.2,0,0,1);
+  transition:left 520ms cubic-bezier(.34,1.45,.58,1),
+             width 620ms cubic-bezier(.28,1.75,.44,1);
+}
+/* Étirement / écrasement à volume constant : scaleX monte quand scaleY descend,
+   et inversement. C'est cette compensation qui fait lire la pilule comme une
+   matière élastique et non comme un rectangle redimensionné.
+   L'étirement horizontal doit être ACTIF ici : les trois boutons ayant presque
+   la même largeur, désynchroniser left et width ne produisait qu'1px de
+   distorsion — invisible. */
+@keyframes segSquash{
+  0%   { transform:scaleX(1)    scaleY(1); }
+  18%  { transform:scaleX(1.16) scaleY(.84); }   /* étirement dans le sens du trajet */
+  45%  { transform:scaleX(.93)  scaleY(1.11); }  /* compression à l'impact */
+  70%  { transform:scaleX(1.04) scaleY(.97); }   /* rebond secondaire, amorti */
+  88%  { transform:scaleX(.99)  scaleY(1.01); }
+  100% { transform:scaleX(1)    scaleY(1); }
+}
+.vsd .seg.seg-anim > .seg-ind.moving{
+  animation:segSquash 560ms cubic-bezier(.2,0,0,1);
+  transform-origin:center center;
 }
 .vsd .seg.seg-anim button{ position:relative; z-index:1; }
 .vsd .seg.seg-anim[data-seg-ready] button.on{ background:transparent; }
 @media (prefers-reduced-motion: reduce){
   .vsd .seg.seg-anim > .seg-ind.anim{ transition:none; }
+  .vsd .seg.seg-anim > .seg-ind.moving{ animation:none; }
 }
 
 /* Pills */
@@ -3257,9 +3287,19 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             if (!ind) { ind = document.createElement('span'); ind.className = 'seg-ind'; seg.prepend(ind); }
             // panneau masqué : offsetWidth vaut 0, on repositionnera à l'affichage
             if (!on || !seg.offsetParent || !on.offsetWidth) return;
+            var avant = ind.dataset.pos || '';
+            var apres = on.offsetLeft + ':' + on.offsetWidth;
             ind.style.left  = on.offsetLeft + 'px';
             ind.style.width = on.offsetWidth + 'px';
+            ind.dataset.pos = apres;
             seg.setAttribute('data-seg-ready','');
+            // Écrasement vertical : uniquement sur un vrai déplacement — pas au
+            // premier placement ni sur un resize qui ne change pas la cible.
+            if (ind.classList.contains('anim') && avant && avant !== apres) {
+              ind.classList.remove('moving');
+              void ind.offsetWidth;            // reflow forcé, sinon l'animation ne rejoue pas
+              ind.classList.add('moving');
+            }
             // .anim posée après le premier placement, sinon la pilule
             // glisserait depuis 0 à l'ouverture du panneau
             if (!ind.classList.contains('anim')) setTimeout(function(){ ind.classList.add('anim'); }, 60);
