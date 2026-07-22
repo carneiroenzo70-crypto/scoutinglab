@@ -2332,6 +2332,55 @@ body.landing-active #panel-landing.active { display:block !important; }
   border-color:rgba(184,196,224,.11);
   box-shadow:0 6px 28px rgba(0,0,0,.35);
 }
+
+/* ════ Cartes du scouting : traitement « verre » de la carte de connexion ════
+   Reprise à l'identique de .vit-signin (maquette vitrine) : fond multi-couches,
+   flou d'arrière-plan, liseré périmétrique et jeu d'ombres internes.
+   Volontairement PAS repris : max-width / justify-self / padding (mise en page),
+   et overflow:hidden — il rognerait les menus et infobulles des cartes.
+   Le sélecteur porte un ID : il l'emporte sur les 3 définitions de .card. */
+#panel-scout .card {
+  position:relative;
+  background:
+    radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.13), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
+    rgba(6,30,26,.10);
+  border:1px solid rgba(255,255,255,.06);
+  -webkit-backdrop-filter:blur(22px) saturate(155%) brightness(1.04);
+          backdrop-filter:blur(22px) saturate(155%) brightness(1.04);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    inset 0 1px 1px rgba(255,255,255,.07),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 22px 50px -22px rgba(0,0,0,.7),
+    0 6px 18px -10px rgba(0,0,0,.55);
+}
+/* liseré de périmètre uniforme + reflet directionnel */
+#panel-scout .card::before {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  padding:0.5px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03) 38%, rgba(255,255,255,.03) 62%, rgba(255,255,255,.06)),
+    rgba(255,255,255,.035);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask-composite:exclude;
+  z-index:2;
+}
+#panel-scout .card > * { position:relative; z-index:1; }
+/* le survol doit rester perceptible malgré les ombres du verre */
+#panel-scout .card:hover {
+  border-color:rgba(255,255,255,.11);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.12),
+    inset 0 1px 1px rgba(255,255,255,.08),
+    inset 0 -10px 22px -12px rgba(7,32,28,.24),
+    inset -1px -1px 0 rgba(7,32,28,.07),
+    0 26px 58px -22px rgba(0,0,0,.75),
+    0 8px 22px -10px rgba(0,0,0,.6);
+}
 .card-title {
   font-size:9.5px;
   letter-spacing:.14em;
