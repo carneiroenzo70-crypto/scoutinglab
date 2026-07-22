@@ -3070,11 +3070,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px">
             <div class="fld">
               <div class="label">Summoner name</div>
-              <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="d-pseudo" placeholder="Akashinho" oninput="onIdentityChange()"/></div>
+              <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="d-pseudo" placeholder="Akashinho" autocomplete="off" oninput="onIdentityChange()"/></div>
             </div>
             <div class="fld">
               <div class="label">Tag</div>
-              <div class="ctrl"><input id="d-tag" placeholder="#EUW"/></div>
+              <div class="ctrl"><input id="d-tag" placeholder="#EUW" autocomplete="off"/></div>
             </div>
             <div class="fld">
               <div class="label">Région</div>
@@ -3096,7 +3096,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="fld">
               <div class="label">Âge</div>
               <div class="ctrl numfield">
-                <input id="d-age" type="number" min="14" max="35" inputmode="numeric" placeholder="20" oninput="onIdentityChange()"/>
+                <input id="d-age" type="number" min="14" max="35" inputmode="numeric" placeholder="20" autocomplete="off" oninput="onIdentityChange()"/>
                 <div class="numfield-steps">
                   <button type="button" aria-label="Augmenter" onclick="vsdStep('d-age',1)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform:rotate(180deg)"><path d="m6 9 6 6 6-6"/></svg></button>
                   <button type="button" aria-label="Diminuer" onclick="vsdStep('d-age',-1)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
