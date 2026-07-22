@@ -1860,10 +1860,11 @@ button { transition:all .18s ease; }
 }
 
 /* ── Welcome screen ── */
+/* Pas de fond propre : il peindrait var(--bg) (opaque) par-dessus .logo-bg,
+   qui est en z-index:-1 — l'accueil perdrait les emblèmes visibles partout
+   ailleurs. Panneau transparent = même fond que les autres pages. */
 #panel-welcome {
-  background:radial-gradient(ellipse at 50% 0%, rgba(45,212,167,.07) 0%, transparent 60%),
-             radial-gradient(ellipse at 0% 100%, rgba(45,212,167,.04) 0%, transparent 50%),
-             var(--bg);
+  background:transparent;
 }
 body.welcome-active .sb { display:none !important; }
 body.welcome-active .main {
