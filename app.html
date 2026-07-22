@@ -340,9 +340,12 @@ body.theme-dark .vsd .dim-section{ border:1px solid var(--vs-forest-500); }
 .vsd .card{ transition:transform .18s var(--ease-out), border-color .18s var(--ease-out), box-shadow .22s var(--ease-out); }
 .vsd .card:hover{ border-color:rgba(45,212,167,.26); box-shadow:0 14px 32px -18px rgba(0,0,0,.5); }
 .vsd .chip{ transition:transform .14s var(--ease-out), background .15s, border-color .15s, color .15s; }
-.vsd .chip:hover{ transform:translateY(-1px); border-color:var(--vs-emerald-500); color:var(--vs-fg-1); }
+/* Pas de translateY au survol : le soulèvement des boutons a été retiré
+   (retour utilisateur). Le survol reste signalé par la bordure et la couleur. */
+.vsd .chip:hover{ border-color:var(--vs-emerald-500); color:var(--vs-fg-1); }
 .vsd .btn{ transition:transform .14s var(--ease-out), background .15s, border-color .15s, box-shadow .2s, color .15s; }
-.vsd .btn-cta:hover, .vsd .btn-secondary:hover, .vsd .btn-ghost:hover{ transform:translateY(-1px); }
+/* .vsd .btn-cta / .btn-secondary / .btn-ghost : règle de soulèvement au survol
+   supprimée — elle ne contenait que le translateY. */
 .vsd .btn-cta:hover{ box-shadow:0 8px 22px -8px rgba(45,212,167,.5); }
 .vsd .dim-header{ transition:background .15s var(--ease-out); }
 
@@ -1936,7 +1939,7 @@ button { transition:all .18s ease; }
   font-size:12px; font-weight:700; cursor:pointer;
   transition:all .18s; font-family:inherit;
 }
-.btn-danger:hover { background:#ff6b5b; transform:translateY(-1px); }
+.btn-danger:hover { background:#ff6b5b; }
 
 @keyframes modalIn {
   from { opacity:0; transform:scale(.93) translateY(14px); }
