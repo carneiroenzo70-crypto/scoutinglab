@@ -648,7 +648,13 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .vsd .dim-section .dim-header-score{ font-size:20px !important; font-weight:600 !important; }
 .vsd .dim-section .dim-header{ padding:18px 24px !important; }
 /* Frames D1–D5 agrandies (lisibilité — feedback Enzo) : cadres + contenu plus grands */
-.vsd-dims-grid{ max-width:none !important; gap:24px 28px !important; } /* aligné sur la largeur unifiée du panel (1264px) */
+/* Aligné sur la largeur unifiée du panel (1264px), comme les cartes voisines.
+   Réinitialiser max-width ne suffit pas : le parent .vsd-wrap est un flex column,
+   or des marges horizontales auto y annulent l'étirement (align-items:stretch)
+   et centrent l'élément sur sa largeur de contenu. D'où la grille à 1025px
+   pendant que les cartes faisaient 1264px. Il faut donc aussi neutraliser les
+   marges auto héritées de la règle du dessus. */
+.vsd-dims-grid{ max-width:none !important; margin-left:0 !important; margin-right:0 !important; gap:24px 28px !important; }
 .vsd .dim-section{ gap:12px; }
 .vsd .dim-section .dim-header-title{ font-size:22px !important; }
 .vsd .dim-section .dim-header-score{ font-size:24px !important; }
