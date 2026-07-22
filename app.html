@@ -2333,31 +2333,41 @@ body.landing-active #panel-landing.active { display:block !important; }
   box-shadow:0 6px 28px rgba(0,0,0,.35);
 }
 
-/* ════ Cartes du scouting : traitement « verre » de la carte de connexion ════
-   Reprise à l'identique de .vit-signin (maquette vitrine) : fond multi-couches,
-   flou d'arrière-plan, liseré périmétrique et jeu d'ombres internes.
-   Volontairement PAS repris : max-width / justify-self / padding (mise en page),
-   et overflow:hidden — il rognerait les menus et infobulles des cartes.
-   Le sélecteur porte un ID : il l'emporte sur les 3 définitions de .card. */
-#panel-scout .card {
+/* ════ Cadres du scouting : traitement « verre » de la carte de connexion ════
+   Reprend .vit-signin (maquette vitrine) : fond multi-couches, flou
+   d'arrière-plan, liseré périmétrique et ombres internes. Appliqué aux cartes
+   ET aux cadres de stats (.dim-header / .dim-body).
+
+   Trois contraintes qui expliquent l'écriture :
+   1. Portée au thème sombre uniquement — sans ça, le sélecteur à ID écraserait
+      « body:not(.theme-dark) .vsd .card » et casserait le mode clair.
+   2. background et box-shadow en !important : les cadres de stats sont posés
+      en !important plus haut (règle « relief 3D », l.664-668).
+   3. Flou volontairement plus faible que la maquette (10px contre 22px) : le
+      rendu était trop brutal répété sur autant de cadres. */
+body.theme-dark #panel-scout .card,
+body.theme-dark #panel-scout .dim-header,
+body.theme-dark #panel-scout .dim-body {
   position:relative;
   background:
     radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.13), transparent 70%),
     linear-gradient(150deg, rgba(255,255,255,.09), rgba(255,255,255,.02) 42%, rgba(7,32,28,.12)),
-    rgba(6,30,26,.10);
+    rgba(6,30,26,.10) !important;
   border:1px solid rgba(255,255,255,.06);
-  -webkit-backdrop-filter:blur(22px) saturate(155%) brightness(1.04);
-          backdrop-filter:blur(22px) saturate(155%) brightness(1.04);
+  -webkit-backdrop-filter:blur(10px) saturate(155%) brightness(1.04);
+          backdrop-filter:blur(10px) saturate(155%) brightness(1.04);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,.10),
     inset 0 1px 1px rgba(255,255,255,.07),
     inset 0 -10px 22px -12px rgba(7,32,28,.24),
     inset -1px -1px 0 rgba(7,32,28,.07),
     0 22px 50px -22px rgba(0,0,0,.7),
-    0 6px 18px -10px rgba(0,0,0,.55);
+    0 6px 18px -10px rgba(0,0,0,.55) !important;
 }
 /* liseré de périmètre uniforme + reflet directionnel */
-#panel-scout .card::before {
+body.theme-dark #panel-scout .card::before,
+body.theme-dark #panel-scout .dim-header::before,
+body.theme-dark #panel-scout .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
   padding:0.5px;
   background:
@@ -2369,9 +2379,12 @@ body.landing-active #panel-landing.active { display:block !important; }
           mask-composite:exclude;
   z-index:2;
 }
-#panel-scout .card > * { position:relative; z-index:1; }
+body.theme-dark #panel-scout .card > *,
+body.theme-dark #panel-scout .dim-header > *,
+body.theme-dark #panel-scout .dim-body > * { position:relative; z-index:1; }
 /* le survol doit rester perceptible malgré les ombres du verre */
-#panel-scout .card:hover {
+body.theme-dark #panel-scout .card:hover,
+body.theme-dark #panel-scout .dim-header:hover {
   border-color:rgba(255,255,255,.11);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,.12),
@@ -2379,7 +2392,7 @@ body.landing-active #panel-landing.active { display:block !important; }
     inset 0 -10px 22px -12px rgba(7,32,28,.24),
     inset -1px -1px 0 rgba(7,32,28,.07),
     0 26px 58px -22px rgba(0,0,0,.75),
-    0 8px 22px -10px rgba(0,0,0,.6);
+    0 8px 22px -10px rgba(0,0,0,.6) !important;
 }
 .card-title {
   font-size:9.5px;
