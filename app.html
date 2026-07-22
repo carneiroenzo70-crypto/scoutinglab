@@ -861,6 +861,33 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
 .vsd .seg button:hover{ color:var(--vs-fg-1); }
 .vsd .seg button.on{ background:var(--vs-emerald-500); color:#06231F; }
 
+/* ── .seg-anim : pilule glissante façon Material Design 3 ──
+   Même mécanique que .an-tabbar / .an-ind plus bas (indicateur absolu piloté
+   en JS, classe .anim posée après coup pour ne pas animer le placement
+   initial), mais avec les jetons de mouvement MD3 :
+     easing  « emphasized »  cubic-bezier(.2, 0, 0, 1)
+     durée   « medium-4 »    400ms
+   C'est ce profil — départ lent, accélération, longue décélération — qui
+   donne la sensation organique, là où le var(--ease-out) du reste de l'app
+   (.2,.8,.2,1) démarre sec et paraît mécanique.
+   La largeur est animée en même temps que la position : entre deux cibles de
+   tailles différentes, la pilule s'étire puis se resserre — l'étirement
+   caractéristique de MD3.
+   Repli sûr : tant que le JS n'a pas posé data-seg-ready, le fond d'origine
+   du bouton .on reste affiché. */
+.vsd .seg.seg-anim > .seg-ind{
+  position:absolute; z-index:0; top:3px; bottom:3px; left:0; width:0;
+  background:var(--vs-emerald-500); border-radius:6px; pointer-events:none;
+}
+.vsd .seg.seg-anim > .seg-ind.anim{
+  transition:left 400ms cubic-bezier(.2,0,0,1), width 400ms cubic-bezier(.2,0,0,1);
+}
+.vsd .seg.seg-anim button{ position:relative; z-index:1; }
+.vsd .seg.seg-anim[data-seg-ready] button.on{ background:transparent; }
+@media (prefers-reduced-motion: reduce){
+  .vsd .seg.seg-anim > .seg-ind.anim{ transition:none; }
+}
+
 /* Pills */
 .vsd .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; font-family:var(--font-sans); font-size:11px; font-weight:700; letter-spacing:.04em; }
 .vsd .pill-emerald{ background:rgba(45,212,167,.15); color:var(--vs-emerald-300); }
@@ -3166,7 +3193,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="between" style="flex-wrap:wrap;gap:14px">
             <div>
               <div class="label" style="margin-bottom:9px">Importer les parties récentes</div>
-              <div class="seg">
+              <div class="seg seg-anim">
                 <button type="button" onclick="vsdScoutCount(this,50)">50 parties</button>
                 <button type="button" class="on" onclick="vsdScoutCount(this,100)">100 parties</button>
                 <button type="button" onclick="vsdScoutCount(this,200)">200 parties</button>
@@ -3216,7 +3243,35 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         btn.classList.add('on');
         var s = document.getElementById('riot-count');
         if (s) s.value = String(n);
+        vsdSegSlide();
       }
+      // Pilule glissante des .seg-anim — même mécanique que anSegSlide() pour
+      // les .an-tabbar. setTimeout et non requestAnimationFrame : rAF ne se
+      // déclenche pas si l'onglet est en arrière-plan, la pilule ne serait
+      // alors jamais posée.
+      function vsdSegSlide(){
+        setTimeout(function(){
+          document.querySelectorAll('.seg.seg-anim').forEach(function(seg){
+            var on = seg.querySelector('button.on');
+            var ind = seg.querySelector('.seg-ind');
+            if (!ind) { ind = document.createElement('span'); ind.className = 'seg-ind'; seg.prepend(ind); }
+            // panneau masqué : offsetWidth vaut 0, on repositionnera à l'affichage
+            if (!on || !seg.offsetParent || !on.offsetWidth) return;
+            ind.style.left  = on.offsetLeft + 'px';
+            ind.style.width = on.offsetWidth + 'px';
+            seg.setAttribute('data-seg-ready','');
+            // .anim posée après le premier placement, sinon la pilule
+            // glisserait depuis 0 à l'ouverture du panneau
+            if (!ind.classList.contains('anim')) setTimeout(function(){ ind.classList.add('anim'); }, 60);
+          });
+        }, 0);
+      }
+      window.addEventListener('resize', function(){
+        document.querySelectorAll('.seg.seg-anim .seg-ind').forEach(function(i){ i.classList.remove('anim'); });
+        vsdSegSlide();
+      });
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vsdSegSlide);
+      else vsdSegSlide();
       function vsdStep(id, d){
         var el = document.getElementById(id);
         if (!el) return;
@@ -7492,6 +7547,7 @@ function switchPanel(id) {
   document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
   // Barres segmentées : repositionne la pilule du panneau qui vient de devenir visible
   if (typeof anSegSlide === 'function') anSegSlide();
+  if (typeof vsdSegSlide === 'function') vsdSegSlide();
 }
 /* Sous-onglets du Scouting : Fiche joueur / Graphiques / Carte (Carte = Pro+) */
 function scoutDecorateTabs() {
