@@ -2343,23 +2343,23 @@ body.landing-active #panel-landing.active { display:block !important; }
       « body:not(.theme-dark) .vsd .card » et casserait le mode clair.
    2. background et box-shadow en !important : les cadres de stats sont posés
       en !important plus haut (règle « relief 3D », l.664-668).
-   3. Flou et reflets volontairement plus faibles que la maquette (3px contre
-      22px, valeurs blanches divisées par deux) : son rendu, calibré pour une
-      carte isolée, était trop brutal répété sur autant de cadres. */
+   3. Flou et reflets volontairement bien plus faibles que la maquette (3px
+      contre 22px, valeurs blanches divisées par quatre) : son rendu, calibré
+      pour une carte isolée, était trop brutal répété sur autant de cadres. */
 body.theme-dark #panel-scout .card,
 body.theme-dark #panel-scout .dim-header,
 body.theme-dark #panel-scout .dim-body {
   position:relative;
   background:
     radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.13), transparent 70%),
-    linear-gradient(150deg, rgba(255,255,255,.045), rgba(255,255,255,.012) 42%, rgba(7,32,28,.12)),
+    linear-gradient(150deg, rgba(255,255,255,.022), rgba(255,255,255,.006) 42%, rgba(7,32,28,.12)),
     rgba(6,30,26,.10) !important;
-  border:1px solid rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.025);
   -webkit-backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
           backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
   box-shadow:
-    inset 1px 1px 0 rgba(255,255,255,.05),
-    inset 0 1px 1px rgba(255,255,255,.035),
+    inset 1px 1px 0 rgba(255,255,255,.025),
+    inset 0 1px 1px rgba(255,255,255,.018),
     inset 0 -10px 22px -12px rgba(7,32,28,.24),
     inset -1px -1px 0 rgba(7,32,28,.07),
     0 22px 50px -22px rgba(0,0,0,.7),
@@ -2372,8 +2372,8 @@ body.theme-dark #panel-scout .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
   padding:0.5px;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.05), rgba(255,255,255,.015) 38%, rgba(255,255,255,.015) 62%, rgba(255,255,255,.03)),
-    rgba(255,255,255,.018);
+    linear-gradient(135deg, rgba(255,255,255,.025), rgba(255,255,255,.008) 38%, rgba(255,255,255,.008) 62%, rgba(255,255,255,.015)),
+    rgba(255,255,255,.01);
   -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
           mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite:xor;
@@ -2386,10 +2386,10 @@ body.theme-dark #panel-scout .dim-body > * { position:relative; z-index:1; }
 /* le survol doit rester perceptible malgré les ombres du verre */
 body.theme-dark #panel-scout .card:hover,
 body.theme-dark #panel-scout .dim-header:hover {
-  border-color:rgba(255,255,255,.07);
+  border-color:rgba(255,255,255,.045);
   box-shadow:
-    inset 1px 1px 0 rgba(255,255,255,.06),
-    inset 0 1px 1px rgba(255,255,255,.04),
+    inset 1px 1px 0 rgba(255,255,255,.03),
+    inset 0 1px 1px rgba(255,255,255,.02),
     inset 0 -10px 22px -12px rgba(7,32,28,.24),
     inset -1px -1px 0 rgba(7,32,28,.07),
     0 26px 58px -22px rgba(0,0,0,.75),
