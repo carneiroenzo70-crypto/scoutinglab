@@ -2280,11 +2280,12 @@ body.landing-active #panel-landing.active { display:block !important; }
 .hd-mark svg {
   filter:none;
 }
-/* Séparateur vertical dans nav */
+/* Séparateur vertical entre le logo et les onglets */
 .hd-nav .hd-sep {
-  width:1px; height:14px;
-  background:rgba(184,196,224,.08);
-  margin:0 3px;
+  width:1px; height:18px;
+  background:var(--border);
+  margin:0 8px 0 2px;
+  align-self:center;
   flex-shrink:0;
 }
 /* Bouton home = le logo principal du header */
@@ -2529,6 +2530,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     </button>
   </div>
   <nav class="hd-nav" id="hd-nav-main">
+    <div class="hd-sep" aria-hidden="true"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouting</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM Agent</button>
