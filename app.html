@@ -794,6 +794,47 @@ body.map-fullscreen .logo-bg{ display:none; }
 .vsd-drawer-item.on{ background:rgba(45,212,167,.10); border-color:rgba(45,212,167,.55); color:#5BE9BE; }
 .vsd-drawer-item.on::after{ content:''; margin-left:auto; width:7px; height:7px; border-radius:50%; background:#2DD4A7; box-shadow:0 0 10px rgba(45,212,167,.55); flex:none; }
 .vsd-drawer-sep{ height:1px; background:rgba(255,255,255,.10); margin:10px 4px; }
+/* ── Tiroir en mode clair ──
+   Tout le contenu du tiroir est écrit en clair-sur-sombre (#F0F4F8, #A9C4BD,
+   reflets blancs, émeraude vive) parce qu'il était sombre dans les deux
+   thèmes. Le passer en clair impose donc de reprendre chaque couleur, pas
+   seulement le fond — sinon texte blanc sur verre blanc.
+   Le tiroir n'a pas la classe .vsd : les variables --vs-* n'y sont PAS
+   remappées par le mode clair, et tout ce qui s'appuie dessus (le fermoir)
+   garderait des valeurs de thème sombre. D'où les couleurs explicites. */
+body:not(.theme-dark) .vsd-drawer{
+  background:
+    radial-gradient(520px 300px at 12% -6%, rgba(45,212,167,.10), transparent 70%),
+    linear-gradient(160deg, rgba(255,255,255,.30), rgba(255,255,255,.13) 45%, rgba(31,71,64,.05)),
+    rgba(255,255,255,.62) !important;
+  border-right:1px solid rgba(31,71,64,.12);
+  color:#0E2A26;
+  box-shadow:
+    inset 1px 0 0 rgba(255,255,255,.40),
+    inset 0 1px 0 rgba(255,255,255,.30),
+    0 0 70px -12px rgba(20,54,48,.30);
+}
+body:not(.theme-dark) .vsd-drawer img{ filter:brightness(0); opacity:.88; }
+body:not(.theme-dark) .vsd-drawer .btn-icon{ color:#4E6A64 !important; }
+/* #50675F et non #5C746C : le voile assombrit la page sous le tiroir, dont la
+   surface est donc plus foncée que celle des cartes — la teinte qui y passait
+   le seuil tombait ici à 3,9. */
+body:not(.theme-dark) .vsd-drawer-label{ color:#50675F; }
+body:not(.theme-dark) .vsd-drawer-item{ color:#3F5A54; }
+body:not(.theme-dark) .vsd-drawer-item:hover{ background:rgba(31,71,64,.07); color:#0E2A26; }
+body:not(.theme-dark) .vsd-drawer-item.on{
+  background:rgba(15,161,118,.12); border-color:rgba(15,161,118,.50); color:#0A6B51;
+}
+body:not(.theme-dark) .vsd-drawer-item.on::after{ background:#0FA176; box-shadow:0 0 10px rgba(15,161,118,.45); }
+body:not(.theme-dark) .vsd-drawer-sep{ background:rgba(31,71,64,.14); }
+body:not(.theme-dark) .vsd-cursor-opt{
+  background:rgba(255,255,255,.55); border-color:rgba(31,71,64,.14); color:#3F5A54;
+}
+body:not(.theme-dark) .vsd-cursor-opt:hover{ background:rgba(255,255,255,.80); color:#0E2A26; }
+body:not(.theme-dark) .vsd-cursor-opt.on{ border-color:#0FA176; color:#0E2A26; }
+/* Voile allégé : il n'a plus à faire ressortir un panneau sombre, seulement à
+   estomper la page. À .55 il grisait tout et virait au vert boueux. */
+body:not(.theme-dark) .vsd-scrim{ background:rgba(20,54,48,.32); }
 .vsd-cursor-pick{ display:flex; gap:8px; margin:4px 0 6px; }
 /* #0F3A34 était exactement l'ancienne couleur du tiroir : sur le verre, ces
    trois vignettes se découpaient en plein comme des blocs rapportés. */
@@ -824,7 +865,11 @@ body.map-fullscreen .logo-bg{ display:none; }
 
 /* ════ MODE CLAIR — palette platine (comme la wireframe) ════ */
 body:not(.theme-dark) .vsd{
-  --vs-forest-950:#B7CCCF; --vs-forest-900:#DBE6E8; --vs-forest-800:#E9F0F1; --vs-forest-700:#FFFFFF; --vs-forest-600:#E2EBEC; --vs-forest-500:#BDD1D4;
+  /* Échelle « forêt » du mode clair. Elle était cyan/bleu-gris (#B7CCCF,
+     #DBE6E8, #BDD1D4…) alors que les --vs-fg-* juste en dessous sont verts :
+     les fonds et bordures juraient avec leur propre texte. Reprise à
+     luminance égale, basculée vers le vert. */
+  --vs-forest-950:#B4CBC4; --vs-forest-900:#D9E7E2; --vs-forest-800:#E7F0EC; --vs-forest-700:#FFFFFF; --vs-forest-600:#E0EBE6; --vs-forest-500:#BACFC8;
   --vs-fg-1:#0E2A26; --vs-fg-2:#4E6A64; --vs-fg-3:#879D98;
   --vs-emerald-300:#0E9270; --vs-emerald-400:#0FA176;
   --rank-gold:#B5821A;
@@ -833,8 +878,19 @@ body:not(.theme-dark) .vsd{
 /* surfaces "verre" hardcodées → claires */
 body:not(.theme-dark) .vsd .card,
 body:not(.theme-dark) .vsd .dim-section{ background:#FFFFFF; border:1px solid var(--vs-forest-500); -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:0 2px 8px rgba(31,60,55,.10); }
-body:not(.theme-dark) .vsd .entry-card{ background:#FFFFFF; -webkit-backdrop-filter:none; backdrop-filter:none; }
-body:not(.theme-dark) .vsd .entry-card:hover{ box-shadow:0 12px 30px rgba(31,60,55,.16); }
+/* Cartes de module de l'accueil : mêmes couches que les cartes du scouting
+   (le bloc « Le même verre, en clair » plus bas), reprises ici parce qu'elles
+   ne portent pas la classe .card. */
+body:not(.theme-dark) .vsd .entry-card{
+  background:
+    radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.12), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.30), rgba(255,255,255,.13) 42%, rgba(31,71,64,.05)),
+    rgba(255,255,255,.38);
+  border-color:rgba(31,71,64,.10);
+  -webkit-backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
+          backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
+}
+body:not(.theme-dark) .vsd .entry-card:hover{ box-shadow:0 12px 30px rgba(20,54,48,.20); }
 body:not(.theme-dark) .vsd .hero .toolbar{ background:rgba(255,255,255,.78); }
 body:not(.theme-dark) .vsd .toolbar{ background:#FFFFFF; }
 body:not(.theme-dark) .vsd .vsd-dropzone{ background:rgba(255,255,255,.55); }
@@ -1158,21 +1214,29 @@ button:has(.vs-star).vs-pressed{
    DESIGN SYSTEM
 ════════════════════════════════ */
 :root {
-  /* ── Fonds Platine-menthe clair (canvas wireframe) ── */
-  --bg:        #DBE6E8;
+  /* ── Mode clair — neutres teintés forêt ──
+     Ces variables ne concernent QUE le mode clair : body.theme-dark les
+     redéfinit toutes plus bas.
+     Elles étaient bleu-gris (#DBE6E8, #8A9BB8, #1A2038, bordures en
+     rgba(100,120,160,…)), une famille froide qui jurait avec l'identité
+     forêt/émeraude que le mode sombre respecte. Chaque teinte est reprise à
+     luminance comparable — le contraste ne bouge donc quasiment pas — mais
+     basculée du bleu vers le vert, alignée sur l'échelle --vs-* déjà utilisée
+     par le mode clair (--vs-fg-1:#0E2A26, --vs-fg-2:#4E6A64, --vs-fg-3:#879D98). */
+  --bg:        #D9E7E2;
   --surf1:     #FFFFFF;
-  --surf2:     #E9F0F1;
-  --surf3:     #E2EBEC;
+  --surf2:     #E7F0EC;
+  --surf3:     #E0EBE6;
 
   /* ── Bordures ── */
-  --border:    rgba(100,120,160,.10);
-  --border2:   rgba(100,120,160,.22);
+  --border:    rgba(31,71,64,.12);
+  --border2:   rgba(31,71,64,.26);
 
   /* ── Texte ── */
-  --text:      #1A2038;
-  --sub:       #8A9BB8;
-  --sub2:      #5A6880;
-  --fg:        #1A2038;
+  --text:      #0E2A26;
+  --sub:       #5C746C;   /* assombri : à luminance égale à l'ancien bleu-gris il tombait à 3,3 — sous le seuil AA */
+  --sub2:      #4E6A64;
+  --fg:        #0E2A26;
 
   /* ── Émeraude — couleur primaire (charte Hi-Fi VisionScore) ── */
   --lime:      #2DD4A7;
@@ -2435,6 +2499,18 @@ body.theme-dark #t50-table.thead-collee thead th {
           backdrop-filter:blur(12px) saturate(140%);
   transition:background .18s linear;
 }
+/* Même logique en clair : rien au repos, un voile blanc opacifiant seulement
+   quand l'en-tête colle. Sans ça il gardait son aplat --surf2, qui tranchait
+   sur le verre de la carte exactement comme le bandeau du mode sombre. */
+body:not(.theme-dark) #t50-table thead th {
+  background:transparent;
+}
+body:not(.theme-dark) #t50-table.thead-collee thead th {
+  background:rgba(255,255,255,.80);
+  -webkit-backdrop-filter:blur(12px) saturate(140%);
+          backdrop-filter:blur(12px) saturate(140%);
+  transition:background .18s linear;
+}
 
 /* ── CRM Pipeline ── */
 .crm-stage-col {
@@ -2716,6 +2792,81 @@ body.theme-dark #panel-scout .dim-header:hover {
     0 26px 58px -22px rgba(0,0,0,.75),
     0 8px 22px -10px rgba(0,0,0,.6) !important;
 }
+
+/* ════ Le même verre, en clair ════
+   Pendant exact du bloc ci-dessus : même structure (fond multi-couches, flou
+   d'arrière-plan, liseré périmétrique, ombres internes et portées), mais les
+   rôles s'inversent. En sombre la matière est un voile foncé que des reflets
+   BLANCS éclairent ; en clair c'est un voile blanc que des ombres VERTES
+   creusent. Reprendre les valeurs du sombre telles quelles donnerait une
+   surface délavée, sans arête ni relief.
+   Trois écarts délibérés :
+   1. Le liseré passe du blanc au vert sombre — sur fond clair, un liseré
+      blanc est invisible, c'est l'ombre qui dessine le bord.
+   2. brightness tombe à 1.02 (contre 1.04) : éclaircir un fond déjà clair
+      efface le peu de matière que le flou capte.
+   3. Les ombres portées sont teintées forêt et non noires, sinon elles
+      grisent la page au lieu de la creuser.
+   !important sur background et box-shadow : les cadres de stats du mode clair
+   sont posés en !important plus haut (règle « relief 3D », l.698-701). */
+body:not(.theme-dark) .vsd .card,
+body:not(.theme-dark) .vsd .dim-section,
+body:not(.theme-dark) .vsd .dim-section .dim-header,
+body:not(.theme-dark) .vsd .dim-section .dim-body {
+  position:relative;
+  background:
+    radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.12), transparent 70%),
+    linear-gradient(150deg, rgba(255,255,255,.30), rgba(255,255,255,.13) 42%, rgba(31,71,64,.05)),
+    rgba(255,255,255,.38) !important;
+  border:1px solid rgba(31,71,64,.10);
+  -webkit-backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
+          backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.40),
+    inset 0 1px 1px rgba(255,255,255,.28),
+    inset 0 -10px 22px -12px rgba(31,71,64,.08),
+    inset -1px -1px 0 rgba(31,71,64,.045),
+    0 22px 50px -24px rgba(20,54,48,.22),
+    0 6px 18px -10px rgba(20,54,48,.14) !important;
+}
+/* liseré de périmètre — vert sombre ici, cf. écart n°1 */
+body:not(.theme-dark) .vsd .card::before,
+body:not(.theme-dark) .vsd .dim-section .dim-header::before,
+body:not(.theme-dark) .vsd .dim-section .dim-body::before {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  padding:0.5px;
+  background:
+    linear-gradient(135deg, rgba(31,71,64,.11), rgba(31,71,64,.04) 38%, rgba(31,71,64,.04) 62%, rgba(31,71,64,.09)),
+    rgba(31,71,64,.03);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+          mask-composite:exclude;
+  z-index:2;
+}
+body:not(.theme-dark) .vsd .card > *,
+body:not(.theme-dark) .vsd .dim-section .dim-header > *,
+body:not(.theme-dark) .vsd .dim-section .dim-body > * { position:relative; z-index:1; }
+body:not(.theme-dark) .vsd .card:hover,
+body:not(.theme-dark) .vsd .dim-section .dim-header:hover {
+  border-color:rgba(31,71,64,.18);
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.48),
+    inset 0 1px 1px rgba(255,255,255,.34),
+    inset 0 -10px 22px -12px rgba(31,71,64,.08),
+    inset -1px -1px 0 rgba(31,71,64,.05),
+    0 26px 58px -24px rgba(20,54,48,.28),
+    0 8px 22px -10px rgba(20,54,48,.18) !important;
+}
+/* Champs de saisie : voile blanc, pendant du rgba(255,255,255,.05) du sombre */
+body:not(.theme-dark) .vsd .ctrl,
+body:not(.theme-dark) .vsd .seg {
+  background:rgba(255,255,255,.62);
+  border-color:rgba(31,71,64,.14);
+  -webkit-backdrop-filter:blur(3px);
+          backdrop-filter:blur(3px);
+}
+body:not(.theme-dark) .vsd .ctrl:focus-within { border-color:var(--vs-emerald-500); }
 /* ════ Rythme vertical du scouting ════
    L'espacement reposait sur des margin-bottom posés bloc par bloc (20/18/16/12px,
    hors échelle), et les deux sections majeures n'en avaient aucune : elles
