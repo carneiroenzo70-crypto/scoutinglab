@@ -867,6 +867,27 @@ body:not(.theme-dark) header.hd{ background:rgba(233,240,241,.9) !important; bor
              border-color 400ms cubic-bezier(.2,0,0,1),
              color 400ms cubic-bezier(.2,0,0,1);
 }
+/* ── Retour élastique au clic, sur tous les boutons du site ──
+   Déclenché au pointerdown (retour visuel immédiat, cf. règle MD3 « feedback
+   sous 100ms ») et porté par une ANIMATION et non une transition : chaque
+   famille de boutons (.vsd .btn, .chip, .hd-nav-item…) déclare déjà sa propre
+   transition sur transform, qui l'emporterait par spécificité. Une animation
+   prime toujours sur une transition — aucun conflit de cascade à arbitrer.
+   Compression rapide puis détente avec dépassement : un ressort se comprime
+   vite et se détend lentement, des durées égales donneraient un effet
+   mécanique. Amplitude volontairement faible (.955) — répétée sur 200
+   boutons, elle doit se sentir sans se voir. */
+@keyframes btnPress{
+  0%   { transform:scale(1); }
+  26%  { transform:scale(.955); }
+  62%  { transform:scale(1.012); }
+  100% { transform:scale(1); }
+}
+button.vs-pressed{ animation:btnPress 380ms cubic-bezier(.34,1.5,.6,1); }
+@media (prefers-reduced-motion: reduce){
+  button.vs-pressed{ animation:none; }
+}
+
 @keyframes chipPop{
   0%   { transform:scaleX(1)    scaleY(1); }
   20%  { transform:scaleX(1.12) scaleY(.90); }
@@ -3354,6 +3375,25 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       window.addEventListener('resize', function(){
         document.querySelectorAll('.seg.seg-anim .seg-ind').forEach(function(i){ i.classList.remove('anim'); });
         vsdSegSlide();
+      });
+
+      // Retour élastique au clic sur tous les boutons (cf. @keyframes btnPress).
+      // Écouteur unique délégué : les boutons sont ~200 et beaucoup sont créés
+      // dynamiquement, en attacher un par élément serait ingérable.
+      document.addEventListener('pointerdown', function(e){
+        var b = e.target.closest('button');
+        if (!b || b.disabled) return;
+        // Exclusions : boutons-cartes qui pilotent déjà leur propre transform au
+        // survol, et pastilles de rôle qui ont leur ressort de sélection (chipPop).
+        if (b.closest('.entry-card') || b.classList.contains('card') ||
+            b.classList.contains('entry-card') || b.classList.contains('wq') ||
+            b.closest('.rolepills-anim')) return;
+        b.classList.remove('vs-pressed');
+        void b.offsetWidth;                 // reflow forcé, sinon pas de rejeu
+        b.classList.add('vs-pressed');
+      }, { passive: true });
+      document.addEventListener('animationend', function(e){
+        if (e.animationName === 'btnPress') e.target.classList.remove('vs-pressed');
       });
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vsdSegSlide);
       else vsdSegSlide();
