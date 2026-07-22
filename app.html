@@ -283,13 +283,17 @@ body.rolebg-on .role-bg{ opacity:1; }
   radial-gradient(78% 62% at 84% -4%, color-mix(in oklab, var(--tint) 40%, transparent), transparent 60%),
   radial-gradient(150% 130% at 50% 22%, color-mix(in oklab, var(--tint) 16%, transparent), transparent 74%); }
 .role-bg-icon{
-  position:absolute; top:50%; right:-8%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.52;
+  /* right:-1% et non -8% : les deux icônes se plaquaient aux bords opposés,
+     laissant ~740px de vide au centre sur écran large. On les rapproche tout
+     en gardant un léger débordement, sans quoi elles se lisent comme des
+     objets posés plutôt que comme un fond. */
+  position:absolute; top:50%; right:-1%; width:min(82vh,880px); aspect-ratio:452 / 462; opacity:.52;
   background:linear-gradient(150deg, color-mix(in oklab, var(--tint) 92%, white 10%), color-mix(in oklab, var(--tint) 50%, transparent));
   -webkit-mask:var(--ic) center / contain no-repeat; mask:var(--ic) center / contain no-repeat;
   transform:translateY(-50%) scale(1.14) rotate(4deg);
   transition:transform .7s cubic-bezier(.05,.7,.1,1), opacity .5s cubic-bezier(.2,0,0,1); will-change:transform;
 }
-.role-bg-icon.echo{ top:auto; bottom:-6%; left:-4%; right:auto; width:min(62vh,640px); opacity:.22; transform:translateY(0) scale(1.1) rotate(-6deg); }
+.role-bg-icon.echo{ top:auto; bottom:-4%; left:-1%; right:auto; width:min(62vh,640px); opacity:.22; transform:translateY(0) scale(1.1) rotate(-6deg); }
 .role-bg-layer.on .role-bg-icon{ transform:translateY(-50%) scale(1) rotate(0deg); }
 .role-bg-layer.on:not([data-role="Mid"]) .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-45deg); }
 .role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
