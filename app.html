@@ -13949,7 +13949,10 @@ function top50Export() {
 
 // Init
 top50LoadLocal();
-initAppMode();
+// initAppMode() retiré : la fonction n'a jamais été définie (appel orphelin
+// laissé par le chantier auth, 5b7b8bf). La ReferenceError interrompait le
+// bloc de script, si bien que checkBackendStatus() juste en dessous n'était
+// jamais appelée — d'où l'indicateur d'API bloqué sur « API… ».
 checkBackendStatus();
 
 
