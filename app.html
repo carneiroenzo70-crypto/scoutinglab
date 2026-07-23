@@ -276,7 +276,13 @@ html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/ass
    Le rôle sélectionné teinte le canvas et incruste son glyphe dans l'espace
    négatif derrière le dossier. N'apparaît que sur Scouter / Résultats. */
 .role-bg{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; opacity:0; transition:opacity .45s cubic-bezier(.2,0,0,1); }
-body.rolebg-on .role-bg{ opacity:1; }
+/* :not(.welcome-active) : garde-fou. rolebg-on n'est basculé que par
+   switchPanel ; les retours à l'accueil (resetToWelcome…) ne passant pas par
+   là, la classe restait active et les glyphes de rôle persistaient sur
+   l'accueil. On gate donc l'affichage sur welcome-active, le drapeau qui
+   atteste réellement qu'on est sur l'accueil — robuste quel que soit le
+   chemin de retour. */
+body.rolebg-on:not(.welcome-active) .role-bg{ opacity:1; }
 .role-bg-layer{ position:absolute; inset:0; opacity:0; transition:opacity .5s cubic-bezier(.2,0,0,1); will-change:opacity; }
 .role-bg-layer.on{ opacity:1; }
 .role-bg-wash{ position:absolute; inset:0; background:
@@ -725,8 +731,18 @@ body.theme-dark .vsd .dim-section .dim-header:hover{
           mask:url('/assets/logos/logo-emblem.svg') center / contain no-repeat;
   transform:translateY(-50%); }
 .logo-bg-icon.echo{ top:auto; bottom:-8%; left:-3%; right:auto; width:min(46vh,460px); opacity:.08; transform:none; }
-body:not(.theme-dark) .logo-bg-icon{ opacity:.10; }
-body:not(.theme-dark) .logo-bg-icon.echo{ opacity:.055; }
+/* Emblème de fond en mode clair. Sa teinte de base est un émeraude clair,
+   calibré pour BRILLER sur fond sombre : sur une page claire, clair-sur-clair
+   ne contraste pas, et monter l'opacité n'y change presque rien (écart de
+   luminance plafonné à ~0,05). On le reteinte donc en vert forêt — sombre sur
+   clair, l'écart passe à ~0,19, l'emblème se lit vraiment — tout en restant
+   dans la charte forêt/émeraude. Sans risque de lisibilité : l'emblème est en
+   z-index:-1, aucun texte ne repose dessus. */
+body:not(.theme-dark) .logo-bg-icon{
+  opacity:.16;
+  background:linear-gradient(150deg, #245C52, rgba(31,71,64,.55));
+}
+body:not(.theme-dark) .logo-bg-icon.echo{ opacity:.10; }
 /* Scouting + carte plein écran : pas de watermark */
 body:has(#panel-scout.active) .logo-bg,
 body.map-fullscreen .logo-bg{ display:none; }
@@ -758,6 +774,14 @@ body.map-fullscreen .logo-bg{ display:none; }
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
 .vsd-burger:hover{ background:#143F39; border-color:#2DD4A7; }
+/* Mode clair : le liseré vert (#245C52) et l'icône blanche sont calibrés pour
+   l'en-tête sombre. Sur l'en-tête clair, le vert ressortait comme un cadre
+   criard tandis que l'icône blanche disparaissait. On passe à une icône vert
+   sombre lisible et à un liseré forêt très ténu — le même token que les
+   champs et cartes du clair (rgba(31,71,64,.14)) — pour un bouton discret
+   mais toujours perceptible. */
+body:not(.theme-dark) .vsd-burger{ color:#3F5A54; border-color:rgba(31,71,64,.14); }
+body:not(.theme-dark) .vsd-burger:hover{ background:rgba(31,71,64,.06); border-color:rgba(31,71,64,.26); }
 /* Voile : moins opaque qu'avant (.72 -> .45) mais bien plus flou (3 -> 10px).
    Le tiroir étant son enfant, le voile forme la racine d'arrière-plan que le
    verre du tiroir échantillonne : à .72 il n'y avait qu'un aplat à brouiller,
@@ -1064,6 +1088,31 @@ button:has(.vs-star).vs-pressed{
 @media (prefers-reduced-motion: reduce){
   #panel-welcome button.vs-pressed{ animation:none; }
 }
+/* Version DOUCE pour les gros boutons-cartes de l'accueil (modules + cartes
+   joueur). chipPop est calibré sur des pastilles de 51px : son étirement de
+   12% (scaleX 1.12 / scaleY .90) devient caoutchouteux sur une carte de 200px
+   et plus — l'effet « too much » signalé. On retire donc la distorsion
+   étirement/écrasement (le scaleX≠scaleY qui fait le rebond élastique) au
+   profit d'un simple enfoncement uniforme, amplitude ~1,5% : le geste se sent
+   sans déformer la carte. Spécificité (1,2,0) > (1,1,1) de la règle ci-dessus,
+   la bascule est franche. animation-composition:add conservé pour préserver le
+   soulèvement au survol (translateY(-3px)). */
+@keyframes chipPopSoft{
+  0%   { transform:scale(1); }
+  30%  { transform:scale(.985); }
+  64%  { transform:scale(1.005); }
+  100% { transform:scale(1); }
+}
+#panel-welcome .entry-card.vs-pressed,
+#panel-welcome .card.vs-pressed{
+  animation:chipPopSoft 440ms cubic-bezier(.2,0,0,1);
+  animation-composition:add;
+  transform-origin:center center;
+}
+@media (prefers-reduced-motion: reduce){
+  #panel-welcome .entry-card.vs-pressed,
+  #panel-welcome .card.vs-pressed{ animation:none; }
+}
 /* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
 .vsd .an-tabbar{ position:relative; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; width:fit-content; max-width:100%; margin-left:auto; margin-right:auto; align-self:center; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; scrollbar-width:none; }
 .vsd .an-tabbar::-webkit-scrollbar{ display:none; }
@@ -1072,6 +1121,20 @@ button:has(.vs-star).vs-pressed{
 .vsd .an-tabbar .an-tab.on{ color:#04211C !important; }
 .vsd .an-tabbar .an-tab.on .an-lock{ background:rgba(4,33,28,.18) !important; color:#04211C !important; border-color:rgba(4,33,28,.3) !important; }
 .vsd .an-tabbar .an-ind{ position:absolute; top:5px; bottom:5px; left:0; width:0; border-radius:8px; background:linear-gradient(180deg,#35E0B2,#23BE93); box-shadow:0 2px 10px rgba(45,212,167,.35); z-index:0; pointer-events:none; }
+/* Mode clair : le fond rgba(4,18,15,.5) est sombre — calibré pour le thème
+   sombre. Sur une page claire il vire au gris boueux et le texte d'onglet
+   (--vs-fg-2, vert sombre) y devient illisible, sombre sur sombre. On passe à
+   un verre clair — même langage que les cartes (blanc translucide + flou +
+   liseré forêt ténu) : le texte sombre redevient lisible sans y toucher, et la
+   pilule émeraude active ressort franchement. */
+body:not(.theme-dark) .vsd .an-tabbar{
+  background:rgba(255,255,255,.45);
+  border-color:rgba(31,71,64,.14);
+  -webkit-backdrop-filter:blur(4px) saturate(140%);
+          backdrop-filter:blur(4px) saturate(140%);
+}
+body:not(.theme-dark) .vsd .an-tabbar .an-tab{ color:#4E6A64; }
+body:not(.theme-dark) .vsd .an-tabbar .an-tab:hover{ color:#0E2A26; }
 /* ── Ressort MD3 sur la pilule des barres d'onglets (Analytics + CRM) ──
    Mêmes jetons de mouvement que le sélecteur de parties (.seg-anim) : courbes
    qui dépassent 1 pour le rebond, et left/width désynchronisés en durée comme
@@ -3792,7 +3855,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       }, { passive: true });
       document.addEventListener('animationend', function(e){
         // chipPop aussi : les .btn-pop rejouent ce keyframe-là au clic.
-        if (e.animationName === 'btnPress' || e.animationName === 'chipPop') e.target.classList.remove('vs-pressed');
+        if (e.animationName === 'btnPress' || e.animationName === 'chipPop' || e.animationName === 'chipPopSoft') e.target.classList.remove('vs-pressed');
       });
 
       // Accueil : laisser le ressort s'achever AVANT de changer de page.
@@ -3809,7 +3872,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         var b = e.target.closest('button');
         if (!b || !b.closest('#panel-welcome')) return;
         if (b.dataset.vsDiffere === '1') { delete b.dataset.vsDiffere; return; }  // second passage : on laisse filer
-        var anim = b.getAnimations().find(function(a){ return a.animationName === 'chipPop'; });
+        // chipPop OU chipPopSoft : les gros boutons-cartes utilisent la variante
+        // douce. Ne chercher que 'chipPop' laissait leur navigation partir sans
+        // attendre — c'est justement eux qu'il faut laisser s'achever.
+        var anim = b.getAnimations().find(function(a){ return a.animationName === 'chipPop' || a.animationName === 'chipPopSoft'; });
         if (!anim || anim.playState === 'finished') return;
         e.preventDefault();
         e.stopPropagation();
@@ -8085,6 +8151,7 @@ function resetToWelcome() {
   appMode = 'welcome';
   try { localStorage.removeItem('spes_mode'); } catch(e) {}
   document.body.classList.remove('landing-active');
+  document.body.classList.remove('rolebg-on');   // état honnête : plus sur le scouting
   document.body.classList.add('welcome-active');
   const welcome = document.getElementById('panel-welcome');
   if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
@@ -8095,6 +8162,7 @@ function resetToWelcome() {
 
 function goToWelcome() {
   document.body.classList.remove('landing-active');
+  document.body.classList.remove('rolebg-on');
   document.body.classList.add('welcome-active');
   const landing = document.getElementById('panel-landing');
   if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
