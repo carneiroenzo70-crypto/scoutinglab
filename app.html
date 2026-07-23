@@ -305,10 +305,14 @@ body.rolebg-on .role-bg{ opacity:1; }
 .role-bg-layer.on[data-role="Jungle"] .role-bg-icon:not(.echo),
 .role-bg-layer.on[data-role="Support"] .role-bg-icon:not(.echo){ transform:translateY(-50%) scale(1) rotate(-70deg); }
 .role-bg-layer.on .role-bg-icon.echo{ transform:translateY(0) scale(1) rotate(-3deg); }
-/* Mode clair : glyphes plus discrets sur le canvas menthe */
+/* Mode clair : glyphes de rôle en fond. Opacité montée à la demande (.38→.52,
+   écho .17→.24). Contrepartie mesurée : la teinte du glyphe est un vert très
+   sombre (rgb 14,42,38) ; là où il passe sous une carte en verre, il assombrit
+   la surface et fait chuter le contraste du texte secondaire --sub (3,0 à .38,
+   ~2,5 à .52). Les titres restent lisibles (>7). */
 body:not(.theme-dark) .role-bg-wash{ opacity:.62; }
-body:not(.theme-dark) .role-bg-icon{ opacity:.38; }
-body:not(.theme-dark) .role-bg-icon.echo{ opacity:.17; }
+body:not(.theme-dark) .role-bg-icon{ opacity:.52; }
+body:not(.theme-dark) .role-bg-icon.echo{ opacity:.24; }
 @media (prefers-reduced-motion: reduce){ .role-bg-layer, .role-bg-icon{ transition:none !important; } }
 /* ════ Notation détaillée — look wireframe : titre & critères en cartes séparées ════ */
 .vsd .dim-section{ background:transparent !important; border:0 !important; box-shadow:none !important; overflow:visible !important; -webkit-backdrop-filter:none !important; backdrop-filter:none !important; display:flex; flex-direction:column; gap:10px; }
@@ -2858,10 +2862,18 @@ body:not(.theme-dark) .vsd .dim-section .dim-header:hover {
     0 26px 58px -24px rgba(20,54,48,.28),
     0 8px 22px -10px rgba(20,54,48,.18) !important;
 }
-/* Champs de saisie : voile blanc, pendant du rgba(255,255,255,.05) du sombre */
+/* Champs de saisie : ce qui compte n'est pas la couleur mais l'ÉCART avec la
+   carte. En sombre, le champ (voile blanc .05) n'est que +0,011 de luminance
+   au-dessus de la carte — un écart infime, donc il se fond dans le verre.
+   Transposer la couleur (.44 de blanc) donnait +0,056, cinq fois plus : sur
+   une carte déjà claire, tout ajout de blanc pousse vers le blanc pur et le
+   champ ressort comme une tuile opaque. On reproduit donc l'écart, pas la
+   valeur : .12 de blanc → +0,018, à peine au-dessus de la carte, le flou
+   transparaît, et c'est la bordure qui délimite le champ — exactement comme
+   en sombre. Le texte, sombre, reste à ~14:1. */
 body:not(.theme-dark) .vsd .ctrl,
 body:not(.theme-dark) .vsd .seg {
-  background:rgba(255,255,255,.62);
+  background:rgba(255,255,255,.12);
   border-color:rgba(31,71,64,.14);
   -webkit-backdrop-filter:blur(3px);
           backdrop-filter:blur(3px);
