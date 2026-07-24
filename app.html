@@ -622,10 +622,57 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .rs-card.weak{ border-color:rgba(230,178,62,.55); }
 .rs-card.empty{ border-style:dashed; align-items:center; justify-content:center; text-align:center; cursor:pointer; color:var(--vs-fg-3); min-height:150px; }
 .rs-card.empty:hover{ border-color:var(--vs-emerald-400); color:var(--vs-emerald-300); transform:none; box-shadow:none; }
-.rs-rolechip{ display:inline-block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:999px; border:1px solid; background:rgba(4,18,15,.5); }
+/* Puce de rôle NEUTRE : plus de couleur par rôle (cf. RS_ROLE_COL unifié) —
+   liseré forêt discret, texte sobre. Le rôle se lit, il ne clignote plus. */
+.rs-rolechip{ display:inline-block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:3px 10px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); background:rgba(4,18,15,.35); }
+body:not(.theme-dark) .rs-rolechip{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.16); color:var(--sub2); }
 .rs-weakchip{ font-size:9.5px; font-weight:700; color:var(--rank-gold); border:1px solid rgba(230,178,62,.45); border-radius:999px; padding:2px 8px; letter-spacing:.03em; }
 .rs-card .idrow{ display:flex; align-items:center; gap:11px; min-width:0; }
-.rs-card .av{ width:42px; height:42px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; color:#04211C; }
+/* Avatar : icône de profil Solo Q (image) avec repli sur l'initiale.
+   .av-fallback = cercle forêt neutre + initiale émeraude (plus de pastille
+   colorée par rôle). .av-img masque l'initiale tant que l'image charge ; si
+   elle échoue (onerror), la classe av-fallback réapparaît et révèle l'initiale. */
+.rs-card .av{ width:42px; height:42px; border-radius:50%; flex:none; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.rs-card .av img{ width:100%; height:100%; object-fit:cover; display:block; }
+.rs-card .av .av-ini{ font-weight:800; font-size:16px; color:var(--vs-emerald-300); }
+.rs-card .av.av-img .av-ini{ display:none; }
+.rs-card .av.av-fallback{ background:var(--vs-forest-600); border:1px solid var(--vs-forest-500); }
+.rs-card .av.av-fallback .av-ini{ display:inline; }
+body:not(.theme-dark) .rs-card .av.av-fallback{ background:rgba(31,71,64,.08); border-color:rgba(31,71,64,.16); color:var(--vs-emerald-500); }
+body:not(.theme-dark) .rs-card .av .av-ini{ color:var(--vs-emerald-500); }
+/* Sous-ligne Solo Q démotée + stats compét */
+.rs-sqtag{ font-size:8.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); border:1px solid var(--vs-forest-500); border-radius:4px; padding:1px 5px; }
+.rs-stat{ font-size:11px; color:var(--vs-fg-2); white-space:nowrap; }
+.rs-stat b{ color:var(--vs-fg-1); font-weight:800; }
+.rs-dot{ color:var(--vs-forest-500); margin:0 1px; }
+/* Bascule GLOBALE Compét / Solo Q dans l'en-tête du site (compacte) */
+.hd-modesw{ display:inline-flex; padding:2px; gap:2px; border:1px solid var(--border2); border-radius:7px; background:var(--surf2); }
+.hd-modebtn{ border:0; background:transparent; color:var(--sub2); font-family:monospace; font-size:10px; letter-spacing:.04em; padding:4px 9px; border-radius:5px; cursor:pointer; transition:color .15s, background .15s; }
+.hd-modebtn.on{ background:var(--lime); color:#04211C; font-weight:700; }
+.hd-modebtn:not(.on):hover{ color:var(--text); }
+@media (max-width:900px){ .hd-modesw{ display:none; } }
+/* Bascule Compét / Solo Q dans l'en-tête du roster */
+.rs-modesw{ display:inline-flex; padding:3px; gap:2px; border:1px solid var(--vs-forest-500); border-radius:10px; background:rgba(4,18,15,.4); }
+body:not(.theme-dark) .rs-modesw{ background:rgba(255,255,255,.4); border-color:rgba(31,71,64,.14); }
+.rs-modebtn{ border:0; background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:11.5px; letter-spacing:.04em; text-transform:uppercase; padding:6px 13px; border-radius:7px; cursor:pointer; transition:color .15s, background .15s; }
+.rs-modebtn.on{ background:var(--vs-emerald-500); color:#04211C; }
+.rs-modebtn:not(.on):hover{ color:var(--vs-fg-1); }
+/* Carte en mode compét : liseré émeraude ténu pour signaler la vue active */
+.rs-card.rs-compet{ border-color:rgba(45,212,167,.32); }
+/* Modale d'édition esport / stats compét */
+.rs-modal-ov{ position:fixed; inset:0; z-index:10000; background:rgba(3,14,12,.6); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; padding:20px; }
+.rs-modal{ width:min(420px,94vw); background:var(--vs-forest-800); border:1px solid var(--vs-forest-500); border-radius:16px; padding:20px; display:flex; flex-direction:column; gap:11px; box-shadow:0 24px 60px -20px rgba(0,0,0,.7); }
+body:not(.theme-dark) .rs-modal{ background:#FFFFFF; border-color:rgba(31,71,64,.14); }
+.rs-modal-h{ font-family:var(--font-display); font-weight:700; font-size:14px; color:var(--vs-fg-1); text-transform:uppercase; letter-spacing:.04em; }
+.rs-f{ display:flex; flex-direction:column; gap:5px; }
+.rs-f > span{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.rs-f input{ height:38px; padding:0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:14px; }
+body:not(.theme-dark) .rs-f input{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.rs-f input:focus{ outline:0; border-color:var(--vs-emerald-500); }
+.rs-f2{ display:flex; gap:10px; }
+.rs-f2 .rs-f{ flex:1; }
+.rs-modal-note{ font-size:10.5px; color:var(--vs-fg-3); line-height:1.4; }
+.rs-modal-a{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -3199,6 +3246,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
+    <!-- Toggle GLOBAL Compét / Solo Q — présent sur toutes les pages (socle
+         vsDataMode). Reflète et pilote le même mode que le roster. -->
+    <div class="hd-modesw" role="group" aria-label="Mode de données du site" title="Analyser en compétitif ou en Solo Q — partout sur le site">
+      <button data-vsmode="compet" onclick="vsSetDataMode('compet')" class="hd-modebtn">Compét</button>
+      <button data-vsmode="soloq" onclick="vsSetDataMode('soloq')" class="hd-modebtn">Solo Q</button>
+    </div>
     <!-- Toggle Dark / Light -->
     <button id="theme-toggle" onclick="toggleTheme()" title="Basculer thème sombre/clair"
       style="background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;
@@ -5737,6 +5790,48 @@ function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   anShowView('scrim');
 }
 let _rsWhatIf = null; // réservé (prévisualisation what-if)
+/* ════════════════════════════════════════════
+   SOCLE COMMUN COMPÉT / SOLO Q  (« branché partout »)
+   ─────────────────────────────────────────────
+   Un seul mode de données pour tout le site : 'compet' ou 'soloq'. Chaque
+   rubrique peut le lire (window.vsDataMode), réagir à l'événement 'vs-data-mode',
+   ou styler via la classe body (.vs-mode-compet / .vs-mode-soloq). Le roster
+   l'expose visiblement ; les autres rubriques héritent du socle même si leur
+   affichage compét viendra plus tard — c'est le « sans forcément que ce soit
+   visible » demandé.
+   Règle de marque tenue ici : le mode compét n'AFFICHE JAMAIS de chiffre inventé.
+   Les stats compétitives sont saisies à la main (vraies données, contrôlées) et,
+   à défaut, un état « à renseigner » s'affiche — jamais un nombre fabriqué. */
+window.vsDataMode = (function(){ try { return localStorage.getItem('vs_data_mode') === 'compet' ? 'compet' : 'soloq'; } catch(e){ return 'soloq'; } })();
+function vsApplyDataModeClass(){
+  document.body.classList.toggle('vs-mode-compet', window.vsDataMode === 'compet');
+  document.body.classList.toggle('vs-mode-soloq',  window.vsDataMode !== 'compet');
+}
+// Reflète l'état actif sur TOUS les toggles de mode (en-tête + roster), où qu'ils
+// soient : chaque bouton porte data-vsmode="compet|soloq".
+function vsSyncModeToggles(){
+  document.querySelectorAll('[data-vsmode]').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-vsmode') === window.vsDataMode);
+  });
+}
+function vsSetDataMode(m){
+  var next = (m === 'compet') ? 'compet' : 'soloq';
+  if (next === window.vsDataMode) return;
+  window.vsDataMode = next;
+  try { localStorage.setItem('vs_data_mode', next); } catch(e){}
+  vsApplyDataModeClass();
+  vsSyncModeToggles();
+  // Notifie toutes les rubriques branchées sur le socle. Chaque module peut
+  // écouter cet événement pour se re-rendre dans le mode courant.
+  document.dispatchEvent(new CustomEvent('vs-data-mode', { detail: next }));
+  if (document.getElementById('an-roster') && typeof renderRoster === 'function') renderRoster();
+}
+vsApplyDataModeClass();
+// Synchro initiale + à chaque changement de panneau (les toggles de l'en-tête
+// sont statiques, mais on garantit leur état à l'affichage).
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', vsSyncModeToggles);
+else vsSyncModeToggles();
+
 async function renderRoster() {
   const box = document.getElementById('an-roster'); if (!box) return;
   rsMigrate();
@@ -5751,6 +5846,14 @@ async function renderRoster() {
   html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
   // Icônes SVG (charte — pas d'emojis)
   const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  // Bascule Compét / Solo Q — le mode global (cf. socle vsDataMode). « Construire
+  // les deux et voir l'avancée jour par jour » : chaque mode a ses propres stats
+  // et ses propres instantanés, on bascule d'une vue à l'autre.
+  const _cpt = window.vsDataMode === 'compet';
+  html += '<div class="rs-modesw" role="group" aria-label="Mode de données">'
+       +    '<button data-vsmode="compet" onclick="vsSetDataMode(\'compet\')" class="rs-modebtn' + (_cpt ? ' on' : '') + '">Compét</button>'
+       +    '<button data-vsmode="soloq" onclick="vsSetDataMode(\'soloq\')" class="rs-modebtn' + (!_cpt ? ' on' : '') + '">Solo Q</button>'
+       +  '</div>';
   html += '<button onclick="rsUiNew()" class="btn btn-ghost btn-sm">' + _ic('<path d="M12 5v14M5 12h14"/>') + ' Nouveau</button>';
   html += '<button onclick="rsUiRename()" class="btn btn-ghost btn-sm">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + ' Renommer</button>';
   html += '<button onclick="rsUiDelete()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + ' Supprimer</button>';
@@ -5804,43 +5907,84 @@ function rsGauge(score, size) {
     + '<span style="position:relative;font-family:var(--font-mono);font-weight:700;font-size:' + fs + ';color:' + (has ? col : 'var(--vs-fg-3)') + '">' + (has ? score.toFixed(1) : '—') + '</span></div>';
 }
 
-const RS_ROLE_COL = { Top: '#4A9EFF', Jgl: '#2DD4A7', Mid: '#F5A623', ADC: '#C084FC', Sup: '#F87171' };
+/* Couleurs de rôle NEUTRALISÉES : l'arc-en-ciel (bleu/orange/violet/rouge)
+   faisait « enfantin ». Une seule teinte émeraude sobre pour tous les rôles ;
+   le rôle se lit à son libellé, plus à sa couleur. Le seul accent coloré qui
+   subsiste est la jauge de score (sémantique : rouge→vert selon la note). */
+const RS_ROLE_COL = { Top: '#4E8C7E', Jgl: '#4E8C7E', Mid: '#4E8C7E', ADC: '#4E8C7E', Sup: '#4E8C7E' };
 const RS_ROLE_FULL = { Top: 'Top lane', Jgl: 'Jungle', Mid: 'Mid lane', ADC: 'Bot lane', Sup: 'Support' };
+// Icône de profil Solo Q via Community Dragon (sans numéro de version, donc
+// pas d'appel /versions.json à gérer). onerror → repli sur l'initiale.
+function rsIconUrl(id){ return 'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/' + id + '.jpg'; }
+function rsAvatarHtml(slot){
+  const initial = anEsc(((slot.proName || slot.pseudo || '?').charAt(0) || '?').toUpperCase());
+  if (slot.profileIconId != null){
+    return '<div class="av av-img"><img src="' + rsIconUrl(slot.profileIconId) + '" alt="" '
+      + 'onerror="this.parentNode.classList.add(\'av-fallback\');this.remove()">'
+      + '<span class="av-ini">' + initial + '</span></div>';
+  }
+  return '<div class="av av-fallback"><span class="av-ini">' + initial + '</span></div>';
+}
 function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   const score = pr && pr.score;
-  const col = RS_ROLE_COL[role] || 'var(--vs-emerald-400)';
   const isWeak = ts && ts.weakest === role && typeof score === 'number';
 
   // Poste vide : carte pointillée, tout le bloc est cliquable.
   if (!slot || !slot.pseudo) {
     return '<div class="rs-card empty" onclick="rsUiPick(\'' + role + '\')">'
-      + '<span class="rs-rolechip" style="color:' + col + ';border-color:' + col + '55">' + role + '</span>'
+      + '<span class="rs-rolechip">' + role + '</span>'
       + '<div style="font-size:24px;line-height:1;color:var(--vs-forest-400);margin:6px 0 2px">+</div>'
       + '<div style="font-weight:700;font-size:13px">Ajouter un titulaire</div>'
-      + '<div class="faint" style="font-size:10.5px">' + (RS_ROLE_FULL[role] || role) + ' · Pseudo#TAG</div>'
+      + '<div class="faint" style="font-size:10.5px">' + (RS_ROLE_FULL[role] || role) + ' · Pseudo esport</div>'
       + '</div>';
   }
 
+  const compet = window.vsDataMode === 'compet';
+  // Pseudo ESPORT mis en avant ; le pseudo Solo Q est démoté en sous-ligne.
+  const proName = (slot.proName || '').trim();
+  const primaire = proName || slot.pseudo;   // à défaut d'esport, on garde le Solo Q en titre
   // "DIAMOND II" → "Diamond II" (tier capitalisé, division conservée)
   const rkLbl = (pr && pr.rank) ? pr.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
   const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
-  let h = '<div class="rs-card' + (isWeak ? ' weak' : '') + '">';
+  let h = '<div class="rs-card' + (isWeak ? ' weak' : '') + (compet ? ' rs-compet' : '') + '">';
   h += '<div style="display:flex;align-items:center;gap:8px">';
-  h += '<span class="rs-rolechip" style="color:' + col + ';border-color:' + col + '55">' + role + '</span>';
+  h += '<span class="rs-rolechip">' + role + '</span>';
   if (isWeak) h += '<span class="rs-weakchip">Maillon faible</span>';
   h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
   h += '</div>';
   h += '<div class="idrow">';
-  h += '<div class="av" style="background:' + col + '">' + anEsc((slot.pseudo || '?').charAt(0).toUpperCase()) + '</div>';
+  h += rsAvatarHtml(slot);
   h += '<div style="min-width:0;flex:1">';
-  h += '<div class="nm">' + anEsc(slot.pseudo) + (slot.tag ? ' <span class="faint" style="font-size:.68rem;font-family:var(--font-mono);font-weight:400">#' + anEsc(slot.tag) + '</span>' : '') + '</div>';
+  h += '<div class="nm">' + anEsc(primaire) + '</div>';
+  // Sous-ligne 1 : identité Solo Q (démotée) — toujours visible pour garder le lien.
   h += '<div class="sub">';
-  if (rk && rk.tier) h += rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:700">' + anEsc(rk.label) + '</span>';
-  else if (pr && pr.source === 'Scout') h += '<span>Fiche scouting</span>';
-  if (pr && pr.wr != null) h += '<span>· ' + pr.wr + '% WR</span>';
+  h += '<span class="rs-sqtag">Solo Q</span><span class="faint" style="font-family:var(--font-mono);font-size:.66rem">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</span>';
+  h += '</div>';
+  // Sous-ligne 2 : stats selon le mode. Compét = données saisies (jamais inventées).
+  h += '<div class="sub" style="margin-top:3px">';
+  if (compet) {
+    const c = slot.compet || {};
+    const has = ['kda','wr','games','kp'].some(k => c[k] != null && c[k] !== '');
+    if (has) {
+      const bits = [];
+      if (c.league) bits.push('<span class="rs-stat" style="color:var(--vs-emerald-300);font-weight:700">' + anEsc(c.league) + '</span>');
+      if (c.kda   != null && c.kda   !== '') bits.push('<span class="rs-stat"><b>' + anEsc(c.kda) + '</b> KDA</span>');
+      if (c.wr    != null && c.wr    !== '') bits.push('<span class="rs-stat"><b>' + anEsc(c.wr) + '%</b> WR</span>');
+      if (c.kp    != null && c.kp    !== '') bits.push('<span class="rs-stat"><b>' + anEsc(c.kp) + '%</b> KP</span>');
+      if (c.games != null && c.games !== '') bits.push('<span class="rs-stat faint">' + anEsc(c.games) + ' matchs</span>');
+      h += bits.join('<span class="rs-dot">·</span>');
+    } else {
+      h += '<span class="faint" style="font-size:.7rem">Stats compét à renseigner</span>';
+    }
+  } else {
+    if (rk && rk.tier) h += rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:700">' + anEsc(rk.label) + '</span>';
+    else if (pr && pr.source === 'Scout') h += '<span>Fiche scouting</span>';
+    if (pr && pr.wr != null) h += '<span>· ' + pr.wr + '% WR</span>';
+  }
   h += '</div></div></div>';
   h += '<div style="display:flex;align-items:center;gap:8px">';
   h += '<button onclick="rsUiPick(\'' + role + '\')" class="btn btn-ghost btn-xs">Changer</button>';
+  h += '<button onclick="rsUiEditPro(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Pseudo esport & stats compétitives">Éditer</button>';
   if (pr && pr.source) h += anSourceBadge(pr.source);
   h += '</div>';
 
@@ -5875,6 +6019,49 @@ function rsUiPick(role) {
   let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
   const f = hist.find(h => (h.pseudo || '').toLowerCase() === (p || '').toLowerCase() && h.role === role);
   rsSetSlot(r.id, role, { pseudo: p.trim(), tag: (tag || 'EUW').trim(), server: 'euw1', proName: '', ficheId: f ? f.id : null });
+  renderRoster();
+}
+// Édition du pseudo esport + des stats compétitives (SAISIE MANUELLE — vraies
+// données, jamais calculées ni inventées, conformément à la règle de marque).
+function rsUiEditPro(role) {
+  const r = rsActive(); if (!r) return;
+  const slot = r.slots[role]; if (!slot) return;
+  const c = slot.compet || {};
+  const v = x => (x == null ? '' : String(x)).replace(/"/g, '&quot;');
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML =
+      '<div class="rs-modal" role="dialog" aria-modal="true">'
+    +   '<div class="rs-modal-h">' + role + ' · pseudo esport &amp; stats compétitives</div>'
+    +   '<label class="rs-f"><span>Pseudo esport</span><input id="rsm-pro" value="' + v(slot.proName) + '" placeholder="ex. Caps" autocomplete="off"></label>'
+    +   '<label class="rs-f"><span>Ligue / compétition</span><input id="rsm-league" value="' + v(c.league) + '" placeholder="ex. LEC" autocomplete="off"></label>'
+    +   '<div class="rs-f2">'
+    +     '<label class="rs-f"><span>KDA</span><input id="rsm-kda" value="' + v(c.kda) + '" placeholder="3.8" inputmode="decimal" autocomplete="off"></label>'
+    +     '<label class="rs-f"><span>Win rate %</span><input id="rsm-wr" value="' + v(c.wr) + '" placeholder="62" inputmode="numeric" autocomplete="off"></label>'
+    +   '</div>'
+    +   '<div class="rs-f2">'
+    +     '<label class="rs-f"><span>KP %</span><input id="rsm-kp" value="' + v(c.kp) + '" placeholder="68" inputmode="numeric" autocomplete="off"></label>'
+    +     '<label class="rs-f"><span>Matchs joués</span><input id="rsm-games" value="' + v(c.games) + '" placeholder="18" inputmode="numeric" autocomplete="off"></label>'
+    +   '</div>'
+    +   '<div class="rs-modal-note">Stats réelles saisies à la main — aucune n\'est calculée ni inventée.</div>'
+    +   '<div class="rs-modal-a">'
+    +     '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
+    +     '<button class="btn btn-cta btn-sm" onclick="rsSaveProFromModal(\'' + role + '\')">Enregistrer</button>'
+    +   '</div>'
+    + '</div>';
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  document.addEventListener('keydown', function esc(e){ if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(ov);
+  const first = ov.querySelector('#rsm-pro'); if (first) first.focus();
+}
+function rsSaveProFromModal(role) {
+  const r = rsActive(); if (!r) return;
+  const slot = r.slots[role]; if (!slot) return;
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  slot.proName = g('rsm-pro');
+  slot.compet = { league: g('rsm-league'), kda: g('rsm-kda'), wr: g('rsm-wr'), kp: g('rsm-kp'), games: g('rsm-games') };
+  rsSetSlot(r.id, role, slot);   // persiste + vsStore.save('rosters')
+  const ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
   renderRoster();
 }
 async function rsSimSwap(role, pseudoEnc) {
@@ -8201,6 +8388,8 @@ function switchPanel(id) {
   if (typeof vsdSegSlide === 'function') vsdSegSlide();
   // Soulignement de la nav : glisse vers l'onglet qui vient de devenir actif
   if (typeof hdNavSlide === 'function') hdNavSlide();
+  // Toggles de mode (en-tête) : garantit leur état actif à chaque page
+  if (typeof vsSyncModeToggles === 'function') vsSyncModeToggles();
 }
 /* Sous-onglets du Scouting : Fiche joueur / Graphiques / Carte (Carte = Pro+) */
 function scoutDecorateTabs() {
