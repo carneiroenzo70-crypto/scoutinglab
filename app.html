@@ -674,9 +674,11 @@ body:not(.theme-dark) .rs-f input{ background:rgba(255,255,255,.6); border-color
 .rs-modal-note{ font-size:10.5px; color:var(--vs-fg-3); line-height:1.4; }
 .rs-modal-a{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
 /* Carte cliquable dans le roster → ouvre la fiche joueur */
-.rs-idrow{ cursor:pointer; border-radius:10px; padding:4px; margin:-4px; transition:background .12s; }
-.rs-idrow:hover{ background:rgba(45,212,167,.07); }
-body:not(.theme-dark) .rs-idrow:hover{ background:rgba(31,71,64,.06); }
+/* Carte roster cliquable → ouvre la fiche ; le bouton Changer stoppe la propagation. */
+.rs-card-clk{ cursor:pointer; }
+.rs-card-clk:hover{ border-color:var(--vs-emerald-500); }
+/* Bouton « Changer » compact (demande : plus petit) */
+.rs-changebtn{ padding:3px 10px !important; font-size:10.5px !important; height:auto !important; min-height:0 !important; border-radius:7px; }
 /* Fiche joueur (modale large) : compét + Solo Q côte à côte + games + évolution */
 .rs-modal-lg{ width:min(680px,95vw); gap:14px; max-height:92vh; overflow-y:auto; }
 .rs-pd-head{ display:flex; align-items:center; gap:12px; }
@@ -5053,8 +5055,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
         <div style="margin-bottom:2px">
-          <div class="h3" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:19px">Dossier d'avant-match <span class="pill pill-emerald">API Riot · Leaguepedia</span></div>
-          <p class="faint" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Saisis le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition (Leaguepedia), utile quand le smurf soloq diffère du nom pro. Les deux champs sont indépendants.</p>
+          <div class="h3" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:19px">Dossier d'avant-match <span class="pill pill-emerald">Solo Q + Compétition</span></div>
+          <p class="faint" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Saisis le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition, utile quand le smurf soloq diffère du nom pro. Les deux champs sont indépendants.</p>
         </div>
 
         <div class="card" style="padding:18px 20px">
@@ -5840,7 +5842,7 @@ const AN_DESC = {
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
   roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 30) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
-  prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif (Leaguepedia), forme récente et menaces à cibler.',
+  prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif, forme récente et menaces à cibler.',
 };
 function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
 function anSyncTabs(active) {
@@ -6109,13 +6111,14 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   // "DIAMOND II" → "Diamond II" (tier capitalisé, division conservée)
   const rkLbl = (pr && pr.rank) ? pr.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
   const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
-  let h = '<div class="rs-card' + (isWeak ? ' weak' : '') + (compet ? ' rs-compet' : '') + '">';
+  // Toute la carte est cliquable → ouvre la fiche du joueur (« on a juste à appuyer dessus »).
+  let h = '<div class="rs-card rs-card-clk' + (isWeak ? ' weak' : '') + (compet ? ' rs-compet' : '') + '" onclick="rsUiPlayerDetail(\'' + role + '\')" title="Voir le détail du joueur">';
   h += '<div style="display:flex;align-items:center;gap:8px">';
   h += '<span class="rs-rolechip">' + role + '</span>';
   if (isWeak) h += '<span class="rs-weakchip">Maillon faible</span>';
   h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
   h += '</div>';
-  h += '<div class="idrow rs-idrow" onclick="rsUiPlayerDetail(\'' + role + '\')" title="Voir le détail du joueur (compét + Solo Q)">';
+  h += '<div class="idrow">';
   h += rsAvatarHtml(slot);
   h += '<div style="min-width:0;flex:1">';
   h += '<div class="nm">' + anEsc(primaire) + '</div>';
@@ -6152,30 +6155,13 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
     if (pr && pr.wr != null) h += '<span>· ' + pr.wr + '% WR</span>';
   }
   h += '</div></div></div>';
-  // Actions : Détails (fiche complète, avec l'édition dedans) + Changer.
-  // flex-wrap évite le chevauchement quand la colonne de la grille est étroite.
+  // Une seule action visible : « Changer » (compacte, ne déclenche pas le détail).
+  // Le roster ne fait que présenter l'équipe ; pour tester d'autres joueurs,
+  // c'est l'outil Comparer. (Plus de « Simuler » ni de suggestions ici.)
   h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px">';
-  h += '<button onclick="rsUiPlayerDetail(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Fiche du joueur : compét + Solo Q, jour par jour">Détails</button>';
-  h += '<button onclick="rsUiPick(\'' + role + '\')" class="btn btn-ghost btn-xs">Changer</button>';
+  h += '<button onclick="event.stopPropagation();rsUiPick(\'' + role + '\')" class="btn btn-ghost rs-changebtn">Changer</button>';
   if (pr && pr.source) h += anSourceBadge(pr.source);
   h += '</div>';
-
-  const better = cands.filter(c => c.role === role && c.score != null && (score == null || c.score > score + 0.05))
-    .filter(c => !slot || c.pseudo.toLowerCase().split('#')[0] !== (slot.pseudo || '').toLowerCase())
-    .sort((a, b) => b.score - a.score).slice(0, 3);
-  if (better.length) {
-    h += '<div class="rs-sugg"><div class="t">Mieux dans ton vivier</div>';
-    better.forEach(c => {
-      const delta = (typeof score === 'number') ? (c.score - score) : null;
-      h += '<div class="row">';
-      h += '<span class="sc" style="color:' + anScoreColor(c.score) + '">' + c.score.toFixed(1) + '</span>';
-      h += '<span class="nm2">' + anEsc(c.pseudo) + '</span>';
-      if (delta != null) h += '<span class="up">▲+' + delta.toFixed(1) + '</span>';
-      h += '<button onclick="rsSimSwap(\'' + role + '\',\'' + encodeURIComponent(c.pseudo) + '\')" class="btn btn-ghost btn-xs" style="flex:none">Simuler</button>';
-      h += '</div>';
-    });
-    h += '</div>';
-  }
   h += '</div>';
   return h;
 }
@@ -6338,7 +6324,7 @@ async function rsFillPlayerDetail(role, slot) {
   html += '<div class="rs-pd-games" id="rspd-games">';
   html += '<div class="rs-pd-h" style="margin-bottom:8px">Games compétitives</div>';
   if (proName) {
-    html += '<div class="rs-pd-empty" id="rspd-games-body">Chargement des games de <b>' + anEsc(proName) + '</b> depuis Leaguepedia…</div>';
+    html += '<div class="rs-pd-empty" id="rspd-games-body">Chargement des games de <b>' + anEsc(proName) + '</b>…</div>';
   } else {
     html += '<div class="rs-pd-empty">Renseigne le <b>pseudo esport</b> du joueur (bouton « Renseigner les stats compét ») pour charger ses games compétitives réelles.</div>';
   }
@@ -6404,7 +6390,7 @@ async function rsPdLoadGames(proName) {
   window._rspdView = 'recent';
   const bodyEl = document.getElementById('rspd-games-body');
   if (!agg || !agg.games || !agg.games.length) {
-    if (bodyEl) bodyEl.innerHTML = 'Aucune game compétitive trouvée pour <b>' + anEsc(proName) + '</b> sur Leaguepedia.<br><span class="faint">Vérifie l\'orthographe exacte du pseudo esport, ou Leaguepedia est momentanément indisponible.</span>';
+    if (bodyEl) bodyEl.innerHTML = 'Aucune game compétitive trouvée pour <b>' + anEsc(proName) + '</b>.<br><span class="faint">Vérifie l\'orthographe exacte du pseudo esport, ou réessaie dans un instant.</span>';
     return;
   }
   let h = '<div class="rs-pd-aggline">'
@@ -6446,7 +6432,9 @@ async function rsPdLoadSplit() {
 async function pmFetchGamePlayers(gameId) {
   const q = encodeURIComponent(gameId);
   const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Role,Kills,Deaths,Assists,CS,Gold,DamageToChampions,Team,Side,PlayerWin,DateTime_UTC,OverviewPage&where=GameId%3D%22' + q + '%22&limit=12&format=json&origin=*';
-  const rows = await pmCargo(url);
+  let rows = await pmCargo(url);
+  // 2e essai si le service renvoie une erreur transitoire (surcharge / rate-limit).
+  if (rows === null) { await new Promise(r => setTimeout(r, 800)); rows = await pmCargo(url); }
   if (!rows || !rows.length) return null;
   return rows.map(x => { const t = x.title; return { link: t.Link || '?', champ: t.Champion || '?', role: t.Role || '', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, team: t.Team || '', side: String(t.Side || ''), win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), page: t.OverviewPage || '' }; });
 }
@@ -6469,10 +6457,10 @@ async function rsPdGameDetail(gameIdEnc) {
   const backHtml = '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" onclick="' + back + '">← Retour aux games</button></div>';
   const box = document.getElementById('rspd-games'); if (!box) return;
   box.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Détail de la game</div>'
-    + '<div class="rs-pd-empty" id="rspd-gd">Chargement du détail depuis Leaguepedia…</div>' + backHtml;
+    + '<div class="rs-pd-empty" id="rspd-gd">Chargement du détail…</div>' + backHtml;
   const players = await pmFetchGamePlayers(gameId).catch(() => null);
   const gd = document.getElementById('rspd-gd'); if (!gd) return;
-  if (!players || !players.length) { gd.innerHTML = 'Détail indisponible pour cette game sur Leaguepedia.'; return; }
+  if (!players || !players.length) { gd.innerHTML = 'Détail momentanément indisponible — réessaie dans un instant.'; return; }
   // Groupe par équipe (Side 1/2), ordonné par rôle.
   const sides = {};
   players.forEach(p => { (sides[p.side] = sides[p.side] || []).push(p); });
@@ -6746,7 +6734,7 @@ async function tmSuggest(q) {
   const box = document.getElementById('pm-team-sugg'); if (!box) return;
   const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=8&format=json&origin=*';
   const rows = await pmCargo(url);
-  if (rows === null) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Leaguepedia surchargé, réessayez dans un instant…</div>'; box.style.display = 'block'; return; }
+  if (rows === null) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Service momentanément surchargé, réessayez dans un instant…</div>'; box.style.display = 'block'; return; }
   if (!rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
   const names = rows.map(r => r.title.Name || '').filter(Boolean);
   window._tmSugg = names;
@@ -6795,7 +6783,7 @@ async function tmLoadRoster() {
     const q = encodeURIComponent(team);
     const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role,Team&where=Team%3D%22' + q + '%22&format=json&origin=*&limit=30';
     const rows = await pmCargo(url);
-    if (rows === null) { st.innerHTML = '<span style="color:var(--amber,#E8A317)">Leaguepedia momentanément surchargé</span> — recliquez sur « Charger » dans quelques secondes.'; return; }
+    if (rows === null) { st.innerHTML = '<span style="color:var(--amber,#E8A317)">Service momentanément surchargé</span> — recliquez sur « Charger » dans quelques secondes.'; return; }
     if (!rows.length) { st.textContent = 'Équipe introuvable — vérifiez le nom exact (ex. « Karmine Corp Blue » pour l\'académie).'; return; }
     let filled = 0; const names = [];
     rows.forEach(r => { const t = r.title; const idx = roleIdx[t.Role]; if (idx !== undefined && t.ID) { const el = document.getElementById('pm-pro-' + idx); if (el) { el.value = t.ID; filled++; names.push(t.ID + ' (' + PM_ROLES[idx] + ')'); } } });
@@ -6931,7 +6919,7 @@ function pmCard(d) {
     html += '<div style="color:var(--sub);font-size:.78rem">' + anEsc(d.soloqError || 'Aucune donnée soloq') + '</div>';
   }
   // ── Compétition ──
-  html += pmSubhead('Compétition', 'Leaguepedia');
+  html += pmSubhead('Compétition', 'officiel');
   if (d.compet) {
     const c = d.compet;
     const rows = c.games.map(g => '<div style="display:flex;align-items:center;gap:8px;font-size:.76rem;padding:4px 0;border-bottom:1px solid var(--border)">' +
@@ -8605,14 +8593,14 @@ async function searchAgeLeaguepedia(gameName) {
         const now = new Date();
         const age = Math.floor((now - birth) / (365.25 * 24 * 3600 * 1000));
         if (age > 10 && age < 40) {
-          ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
+          ageCache[gameName.toLowerCase()] = { age, source: 'Officiel', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
           return ageCache[gameName.toLowerCase()];
         }
       }
       // Age direct si pas de birthdate
       if (p.Age && parseInt(p.Age) > 10) {
         const age = parseInt(p.Age);
-        ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia', name: p.Name || gameName, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
+        ageCache[gameName.toLowerCase()] = { age, source: 'Officiel', name: p.Name || gameName, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
         return ageCache[gameName.toLowerCase()];
       }
     }
@@ -8635,7 +8623,7 @@ async function searchAgeLeaguepedia(gameName) {
           const now = new Date();
           const age = Math.floor((now - birth) / (365.25 * 24 * 3600 * 1000));
           if (age > 10 && age < 40) {
-            ageCache[gameName.toLowerCase()] = { age, source: 'Leaguepedia ≈', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
+            ageCache[gameName.toLowerCase()] = { age, source: 'Officiel ≈', name: p.Name || gameName, birthdate: p.Birthdate, team: p.Team||null, country: p.Country||null, competRole: p.Role||null };
             return ageCache[gameName.toLowerCase()];
           }
         }
@@ -14982,7 +14970,7 @@ async function top50Scan() {
     }
 
     // 3. Recherche d'âge en masse via Leaguepedia
-    t50SetProg(92, 'Recherche des âges via Leaguepedia…');
+    t50SetProg(92, 'Recherche des âges…');
     const agesFound = await top50FetchAges(prospects);
     t50SetProg(97, agesFound + ' âges trouvés sur ' + prospects.length + ' joueurs…');
 
@@ -15061,7 +15049,7 @@ function top50SeedDemo() {
     { name:'Zephy',  tag:'EUN2', server:'eun1', role:'Jgl', tier:'DIAMOND',     rank:'I', lp:92,  age:16, wr:60.9, kda:4.3, csm:6.0, vision:31, vsScore:69, scorePotentiel:8.7 },
   ];
   top50Data = D.map(p => Object.assign({
-    score: (p.vsScore/10).toFixed(2), statut:'Nouveau', ageSource:'Leaguepedia', ageStatus:'✅',
+    score: (p.vsScore/10).toFixed(2), statut:'Nouveau', ageSource:'Officiel', ageStatus:'✅',
     addedAt: Date.now()
   }, p));
   try { top50RenderTable(); } catch(e){}
