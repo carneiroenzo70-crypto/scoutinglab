@@ -673,6 +673,46 @@ body:not(.theme-dark) .rs-f input{ background:rgba(255,255,255,.6); border-color
 .rs-f2 .rs-f{ flex:1; }
 .rs-modal-note{ font-size:10.5px; color:var(--vs-fg-3); line-height:1.4; }
 .rs-modal-a{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
+/* Carte cliquable dans le roster → ouvre la fiche joueur */
+.rs-idrow{ cursor:pointer; border-radius:10px; padding:4px; margin:-4px; transition:background .12s; }
+.rs-idrow:hover{ background:rgba(45,212,167,.07); }
+body:not(.theme-dark) .rs-idrow:hover{ background:rgba(31,71,64,.06); }
+/* Fiche joueur (modale large) : compét + Solo Q côte à côte + évolution */
+.rs-modal-lg{ width:min(560px,95vw); gap:14px; }
+.rs-pd-head{ display:flex; align-items:center; gap:12px; }
+/* L'avatar hérite du même rendu que dans la carte roster (les règles .rs-card .av
+   ne s'appliquent pas ici → on les rejoue pour la modale). */
+.rs-pd-head .av{ width:46px; height:46px; border-radius:50%; flex:none; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.rs-pd-head .av img{ width:100%; height:100%; object-fit:cover; display:block; }
+.rs-pd-head .av .av-ini{ font-weight:800; font-size:19px; color:var(--vs-emerald-300); }
+.rs-pd-head .av.av-img .av-ini{ display:none; }
+.rs-pd-head .av.av-fallback{ background:var(--vs-forest-600); border:1px solid var(--vs-forest-500); }
+.rs-pd-head .av.av-fallback .av-ini{ display:inline; }
+body:not(.theme-dark) .rs-pd-head .av.av-fallback{ background:rgba(31,71,64,.08); border-color:rgba(31,71,64,.16); }
+body:not(.theme-dark) .rs-pd-head .av .av-ini{ color:var(--vs-emerald-500); }
+.rs-pd-name{ font-family:var(--font-display); font-weight:800; font-size:19px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-pd-sub{ display:flex; align-items:center; gap:6px; margin-top:3px; flex-wrap:wrap; }
+.rs-pd-cols{ display:flex; gap:12px; }
+@media (max-width:520px){ .rs-pd-cols{ flex-direction:column; } }
+.rs-pd-col{ flex:1; min-width:0; border:1px solid var(--vs-forest-500); border-radius:12px; padding:13px; background:rgba(4,18,15,.28); display:flex; flex-direction:column; }
+body:not(.theme-dark) .rs-pd-col{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.rs-pd-h{ font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-emerald-300); display:flex; align-items:center; gap:7px; }
+body:not(.theme-dark) .rs-pd-h{ color:var(--vs-emerald-500); }
+.rs-pd-tag{ font-family:var(--font-mono); font-size:11px; font-weight:700; color:var(--vs-fg-2); background:rgba(45,212,167,.12); border-radius:5px; padding:1px 6px; letter-spacing:0; text-transform:none; }
+.rs-pd-rank{ display:flex; align-items:center; gap:6px; margin:10px 0 2px; }
+.rs-pd-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+.rs-pd-stat{ background:rgba(255,255,255,.04); border:1px solid var(--vs-forest-600); border-radius:9px; padding:7px 9px; }
+body:not(.theme-dark) .rs-pd-stat{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.1); }
+.rs-pd-stat .k{ font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.rs-pd-stat .v{ font-family:var(--font-mono); font-weight:800; font-size:16px; color:var(--vs-fg-1); margin-top:2px; }
+.rs-pd-stat .v .u{ font-size:11px; color:var(--vs-fg-3); margin-left:1px; }
+.rs-pd-stat .v .na{ color:var(--vs-fg-3); font-weight:600; }
+.rs-pd-empty{ font-size:11.5px; color:var(--vs-fg-2); line-height:1.5; margin-top:10px; }
+.rs-pd-evo{ border-top:1px solid var(--vs-forest-600); padding-top:12px; }
+.rs-pd-evo-sw{ display:flex; gap:5px; margin-top:8px; justify-content:center; }
+.rs-pd-mbtn{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-3); font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; padding:4px 10px; border-radius:6px; cursor:pointer; transition:.14s; }
+.rs-pd-mbtn.on{ background:var(--vs-emerald-500); color:#04211C; border-color:var(--vs-emerald-500); font-weight:700; }
+.rs-pd-mbtn:not(.on):hover{ color:var(--vs-fg-1); }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -5554,9 +5594,17 @@ async function rsSnapCapture(rosterId) {
   for (const role of RS_ROLES) {
     const slot = r.slots[role]; if (!slot || !slot.pseudo) continue;
     const raw = await rsFetchSoloqRaw(slot);
-    if (raw) players.push({ role, pseudo: slot.pseudo, tier: raw.tier, lp: raw.lp, wr: raw.wr, kda: raw.kda, csMin: raw.csMin, visMin: raw.visMin, killPart: raw.killPart, dmgShare: raw.dmgShare });
+    // Compét : on fige les valeurs SAISIES à la main à cette date (jamais inventées),
+    // pour que l'évolution compét se construise jour après jour, comme la Solo Q.
+    const c = slot.compet || {};
+    const hasCompet = ['kda', 'wr', 'kp', 'games'].some(k => c[k] != null && c[k] !== '');
+    if (!raw && !hasCompet) continue;
+    const p = { role, pseudo: slot.pseudo, proName: slot.proName || '' };
+    if (raw) { p.tier = raw.tier; p.lp = raw.lp; p.wr = raw.wr; p.kda = raw.kda; p.csMin = raw.csMin; p.visMin = raw.visMin; p.killPart = raw.killPart; p.dmgShare = raw.dmgShare; }
+    if (hasCompet) p.compet = { league: c.league || '', kda: c.kda || '', wr: c.wr || '', kp: c.kp || '', games: c.games || '' };
+    players.push(p);
   }
-  if (!players.length) { if (typeof showToast === 'function') showToast('Aucune stat Solo Q à enregistrer (joueurs sans Riot ID ?)', 'warning'); return null; }
+  if (!players.length) { if (typeof showToast === 'function') showToast('Aucune stat à enregistrer (ni Solo Q ni compét renseignée)', 'warning'); return null; }
   const snap = { date: new Date().toISOString(), players };
   const all = rsSnapsAll(); const list = all[rosterId] || []; list.push(snap);
   if (list.length > 90) list.splice(0, list.length - 90);
@@ -5952,14 +6000,21 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   if (isWeak) h += '<span class="rs-weakchip">Maillon faible</span>';
   h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
   h += '</div>';
-  h += '<div class="idrow">';
+  h += '<div class="idrow rs-idrow" onclick="rsUiPlayerDetail(\'' + role + '\')" title="Voir le détail du joueur (compét + Solo Q)">';
   h += rsAvatarHtml(slot);
   h += '<div style="min-width:0;flex:1">';
   h += '<div class="nm">' + anEsc(primaire) + '</div>';
-  // Sous-ligne 1 : identité Solo Q (démotée) — toujours visible pour garder le lien.
-  h += '<div class="sub">';
-  h += '<span class="rs-sqtag">Solo Q</span><span class="faint" style="font-family:var(--font-mono);font-size:.66rem">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</span>';
-  h += '</div>';
+  // Sous-ligne 1 : identité secondaire selon le mode.
+  //  · Solo Q  → on montre le pseudo Solo Q (démoté) pour garder le lien.
+  //  · Compét  → on N'AFFICHE PAS le pseudo Solo Q : seul le pseudo esport ressort.
+  //    (si l'esport n'est pas encore saisi, on invite à le renseigner — jamais inventé.)
+  if (!compet) {
+    h += '<div class="sub">';
+    h += '<span class="rs-sqtag">Solo Q</span><span class="faint" style="font-family:var(--font-mono);font-size:.66rem">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</span>';
+    h += '</div>';
+  } else if (!proName) {
+    h += '<div class="sub"><span class="faint" style="font-size:.66rem">Pseudo esport à renseigner</span></div>';
+  }
   // Sous-ligne 2 : stats selon le mode. Compét = données saisies (jamais inventées).
   h += '<div class="sub" style="margin-top:3px">';
   if (compet) {
@@ -5983,6 +6038,7 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   }
   h += '</div></div></div>';
   h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<button onclick="rsUiPlayerDetail(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Fiche du joueur : compét + Solo Q, jour par jour">Détails</button>';
   h += '<button onclick="rsUiPick(\'' + role + '\')" class="btn btn-ghost btn-xs">Changer</button>';
   h += '<button onclick="rsUiEditPro(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Pseudo esport & stats compétitives">Éditer</button>';
   if (pr && pr.source) h += anSourceBadge(pr.source);
@@ -6063,6 +6119,155 @@ function rsSaveProFromModal(role) {
   rsSetSlot(r.id, role, slot);   // persiste + vsStore.save('rosters')
   const ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
   renderRoster();
+}
+/* ─── Fiche joueur (clic sur un titulaire) : ses perfs poussées sur les DEUX
+   aspects — compét ET Solo Q — pour que le coach visualise chaque joueur un à
+   un, pas seulement l'équipe. Les stats compét sont saisies à la main ; la
+   Solo Q est tirée en direct (fiche Scout prioritaire, sinon API Riot). ─── */
+function rsPdStat(label, val, unit) {
+  const has = val != null && val !== '';
+  return '<div class="rs-pd-stat"><div class="k">' + label + '</div><div class="v">'
+    + (has ? anEsc(String(val)) + (unit ? '<span class="u">' + unit + '</span>' : '') : '<span class="na">—</span>')
+    + '</div></div>';
+}
+function rsUiPlayerDetail(role) {
+  const r = rsActive(); if (!r) return;
+  const slot = r.slots[role]; if (!slot || !slot.pseudo) return;
+  const proName = (slot.proName || '').trim();
+  const primaire = proName || slot.pseudo;
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML =
+      '<div class="rs-modal rs-modal-lg" role="dialog" aria-modal="true">'
+    +   '<div class="rs-pd-head">'
+    +     rsAvatarHtml(slot)
+    +     '<div style="min-width:0;flex:1">'
+    +       '<div class="rs-pd-name">' + anEsc(primaire) + '</div>'
+    +       '<div class="rs-pd-sub"><span class="rs-rolechip">' + role + '</span>'
+    +         '<span class="rs-sqtag">Solo Q</span><span class="faint" style="font-family:var(--font-mono);font-size:.7rem">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</span>'
+    +       '</div>'
+    +     '</div>'
+    +     '<button class="btn btn-ghost btn-xs" onclick="this.closest(\'.rs-modal-ov\').remove()" aria-label="Fermer">Fermer</button>'
+    +   '</div>'
+    +   '<div id="rspd-body" class="faint" style="font-size:.85rem;padding:8px 2px">Chargement des stats du joueur…</div>'
+    + '</div>';
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(ov);
+  rsFillPlayerDetail(role, slot);
+}
+async function rsFillPlayerDetail(role, slot) {
+  const r = rsActive();
+  const resolve = await rsResolveScore(slot, role).catch(() => null);
+  const raw = resolve && resolve.raw;
+  const c = slot.compet || {};
+  const hasCompet = ['kda', 'wr', 'kp', 'games'].some(k => c[k] != null && c[k] !== '');
+  // Historique par joueur (fusion serveur + local), filtré sur ce poste/pseudo.
+  let snaps = [];
+  try { if (r) snaps = await rsLoadSnaps(r.id); } catch (_) { snaps = rsSnapsGet(r ? r.id : ''); }
+  const key = (slot.pseudo || '').toLowerCase();
+  const series = snaps.map(s => {
+    const p = (s.players || []).find(x => x.role === role && (x.pseudo || '').toLowerCase() === key);
+    return p ? { date: s.date, sq: p, cp: p.compet || null, score: rsSnapPlayerScore(p) } : null;
+  }).filter(Boolean);
+
+  const body = document.getElementById('rspd-body'); if (!body) return;
+
+  // Colonne COMPÉT
+  let competCol = '<div class="rs-pd-col"><div class="rs-pd-h">Compét'
+    + (c.league ? ' <span class="rs-pd-tag">' + anEsc(c.league) + '</span>' : '') + '</div>';
+  if (hasCompet) {
+    competCol += '<div class="rs-pd-grid">'
+      + rsPdStat('KDA', c.kda, '')
+      + rsPdStat('Win rate', c.wr, '%')
+      + rsPdStat('KP', c.kp, '%')
+      + rsPdStat('Matchs', c.games, '')
+      + '</div>';
+  } else {
+    competCol += '<div class="rs-pd-empty">Stats compétitives à renseigner.<br><span class="faint">Saisie manuelle — aucune donnée n\'est inventée.</span></div>';
+  }
+  competCol += '<button class="btn btn-ghost btn-xs" style="margin-top:10px" onclick="this.closest(\'.rs-modal-ov\').remove();rsUiEditPro(\'' + role + '\')">' + (hasCompet ? 'Modifier les stats compét' : 'Renseigner les stats compét') + '</button>';
+  competCol += '</div>';
+
+  // Colonne SOLO Q
+  let sqCol = '<div class="rs-pd-col"><div class="rs-pd-h">Solo Q';
+  if (resolve && typeof resolve.score === 'number') sqCol += ' <span class="rs-pd-tag" style="color:' + anScoreColor(resolve.score) + '">VS ' + resolve.score.toFixed(1) + '</span>';
+  sqCol += '</div>';
+  if (resolve && (raw || resolve.source === 'Scout')) {
+    const rkLbl = resolve.rank ? resolve.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
+    const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
+    sqCol += '<div class="rs-pd-rank">';
+    if (rk && rk.tier) sqCol += rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:800">' + anEsc(rk.label) + '</span>';
+    else if (resolve.source === 'Scout') sqCol += '<span style="font-weight:700">Fiche scouting</span>';
+    if (resolve.lp != null) sqCol += '<span class="faint" style="font-size:.72rem">· ' + resolve.lp + ' LP</span>';
+    sqCol += '</div>';
+    sqCol += '<div class="rs-pd-grid">'
+      + rsPdStat('Win rate', resolve.wr, '%')
+      + rsPdStat('KDA', raw && raw.kda, '')
+      + rsPdStat('CS/min', raw && raw.csMin, '')
+      + rsPdStat('KP', raw && raw.killPart, '%')
+      + rsPdStat('Vision/min', raw && raw.visMin, '')
+      + rsPdStat('Part dégâts', raw && raw.dmgShare, '%')
+      + '</div>';
+  } else {
+    sqCol += '<div class="rs-pd-empty">Aucune donnée Solo Q disponible.<br><span class="faint">Riot ID introuvable ou API momentanément indisponible.</span></div>';
+  }
+  sqCol += '</div>';
+
+  let html = '<div class="rs-pd-cols">' + competCol + sqCol + '</div>';
+
+  // ÉVOLUTION jour par jour (les deux aspects, selon ce qui a été enregistré)
+  html += '<div class="rs-pd-evo">';
+  html += '<div class="rs-pd-h" style="margin-bottom:8px">Évolution jour par jour</div>';
+  if (series.length >= 2) {
+    html += '<div style="height:150px"><canvas id="rspd-evo-cv"></canvas></div>';
+    html += '<div class="rs-pd-evo-sw">'
+      + '<button class="rs-pd-mbtn on" data-m="score" onclick="rsPdSwitchEvo(this)">VisionScore</button>'
+      + '<button class="rs-pd-mbtn" data-m="wr" onclick="rsPdSwitchEvo(this)">Win rate</button>'
+      + '<button class="rs-pd-mbtn" data-m="cwr" onclick="rsPdSwitchEvo(this)">WR compét</button>'
+      + '</div>';
+  } else {
+    html += '<div class="rs-pd-empty">Il faut au moins deux instantanés pour tracer la progression.<br><span class="faint">Clique « Instantané » dans le roster, un par jour, pour construire la courbe.</span></div>';
+  }
+  html += '</div>';
+
+  body.classList.remove('faint');
+  body.innerHTML = html;
+
+  if (series.length >= 2) {
+    window._rspdSeries = series;
+    rsPdDrawEvo('score');
+  }
+}
+// Trace la courbe d'évolution du joueur pour la métrique choisie.
+function rsPdDrawEvo(metric) {
+  const series = window._rspdSeries || []; if (series.length < 2) return;
+  const cv = document.getElementById('rspd-evo-cv'); if (!cv || !window.Chart) return;
+  if (window._rspdChart) { try { window._rspdChart.destroy(); } catch (_) {} }
+  const labels = series.map(s => rsEvoLabel(s.date));
+  const pick = {
+    score: { get: s => s.score, col: '#2DD4A7', lbl: 'VisionScore' },
+    wr:    { get: s => (s.sq && s.sq.wr != null) ? s.sq.wr : null, col: '#48A0FF', lbl: 'Win rate Solo Q (%)' },
+    cwr:   { get: s => (s.cp && s.cp.wr !== '' && s.cp.wr != null) ? +s.cp.wr : null, col: '#E8B23A', lbl: 'Win rate compét (%)' }
+  }[metric] || { get: s => s.score, col: '#2DD4A7', lbl: 'VisionScore' };
+  const data = series.map(pick.get);
+  const sub = (getComputedStyle(document.body).getPropertyValue('--sub2') || '#5A6880').trim();
+  window._rspdChart = new Chart(cv.getContext('2d'), {
+    type: 'line',
+    data: { labels, datasets: [{ label: pick.lbl, data, borderColor: pick.col, backgroundColor: pick.col + '22', pointRadius: 3, pointBackgroundColor: pick.col, tension: .25, spanGaps: true, fill: true }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
+      scales: {
+        x: { ticks: { color: sub, font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: sub, font: { size: 10 } }, grid: { color: 'rgba(120,140,135,.12)' } }
+      }
+    }
+  });
+}
+function rsPdSwitchEvo(btn) {
+  document.querySelectorAll('.rs-pd-mbtn').forEach(b => b.classList.toggle('on', b === btn));
+  rsPdDrawEvo(btn.getAttribute('data-m'));
 }
 async function rsSimSwap(role, pseudoEnc) {
   const pseudo = decodeURIComponent(pseudoEnc);
