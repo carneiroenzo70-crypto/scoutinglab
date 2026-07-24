@@ -140,9 +140,9 @@ document.addEventListener('visibilitychange', function(){ if (!document.hidden) 
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2, scrimlab:2 };   /* Top 50, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
+window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2, scrimlab:2 };   /* Top 30, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
-function vsUpsell(panelId){ var n={top50:'Le Top 50',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
+function vsUpsell(panelId){ var n={top50:'Le Top 30',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
   document.querySelectorAll('[onclick]').forEach(function(el){
     var m=(el.getAttribute('onclick')||'').match(/switchPanel\('([a-z0-9]+)'\)/);
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', applyPlanGating);
 
 /* Card (glass) — mêmes propriétés partout que sur la page Scouting :
    fond translucide SANS backdrop-blur (le blur rendait les cartes massives/opaques
-   sur les pages sans décor de fond, ex. Top 50) */
+   sur les pages sans décor de fond, ex. Top 30) */
 .vsd .card{
   background:rgba(9,37,32,.55);
   border:1px solid rgba(255,255,255,.03);
@@ -1227,7 +1227,7 @@ button.btn-pop.vs-pressed{
 @media (prefers-reduced-motion: reduce){
   button.btn-pop.vs-pressed{ animation:none; }
 }
-/* Top 50 : le ressort sur TOUS les boutons de la page, sans avoir à poser
+/* Top 30 : le ressort sur TOUS les boutons de la page, sans avoir à poser
    .btn-pop un par un. Douze des quinze boutons sont les « CRM » générés dans
    les lignes du tableau — une classe dans le markup ne les atteindrait pas.
    L'ID du panneau l'emporte sur la règle générique button.vs-pressed comme
@@ -2729,7 +2729,7 @@ body.landing-active #panel-landing.active { display:block !important; }
   to   { box-shadow:0 0 20px rgba(45,212,167,.28); }
 }
 
-/* ── Top 50 table ── */
+/* ── Top 30 table ── */
 #t50-table tr:hover td { background:rgba(255,255,255,.02); }
 #t50-table thead th { position:sticky; top:0; background:var(--surf2); z-index:2; }
 /* En-tête de colonnes : aucun fond au repos (thème sombre).
@@ -2977,7 +2977,7 @@ body:not(.theme-dark) #t50-table.thead-collee thead th {
   box-shadow:0 6px 28px rgba(0,0,0,.35);
 }
 
-/* ════ Cadres en « verre » — Scouting + Top 50 ════
+/* ════ Cadres en « verre » — Scouting + Top 30 ════
    Reprend .vit-signin (maquette vitrine) : fond multi-couches, flou
    d'arrière-plan, liseré périmétrique et ombres internes. Appliqué aux cartes
    ET aux cadres de stats (.dim-header / .dim-body, propres au scouting).
@@ -3377,7 +3377,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <span class="hd-nav-ind" aria-hidden="true"></span>
     <div class="hd-sep" aria-hidden="true"></div>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouting</button>
-    <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 50</button>
+    <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 30</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM Agent</button>
     <button class="hd-nav-item" id="nav-analytics" onclick="switchPanel('analytics')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg> Analytics</button>
     <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
@@ -3422,7 +3422,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="vsd-drawer-item home" data-nav="welcome" onclick="vsdDrawerGo('welcome')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Accueil</span></button>
     <div class="vsd-drawer-label">Plateforme</div>
     <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
-    <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 50</span></button>
+    <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 30</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
     <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
     <div style="flex:1"></div>
@@ -3588,7 +3588,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <tr><td>Seuils absolus (non relatifs au rang)</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-partial">partiel</span></td></tr>
               <tr><td>5 dimensions (macro, impact, progression)</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
               <tr><td>Rapport PDF professionnel exportable</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
-              <tr><td>Détection de pépites Top 50 automatique</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
+              <tr><td>Détection de pépites Top 30 automatique</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
               <tr><td>CRM structures &amp; pipeline recrutement</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-cross">—</span></td><td><span class="lp-cross">—</span></td></tr>
               <tr><td>Données Riot Games API officielles</td><td class="lp-us-col"><span class="lp-check">✓</span></td><td><span class="lp-check" style="color:rgba(184,196,224,.3)">✓</span></td><td><span class="lp-check" style="color:rgba(184,196,224,.3)">✓</span></td></tr>
             </tbody>
@@ -3643,7 +3643,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           </button>
           <button class="entry-card" onclick="vsdGo('top50')">
             <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
-            <div><div class="h3" style="font-size:19px">Top 50</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Générer un classement de 50 joueurs selon tes critères.</p></div>
+            <div><div class="h3" style="font-size:19px">Top 30</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Générer un classement de 30 joueurs selon tes critères.</p></div>
             <div class="entry-mini"><div><div class="label" style="font-size:10px">Critères</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">10</div></div><div><div class="label" style="font-size:10px">Rôles</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">5</div></div></div>
           </button>
           <button class="entry-card" onclick="vsdGo('crm')">
@@ -3661,7 +3661,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <!-- Prospects en hausse + panneau latéral -->
         <div class="grid home-grid-main" style="grid-template-columns:1fr 320px;gap:18px;align-items:start">
           <div>
-            <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">Prospects en hausse</div><h2 class="h2" style="font-size:24px">Ça grimpe sur la ladder</h2></div><button class="btn btn-secondary btn-sm" onclick="vsdGo('top50')">Voir le Top 50</button></div>
+            <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">Prospects en hausse</div><h2 class="h2" style="font-size:24px">Ça grimpe sur la ladder</h2></div><button class="btn btn-secondary btn-sm" onclick="vsdGo('top50')">Voir le Top 30</button></div>
             <div class="grid home-prospects" style="grid-template-columns:1fr 1fr;gap:12px" id="home-prospects"></div>
           </div>
           <div style="display:flex;flex-direction:column;gap:14px">
@@ -3730,10 +3730,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="wq-corner-arrow" style="color:#F5A623">&#x2192;</div>
           </div>
 
-          <!-- Centre : Logo → Top 50 -->
+          <!-- Centre : Logo → Top 30 -->
           <div class="wq-center-btn" onclick="setAppMode('agent');setTimeout(()=>switchPanel('top50'),60)">
             <svg width="82" height="82" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg>
-            <div class="wq-center-lbl">Top 50</div>
+            <div class="wq-center-lbl">Top 30</div>
           </div>
 
         </div><!-- /wq-grid -->
@@ -4632,9 +4632,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
         <!-- Page head -->
         <div class="page-head">
-          <div class="eyebrow">Top 50</div>
-          <h2 class="h2">Générer un Top 50</h2>
-          <p class="muted">Combine des critères (rôle, rang min, région, WR, KDA, CS/min, âge, VisionScore…) pour sortir un classement de 50 joueurs, prêt à pousser dans le CRM.</p>
+          <div class="eyebrow">Top 30</div>
+          <h2 class="h2">Générer un Top 30</h2>
+          <p class="muted">Combine des critères (rôle, rang min, région, WR, KDA, CS/min, âge, VisionScore…) pour sortir un classement de 30 joueurs, prêt à pousser dans le CRM.</p>
         </div>
 
         <!-- Critères de génération -->
@@ -4647,7 +4647,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
               <button onclick="top50Export()" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> CSV</button>
               <button onclick="top50ToggleView()" id="t50-view-btn" class="btn btn-ghost btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Vue publique</button>
-              <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 50</button>
+              <button id="t50-scan-btn" onclick="top50Scan()" class="btn btn-cta"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Générer le Top 30</button>
             </div>
           </div>
           <div class="grid" style="grid-template-columns:repeat(5,1fr);gap:10px">
@@ -4741,7 +4741,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 </tr>
               </thead>
               <tbody id="t50-tbody">
-                <tr><td colspan="11" class="faint" style="padding:2rem;text-align:center">Lancez « Générer le Top 50 » pour sortir le classement des prospects.</td></tr>
+                <tr><td colspan="11" class="faint" style="padding:2rem;text-align:center">Lancez « Générer le Top 30 » pour sortir le classement des prospects.</td></tr>
               </tbody>
             </table>
           </div>
@@ -5514,13 +5514,13 @@ function anGatherCandidates() {
   const out = [];
   hist.forEach(h => { if (!h.role) return; out.push({ key: 'scout:' + h.id, pseudo: h.pseudo, role: h.role, score: (h.score != null ? +h.score : null), potentiel: (h.potentiel != null ? +h.potentiel : null), age: h.age || '', source: 'Scout', meta: (ranks[parseInt(h.rank)] || '') }); });
   pipe.forEach(p => { if (!p.role || p.stage === 'ecarte') return; const sc = parseFloat(p.score); out.push({ key: 'crm:' + p.id, pseudo: p.playerName + (p.playerTag ? '#' + p.playerTag : ''), role: p.role, score: (isNaN(sc) ? null : sc), potentiel: null, age: p.age || '', source: 'CRM', meta: (p.structureName && p.structureName !== 'Sans structure') ? p.structureName : (p.stage || '') }); });
-  // Source Top 50 (scan des meilleurs joueurs classés)
+  // Source Top 30 (scan des meilleurs joueurs classés)
   let top = [];
   try { top = (typeof top50Data !== 'undefined' && Array.isArray(top50Data)) ? top50Data : []; } catch (_) {}
   top.forEach(p => {
     if (!p || !p.role || !p.name) return;
     const sc = parseFloat(p.score);
-    out.push({ key: 'top50:' + (p.puuid || p.name) + '|' + p.role, pseudo: p.name + (p.tag ? '#' + p.tag : ''), role: p.role, score: (isNaN(sc) ? null : sc), potentiel: null, age: p.age || '', source: 'Top50', meta: 'Top 50' });
+    out.push({ key: 'top50:' + (p.puuid || p.name) + '|' + p.role, pseudo: p.name + (p.tag ? '#' + p.tag : ''), role: p.role, score: (isNaN(sc) ? null : sc), potentiel: null, age: p.age || '', source: 'Top50', meta: 'Top 30' });
   });
   const srcRank = { Scout: 3, CRM: 2, Top50: 1 };
   const map = {};
@@ -5587,7 +5587,7 @@ function rsMigrate() {
   rsSaveAll([r]); rsSetActive(r.id);
 }
 /* ─── Résolution du score d'un joueur : fiche SPES complète sinon auto Solo Q ─── */
-/* TIER_IDX est déclaré plus bas (scan Top 50) — réutilisé ici, pas redéclaré. */
+/* TIER_IDX est déclaré plus bas (scan Top 30) — réutilisé ici, pas redéclaré. */
 const _rsRawCache = {};
 // Icône de profil Solo Q par joueur (récupérée depuis les matchs récents) — évite
 // l'avatar vide. Clé = même signature que _rsRawCache.
@@ -5838,7 +5838,7 @@ const AN_DESC = {
   scrim: 'Studio d\'analyse vidéo de scrims : code les actions en direct (gank, dive, teamfight…), dessine sur l\'image, monte des playlists et lis la matrice — comme les staffs du foot pro.',
   perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
-  roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 50) peut l\'améliorer poste par poste.',
+  roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 30) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
   prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif (Leaguepedia), forme récente et menaces à cibler.',
 };
@@ -8675,7 +8675,7 @@ async function searchCompetHistory(playerWikiId) {
   } catch(e) { return null; }
 }
 
-// Recherche d'âge principale — appelée à l'import et dans le Top 50
+// Recherche d'âge principale — appelée à l'import et dans le Top 30
 // Recherche âge + équipe via lolpros.gg (scène EU semi-pro)
 // Lie les pseudos SoloQ aux profils compétitifs officiels
 async function lookupLolPros(gameName, tag, server) {
@@ -8842,7 +8842,7 @@ async function autoFindAge() {
   }
 }
 
-// Recherche d'âge en masse pour le Top 50
+// Recherche d'âge en masse pour le Top 30
 async function top50FetchAges(prospects) {
   let found = 0;
   for (const p of prospects) {
@@ -11363,7 +11363,7 @@ function crmAddPlayerToStructure(structureId) {
   const struct = crmStructures.find(s => s.id === structureId);
   if (!struct) return;
 
-  // Construire la liste des joueurs disponibles (Top 50 + fiche courante)
+  // Construire la liste des joueurs disponibles (Top 30 + fiche courante)
   const availablePlayers = [];
   if (typeof top50Data !== 'undefined' && top50Data.length) {
     top50Data.forEach(p => availablePlayers.push({ name:p.name, tag:p.tag||'', role:p.role||'', score:p.score, age:p.age||'' }));
@@ -11550,7 +11550,7 @@ function crmRenderPipeline() {
   // Table
   const list = crmFiltered();
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le scouting (bouton ⭐), le Top 50, ou « Nouvelle fiche ».') + '</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le scouting (bouton ⭐), le Top 30, ou « Nouvelle fiche ».') + '</td></tr>';
     document.getElementById('crm-fiche').style.display = 'none';
     return;
   }
@@ -11898,7 +11898,7 @@ function crmRunMatching() {
   const allPlayers = [
     ...(typeof top50Data !== 'undefined' ? top50Data : []).map(p => ({
       name:p.name, tag:p.tag||'', role:p.role||'', score:parseFloat(p.score||0),
-      age:p.age, scorePotentiel:p.scorePotentiel, source:'Top 50',
+      age:p.age, scorePotentiel:p.scorePotentiel, source:'Top 30',
     })),
     ...crmPipeline.filter(p => p.stage !== 'ecarte' && p.stage !== 'signe').map(p => ({
       name:p.playerName, tag:p.playerTag||'', role:p.role||'', score:parseFloat(p.score||0),
@@ -11907,7 +11907,7 @@ function crmRunMatching() {
   ];
 
   if (!allPlayers.length) {
-    el.innerHTML = '<div style="color:var(--amber);font-size:.85rem;padding:1.5rem;text-align:center">Aucun joueur disponible — scannez un Top 50 ou ajoutez des joueurs au pipeline.</div>';
+    el.innerHTML = '<div style="color:var(--amber);font-size:.85rem;padding:1.5rem;text-align:center">Aucun joueur disponible — scannez un Top 30 ou ajoutez des joueurs au pipeline.</div>';
     return;
   }
 
@@ -11926,7 +11926,7 @@ function crmRunMatching() {
       const bonusAge     = player.age && parseInt(player.age) <= 19 ? 1.5
                          : player.age && parseInt(player.age) <= 22 ? 0.5 : 0;
       const bonusPepite  = player.scorePotentiel && (player.scorePotentiel - player.score) >= 1.5 ? 1.0 : 0;
-      const bonusSource  = player.source === 'Top 50' ? 0.3 : 0.5; // Pipeline = déjà engagé
+      const bonusSource  = player.source === 'Top 30' ? 0.3 : 0.5; // Pipeline = déjà engagé
 
       const scoreCompat  = Math.min(10, scoreSPES + bonusRole + bonusAge + bonusPepite + bonusSource);
 
@@ -14817,31 +14817,45 @@ async function top50Scan() {
   t50SetProg(2, 'Initialisation du scan…');
 
   const regional = { euw1:'europe', eun1:'europe', na1:'americas', kr:'asia' }[server] || 'europe';
-  const MAX = 30;
+  const MAX = 30;             // Top 30 provisoire (clé Riot perso = lent). Repassera à 50 avec la clé Production.
   const DELAY = 1300;
+  const POOL = MAX + 20;      // marge : des joueurs sont ignorés (pas de match récent, etc.)
 
   try {
-    // 1. Récupérer le leaderboard
-    t50SetProg(5, 'Récupération du leaderboard ' + tier + ' ' + server.toUpperCase() + '…');
+    // 1. Leaderboard — « Rang min » = ce rang ET tous ceux AU-DESSUS.
+    //    On récupère chaque palier éligible, puis on mélange en round-robin pour
+    //    que chaque rang soit représenté (et pas seulement le plus haut).
+    t50SetProg(5, 'Récupération des leaderboards ≥ ' + tier + ' ' + server.toUpperCase() + '…');
+    const T_ORDER = ['DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+    const startIdx = Math.max(0, T_ORDER.indexOf(tier));
+    const eligible = T_ORDER.slice(startIdx);   // du seuil jusqu'à Challenger
+    async function t50Leaderboard(tg) {
+      if (tg === 'DIAMOND') {
+        const d1 = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1', apiKey);
+        return (Array.isArray(d1) ? d1 : []).map(e => Object.assign({}, e, { tier: 'DIAMOND', rank: e.rank || 'I' }));
+      }
+      const data = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/' + tg.toLowerCase() + 'leagues/by-queue/RANKED_SOLO_5x5', apiKey);
+      return ((data && data.entries) || []).map(e => Object.assign({}, e, { tier: tg, rank: e.rank || 'I' }));
+    }
+    // Récupère chaque palier (du plus haut au seuil), trié par LP décroissant.
+    const buckets = [];
+    for (let t = eligible.length - 1; t >= 0; t--) {
+      let lb = [];
+      try { lb = await t50Leaderboard(eligible[t]); } catch (e) { dbgLog && dbgLog('⚠ Leaderboard ' + eligible[t] + ' indisponible : ' + (e.message || e)); }
+      lb.sort((a, b) => b.leaguePoints - a.leaguePoints);
+      if (lb.length) buckets.push(lb);
+      if (eligible.length > 1) await sleep(DELAY);
+    }
+    // Round-robin : 1 joueur de chaque palier à tour de rôle → mélange des rangs.
     let entries = [];
-
-    if (['MASTER','GRANDMASTER','CHALLENGER'].includes(tier)) {
-      const data = await riotFetch(
-        'https://' + server + '.api.riotgames.com/lol/league/v4/' + tier.toLowerCase() + 'leagues/by-queue/RANKED_SOLO_5x5',
-        apiKey
-      );
-      entries = (data?.entries || []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, MAX + 10);
-    } else {
-      // Diamond I
-      const d1 = await riotFetch(
-        'https://' + server + '.api.riotgames.com/lol/league/v4/entries/RANKED_SOLO_5x5/DIAMOND/I?page=1',
-        apiKey
-      );
-      entries = (Array.isArray(d1) ? d1 : []).sort((a,b) => b.leaguePoints - a.leaguePoints).slice(0, MAX + 10);
+    for (let idx = 0; entries.length < POOL; idx++) {
+      let added = false;
+      for (const b of buckets) { if (b[idx]) { entries.push(b[idx]); added = true; if (entries.length >= POOL) break; } }
+      if (!added) break;
     }
 
     if (!entries.length) throw new Error('Aucun joueur trouvé. Vérifiez votre clé API.');
-    t50SetProg(12, entries.length + ' joueurs trouvés — analyse en cours…');
+    t50SetProg(12, entries.length + ' joueurs trouvés (≥ ' + tier + ') — analyse en cours…');
     await sleep(DELAY);
 
     // 2. Analyser chaque joueur
@@ -14990,7 +15004,7 @@ async function top50Scan() {
 
     // 5. Trier : par score composite (pépites remontées)
     prospects.sort((a,b) => b.scoreComposite - a.scoreComposite);
-    top50Data = prospects.slice(0, 50);
+    top50Data = prospects.slice(0, MAX);
     top50SaveLocal();
     top50RenderTable();
 
@@ -15031,7 +15045,7 @@ function top50LoadLocal() {
   top50SeedDemo();
 }
 
-// Top 50 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
+// Top 30 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
 function top50SeedDemo() {
   const D = [
     { name:'Caliste',tag:'EUW9', server:'euw1', role:'Jgl', tier:'CHALLENGER',  rank:'I', lp:842, age:17, wr:64.8, kda:4.7, csm:6.4, vision:38, vsScore:88, scorePotentiel:9.4 },
@@ -15250,7 +15264,7 @@ const TIER_COLOR = {
   MASTER:'#9D4EDD', GRANDMASTER:'#E15554', CHALLENGER:'#F59E0B'
 };
 
-// Actions rapides Top 50 → roster / CRM (chantier 3)
+// Actions rapides Top 30 → roster / CRM (chantier 3)
 const T50_ROLE = { TOP: 'Top', JUNGLE: 'Jgl', JUNGLER: 'Jgl', MIDDLE: 'Mid', MID: 'Mid', BOTTOM: 'ADC', BOT: 'ADC', ADC: 'ADC', UTILITY: 'Sup', SUPPORT: 'Sup', Top: 'Top', Jgl: 'Jgl', Mid: 'Mid', Sup: 'Sup' };
 function top50AddRoster(name, tag, server, role) {
   const rk = T50_ROLE[role] || role;
@@ -15271,7 +15285,7 @@ function top50AddCrm(name, tag, role, score, age) {
     playerName: name, playerTag: tag || '', role: rk, score: (score != null ? String(score) : ''), age: age || '',
     stage: 'repere', notes: '', dateRelance: '',
     addedAt: new Date().toISOString(),
-    history: [{ date: new Date().toISOString(), action: 'Ajouté depuis le Top 50' }]
+    history: [{ date: new Date().toISOString(), action: 'Ajouté depuis le Top 30' }]
   });
   if (typeof crmSave === 'function') crmSave();
   showToast(name + ' ajouté au CRM · ' + rk, 'success');
@@ -15370,8 +15384,12 @@ function top50RenderTable() {
                    :           {lbl:'C',  col:'var(--sub2)', bg:'var(--surf3)'};
     const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(45,212,167,.05),transparent);' : '';
     const initT50 = (p.name||'?').charAt(0).toUpperCase();
-    const vs = p.vsScore != null ? p.vsScore : Math.round(parseFloat(scoreFinal) * 10);
-    const vsCol = vs >= 85 ? 'var(--vs-emerald-300)' : vs >= 75 ? 'var(--vs-emerald-400)' : vs >= 65 ? '#A78BFA' : vs >= 55 ? '#F59E0B' : 'var(--sub2)';
+    // VisionScore = note /10, cohérente avec le roster/la fiche et avec la
+    // pastille S/A/B ci-dessus (qui utilise déjà scoreFinal). Plus de /100.
+    const vsNum = parseFloat(scoreFinal);
+    const vs = isNaN(vsNum) ? '—' : vsNum.toFixed(1);
+    const vsCol = (typeof anScoreColor === 'function') ? anScoreColor(vsNum)
+                : vsNum >= 8.5 ? 'var(--vs-emerald-300)' : vsNum >= 7.5 ? 'var(--vs-emerald-400)' : vsNum >= 6.5 ? '#A78BFA' : vsNum >= 5.5 ? '#F59E0B' : 'var(--sub2)';
     const csmTxt = (p.csm != null && p.csm !== '') ? p.csm : '—';
     const visTxt = (p.vision != null && p.vision !== '') ? p.vision : '—';
     const roleLbl = { Top:'Top', Jgl:'Jungle', Mid:'Mid', ADC:'ADC', Sup:'Support' }[p.role] || (p.role||'?');
@@ -16939,7 +16957,7 @@ function vsdRenderHome(){
   var box=document.getElementById('home-prospects'); if(!box) return;
   vsSyncRegionChips();
 
-  // Vrai ladder : les meilleurs prospects réellement scannés (Top 50 SPES)
+  // Vrai ladder : les meilleurs prospects réellement scannés (Top 30 SPES)
   var data=[];
   try{ if(typeof top50Data!=='undefined' && Array.isArray(top50Data)) data=top50Data.slice(); }catch(e){}
 
@@ -16954,20 +16972,20 @@ function vsdRenderHome(){
   var ageMultOf=function(a){ try{ if(a && typeof ageBonus==='function') return ageBonus(a); }catch(e){} return 1; };
 
   if(!data.length){
-    // Pas de fond factice : on invite à lancer le scan Top 50 (véritables joueurs)
+    // Pas de fond factice : on invite à lancer le scan Top 30 (véritables joueurs)
     box.style.gridTemplateColumns='1fr';
     var emptyMsg = hadData
       ? {t:'Aucun prospect dans ces régions', d:'Aucun joueur scanné pour les régions suivies. Ajoute une région ci-contre ou lance un scan du ladder.'}
-      : {t:'Aucun prospect scanné pour l\'instant', d:'Lance un scan du ladder pour peupler ton Top 50 avec de vrais joueurs, notés par le modèle SPES.'};
+      : {t:'Aucun prospect scanné pour l\'instant', d:'Lance un scan du ladder pour peupler ton Top 30 avec de vrais joueurs, notés par le modèle SPES.'};
     box.innerHTML='<div class="card" style="padding:26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500)">'
       +'<div class="entry-ico" style="width:44px;height:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>'
       +'<div><div class="h3" style="font-size:16px">'+emptyMsg.t+'</div>'
       +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">'+emptyMsg.d+'</div></div>'
-      +'<button class="btn btn-cta btn-sm" onclick="vsdGo(\'top50\')" style="margin-top:2px">Générer le Top 50 →</button>'
+      +'<button class="btn btn-cta btn-sm" onclick="vsdGo(\'top50\')" style="margin-top:2px">Générer le Top 30 →</button>'
       +'</div>';
     box.__ladderReal=false;
   } else {
-    // Tri par score final (avec bonus d\'âge, comme le Top 50) puis top 6
+    // Tri par score final (avec bonus d\'âge, comme le Top 30) puis top 6
     data.forEach(function(p){ var m=ageMultOf(p.age); p.__sf=p.age?Math.min(10,parseFloat(p.score||0)*m):parseFloat(p.score||0); });
     data.sort(function(a,b){ return b.__sf-a.__sf; });
     var pros=data.slice(0,6);
