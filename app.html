@@ -788,6 +788,28 @@ body:not(.theme-dark) .stb-tile{ background:rgba(255,255,255,.5); border-color:r
 body:not(.theme-dark) .stb-f input{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .stb-f input:focus{ outline:0; border-color:var(--vs-emerald-500); }
 .stb-inwrap i{ position:absolute; right:11px; font-style:normal; font-size:11px; color:var(--vs-fg-3); pointer-events:none; }
+.stb-syn{ border:1px solid var(--vs-emerald-500); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(45,212,167,.05); }
+body:not(.theme-dark) .stb-syn{ background:rgba(45,212,167,.06); border-color:rgba(31,71,64,.18); }
+/* Journal de moments clés (timecodes) */
+.stb-journal{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px 16px; margin-top:16px; background:rgba(4,18,15,.28); }
+body:not(.theme-dark) .stb-journal{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.stb-jadd{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+.stb-jadd input, .stb-jadd select{ height:36px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; padding:0 10px; }
+body:not(.theme-dark) .stb-jadd input, body:not(.theme-dark) .stb-jadd select{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.stb-jadd input:focus, .stb-jadd select:focus{ outline:0; border-color:var(--vs-emerald-500); }
+.stb-jt{ width:78px; text-align:center; font-family:var(--font-mono); }
+.stb-jnote{ flex:1; min-width:190px; }
+.stb-jlist{ display:flex; flex-direction:column; gap:5px; }
+.stb-jrow{ display:flex; align-items:center; gap:10px; padding:6px 9px; border:1px solid var(--vs-forest-600); border-radius:8px; font-size:12.5px; }
+body:not(.theme-dark) .stb-jrow{ border-color:rgba(31,71,64,.1); }
+.stb-jtime{ font-family:var(--font-mono); font-weight:800; color:var(--vs-emerald-300); min-width:48px; flex:none; }
+body:not(.theme-dark) .stb-jtime{ color:var(--vs-emerald-500); }
+.stb-jtype{ font-weight:700; color:var(--vs-fg-1); min-width:76px; flex:none; }
+.stb-jn{ flex:1; min-width:0; color:var(--vs-fg-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stb-jdel{ background:none; border:0; color:var(--vs-fg-3); cursor:pointer; flex:none; display:flex; align-items:center; padding:4px; border-radius:5px; transition:.12s; }
+.stb-jdel:hover{ color:var(--vs-red-400); background:rgba(255,90,51,.1); }
+.stb-jempty{ font-size:12px; }
+@media (max-width:560px){ .stb-jnote{ min-width:120px; } }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -5567,6 +5589,9 @@ function rsMigrate() {
 /* ─── Résolution du score d'un joueur : fiche SPES complète sinon auto Solo Q ─── */
 /* TIER_IDX est déclaré plus bas (scan Top 50) — réutilisé ici, pas redéclaré. */
 const _rsRawCache = {};
+// Icône de profil Solo Q par joueur (récupérée depuis les matchs récents) — évite
+// l'avatar vide. Clé = même signature que _rsRawCache.
+const _rsIconCache = {};
 // Score SPES (prospect) recomposé à partir des stats brutes — source unique du scoring.
 function rsScoreFromRaw(raw, role) {
   if (!raw) return null;
@@ -5589,10 +5614,11 @@ async function rsFetchSoloqRaw(slot) {
     const lp = soloQ ? (soloQ.leaguePoints || 0) : 0;
     const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=15&type=ranked');
     const matches = (ids && ids.length) ? await fetchMatchesInBatches(regional, ids, undefined, () => {}) : [];
-    let n = 0, w = 0, kS = 0, dS = 0, aS = 0, csT = 0, durT = 0, visT = 0, dmgT = 0, kp = 0;
+    let n = 0, w = 0, kS = 0, dS = 0, aS = 0, csT = 0, durT = 0, visT = 0, dmgT = 0, kp = 0, iconId = null;
     matches.forEach(m => {
       const info = m && m.info; if (!info) return;
       const p = (info.participants || []).find(x => x.puuid === acc.puuid); if (!p) return;
+      if (iconId == null && p.profileIcon != null) iconId = p.profileIcon;   // matchs triés du + récent → icône la + fraîche
       const dur = (info.gameDuration || 0) / 60; if (dur < 5) return;
       const team = (info.participants || []).filter(x => x.teamId === p.teamId);
       const tk = team.reduce((s, x) => s + (x.kills || 0), 0);
@@ -5615,8 +5641,10 @@ async function rsFetchSoloqRaw(slot) {
       csMin: durT ? +(csT / durT).toFixed(2) : null,
       visMin: n ? +(visT / n).toFixed(2) : null,
       killPart: n ? +(kp / n).toFixed(1) : null,
-      dmgShare: n ? +(dmgT / n).toFixed(1) : null
+      dmgShare: n ? +(dmgT / n).toFixed(1) : null,
+      profileIconId: iconId
     };
+    if (iconId != null) _rsIconCache[ck] = iconId;
     _rsRawCache[ck] = raw;
     return raw;
   } catch (_) { _rsRawCache[ck] = null; return null; }
@@ -6047,8 +6075,14 @@ const RS_ROLE_FULL = { Top: 'Top lane', Jgl: 'Jungle', Mid: 'Mid lane', ADC: 'Bo
 function rsIconUrl(id){ return 'https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/' + id + '.jpg'; }
 function rsAvatarHtml(slot){
   const initial = anEsc(((slot.proName || slot.pseudo || '?').charAt(0) || '?').toUpperCase());
-  if (slot.profileIconId != null){
-    return '<div class="av av-img"><img src="' + rsIconUrl(slot.profileIconId) + '" alt="" '
+  // Icône explicite du slot sinon icône Solo Q apprise via les matchs (_rsIconCache).
+  let iconId = (slot.profileIconId != null) ? slot.profileIconId : null;
+  if (iconId == null && typeof _rsIconCache !== 'undefined') {
+    const ck = ((slot.pseudo || '') + '|' + (slot.tag || '') + '|' + (slot.server || 'euw1')).toLowerCase();
+    if (_rsIconCache[ck] != null) iconId = _rsIconCache[ck];
+  }
+  if (iconId != null){
+    return '<div class="av av-img"><img src="' + rsIconUrl(iconId) + '" alt="" '
       + 'onerror="this.parentNode.classList.add(\'av-fallback\');this.remove()">'
       + '<span class="av-ini">' + initial + '</span></div>';
   }
@@ -6518,12 +6552,32 @@ async function rsSimSwap(role, pseudoEnc) {
    Persistées par compte : slot.adv fait partie du slot → rsSetSlot → vsStore.
 ════════════════════════════════════════════ */
 const RS_ADV = {
-  Top: [ { k: 'survie_ganks', label: '% survie aux ganks', u: '%' }, { k: 'prio_lane', label: '% prio lane', u: '%' }, { k: 'tp_decisifs', label: 'TP décisifs / game', u: '' }, { k: 'diff_cs15', label: 'Diff. CS @15', u: '' }, { k: 'solokills', label: 'Solo kills / game', u: '' } ],
-  Jgl: [ { k: 'ganks_reussis', label: '% ganks réussis', u: '%' }, { k: 'obj_gagnes', label: '% objectifs contestés gagnés', u: '%' }, { k: 'fb_particip', label: '% participation 1er sang', u: '%' }, { k: 'vision_riviere', label: 'Vision rivière /min', u: '' }, { k: 'clear_time', label: 'Full clear (min)', u: '' } ],
-  Mid: [ { k: 'roams_cles', label: 'Roams clés / game', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' }, { k: 'prio_waves', label: '% prio waves', u: '%' }, { k: 'dmg_share', label: '% dégâts équipe', u: '%' }, { k: 'diff_xp10', label: 'Diff. XP @10', u: '' } ],
-  ADC: [ { k: 'cs10', label: 'CS @10', u: '' }, { k: 'positionnement', label: '% positionnement TF', u: '%' }, { k: 'dmg_min', label: 'Dégâts / min', u: '' }, { k: 'morts_tf', label: 'Morts en TF / game', u: '' }, { k: 'particip_obj', label: '% participation objectifs', u: '%' } ],
-  Sup: [ { k: 'vision_min', label: 'Vision / min', u: '' }, { k: 'engages_reussis', label: '% engages réussis', u: '%' }, { k: 'peel', label: 'Sauvetages (peel) / game', u: '' }, { k: 'wards_detruites', label: 'Wards détruites /min', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' } ]
+  Top: [ { k: 'duel_win', label: '% 1v1 gagnés', u: '%' }, { k: 'survie_ganks', label: '% survie aux ganks', u: '%' }, { k: 'prio_lane', label: '% prio lane', u: '%' }, { k: 'tp_decisifs', label: 'TP décisifs / game', u: '' }, { k: 'diff_cs15', label: 'Diff. CS @15', u: '' }, { k: 'solokills', label: 'Solo kills / game', u: '' } ],
+  Jgl: [ { k: 'ganks_reussis', label: '% ganks réussis', u: '%' }, { k: 'duo_sup', label: 'Synergie avec sup (/10)', u: '' }, { k: 'obj_gagnes', label: '% objectifs contestés gagnés', u: '%' }, { k: 'fb_particip', label: '% participation 1er sang', u: '%' }, { k: 'vision_riviere', label: 'Vision rivière /min', u: '' }, { k: 'clear_time', label: 'Full clear (min)', u: '' } ],
+  Mid: [ { k: 'duel_win', label: '% 1v1 gagnés', u: '%' }, { k: 'roams_cles', label: 'Roams clés / game', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' }, { k: 'prio_waves', label: '% prio waves', u: '%' }, { k: 'dmg_share', label: '% dégâts équipe', u: '%' }, { k: 'diff_xp10', label: 'Diff. XP @10', u: '' } ],
+  ADC: [ { k: 'lane2v2', label: '% 2v2 botlane gagnés', u: '%' }, { k: 'cs10', label: 'CS @10', u: '' }, { k: 'positionnement', label: '% positionnement TF', u: '%' }, { k: 'dmg_min', label: 'Dégâts / min', u: '' }, { k: 'morts_tf', label: 'Morts en TF / game', u: '' }, { k: 'particip_obj', label: '% participation objectifs', u: '%' } ],
+  Sup: [ { k: 'duo_jgl', label: 'Synergie avec jungle (/10)', u: '' }, { k: 'vision_min', label: 'Vision / min', u: '' }, { k: 'engages_reussis', label: '% engages réussis', u: '%' }, { k: 'peel', label: 'Sauvetages (peel) / game', u: '' }, { k: 'wards_detruites', label: 'Wards détruites /min', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' } ]
 };
+// Métriques de RELATION / DUO au niveau de l'équipe (saisie coach). « La relation
+// jungle-sup » demandée + autres synergies clés.
+const RS_SYN = [
+  { k: 'jgl_sup', label: 'Relation jungle ↔ support', u: '/10' },
+  { k: 'jgl_mid', label: 'Relation jungle ↔ mid', u: '/10' },
+  { k: 'botlane', label: 'Botlane 2v2 (ADC + Sup)', u: '/10' },
+  { k: 'engage_follow', label: 'Engage → follow équipe', u: '/10' },
+  { k: 'obj_setup', label: 'Setup objectifs (vision + timing)', u: '/10' },
+  { k: 'early_prio', label: 'Prio early game', u: '/10' }
+];
+function stbSynergyHtml(roster) {
+  const syn = (roster && roster.synergy) || {};
+  let h = '<div class="stb-syn"><div class="stb-sech">Synergies & duos — saisie coach</div><div class="stb-adv">';
+  RS_SYN.forEach(f => {
+    const val = (syn[f.k] == null ? '' : String(syn[f.k])).replace(/"/g, '&quot;');
+    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap"><input id="syn-' + f.k + '" value="' + val + '" placeholder="—" inputmode="decimal" autocomplete="off">' + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
+  });
+  h += '</div></div>';
+  return h;
+}
 async function renderStatsBoard() {
   const box = document.getElementById('an-stats'); if (!box) return;
   if (typeof rsMigrate === 'function') rsMigrate();
@@ -6538,7 +6592,8 @@ async function renderStatsBoard() {
   html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
   html += '<button onclick="stbSaveAll()" class="btn btn-cta btn-sm" style="margin-left:auto">' + _ic('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>') + ' Enregistrer les stats coach</button>';
   html += '</div>';
-  box.innerHTML = html + '<div id="an-stats-body" class="faint" style="font-size:.85rem">Calcul des stats…</div>';
+  html += stbSynergyHtml(roster);
+  box.innerHTML = html + '<div id="an-stats-body" class="faint" style="font-size:.85rem">Calcul des stats…</div>' + stbJournalHtml(roster);
   const ts = await rsTeamScore(roster);
   let body = '', any = false;
   for (const role of RS_ROLES) { const slot = roster.slots[role]; if (slot && slot.pseudo) any = true; body += stbRow(roster, role, slot, ts.perRole[role]); }
@@ -6591,7 +6646,68 @@ function stbSaveAll() {
     slot.adv = adv;
     rsSetSlot(r.id, role, slot);   // persiste + vsStore.save('rosters')
   });
+  // Synergies au niveau de l'équipe (sur l'objet roster, pas un slot).
+  const syn = {};
+  RS_SYN.forEach(f => { const el = document.getElementById('syn-' + f.k); if (el) { const v = el.value.trim(); if (v !== '') syn[f.k] = v; } });
+  const list = rsAll(); const rr = list.find(x => x.id === r.id);
+  if (rr) { rr.synergy = syn; rsSaveAll(list); }   // rsSaveAll → vsStore.save('rosters')
   if (typeof showToast === 'function') showToast('Stats coach enregistrées', 'success');
+}
+/* Journal de moments clés — timecodes (mm:ss) que le coach note en regardant le
+   scrim, pour « remonter la vidéo » dans son propre lecteur. Aucune vidéo
+   embarquée. Stocké sur roster.journal (par compte). */
+function stbParseTime(s) {
+  if (s == null || s === '') return null;
+  const m = String(s).trim().match(/^(\d{1,3}):([0-5]?\d)$/);
+  if (m) return (+m[1]) * 60 + (+m[2]);
+  const n = parseInt(s, 10); return isNaN(n) ? null : n;
+}
+function stbJournalHtml(roster) {
+  const j = (roster && roster.journal) || [];
+  const types = ['Gank', 'Roam', 'Teamfight', 'Objectif', 'Pick', 'Vision', 'Erreur', 'Autre'];
+  const roles = ['', 'Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
+  const del = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  const sorted = j.map((e, i) => ({ e, i })).sort((a, b) => { const ta = stbParseTime(a.e.t), tb = stbParseTime(b.e.t); return (ta == null ? 1e9 : ta) - (tb == null ? 1e9 : tb); });
+  let h = '<div class="stb-journal" id="an-stats-journal"><div class="stb-sech">Journal de moments clés — timecodes pour remonter ta vidéo</div>';
+  h += '<div class="stb-jadd">';
+  h += '<input id="jn-t" class="stb-jt" placeholder="mm:ss" inputmode="numeric" autocomplete="off">';
+  h += '<select id="jn-type" class="stb-jsel">' + types.map(t => '<option>' + t + '</option>').join('') + '</select>';
+  h += '<select id="jn-role" class="stb-jsel"><option value="">Rôle…</option>' + roles.filter(Boolean).map(r => '<option value="' + r + '">' + r + '</option>').join('') + '</select>';
+  h += '<input id="jn-note" class="stb-jnote" placeholder="Note (ex. gank bot réussi, TP contré…)" autocomplete="off" onkeydown="if(event.key===\'Enter\')stbJournalAdd()">';
+  h += '<button class="btn btn-cta btn-xs" onclick="stbJournalAdd()">Ajouter</button>';
+  h += '</div>';
+  if (!sorted.length) {
+    h += '<div class="stb-jempty faint">Aucun moment noté. Ajoute un timecode pendant que tu regardes le scrim — tu pourras t\'y repérer dans ta vidéo.</div>';
+  } else {
+    h += '<div class="stb-jlist">';
+    sorted.forEach(({ e, i }) => {
+      h += '<div class="stb-jrow"><span class="stb-jtime">' + anEsc(e.t || '') + '</span>'
+        + '<span class="stb-jtype">' + anEsc(e.type || '') + '</span>'
+        + (e.role ? '<span class="rs-rolechip">' + anEsc(e.role) + '</span>' : '')
+        + '<span class="stb-jn">' + anEsc(e.note || '') + '</span>'
+        + '<button class="stb-jdel" title="Supprimer" onclick="stbJournalDel(' + i + ')">' + del + '</button></div>';
+    });
+    h += '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+function stbJournalReRender() { const el = document.getElementById('an-stats-journal'); if (el) el.outerHTML = stbJournalHtml(rsActive()); }
+function stbJournalAdd() {
+  const r = rsActive(); if (!r) return;
+  const gv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  const t = gv('jn-t');
+  if (stbParseTime(t) == null) { if (typeof showToast === 'function') showToast('Format du temps : mm:ss (ex. 14:32)', 'warning'); return; }
+  const entry = { t: t, type: gv('jn-type'), role: gv('jn-role'), note: gv('jn-note') };
+  const list = rsAll(); const rr = list.find(x => x.id === r.id); if (!rr) return;
+  rr.journal = rr.journal || []; rr.journal.push(entry); rsSaveAll(list);
+  stbJournalReRender();
+}
+function stbJournalDel(i) {
+  const r = rsActive(); if (!r) return;
+  const list = rsAll(); const rr = list.find(x => x.id === r.id); if (!rr || !rr.journal) return;
+  rr.journal.splice(i, 1); rsSaveAll(list);
+  stbJournalReRender();
 }
 
 /* ════════════════════════════════════════════
