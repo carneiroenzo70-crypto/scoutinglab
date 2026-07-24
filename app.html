@@ -677,8 +677,8 @@ body:not(.theme-dark) .rs-f input{ background:rgba(255,255,255,.6); border-color
 .rs-idrow{ cursor:pointer; border-radius:10px; padding:4px; margin:-4px; transition:background .12s; }
 .rs-idrow:hover{ background:rgba(45,212,167,.07); }
 body:not(.theme-dark) .rs-idrow:hover{ background:rgba(31,71,64,.06); }
-/* Fiche joueur (modale large) : compét + Solo Q côte à côte + évolution */
-.rs-modal-lg{ width:min(560px,95vw); gap:14px; }
+/* Fiche joueur (modale large) : compét + Solo Q côte à côte + games + évolution */
+.rs-modal-lg{ width:min(680px,95vw); gap:14px; max-height:92vh; overflow-y:auto; }
 .rs-pd-head{ display:flex; align-items:center; gap:12px; }
 /* L'avatar hérite du même rendu que dans la carte roster (les règles .rs-card .av
    ne s'appliquent pas ici → on les rejoue pour la modale). */
@@ -713,6 +713,26 @@ body:not(.theme-dark) .rs-pd-stat{ background:rgba(255,255,255,.5); border-color
 .rs-pd-mbtn{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-3); font-family:var(--font-mono); font-size:10px; letter-spacing:.03em; padding:4px 10px; border-radius:6px; cursor:pointer; transition:.14s; }
 .rs-pd-mbtn.on{ background:var(--vs-emerald-500); color:#04211C; border-color:var(--vs-emerald-500); font-weight:700; }
 .rs-pd-mbtn:not(.on):hover{ color:var(--vs-fg-1); }
+/* Games compétitives (données réelles Leaguepedia) */
+.rs-pd-games{ border-top:1px solid var(--vs-forest-600); padding-top:12px; }
+.rs-pd-aggline{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
+.rs-pd-agstat{ font-size:12px; color:var(--vs-fg-2); }
+.rs-pd-agstat b{ color:var(--vs-fg-1); font-weight:800; }
+.rs-pd-glist{ display:flex; flex-direction:column; gap:4px; }
+.rs-pd-glist-full{ max-height:280px; overflow-y:auto; padding-right:4px; }
+.rs-pd-game{ display:flex; align-items:center; gap:9px; font-size:11.5px; padding:5px 9px; border:1px solid var(--vs-forest-600); border-radius:8px; background:rgba(255,255,255,.02); }
+body:not(.theme-dark) .rs-pd-game{ background:rgba(31,71,64,.03); border-color:rgba(31,71,64,.1); }
+.rs-pd-res{ font-weight:800; font-size:11px; width:20px; height:20px; border-radius:5px; display:grid; place-items:center; flex:none; }
+.rs-pd-res.w{ color:#04211C; background:var(--vs-emerald-400); }
+.rs-pd-res.l{ color:#fff; background:#C0503A; }
+.rs-pd-champ{ font-weight:700; color:var(--vs-fg-1); min-width:72px; max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-pd-kdanum{ font-family:var(--font-mono); color:var(--vs-fg-2); min-width:84px; flex:none; }
+.rs-pd-kdanum b{ color:var(--vs-fg-1); }
+.rs-pd-gvs{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-pd-gev{ max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:none; }
+.rs-pd-gdate{ font-family:var(--font-mono); font-size:10.5px; flex:none; }
+.rs-pd-split-wrap{ margin-top:10px; text-align:center; }
+@media (max-width:560px){ .rs-pd-gev{ display:none; } .rs-pd-champ{ min-width:56px; } .rs-pd-gvs{ font-size:10.5px; } }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -6037,10 +6057,11 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
     if (pr && pr.wr != null) h += '<span>· ' + pr.wr + '% WR</span>';
   }
   h += '</div></div></div>';
-  h += '<div style="display:flex;align-items:center;gap:8px">';
+  // Actions : Détails (fiche complète, avec l'édition dedans) + Changer.
+  // flex-wrap évite le chevauchement quand la colonne de la grille est étroite.
+  h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px">';
   h += '<button onclick="rsUiPlayerDetail(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Fiche du joueur : compét + Solo Q, jour par jour">Détails</button>';
   h += '<button onclick="rsUiPick(\'' + role + '\')" class="btn btn-ghost btn-xs">Changer</button>';
-  h += '<button onclick="rsUiEditPro(\'' + role + '\')" class="btn btn-ghost btn-xs" title="Pseudo esport & stats compétitives">Éditer</button>';
   if (pr && pr.source) h += anSourceBadge(pr.source);
   h += '</div>';
 
@@ -6216,6 +6237,18 @@ async function rsFillPlayerDetail(role, slot) {
 
   let html = '<div class="rs-pd-cols">' + competCol + sqCol + '</div>';
 
+  // DERNIÈRES GAMES COMPÉTITIVES (données réelles Leaguepedia via /api/lp).
+  // Nécessite le pseudo esport (clé Leaguepedia). Rempli en asynchrone après le rendu.
+  const proName = (slot.proName || '').trim();
+  html += '<div class="rs-pd-games" id="rspd-games">';
+  html += '<div class="rs-pd-h" style="margin-bottom:8px">Games compétitives</div>';
+  if (proName) {
+    html += '<div class="rs-pd-empty" id="rspd-games-body">Chargement des games de <b>' + anEsc(proName) + '</b> depuis Leaguepedia…</div>';
+  } else {
+    html += '<div class="rs-pd-empty">Renseigne le <b>pseudo esport</b> du joueur (bouton « Renseigner les stats compét ») pour charger ses games compétitives réelles.</div>';
+  }
+  html += '</div>';
+
   // ÉVOLUTION jour par jour (les deux aspects, selon ce qui a été enregistré)
   html += '<div class="rs-pd-evo">';
   html += '<div class="rs-pd-h" style="margin-bottom:8px">Évolution jour par jour</div>';
@@ -6238,6 +6271,75 @@ async function rsFillPlayerDetail(role, slot) {
     window._rspdSeries = series;
     rsPdDrawEvo('score');
   }
+  // Games compét : chargement réel après le rendu (ne bloque pas l'ouverture).
+  window._rspdRole = role;
+  window._rspdPro = proName;
+  window._rspdSplit = null;
+  if (proName) rsPdLoadGames(proName);
+}
+// Ligne « game » compétitive : V/D, champion, KDA, adversaire, événement, date.
+function rsPdGameRow(g) {
+  const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
+  return '<div class="rs-pd-game">'
+    + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
+    + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
+    + '<span class="rs-pd-kdanum"><b>' + g.k + '</b>/<b>' + g.d + '</b>/<b>' + g.a + '</b> <span class="faint">(' + kda + ')</span></span>'
+    + '<span class="rs-pd-gvs faint">vs ' + anEsc(g.vs || '?') + '</span>'
+    + '<span class="rs-pd-gev faint" title="' + anEsc(g.page || g.event || '') + '">' + anEsc(g.event || '') + '</span>'
+    + '<span class="rs-pd-gdate faint">' + anEsc(g.date || '') + '</span>'
+    + '</div>';
+}
+// Récupère les games brutes (Leaguepedia) — comme pmFetchCompet mais sans agréger,
+// et en conservant l'OverviewPage complète (pour isoler « le split » courant).
+async function pmFetchCompetRaw(proName, limit) {
+  const q = encodeURIComponent(proName);
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=' + (limit || 100) + '&format=json&origin=*';
+  const rows = await pmCargo(url);
+  if (!rows) return null;
+  return rows.map(x => { const t = x.title; const page = t.OverviewPage || ''; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), page: page, event: page.split('/')[0] }; });
+}
+// Charge et affiche le récap compét réel + les dernières games.
+async function rsPdLoadGames(proName) {
+  const agg = await pmFetchCompet(proName).catch(() => null);
+  const box = document.getElementById('rspd-games'); if (!box) return;
+  const bodyEl = document.getElementById('rspd-games-body');
+  if (!agg || !agg.games || !agg.games.length) {
+    if (bodyEl) bodyEl.innerHTML = 'Aucune game compétitive trouvée pour <b>' + anEsc(proName) + '</b> sur Leaguepedia.<br><span class="faint">Vérifie l\'orthographe exacte du pseudo esport, ou Leaguepedia est momentanément indisponible.</span>';
+    return;
+  }
+  let h = '<div class="rs-pd-aggline">'
+    + '<span class="rs-pd-tag">' + agg.count + ' games</span>'
+    + '<span class="rs-pd-agstat"><b>' + agg.winrate + '%</b> WR</span>'
+    + '<span class="rs-pd-agstat"><b>' + agg.kda + '</b> KDA</span>'
+    + (agg.csAvg ? '<span class="rs-pd-agstat"><b>' + agg.csAvg + '</b> CS</span>' : '')
+    + '</div>';
+  h += '<div class="rs-pd-glist">' + agg.games.map(rsPdGameRow).join('') + '</div>';
+  h += '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" id="rspd-split-btn" onclick="rsPdLoadSplit()">Voir tout le split</button></div>';
+  // remplace tout le corps (garde le titre)
+  box.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Games compétitives</div>' + h;
+}
+// Étend à toutes les games du split le plus récent (même OverviewPage).
+async function rsPdLoadSplit() {
+  const proName = window._rspdPro; if (!proName) return;
+  const btn = document.getElementById('rspd-split-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Chargement du split…'; }
+  const raw = await pmFetchCompetRaw(proName, 120).catch(() => null);
+  const box = document.getElementById('rspd-games'); if (!box) return;
+  if (!raw || !raw.length) { if (btn) { btn.disabled = false; btn.textContent = 'Voir tout le split'; } return; }
+  // « Split » = tournoi le plus récent (OverviewPage de la game la plus récente).
+  const page = raw[0].page;
+  const split = raw.filter(g => g.page === page);
+  const wins = split.filter(g => g.win).length;
+  const splitName = page.replace(/_/g, ' ');
+  let h = '<div class="rs-pd-h" style="margin-bottom:8px">Split complet <span class="rs-pd-tag" style="text-transform:none">' + anEsc(splitName) + '</span></div>';
+  h += '<div class="rs-pd-aggline">'
+    + '<span class="rs-pd-tag">' + split.length + ' games</span>'
+    + '<span class="rs-pd-agstat"><b>' + Math.round(wins / split.length * 100) + '%</b> WR</span>'
+    + '<span class="rs-pd-agstat">' + wins + 'V ' + (split.length - wins) + 'D</span>'
+    + '</div>';
+  h += '<div class="rs-pd-glist rs-pd-glist-full">' + split.map(rsPdGameRow).join('') + '</div>';
+  h += '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" onclick="rsPdLoadGames(window._rspdPro)">Réduire</button></div>';
+  box.innerHTML = h;
 }
 // Trace la courbe d'évolution du joueur pour la métrique choisie.
 function rsPdDrawEvo(metric) {
