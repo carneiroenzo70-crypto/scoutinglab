@@ -733,6 +733,61 @@ body:not(.theme-dark) .rs-pd-game{ background:rgba(31,71,64,.03); border-color:r
 .rs-pd-gdate{ font-family:var(--font-mono); font-size:10.5px; flex:none; }
 .rs-pd-split-wrap{ margin-top:10px; text-align:center; }
 @media (max-width:560px){ .rs-pd-gev{ display:none; } .rs-pd-champ{ min-width:56px; } .rs-pd-gvs{ font-size:10.5px; } }
+/* Ligne game cliquable → détail */
+.rs-pd-game-clk{ cursor:pointer; transition:background .12s, border-color .12s; }
+.rs-pd-game-clk:hover{ background:rgba(45,212,167,.09); border-color:var(--vs-emerald-500); }
+body:not(.theme-dark) .rs-pd-game-clk:hover{ background:rgba(31,71,64,.07); }
+/* Détail de game : deux équipes, 5 joueurs chacune */
+.rs-pd-gdmeta{ font-size:10.5px; margin-bottom:10px; }
+.rs-pd-teams{ display:flex; flex-direction:column; gap:12px; }
+.rs-pd-team{ border:1px solid var(--vs-forest-600); border-radius:10px; padding:9px; }
+body:not(.theme-dark) .rs-pd-team{ border-color:rgba(31,71,64,.1); }
+.rs-pd-teamh{ display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.rs-pd-teamnm{ font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--vs-fg-1); }
+.rs-pd-pl{ display:flex; align-items:center; gap:9px; font-size:11.5px; padding:4px 6px; border-radius:6px; }
+.rs-pd-pl + .rs-pd-pl{ border-top:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .rs-pd-pl + .rs-pd-pl{ border-top-color:rgba(31,71,64,.07); }
+.rs-pd-pl.hl{ background:rgba(45,212,167,.12); border:1px solid var(--vs-emerald-500); }
+.rs-pd-plrole{ width:26px; flex:none; font-family:var(--font-mono); font-size:9.5px; text-transform:uppercase; }
+.rs-pd-plchamp{ font-weight:700; color:var(--vs-fg-1); min-width:70px; max-width:96px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-pd-plname{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rs-pd-plkda{ font-family:var(--font-mono); color:var(--vs-fg-2); min-width:82px; flex:none; }
+.rs-pd-plkda b{ color:var(--vs-fg-1); }
+.rs-pd-plcs{ min-width:48px; flex:none; text-align:right; }
+.rs-pd-plgold{ font-family:var(--font-mono); min-width:40px; flex:none; text-align:right; }
+@media (max-width:560px){ .rs-pd-plname{ display:none; } .rs-pd-plcs{ display:none; } }
+/* ════ Tableau STATS ÉQUIPE (onglet Analytics → Stats équipe) ════ */
+.stb-row{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px 16px; margin-bottom:12px; background:rgba(4,18,15,.28); display:flex; flex-direction:column; gap:12px; }
+body:not(.theme-dark) .stb-row{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.stb-row.empty{ opacity:.55; }
+.stb-id{ display:flex; align-items:center; gap:11px; }
+.stb-id .av{ width:40px; height:40px; border-radius:50%; flex:none; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.stb-id .av img{ width:100%; height:100%; object-fit:cover; display:block; }
+.stb-id .av .av-ini{ font-weight:800; font-size:16px; color:var(--vs-emerald-300); }
+.stb-id .av.av-img .av-ini{ display:none; }
+.stb-id .av.av-fallback{ background:var(--vs-forest-600); border:1px solid var(--vs-forest-500); }
+body:not(.theme-dark) .stb-id .av.av-fallback{ background:rgba(31,71,64,.08); border-color:rgba(31,71,64,.16); }
+body:not(.theme-dark) .stb-id .av .av-ini{ color:var(--vs-emerald-500); }
+.stb-nm{ font-family:var(--font-display); font-weight:800; font-size:15px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stb-sq{ font-family:var(--font-mono); font-size:11px; }
+.stb-empty{ font-size:12px; }
+.stb-sech{ font-size:9.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:7px; }
+body:not(.theme-dark) .stb-sech{ color:var(--vs-emerald-500); }
+.stb-base{ display:flex; gap:8px; flex-wrap:wrap; }
+.stb-tile{ background:rgba(255,255,255,.04); border:1px solid var(--vs-forest-600); border-radius:9px; padding:7px 11px; min-width:78px; }
+body:not(.theme-dark) .stb-tile{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.1); }
+.stb-tile .k{ font-size:9px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--vs-fg-3); }
+.stb-tile .v{ font-family:var(--font-mono); font-weight:800; font-size:15px; color:var(--vs-fg-1); margin-top:2px; }
+.stb-tile .v .u{ font-size:10px; color:var(--vs-fg-3); margin-left:1px; }
+.stb-tile .v .na{ color:var(--vs-fg-3); font-weight:600; }
+.stb-adv{ display:grid; grid-template-columns:repeat(auto-fill,minmax(184px,1fr)); gap:9px; }
+.stb-f{ display:flex; flex-direction:column; gap:4px; }
+.stb-f > span{ font-size:10px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--vs-fg-3); }
+.stb-inwrap{ position:relative; display:flex; align-items:center; }
+.stb-f input{ width:100%; height:36px; padding:0 30px 0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-mono); font-size:14px; }
+body:not(.theme-dark) .stb-f input{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.stb-f input:focus{ outline:0; border-color:var(--vs-emerald-500); }
+.stb-inwrap i{ position:absolute; right:11px; font-style:normal; font-size:11px; color:var(--vs-fg-3); pointer-events:none; }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -4683,7 +4738,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -4871,7 +4926,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -4884,8 +4939,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
         <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
-        <!-- ══ Vue Analyse scrim (studio vidéo façon Sportscode/Metrica) ══ -->
+        <!-- ══ Vue Stats équipe (tableau de data coach — remplace l'Analyse vidéo) ══ -->
         <div id="an-view-scrim">
+          <div id="an-stats"></div>
+          <!-- Studio vidéo conservé mais non routé (chantier en pause) -->
+          <div id="scrim-studio-legacy" style="display:none">
           <div id="scrim-drop" class="vsd-dropzone" style="margin-bottom:18px">
             <div class="vsd-dz-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
             <div style="font-weight:900;font-size:18px;margin-bottom:6px;color:var(--vs-fg-1)">Dépose la vidéo de ton scrim ici</div>
@@ -4921,6 +4979,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <span class="faint" style="font-size:12px">Le codage est sauvegardé automatiquement — redépose la même vidéo pour reprendre.</span>
           </div>
           <div id="scrim-history"></div>
+          </div><!-- /scrim-studio-legacy -->
         </div>
 
         <div id="an-view-perf" style="display:none">
@@ -4958,7 +5017,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
         <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
         <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Analyse scrim</button>
+          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
@@ -5850,7 +5909,9 @@ function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes 
   });
   anSyncTabs(view);
   if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
-  if (view === 'scrim' && typeof slUiInit === 'function') { slUiInit(); slRenderHistory(); if (typeof vsliveInit === 'function') vsliveInit(); }
+  // La vue 'scrim' est désormais le TABLEAU STATS ÉQUIPE (l'analyse vidéo est en
+  // pause ; son studio reste dans le DOM sous #scrim-studio-legacy, non routé).
+  if (view === 'scrim' && typeof renderStatsBoard === 'function') renderStatsBoard();
 }
 function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
@@ -6278,9 +6339,13 @@ async function rsFillPlayerDetail(role, slot) {
   if (proName) rsPdLoadGames(proName);
 }
 // Ligne « game » compétitive : V/D, champion, KDA, adversaire, événement, date.
+// Cliquable (si GameId connu) → détail complet de la game (les 10 joueurs).
 function rsPdGameRow(g) {
   const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
-  return '<div class="rs-pd-game">'
+  const open = g.gameId
+    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="rsPdGameDetail(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le détail de la game">'
+    : '<div class="rs-pd-game">';
+  return open
     + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
     + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
     + '<span class="rs-pd-kdanum"><b>' + g.k + '</b>/<b>' + g.d + '</b>/<b>' + g.a + '</b> <span class="faint">(' + kda + ')</span></span>'
@@ -6293,15 +6358,16 @@ function rsPdGameRow(g) {
 // et en conservant l'OverviewPage complète (pour isoler « le split » courant).
 async function pmFetchCompetRaw(proName, limit) {
   const q = encodeURIComponent(proName);
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=' + (limit || 100) + '&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage,GameId&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=' + (limit || 100) + '&format=json&origin=*';
   const rows = await pmCargo(url);
   if (!rows) return null;
-  return rows.map(x => { const t = x.title; const page = t.OverviewPage || ''; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), page: page, event: page.split('/')[0] }; });
+  return rows.map(x => { const t = x.title; const page = t.OverviewPage || ''; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), page: page, event: page.split('/')[0], gameId: t.GameId || '' }; });
 }
 // Charge et affiche le récap compét réel + les dernières games.
 async function rsPdLoadGames(proName) {
   const agg = await pmFetchCompet(proName).catch(() => null);
   const box = document.getElementById('rspd-games'); if (!box) return;
+  window._rspdView = 'recent';
   const bodyEl = document.getElementById('rspd-games-body');
   if (!agg || !agg.games || !agg.games.length) {
     if (bodyEl) bodyEl.innerHTML = 'Aucune game compétitive trouvée pour <b>' + anEsc(proName) + '</b> sur Leaguepedia.<br><span class="faint">Vérifie l\'orthographe exacte du pseudo esport, ou Leaguepedia est momentanément indisponible.</span>';
@@ -6337,9 +6403,63 @@ async function rsPdLoadSplit() {
     + '<span class="rs-pd-agstat"><b>' + Math.round(wins / split.length * 100) + '%</b> WR</span>'
     + '<span class="rs-pd-agstat">' + wins + 'V ' + (split.length - wins) + 'D</span>'
     + '</div>';
+  window._rspdView = 'split';
   h += '<div class="rs-pd-glist rs-pd-glist-full">' + split.map(rsPdGameRow).join('') + '</div>';
   h += '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" onclick="rsPdLoadGames(window._rspdPro)">Réduire</button></div>';
   box.innerHTML = h;
+}
+// Détail d'une game : les 10 joueurs (2 équipes) via Leaguepedia (GameId).
+async function pmFetchGamePlayers(gameId) {
+  const q = encodeURIComponent(gameId);
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Role,Kills,Deaths,Assists,CS,Gold,DamageToChampions,Team,Side,PlayerWin,DateTime_UTC,OverviewPage&where=GameId%3D%22' + q + '%22&limit=12&format=json&origin=*';
+  const rows = await pmCargo(url);
+  if (!rows || !rows.length) return null;
+  return rows.map(x => { const t = x.title; return { link: t.Link || '?', champ: t.Champion || '?', role: t.Role || '', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, team: t.Team || '', side: String(t.Side || ''), win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), page: t.OverviewPage || '' }; });
+}
+const _PD_ROLEORD = { Top: 0, Jungle: 1, Mid: 2, Bot: 3, ADC: 3, Support: 4 };
+function rsPdPlayerRow(p, highlight) {
+  const kda = (p.d ? ((p.k + p.a) / p.d).toFixed(1) : (p.k + p.a).toFixed(1));
+  return '<div class="rs-pd-pl' + (highlight ? ' hl' : '') + '">'
+    + '<span class="rs-pd-plrole faint">' + anEsc((p.role || '').slice(0, 3)) + '</span>'
+    + '<span class="rs-pd-plchamp" title="' + anEsc(p.champ) + '">' + anEsc(p.champ) + '</span>'
+    + '<span class="rs-pd-plname faint" title="' + anEsc(p.link) + '">' + anEsc(p.link) + '</span>'
+    + '<span class="rs-pd-plkda"><b>' + p.k + '</b>/<b>' + p.d + '</b>/<b>' + p.a + '</b> <span class="faint">(' + kda + ')</span></span>'
+    + '<span class="rs-pd-plcs faint">' + (p.cs || 0) + ' CS</span>'
+    + '<span class="rs-pd-plgold faint">' + (p.gold ? (p.gold / 1000).toFixed(1) + 'k' : '—') + '</span>'
+    + '</div>';
+}
+// Rend le détail de la game (remplace la section games ; retour selon la vue).
+async function rsPdGameDetail(gameIdEnc) {
+  const gameId = decodeURIComponent(gameIdEnc);
+  const back = window._rspdView === 'split' ? 'rsPdLoadSplit()' : 'rsPdLoadGames(window._rspdPro)';
+  const backHtml = '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" onclick="' + back + '">← Retour aux games</button></div>';
+  const box = document.getElementById('rspd-games'); if (!box) return;
+  box.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Détail de la game</div>'
+    + '<div class="rs-pd-empty" id="rspd-gd">Chargement du détail depuis Leaguepedia…</div>' + backHtml;
+  const players = await pmFetchGamePlayers(gameId).catch(() => null);
+  const gd = document.getElementById('rspd-gd'); if (!gd) return;
+  if (!players || !players.length) { gd.innerHTML = 'Détail indisponible pour cette game sur Leaguepedia.'; return; }
+  // Groupe par équipe (Side 1/2), ordonné par rôle.
+  const sides = {};
+  players.forEach(p => { (sides[p.side] = sides[p.side] || []).push(p); });
+  const order = Object.keys(sides).sort();
+  const pro = (window._rspdPro || '').toLowerCase();
+  const teamBlock = (side) => {
+    const list = sides[side].slice().sort((a, b) => (_PD_ROLEORD[a.role] ?? 9) - (_PD_ROLEORD[b.role] ?? 9));
+    const teamName = list[0] ? list[0].team : '';
+    const won = list[0] ? list[0].win : false;
+    let bh = '<div class="rs-pd-team">'
+      + '<div class="rs-pd-teamh"><span class="rs-pd-res ' + (won ? 'w' : 'l') + '">' + (won ? 'V' : 'D') + '</span>'
+      + '<span class="rs-pd-teamnm">' + anEsc(teamName) + '</span></div>';
+    bh += list.map(p => rsPdPlayerRow(p, pro && p.link.toLowerCase() === pro)).join('');
+    bh += '</div>';
+    return bh;
+  };
+  const meta = players[0];
+  let h = '<div class="rs-pd-gdmeta faint">' + anEsc((meta.page || '').replace(/_/g, ' ')) + ' · ' + anEsc(meta.date || '') + '</div>';
+  h += '<div class="rs-pd-teams">' + order.map(teamBlock).join('') + '</div>';
+  gd.classList.remove('rs-pd-empty');
+  gd.innerHTML = h;
 }
 // Trace la courbe d'évolution du joueur pour la métrique choisie.
 function rsPdDrawEvo(metric) {
@@ -6386,6 +6506,92 @@ async function rsSimSwap(role, pseudoEnc) {
     + 'Score d\'équipe ' + (before.team != null ? before.team.toFixed(1) : '—') + ' → ' + (after.team != null ? after.team.toFixed(1) : '—')
     + (d != null ? ' (' + (d >= 0 ? '+' : '') + d.toFixed(2) + ')' : '') + '\n\nAppliquer ce changement ?';
   if (confirm(msg)) { rsSetSlot(r.id, role, clone.slots[role]); renderRoster(); }
+}
+
+/* ════════════════════════════════════════════
+   STATS ÉQUIPE — tableau de data coach (remplace l'Analyse vidéo)
+   ─────────────────────────────────────────────
+   « Stats de base transférées automatiquement + stats à saisir ». La base vient
+   de la Solo Q (API Riot, via rsTeamScore) ; les stats avancées sont SAISIES par
+   l'assistant coach — non issues de l'API, propres à la structure, et
+   rôle-spécifiques (roams pour le mid, survie aux ganks pour le top…).
+   Persistées par compte : slot.adv fait partie du slot → rsSetSlot → vsStore.
+════════════════════════════════════════════ */
+const RS_ADV = {
+  Top: [ { k: 'survie_ganks', label: '% survie aux ganks', u: '%' }, { k: 'prio_lane', label: '% prio lane', u: '%' }, { k: 'tp_decisifs', label: 'TP décisifs / game', u: '' }, { k: 'diff_cs15', label: 'Diff. CS @15', u: '' }, { k: 'solokills', label: 'Solo kills / game', u: '' } ],
+  Jgl: [ { k: 'ganks_reussis', label: '% ganks réussis', u: '%' }, { k: 'obj_gagnes', label: '% objectifs contestés gagnés', u: '%' }, { k: 'fb_particip', label: '% participation 1er sang', u: '%' }, { k: 'vision_riviere', label: 'Vision rivière /min', u: '' }, { k: 'clear_time', label: 'Full clear (min)', u: '' } ],
+  Mid: [ { k: 'roams_cles', label: 'Roams clés / game', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' }, { k: 'prio_waves', label: '% prio waves', u: '%' }, { k: 'dmg_share', label: '% dégâts équipe', u: '%' }, { k: 'diff_xp10', label: 'Diff. XP @10', u: '' } ],
+  ADC: [ { k: 'cs10', label: 'CS @10', u: '' }, { k: 'positionnement', label: '% positionnement TF', u: '%' }, { k: 'dmg_min', label: 'Dégâts / min', u: '' }, { k: 'morts_tf', label: 'Morts en TF / game', u: '' }, { k: 'particip_obj', label: '% participation objectifs', u: '%' } ],
+  Sup: [ { k: 'vision_min', label: 'Vision / min', u: '' }, { k: 'engages_reussis', label: '% engages réussis', u: '%' }, { k: 'peel', label: 'Sauvetages (peel) / game', u: '' }, { k: 'wards_detruites', label: 'Wards détruites /min', u: '' }, { k: 'roams_reussis', label: '% roams réussis', u: '%' } ]
+};
+async function renderStatsBoard() {
+  const box = document.getElementById('an-stats'); if (!box) return;
+  if (typeof rsMigrate === 'function') rsMigrate();
+  let roster = rsActive(); if (!roster && typeof rsCreate === 'function') roster = rsCreate('Mon équipe');
+  if (!roster) { box.innerHTML = ''; return; }
+  const list = rsAll();
+  const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  let html = '<p class="muted" style="margin:0 0 14px;font-size:.85rem">Tableau de performance de l\'équipe — stats de base transférées automatiquement (Solo Q) + stats avancées saisies par le coach, propres à ta structure et non issues de l\'API.</p>';
+  html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">';
+  html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderStatsBoard()">';
+  list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
+  html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
+  html += '<button onclick="stbSaveAll()" class="btn btn-cta btn-sm" style="margin-left:auto">' + _ic('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>') + ' Enregistrer les stats coach</button>';
+  html += '</div>';
+  box.innerHTML = html + '<div id="an-stats-body" class="faint" style="font-size:.85rem">Calcul des stats…</div>';
+  const ts = await rsTeamScore(roster);
+  let body = '', any = false;
+  for (const role of RS_ROLES) { const slot = roster.slots[role]; if (slot && slot.pseudo) any = true; body += stbRow(roster, role, slot, ts.perRole[role]); }
+  const el = document.getElementById('an-stats-body'); if (!el) return;
+  el.classList.remove('faint');
+  el.innerHTML = any ? body : '<div class="card" style="padding:40px 20px;text-align:center"><div class="h3" style="font-size:1rem;margin-bottom:6px">Roster vide</div><div class="muted" style="font-size:.85rem">Ajoute tes titulaires dans l\'onglet <strong>Roster</strong>, puis reviens ici pour saisir leurs stats avancées.</div></div>';
+}
+function stbBaseTiles(pr) {
+  const raw = pr && pr.raw;
+  const rkLbl = (pr && pr.rank) ? pr.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
+  const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
+  const tile = (l, v, u) => { const has = v != null && v !== ''; return '<div class="stb-tile"><div class="k">' + l + '</div><div class="v">' + (has ? anEsc(String(v)) + (u ? '<span class="u">' + u + '</span>' : '') : '<span class="na">—</span>') + '</div></div>'; };
+  let h = '<div class="stb-tile"><div class="k">Rang SoloQ</div><div class="v" style="font-size:12.5px;display:flex;align-items:center;gap:5px">'
+    + ((rk && rk.tier) ? rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:800">' + anEsc(rk.label) + '</span>' : '<span class="na">—</span>') + '</div></div>';
+  h += tile('WR SoloQ', pr && pr.wr, '%');
+  h += tile('KDA', raw && raw.kda, '');
+  h += tile('CS/min', raw && raw.csMin, '');
+  h += tile('KP', raw && raw.killPart, '%');
+  return h;
+}
+function stbRow(roster, role, slot, pr) {
+  const full = RS_ROLE_FULL[role] || role;
+  if (!slot || !slot.pseudo) {
+    return '<div class="stb-row empty"><div class="stb-id"><span class="rs-rolechip">' + role + '</span><div class="stb-empty faint">' + full + ' — poste vide</div></div></div>';
+  }
+  const proName = (slot.proName || '').trim();
+  const primaire = proName || slot.pseudo;
+  const score = pr && pr.score;
+  let h = '<div class="stb-row">';
+  h += '<div class="stb-id"><span class="rs-rolechip">' + role + '</span>' + rsAvatarHtml(slot);
+  h += '<div style="min-width:0"><div class="stb-nm">' + anEsc(primaire) + '</div><div class="stb-sq faint">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</div></div>';
+  h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span></div>';
+  h += '<div class="stb-sec"><div class="stb-sech">Base — auto (Solo Q)</div><div class="stb-base">' + stbBaseTiles(pr) + '</div></div>';
+  const adv = slot.adv || {};
+  const fields = RS_ADV[role] || [];
+  h += '<div class="stb-sec"><div class="stb-sech">Avancé — saisie coach</div><div class="stb-adv">';
+  fields.forEach(f => {
+    const val = (adv[f.k] == null ? '' : String(adv[f.k])).replace(/"/g, '&quot;');
+    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap"><input id="adv-' + role + '-' + f.k + '" value="' + val + '" placeholder="—" inputmode="decimal" autocomplete="off">' + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
+  });
+  h += '</div></div></div>';
+  return h;
+}
+function stbSaveAll() {
+  const r = rsActive(); if (!r) return;
+  RS_ROLES.forEach(role => {
+    const slot = r.slots[role]; if (!slot || !slot.pseudo) return;
+    const adv = {};
+    (RS_ADV[role] || []).forEach(f => { const el = document.getElementById('adv-' + role + '-' + f.k); if (el) { const v = el.value.trim(); if (v !== '') adv[f.k] = v; } });
+    slot.adv = adv;
+    rsSetSlot(r.id, role, slot);   // persiste + vsStore.save('rosters')
+  });
+  if (typeof showToast === 'function') showToast('Stats coach enregistrées', 'success');
 }
 
 /* ════════════════════════════════════════════
@@ -6656,9 +6862,9 @@ async function pmResolveProName(gameName) {
 }
 async function pmFetchCompet(proName) {
   const q = encodeURIComponent(proName);
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role,GameId&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
   const rows = await pmCargo(url); if (!rows || !rows.length) return null;
-  const games = rows.map(x => { const t = x.title; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, team: t.Team || '', vs: t.TeamVs || '', win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0] }; });
+  const games = rows.map(x => { const t = x.title; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, team: t.Team || '', vs: t.TeamVs || '', win: t.PlayerWin === 'Yes', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0], gameId: t.GameId || '' }; });
   return pmAggCompet(games);
 }
 
