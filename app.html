@@ -4382,22 +4382,22 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             </div>
           </div>
 
-          <!-- Pool de champions + Recommandation -->
+          <!-- Pool de champions + Notation détaillée côte à côte (comble le vide à droite du pool) -->
           <div class="grid vsd-pool-grid" style="grid-template-columns:1fr 1fr;gap:16px;align-items:start">
             <div class="card" style="padding:18px 8px 6px">
               <div class="section-head" style="margin-bottom:6px;padding:0 14px"><h3 class="h3">Champion pool · Top 10</h3><span class="faint" id="vsd-pool-sub" style="font-size:12px"></span></div>
               <table class="tbl"><thead><tr><th>Champion</th><th>% Parties</th><th>Win rate</th><th>KDA</th><th>Score SPES</th></tr></thead><tbody id="vsd-champ-tbody"><tr><td colspan="5" class="faint" style="padding:18px 14px">Importez via l'API pour voir le pool de champions</td></tr></tbody></table>
             </div>
             <div class="card" style="padding:18px 22px">
-              <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
-              <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
+              <div class="section-head"><h3 class="h3">Notation détaillée · par dimension</h3><span class="faint" style="font-size:12px">5 dimensions du modèle SPES</span></div>
+              <div id="res-detail"></div>
             </div>
           </div>
 
-          <!-- Notation détaillée -->
+          <!-- Recommandation scout (pleine largeur) -->
           <div class="card" style="padding:18px 22px">
-            <div class="section-head"><h3 class="h3">Notation détaillée · par dimension</h3><span class="faint" style="font-size:12px">5 dimensions du modèle SPES</span></div>
-            <div id="res-detail"></div>
+            <div class="section-head" style="margin-bottom:12px"><h3 class="h3">Recommandation scout</h3></div>
+            <div id="res-reco" style="font-size:13px;line-height:1.7">Complétez la fiche joueur pour générer la recommandation.</div>
           </div>
 
         </div>
@@ -7909,14 +7909,13 @@ function calcScorePotentiel(scorePerf, age, rankIdx) {
   return parseFloat(potentiel.toFixed(2));
 }
 
+// Couleur des NOTES scouting : plus d'arc-en-ciel par palier. Neutre par défaut
+// (blanc/texte), vert si bon, rouge si très bas. (demande produit)
 function scColor(s) {
   if (s === null || s === undefined) return 'var(--sub)';
-  if (s >= 9.0) return '#F5A623';  // or gold — S tier
-  if (s >= 8.0) return '#00C27A';  // emerald vif — A+
-  if (s >= 7.0) return '#2DD4A7';  // lime — A
-  if (s >= 5.5) return '#4A9EFF';  // bleu — B+
-  if (s >= 4.0) return '#D4714A';  // amber — B
-  return 'var(--red)';             // rouge — C
+  if (s >= 7) return 'var(--lime)';   // bon → vert
+  if (s < 4)  return 'var(--red)';    // très bas → rouge
+  return 'var(--text)';                // sinon → neutre (blanc en sombre, foncé en clair)
 }
 
 function pctLabel(val, thr) {
@@ -7955,7 +7954,7 @@ function buildDimBody(dimId, fields) {
       inputHtml = `<span style="font-family:monospace;font-size:11px;color:var(--sub)">AUTO</span>`;
     }
     const barW = sc !== null ? sc*10 : 0;
-    const color = DIM_COLORS[dimId] || 'var(--lime)';
+    const color = scColor(sc);   // barre = couleur de la note (vert/blanc/rouge), plus de couleur par dimension
     row.innerHTML = `
       <div class="dim-row-label">${f.lbl || f.label} <span class="dim-badge ${bc}">${bl}</span></div>
       ${inputHtml}
@@ -7984,10 +7983,9 @@ function refreshField(id, dimId) {
          || Object.values(allFields).flat().find(x => x.id === id);
   if (!f) return;
   const sc = computeFieldScore(f);
-  const color = C[dimId] || 'var(--lime)';
   const dbar = document.getElementById(`dbar-${id}`);
   const dsc  = document.getElementById(`dsc-${id}`);
-  if (dbar) dbar.style.width = sc !== null ? sc*10+'%' : '0%';
+  if (dbar) { dbar.style.width = sc !== null ? sc*10+'%' : '0%'; dbar.style.background = scColor(sc); }
   if (dsc)  { dsc.textContent = sc !== null ? sc.toFixed(1) : '—'; dsc.style.color = scColor(sc); }
   const _allF = getRoleFields(); updateDimScore(dimId, _allF[dimId] || []);
   updateGlobal();
@@ -8000,8 +7998,8 @@ function updateDimScore(dimId, fields) {
   if (el) { el.textContent = avg !== null ? avg.toFixed(2) : '—'; el.style.color = scColor(avg); }
   const b = document.getElementById('bar-' + dimId);
   const vv = document.getElementById('val-' + dimId);
-  if (b) b.style.width = avg !== null ? avg*10+'%' : '0%';
-  if (vv) vv.textContent = avg !== null ? avg.toFixed(2) : '—';
+  if (b) { b.style.width = avg !== null ? avg*10+'%' : '0%'; b.style.background = scColor(avg); }
+  if (vv) { vv.textContent = avg !== null ? avg.toFixed(2) : '—'; vv.style.color = scColor(avg); }
   // Update weight badge
   const W = ROLE_WEIGHTS[currentRole] || {};
   const wEl = document.getElementById('dim-w-' + dimId);
@@ -8419,7 +8417,7 @@ function buildResults() {
     const SHORT = { d1:'Stats', d2:'Objectifs', d3:'Impact', d4:'Progression', d5:'Discipline' };
     dimbars.innerHTML = dims.map(d => {
       const v = d.val;
-      const col = v === null ? 'var(--vs-forest-500)' : v >= 7 ? 'var(--vs-emerald-400)' : v >= 5 ? 'var(--rank-gold)' : 'var(--vs-red-400)';
+      const col = v === null ? 'var(--vs-forest-500)' : scColor(v);
       const w = v !== null ? Math.max(0, Math.min(100, v * 10)) : 0;
       return `<div style="display:flex;align-items:center;gap:14px">
         <span class="label" style="width:96px;flex:0 0 auto;font-size:12.5px">${SHORT[d.id]}</span>
@@ -8439,22 +8437,23 @@ function buildResults() {
   };
   if (det) det.innerHTML = dims.map(d => {
     const barW = d.val !== null ? (d.val / 10 * 100).toFixed(1) : 0;
+    const nc = scColor(d.val);   // vert/blanc/rouge — plus de couleur par dimension
     const rankLabel = d.val !== null
       ? (d.val >= 8.5 ? 'Élite' : d.val >= 7 ? 'Très bon' : d.val >= 5.5 ? 'Dans la norme' : d.val >= 4 ? 'En dessous' : 'Faible')
       : 'Non renseigné';
     return `<div style="margin-bottom:13px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
         <div style="display:flex;align-items:center;gap:7px">
-          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${d.color};flex-shrink:0"></span>
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${nc};flex-shrink:0"></span>
           <span style="font-size:12px;font-weight:700;color:var(--text)">${DIM_LABELS_FULL[d.id]}</span>
           <span style="font-family:monospace;font-size:9px;color:var(--sub);letter-spacing:.06em">${Math.round(d.w*100)}%</span>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           <span style="font-size:10px;color:var(--sub2)">${rankLabel}</span>
-          <span style="font-family:monospace;font-size:13px;font-weight:700;color:${d.val !== null ? d.color : 'var(--sub)'}">${d.val !== null ? d.val.toFixed(1) : '—'}</span>
+          <span style="font-family:monospace;font-size:13px;font-weight:700;color:${nc}">${d.val !== null ? d.val.toFixed(1) : '—'}</span>
         </div>
       </div>
-      <div class="pct-track"><div class="pct-fill" style="width:${barW}%;background:${d.color}"></div></div>
+      <div class="pct-track"><div class="pct-fill" style="width:${barW}%;background:${nc}"></div></div>
     </div>`;
   }).join('');
 
@@ -8522,10 +8521,10 @@ function vsdRenderPool() {
   if (sub) sub.textContent = total + ' parties analysées · ' + pool.length + ' champions';
   tb.innerHTML = pool.slice(0, 10).map(c => {
     const wr = parseFloat(c.wr);
-    const wrCol = wr >= 55 ? 'var(--vs-emerald-400)' : wr >= 50 ? 'var(--rank-gold)' : 'var(--vs-red-400)';
+    const wrCol = wr >= 55 ? 'var(--vs-emerald-400)' : wr < 48 ? 'var(--vs-red-400)' : 'var(--vs-fg-1)';
     const vol = total ? Math.round((c.games || 0) / total * 100) : 0;
     const sc = Math.min(10, (wr >= 55 ? 8 : wr >= 50 ? 5.5 : 3) + Math.min(2, (c.games || 0) / 10));
-    const scCol = sc >= 7 ? 'var(--vs-emerald-400)' : sc >= 5 ? 'var(--rank-gold)' : 'var(--vs-red-400)';
+    const scCol = scColor(sc);
     const init = (c.name || '?').slice(0, 2);
     const img = (typeof champImgUrl === 'function') ? champImgUrl(c.name) : '';
     return `<tr>
