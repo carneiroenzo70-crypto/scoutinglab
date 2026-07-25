@@ -916,6 +916,22 @@ body:not(.theme-dark) .ss-pl-player{ border-color:rgba(31,71,64,.1); }
 .ss-pl-vs{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); flex:none; }
 .ss-pl-opp{ font-weight:800; font-size:13px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
 .ss-pl-mu{ width:100%; box-sizing:border-box; }
+/* Stats compétitives de l'adversaire (repliées par défaut, base compét) */
+.ss-cs-det{ margin-top:2px; }
+.ss-cs-det summary{ cursor:pointer; list-style:none; font-size:11px; font-weight:700; color:var(--vs-emerald-300); display:flex; align-items:center; gap:5px; padding:2px 0; user-select:none; }
+body:not(.theme-dark) .ss-cs-det summary{ color:var(--vs-emerald-500); }
+.ss-cs-det summary::-webkit-details-marker{ display:none; }
+.ss-cs-det summary::before{ content:'▸'; font-size:9px; transition:transform .16s var(--ease-out); }
+.ss-cs-det[open] summary::before{ transform:rotate(90deg); }
+.ss-cs-body{ padding:8px 2px 2px; }
+.ss-cs-summary{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; color:var(--vs-fg-2); margin-bottom:8px; }
+.ss-cs-summary b{ color:var(--vs-fg-1); font-family:var(--font-mono); }
+.ss-cs-pool{ display:flex; flex-direction:column; gap:3px; }
+.ss-cs-champrow{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
+.ss-cs-cn{ min-width:90px; color:var(--vs-fg-1); font-weight:600; }
+.ss-cs-wr{ margin-left:auto; font-family:var(--font-mono); font-weight:800; color:var(--vs-fg-2); }
+.ss-cs-wr.hi{ color:var(--vs-emerald-400); }
+.ss-cs-wr.lo{ color:#E0785F; }
 /* Draft */
 .ss-sctabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .ss-sctab{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:11.5px; padding:5px 11px; border-radius:8px; cursor:pointer; transition:.14s; }
@@ -945,7 +961,17 @@ body:not(.theme-dark) .ss-slot{ background:rgba(31,71,64,.04); border-color:rgba
 body:not(.theme-dark) .ss-pool-wrap{ border-top-color:rgba(31,71,64,.1); }
 .ss-champq{ height:34px; padding:0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-size:13px; min-width:180px; }
 body:not(.theme-dark) .ss-champq{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
-.ss-champgrid{ display:flex; flex-wrap:wrap; gap:6px; max-height:300px; overflow-y:auto; padding:2px; }
+.ss-rolechips{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+.ss-rolechip-f{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.02em; padding:4px 10px; border-radius:999px; cursor:pointer; transition:.14s; }
+body:not(.theme-dark) .ss-rolechip-f{ border-color:rgba(31,71,64,.16); }
+.ss-rolechip-f:hover{ color:var(--vs-fg-1); border-color:var(--vs-emerald-500); }
+.ss-rolechip-f.on{ background:var(--vs-emerald-500); color:#04211C; border-color:var(--vs-emerald-500); }
+.ss-champgrid{ max-height:340px; overflow-y:auto; padding:2px; }
+.ss-champrole-t{ display:flex; align-items:center; gap:7px; font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-emerald-300); padding:8px 2px 5px; }
+.ss-champrole-t:first-child{ padding-top:2px; }
+body:not(.theme-dark) .ss-champrole-t{ color:var(--vs-emerald-500); }
+.ss-champrole-n{ font-family:var(--font-mono); font-weight:700; font-size:10px; color:var(--vs-fg-3); background:rgba(45,212,167,.1); border-radius:999px; padding:0 6px; letter-spacing:0; }
+.ss-champrole-grp{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
 .ss-champ{ width:52px; border:0; background:transparent; cursor:pointer; padding:2px; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:2px; transition:background .1s; }
 .ss-champ:hover{ background:rgba(45,212,167,.1); }
 .ss-champ img{ width:40px; height:40px; border-radius:7px; }
@@ -6889,6 +6915,15 @@ function stbJournalDel(i) {
 ════════════════════════════════════════════ */
 const SS_ROLES = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
 const SS_COMPETS = ['LFL', 'LFL Division 2', 'EMEA Masters', 'LEC', 'First Stand', 'MSI', 'Worlds', 'Autre'];
+// ── Rôle RÉEL des champions (source : op.gg, relevé le 25/07/2026, patch 16.14) ──
+// L'étiquette « rôle de base » de Data Dragon ne reflète pas la méta : ex. Camille
+// et Poppy sont plus joués Support que Top, Wukong et Nasus plus joués Jungle que
+// Top, Vladimir/Cassiopeia/Yasuo/Akali plus joués Mid que Top. Ici on classe par le
+// rôle où le champion a le plus fort taux de pick sur op.gg, tous rôles confondus
+// (Top/Jgl/Mid/Bottom/Support) — c'est la vraie répartition de la draft en solo/flex Q.
+// À rafraîchir périodiquement (rôles.js dans le dossier de travail Claude reprend la
+// méthode : lire https://op.gg/lol/champions?position=<top|jungle|mid|adc|support>).
+const SS_CHAMP_ROLE = {"Mordekaiser":"Top","Malphite":"Top","Garen":"Top","Gangplank":"Top","Singed":"Top","Teemo":"Top","Aatrox":"Top","Sett":"Top","Shen":"Top","Darius":"Top","Dr. Mundo":"Top","Yone":"Top","Kayle":"Top","Ornn":"Top","Tryndamere":"Top","Jax":"Top","Olaf":"Top","Renekton":"Top","Irelia":"Top","Warwick":"Jgl","Urgot":"Top","Riven":"Top","Fiora":"Top","Illaoi":"Top","Yorick":"Top","Zaahen":"Top","Vayne":"ADC","Kled":"Top","Quinn":"Jgl","Nasus":"Jgl","Pantheon":"Sup","Ambessa":"Top","Camille":"Sup","Cho'Gath":"Top","Sion":"Top","Gnar":"Top","Poppy":"Sup","Akali":"Mid","Gragas":"Top","Anivia":"Mid","Yasuo":"Mid","Jayce":"Top","Tahm Kench":"Sup","Gwen":"Top","Heimerdinger":"Top","Volibear":"Top","Wukong":"Jgl","Locke":"Mid","Cassiopeia":"Mid","Vladimir":"Mid","Kennen":"Top","K'Sante":"Top","Trundle":"Top","Rumble":"Top","Swain":"Sup","Nocturne":"Jgl","Naafiri":"Jgl","Briar":"Jgl","Kayn":"Jgl","Graves":"Jgl","Shyvana":"Jgl","Sylas":"Mid","Viego":"Jgl","Lee Sin":"Jgl","Shaco":"Jgl","Master Yi":"Jgl","Jarvan IV":"Jgl","Talon":"Jgl","Kha'Zix":"Jgl","Bel'Veth":"Jgl","Udyr":"Jgl","Vi":"Jgl","Lillia":"Jgl","Hecarim":"Jgl","Xin Zhao":"Jgl","Rammus":"Jgl","Ekko":"Jgl","Kindred":"Jgl","Nidalee":"Jgl","Rek'Sai":"Jgl","Diana":"Mid","Ivern":"Jgl","Evelynn":"Jgl","Fiddlesticks":"Jgl","Nunu & Willump":"Jgl","Zyra":"Sup","Elise":"Jgl","Zac":"Jgl","Rengar":"Jgl","Taliyah":"Mid","Sejuani":"Jgl","Amumu":"Jgl","Karthus":"Jgl","Fizz":"Mid","Skarner":"Jgl","Ahri":"Mid","Viktor":"Mid","Xerath":"Mid","Syndra":"Mid","Katarina":"Mid","Zed":"Mid","Twisted Fate":"Mid","Malzahar":"Mid","Lissandra":"Mid","Hwei":"Mid","Lux":"Sup","Vex":"Mid","Galio":"Mid","Veigar":"Mid","Kassadin":"Mid","LeBlanc":"Mid","Zoe":"Mid","Annie":"Mid","Akshan":"Mid","Aurora":"Mid","Qiyana":"Mid","Vel'Koz":"Sup","Aurelion Sol":"Mid","Ziggs":"ADC","Brand":"Sup","Ryze":"Mid","Orianna":"Mid","Azir":"Mid","Tristana":"ADC","Mel":"ADC","Jinx":"ADC","Senna":"Sup","Seraphine":"Sup","Jhin":"ADC","Caitlyn":"ADC","Ashe":"ADC","Miss Fortune":"ADC","Smolder":"ADC","Kai'Sa":"ADC","Twitch":"ADC","Lucian":"ADC","Xayah":"ADC","Zeri":"ADC","Yunara":"ADC","Sivir":"ADC","Nilah":"ADC","Kog'Maw":"ADC","Samira":"ADC","Ezreal":"ADC","Aphelios":"ADC","Draven":"ADC","Corki":"ADC","Kalista":"ADC","Varus":"ADC","Thresh":"Sup","Leona":"Sup","Nautilus":"Sup","Nami":"Sup","Rell":"Sup","Blitzcrank":"Sup","Pyke":"Sup","Braum":"Sup","Lulu":"Sup","Sona":"Sup","Milio":"Sup","Soraka":"Sup","Zilean":"Sup","Janna":"Sup","Karma":"Sup","Bard":"Sup","Morgana":"Sup","Rakan":"Sup","Alistar":"Sup","Taric":"Sup","Maokai":"Sup","Yuumi":"Sup","Renata Glasc":"Sup","Neeko":"Sup"};
 function ssRead() { try { var d = JSON.parse(localStorage.getItem('vs_seasons') || 'null'); return (d && typeof d === 'object') ? d : {}; } catch (_) { return {}; } }
 function ssData() { var d = ssRead(); if (!Array.isArray(d.seasons)) d.seasons = []; if (!Array.isArray(d.matches)) d.matches = []; if (!d.myTeam || typeof d.myTeam !== 'object') d.myTeam = { name: '', image: '' }; return d; }
 function ssWrite(d) { try { localStorage.setItem('vs_seasons', JSON.stringify(d)); } catch (_) {} if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('seasons'); }
@@ -6921,7 +6956,7 @@ async function ssChampList() {
     var v = await ddVerLoad();
     var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + v + '/data/en_US/champion.json');
     var j = await r.json();
-    var list = Object.keys(j.data || {}).map(function (k) { var c = j.data[k]; return { key: c.id, name: c.name }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    var list = Object.keys(j.data || {}).map(function (k) { var c = j.data[k]; return { key: c.id, name: c.name, role: SS_CHAMP_ROLE[c.name] || null }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     window._ssChamps = list; return list;
   } catch (_) { return []; }
 }
@@ -7181,7 +7216,10 @@ function ssRenderMatchDetail(root, id) {
   root.innerHTML = h;
   if (tab === 'draft') ssRenderDraft(m);
   // Roster adverse : chargement AUTOMATIQUE (plus de saisie manuelle nécessaire).
-  if (tab === 'prematch' && (!m.oppRoster || !m.oppRoster.length)) ssReloadRoster(m.id);
+  if (tab === 'prematch') {
+    if (!m.oppRoster || !m.oppRoster.length) ssReloadRoster(m.id);
+    else if (!(window._ssCompetCache || {})[m.id]) ssLoadCompetStats(m.id);
+  }
   if (tab === 'result' && !m.result) ssEnsureResult(m.id);
 }
 function ssRosterHtml(m) {
@@ -7197,10 +7235,14 @@ async function ssReloadRoster(id) {
   var m0 = ssData().matches.find(function (x) { return x.id === id; }); if (!m0) return;
   var r = await ssTeamRoster(m0.opp.name).catch(function () { return null; });
   var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
-  if (r && r.length) { m.oppRoster = ssDedupeRoster(r); ssWrite(d); }
+  if (r && r.length) {
+    m.oppRoster = ssDedupeRoster(r); ssWrite(d);
+    if (window._ssCompetCache) delete window._ssCompetCache[id];   // les noms ont pu changer : ne pas garder de vieilles stats
+  }
   if (window._ssOpen === id) {
     var b = document.getElementById('ss-roster'); if (b) b.innerHTML = ssRosterHtml(m);
     ssPlanRefresh(id);   // les matchups de la feuille de route citent le roster adverse
+    if (r && r.length) ssLoadCompetStats(id);
     if (!r || !r.length) { if (typeof showToast === 'function') showToast('Roster introuvable — vérifie le nom exact de l\'équipe', 'warning'); }
   }
 }
@@ -7226,7 +7268,7 @@ function ssRenderDraft(m) {
     h += '<div class="ss-game"><div class="ss-game-t">Game ' + (gi + 1) + '</div>' + ssTeamDraft(mm.id, gi, 'b', 'Bleu', g) + ssTeamDraft(mm.id, gi, 'r', 'Rouge', g) + '</div>';
   });
   h += '</div>';
-  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:6px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><span class="faint" style="font-size:10.5px;font-family:var(--font-mono)" id="ss-champcount"></span><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
+  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:8px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><span class="faint" style="font-size:10.5px;font-family:var(--font-mono)" id="ss-champcount"></span><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champrolef"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
   box.innerHTML = h;
   ssRenderChampGrid();
   ssUpdateSlotInfo();
@@ -7256,14 +7298,37 @@ function ssPlaceChamp(key) {
   sc.games[gi][st][idx] = key; ssWrite(d); ssRenderDraft(m);
 }
 function ssUpdateSlotInfo() { var el = document.getElementById('ss-slotinfo'); if (!el) return; if (window._ssSlot) { var p = window._ssSlot.split('|'), st = p[1]; el.textContent = 'Sélectionné : ' + (st.charAt(1) === 'b' ? 'Ban' : 'Pick') + ' ' + (st.charAt(0) === 'b' ? 'Bleu' : 'Rouge') + ' · Game ' + (+p[0] + 1) + ' — clique un champion (clic droit sur un emplacement = retirer).'; } else { el.textContent = 'Sélectionne un emplacement (ban/pick) puis un champion.'; } }
+const SS_ROLE_LABEL = { Top: 'Top', Jgl: 'Jungle', Mid: 'Mid', ADC: 'ADC', Sup: 'Support' };
+function ssChampRoleChipsHtml() {
+  var cur = window._ssChampRoleF || '';
+  var chip = function (v, lbl) { return '<button class="ss-rolechip-f' + (cur === v ? ' on' : '') + '" onclick="ssSetChampRoleF(\'' + v + '\')">' + lbl + '</button>'; };
+  return '<div class="ss-rolechips">' + chip('', 'Tous') + SS_ROLES.map(function (r) { return chip(r, SS_ROLE_LABEL[r]); }).join('') + '</div>';
+}
+function ssSetChampRoleF(r) { window._ssChampRoleF = r; ssRenderChampGrid(); }
 async function ssRenderChampGrid() {
   var grid = document.getElementById('ss-champgrid'); if (!grid) return;
+  var chipsBox = document.getElementById('ss-champrolef'); if (chipsBox) chipsBox.innerHTML = ssChampRoleChipsHtml();
   var list = await ssChampList();
   var qq = (window._ssChampQ || '').toLowerCase();
-  var f = qq ? list.filter(function (c) { return c.name.toLowerCase().indexOf(qq) >= 0; }) : list;
-  // Pas de troncature : la grille scrolle. Un slice(0,90) masquait tout le bas de
-  // l'alphabet (les champions récents s'y trouvent souvent) — ils semblaient absents.
-  grid.innerHTML = f.map(function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
+  var roleF = window._ssChampRoleF || '';
+  var f = list.filter(function (c) {
+    if (qq && c.name.toLowerCase().indexOf(qq) < 0) return false;
+    if (roleF && c.role !== roleF) return false;
+    return true;
+  });
+  // Regroupée par rôle RÉEL (op.gg, pas l'étiquette de base de Data Dragon) : un
+  // coach cherche « qui joue Support » à la volée, pas l'ordre alphabétique brut.
+  // Pas de troncature dans chaque groupe : la grille scrolle.
+  var groups = {}; SS_ROLES.forEach(function (r) { groups[r] = []; }); groups[''] = [];
+  f.forEach(function (c) { (groups[c.role] || groups['']).push(c); });
+  var champBtn = function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; };
+  var order = roleF ? [roleF] : SS_ROLES.concat(['']);
+  var html = order.map(function (r) {
+    var champs = groups[r] || []; if (!champs.length) return '';
+    var lbl = r ? SS_ROLE_LABEL[r] : 'Autres / non classés';
+    return '<div class="ss-champrole-t">' + lbl + '<span class="ss-champrole-n">' + champs.length + '</span></div><div class="ss-champrole-grp">' + champs.map(champBtn).join('') + '</div>';
+  }).join('');
+  grid.innerHTML = html || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
   var info = document.getElementById('ss-champcount');
   if (info) info.textContent = f.length ? (f.length + ' champions') : '';
 }
@@ -7490,9 +7555,66 @@ function ssPlanHtml(m) {
       + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button></div>'
       + '<input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Matchup : champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)">'
       + '<textarea class="ss-pl-ta" rows="2" placeholder="Ses consignes : une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea>'
+      + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
   }).join('');
   return h;
+}
+// ── Stats compétitives de l'adversaire (base compét Leaguepedia) ──
+// Récupérées en UNE requête groupée pour les 5 postes (pmFetchCompetBatch, déjà
+// utilisée par le dossier avant-match historique) dès l'ouverture de l'onglet,
+// mais restent repliées : l'entraîneur clique pour les voir, elles ne polluent
+// pas la feuille de route par défaut.
+function ssCompetKey(name) { return String(name || '').trim().toLowerCase(); }
+function ssCompetStatsHtml(mid, role) {
+  var cache = (window._ssCompetCache || {})[mid];
+  if (!cache) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Chargement…</div>';
+  var m = ssData().matches.find(function (x) { return x.id === mid; }); if (!m) return '';
+  var name = ssOppAt(m, role);
+  var s = cache[ssCompetKey(name)];
+  if (s === SS_ERR) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Base compét momentanément surchargée — <a href="#" onclick="ssRetryCompet(\'' + mid + '\');return false" style="color:var(--vs-emerald-300)">réessayer</a>.</div>';
+  if (!s) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune partie compétitive trouvée pour ce pseudo dans la base compét.</div>';
+  var h = '<div class="ss-cs-summary">'
+    + '<span><b>' + s.count + '</b> games</span>'
+    + '<span><b>' + s.winrate + '%</b> winrate</span>'
+    + '<span><b>' + s.kda + '</b> KDA</span>'
+    + '<span>' + s.csAvg + ' CS</span>'
+    + '<span>' + s.visionAvg + ' vision</span>'
+    + '<span>' + Math.round(s.dmgAvg / 1000) + 'k dégâts</span>'
+    + '<span>' + Math.round(s.goldAvg / 1000) + 'k or</span>'
+    + '</div>';
+  if (s.champPool && s.champPool.length) {
+    h += '<div class="ss-cs-pool">' + s.champPool.map(function (c) {
+      return '<div class="ss-cs-champrow">' + ssRealChampImg(c.name) + '<span class="ss-cs-cn">' + anEsc(c.name) + '</span><span class="faint">' + c.games + ' games</span><span class="ss-cs-wr' + (c.wr >= 55 ? ' hi' : (c.wr < 45 ? ' lo' : '')) + '">' + c.wr + '% WR</span></div>';
+    }).join('') + '</div>';
+  }
+  if (s.byEvent && s.byEvent.length) {
+    h += '<div class="faint" style="font-size:10.5px;margin-top:6px">Compétitions récentes : ' + s.byEvent.map(function (e) { return anEsc(e.event) + ' (' + e.games + ')'; }).join(' · ') + '</div>';
+  }
+  return h;
+}
+async function ssLoadCompetStats(mid) {
+  window._ssCompetFetch = window._ssCompetFetch || {};
+  if (window._ssCompetFetch[mid]) return; window._ssCompetFetch[mid] = true;
+  var m = ssData().matches.find(function (x) { return x.id === mid; });
+  var names = (m && m.oppRoster || []).map(function (p) { return p.name; }).filter(Boolean);
+  if (!names.length) { window._ssCompetFetch[mid] = false; return; }
+  var raw = await pmFetchCompetBatch(names).catch(function () { return null; });
+  window._ssCompetFetch[mid] = false;
+  window._ssCompetCache = window._ssCompetCache || {};
+  var byKey = {};
+  if (raw === null) { names.forEach(function (n) { byKey[ssCompetKey(n)] = SS_ERR; }); }
+  else { Object.keys(raw).forEach(function (k) { byKey[k] = raw[k]; }); }
+  window._ssCompetCache[mid] = byKey;
+  if (window._ssOpen === mid && window._ssTab === 'prematch') {
+    SS_ROLES.forEach(function (role) { var box = document.getElementById('ss-cs-' + role); if (box) box.innerHTML = ssCompetStatsHtml(mid, role); });
+  }
+}
+function ssRetryCompet(mid) {
+  if (window._ssCompetCache) delete window._ssCompetCache[mid];
+  if (window._ssCompetFetch) window._ssCompetFetch[mid] = false;
+  SS_ROLES.forEach(function (role) { var box = document.getElementById('ss-cs-' + role); if (box) box.innerHTML = '<div class="faint" style="font-size:11.5px;padding:6px 2px">Chargement…</div>'; });
+  ssLoadCompetStats(mid);
 }
 // ── Édition (sans re-render : on ne perd jamais le focus de la frappe) ──
 function ssPlanTime(id, itId, v) { ssPlanSet(id, function (p) { var it = p.items.find(function (x) { return x.id === itId; }); if (it) it.time = v; }); }
