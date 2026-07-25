@@ -844,6 +844,14 @@ body:not(.theme-dark) .ss-card{ background:linear-gradient(168deg, rgba(31,71,64
 .ss-card:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:2px; }
 .ss-card-past{ opacity:.9; }
 .ss-card-past:hover{ opacity:1; }
+/* Verre pur « comme Scouting » : le liseré périmétrique du verre (::before,
+   défini dans le bloc verre plus bas) remplace les décors propres aux cartes
+   Seasons — filet d'accent latéral, barre de KPI et halo d'angle. On neutralise
+   ici leurs dimensions/opacité résiduelles (width/height:auto, opacity:1) pour
+   que le liseré du verre couvre bien tout le périmètre, et on masque le halo. */
+#panel-seasons .ss-card::before,
+#panel-seasons .ss-kpi::before{ width:auto; height:auto; opacity:1; }
+#panel-seasons .ss-card::after{ display:none; }
 .ss-card-top{ display:flex; justify-content:space-between; width:100%; align-items:flex-start; gap:8px; }
 .ss-comp{ display:flex; flex-direction:column; gap:2px; min-width:0; font-size:10.5px; font-weight:700; letter-spacing:.04em; color:var(--vs-emerald-300); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 body:not(.theme-dark) .ss-comp{ color:var(--vs-emerald-500); }
@@ -3192,7 +3200,9 @@ body:not(.theme-dark) #t50-table.thead-collee thead th {
    :is() plutôt que de dupliquer chaque sélecteur : sa spécificité est celle de
    son argument le plus fort, donc identique à l'ID d'origine — la cascade est
    inchangée — et étendre le traitement à une page de plus tient en un mot. */
-body.theme-dark :is(#panel-scout, #panel-top50) .card,
+body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card,
+body.theme-dark #panel-seasons .ss-card,
+body.theme-dark #panel-seasons .ss-kpi,
 body.theme-dark #panel-scout .dim-header,
 body.theme-dark #panel-scout .dim-body {
   position:relative;
@@ -3212,7 +3222,9 @@ body.theme-dark #panel-scout .dim-body {
     0 6px 18px -10px rgba(0,0,0,.55) !important;
 }
 /* liseré de périmètre uniforme + reflet directionnel */
-body.theme-dark :is(#panel-scout, #panel-top50) .card::before,
+body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card::before,
+body.theme-dark #panel-seasons .ss-card::before,
+body.theme-dark #panel-seasons .ss-kpi::before,
 body.theme-dark #panel-scout .dim-header::before,
 body.theme-dark #panel-scout .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
@@ -3226,11 +3238,14 @@ body.theme-dark #panel-scout .dim-body::before {
           mask-composite:exclude;
   z-index:2;
 }
-body.theme-dark :is(#panel-scout, #panel-top50) .card > *,
+body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card > *,
+body.theme-dark #panel-seasons .ss-card > *,
+body.theme-dark #panel-seasons .ss-kpi > *,
 body.theme-dark #panel-scout .dim-header > *,
 body.theme-dark #panel-scout .dim-body > * { position:relative; z-index:1; }
 /* le survol doit rester perceptible malgré les ombres du verre */
-body.theme-dark :is(#panel-scout, #panel-top50) .card:hover,
+body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card:hover,
+body.theme-dark #panel-seasons .ss-card:hover,
 body.theme-dark #panel-scout .dim-header:hover {
   border-color:rgba(255,255,255,.045);
   box-shadow:
@@ -3259,6 +3274,8 @@ body.theme-dark #panel-scout .dim-header:hover {
    !important sur background et box-shadow : les cadres de stats du mode clair
    sont posés en !important plus haut (règle « relief 3D », l.698-701). */
 body:not(.theme-dark) .vsd .card,
+body:not(.theme-dark) #panel-seasons .ss-card,
+body:not(.theme-dark) #panel-seasons .ss-kpi,
 body:not(.theme-dark) .vsd .dim-section,
 body:not(.theme-dark) .vsd .dim-section .dim-header,
 body:not(.theme-dark) .vsd .dim-section .dim-body {
@@ -3280,6 +3297,8 @@ body:not(.theme-dark) .vsd .dim-section .dim-body {
 }
 /* liseré de périmètre — vert sombre ici, cf. écart n°1 */
 body:not(.theme-dark) .vsd .card::before,
+body:not(.theme-dark) #panel-seasons .ss-card::before,
+body:not(.theme-dark) #panel-seasons .ss-kpi::before,
 body:not(.theme-dark) .vsd .dim-section .dim-header::before,
 body:not(.theme-dark) .vsd .dim-section .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
@@ -3294,9 +3313,12 @@ body:not(.theme-dark) .vsd .dim-section .dim-body::before {
   z-index:2;
 }
 body:not(.theme-dark) .vsd .card > *,
+body:not(.theme-dark) #panel-seasons .ss-card > *,
+body:not(.theme-dark) #panel-seasons .ss-kpi > *,
 body:not(.theme-dark) .vsd .dim-section .dim-header > *,
 body:not(.theme-dark) .vsd .dim-section .dim-body > * { position:relative; z-index:1; }
 body:not(.theme-dark) .vsd .card:hover,
+body:not(.theme-dark) #panel-seasons .ss-card:hover,
 body:not(.theme-dark) .vsd .dim-section .dim-header:hover {
   border-color:rgba(31,71,64,.18);
   box-shadow:
