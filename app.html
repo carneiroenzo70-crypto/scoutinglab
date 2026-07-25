@@ -816,7 +816,9 @@ body:not(.theme-dark) .stb-jtime{ color:var(--vs-emerald-500); }
 /* ════ SEASONS — calendrier compétitif + préparation de match ════ */
 .ss-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
 .ss-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
-.ss-logo{ display:inline-flex; align-items:center; justify-content:center; border-radius:7px; overflow:hidden; flex:none; position:relative; vertical-align:middle; background:rgba(255,255,255,.04); }
+/* Fond clair derrière les logos : indispensable, beaucoup de logos sont sombres
+   (ex. Galions noir) et disparaissaient sur le vert foncé. */
+.ss-logo{ display:inline-flex; align-items:center; justify-content:center; border-radius:8px; overflow:hidden; flex:none; position:relative; vertical-align:middle; background:#EEF2F0; box-shadow:inset 0 0 0 1px rgba(31,71,64,.14); box-sizing:border-box; padding:2px; }
 .ss-logo img{ width:100%; height:100%; object-fit:contain; display:block; }
 .ss-logo .ss-logo-ini{ display:none; font-family:var(--font-display); font-weight:800; font-size:.7em; color:var(--vs-emerald-300); }
 .ss-logo.ss-logo-fb{ background:var(--vs-forest-600); border:1px solid var(--vs-forest-500); }
@@ -888,6 +890,35 @@ body:not(.theme-dark) .ss-champq{ background:rgba(255,255,255,.6); border-color:
 .ss-champ:hover{ background:rgba(45,212,167,.1); }
 .ss-champ img{ width:40px; height:40px; border-radius:7px; }
 .ss-champ span{ font-size:8px; color:var(--vs-fg-3); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+/* KPIs (haut du calendrier) */
+.ss-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px; }
+.ss-kpi{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:13px 16px; background:rgba(4,18,15,.28); }
+body:not(.theme-dark) .ss-kpi{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.ss-kpi .k{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.ss-kpi .v{ font-family:var(--font-mono); font-weight:800; font-size:22px; color:var(--vs-fg-1); margin-top:3px; }
+.ss-kpi-next .v{ font-family:var(--font-sans); }
+/* Badge résultat sur la carte */
+.ss-res{ margin-top:2px; font-family:var(--font-mono); font-weight:800; font-size:11.5px; padding:2px 10px; border-radius:999px; }
+.ss-res.w{ color:#04211C; background:var(--vs-emerald-400); }
+.ss-res.l{ color:#fff; background:#C0503A; }
+/* Résultat détaillé + draft réelle */
+.ss-score{ display:inline-flex; align-items:center; gap:10px; padding:6px 14px; border-radius:10px; margin-bottom:12px; }
+.ss-score.w{ background:rgba(45,212,167,.14); }
+.ss-score.l{ background:rgba(192,80,58,.16); }
+.ss-score-lbl{ font-family:var(--font-display); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.04em; }
+.ss-score.w .ss-score-lbl{ color:var(--vs-emerald-300); } .ss-score.l .ss-score-lbl{ color:#E0785F; }
+.ss-score-num{ font-family:var(--font-mono); font-weight:800; font-size:20px; color:var(--vs-fg-1); }
+.ss-rgame{ border:1px solid var(--vs-forest-600); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+body:not(.theme-dark) .ss-rgame{ border-color:rgba(31,71,64,.1); }
+.ss-rgame-t{ font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--vs-fg-2); margin-bottom:8px; }
+.ss-rside{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; padding:5px 0; }
+.ss-rside + .ss-rside{ border-top:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .ss-rside + .ss-rside{ border-top-color:rgba(31,71,64,.08); }
+.ss-rside-t{ width:80px; flex:none; font-weight:800; font-size:12px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-rgrp{ display:inline-flex; align-items:center; gap:4px; }
+.ss-rgl{ font-size:9px; text-transform:uppercase; letter-spacing:.05em; margin-right:2px; }
+.ss-rchamp{ display:inline-block; width:26px; height:26px; border-radius:6px; overflow:hidden; }
+.ss-rchamp img{ width:100%; height:100%; object-fit:cover; display:block; }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -6859,23 +6890,42 @@ function ssRenderCalendar(root) {
   var now = new Date().toISOString().slice(0, 16);
   var upcoming = matches.filter(function (m) { return (m.date || '') >= now; });
   var past = matches.filter(function (m) { return (m.date || '') < now; });
+  var kpis = ssKpisHtml(matches, upcoming, past, team);
   var body = '';
   if (!matches.length) body = '<div class="card" style="padding:40px 20px;text-align:center"><div class="muted">Aucun match dans cette saison. Clique « Ajouter un match ».</div></div>';
   else {
     if (upcoming.length) body += '<div class="ss-sec-t">À venir</div><div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
     if (past.length) body += '<div class="ss-sec-t" style="margin-top:22px">Passés</div><div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
   }
-  root.innerHTML = head + toolbar + body;
+  root.innerHTML = head + toolbar + kpis + body;
+  // Résultats réels des matchs passés — récupérés en tâche de fond (une fois).
+  past.forEach(function (m) { if (!m.result) ssEnsureResult(m.id); });
+}
+function ssKpi(label, val) { return '<div class="ss-kpi"><div class="k">' + label + '</div><div class="v">' + val + '</div></div>'; }
+function ssKpisHtml(matches, upcoming, past, team) {
+  var wins = past.filter(function (m) { return m.result && m.result.score && m.result.score.us > m.result.score.them; }).length;
+  var losses = past.filter(function (m) { return m.result && m.result.score && m.result.score.us < m.result.score.them; }).length;
+  var next = upcoming[0] || null;
+  var nextHtml = next ? (ssLogoImg(next.opp, 20) + ' <b style="font-weight:800">' + anEsc(next.opp.name) + '</b>') : '<span class="faint">—</span>';
+  return '<div class="ss-kpis">'
+    + ssKpi('Matchs', matches.length)
+    + ssKpi('À venir', upcoming.length)
+    + ssKpi('Bilan', (wins + losses) ? (wins + 'V – ' + losses + 'D') : '—')
+    + '<div class="ss-kpi ss-kpi-next"><div class="k">Prochain adversaire</div><div class="v" style="font-size:14px;display:flex;align-items:center;gap:7px;min-width:0">' + nextHtml + '</div></div>'
+    + '</div>';
 }
 function ssMatchCard(m, team, season) {
   var dt = new Date(m.date);
   var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   var split = ''; if (season) { var sp = season.splits.find(function (x) { return x.id === m.splitId; }); split = sp ? sp.name : ''; }
-  return '<div class="ss-card" onclick="ssOpenMatch(\'' + m.id + '\')">'
+  var res = '';
+  if (m.result && m.result.score) { var win = m.result.score.us > m.result.score.them; res = '<div class="ss-res ' + (win ? 'w' : 'l') + '">' + (win ? 'Victoire' : 'Défaite') + ' ' + m.result.score.us + '–' + m.result.score.them + '</div>'; }
+  return '<div class="ss-card" id="sscard-' + m.id + '" onclick="ssOpenMatch(\'' + m.id + '\')">'
     + '<div class="ss-card-top"><span class="ss-comp">' + anEsc(m.competition || '') + '</span><span class="ss-bo">BO' + (m.bo || 1) + '</span></div>'
     + '<div class="ss-vs">' + ssLogoImg(team || { name: '?' }, 34) + '<span class="ss-vs-x">vs</span>' + ssLogoImg(m.opp, 34) + '</div>'
     + '<div class="ss-oppname">' + anEsc((m.opp && m.opp.name) || '—') + '</div>'
     + '<div class="ss-date faint">' + anEsc(dateStr) + (split ? (' · ' + anEsc(split)) : '') + '</div>'
+    + res
     + '</div>';
 }
 function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); var name = prompt('Nom de la saison :', 'Saison ' + (yr % 100) + '-' + ((yr + 1) % 100)); if (!name) return; var s = { id: ssId(), name: name.trim(), splits: [{ id: ssId(), name: 'Split 1' }] }; d.seasons.push(s); d.activeSeason = s.id; ssWrite(d); renderSeasons(); }
@@ -6968,10 +7018,15 @@ function ssRenderMatchDetail(root, id) {
   var h = '<button class="btn btn-ghost btn-sm" onclick="ssBackCal()" style="margin-bottom:14px">← Retour au calendrier</button>';
   h += '<div class="card ss-detail-head"><div class="ss-dh-teams">' + ssLogoImg(team, 44) + '<div class="ss-dh-vs">vs</div>' + ssLogoImg(m.opp, 44) + '<div style="min-width:0"><div class="ss-dh-name">' + anEsc((m.opp && m.opp.name) || '—') + '</div><div class="faint" style="font-size:12px">' + anEsc(m.competition || '') + ' · BO' + (m.bo || 1) + '</div></div></div>'
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="faint" style="font-size:12.5px;text-transform:capitalize">' + anEsc(dateStr) + '</span><button class="btn btn-ghost btn-xs" onclick="ssDeleteMatch(\'' + m.id + '\')" style="color:var(--vs-red-400)">Supprimer</button></div></div>';
+  var isPast = !isNaN(dt) && dt < new Date();
+  if (isPast) h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Chargement du résultat…</div>') + '</div></div>';
   h += '<div class="card" style="padding:16px 20px;margin-top:14px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div><div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
   h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3><div id="ss-draft"></div></div>';
   root.innerHTML = h;
   ssRenderDraft(m);
+  // Roster adverse : affichage AUTOMATIQUE (plus de saisie manuelle nécessaire).
+  if (!m.oppRoster || !m.oppRoster.length) ssReloadRoster(m.id);
+  if (isPast && !m.result) ssEnsureResult(m.id);
 }
 function ssRosterHtml(m) {
   var rows = SS_ROLES.map(function (role) {
@@ -7050,6 +7105,50 @@ async function ssRenderChampGrid() {
 }
 function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; var dr = ssDraftEnsure(m); dr.scenarios.push(ssNewScenario(m.bo, 'Scénario ' + (dr.scenarios.length + 1))); dr.active = dr.scenarios.length - 1; ssWrite(d); ssRenderDraft(m); }
 function ssSetScenario(mid, i) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; ssDraftEnsure(m); m.draft.active = i; ssWrite(d); ssRenderDraft(m); }
+// ── Résultat réel + draft réelle des matchs passés (base compét) ──
+async function ssFetchResult(m) {
+  var d = ssData(); var me = ((d.myTeam && d.myTeam.name) || '').trim().replace(/"/g, ''); var opp = ((m.opp && m.opp.name) || '').trim().replace(/"/g, '');
+  if (!me || !opp) return null;
+  var day = (m.date || '').slice(0, 10);
+  var where = '((Team1="' + me + '" AND Team2="' + opp + '") OR (Team1="' + opp + '" AND Team2="' + me + '"))';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) where += ' AND DateTime_UTC LIKE "' + day + '%"';
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardGames&fields=Team1,Team2,WinTeam,Team1Bans,Team2Bans,Team1Picks,Team2Picks,DateTime_UTC&where=' + encodeURIComponent(where) + '&order_by=DateTime_UTC&limit=7&format=json&origin=*';
+  var rows = await pmCargo(url);
+  if (!rows || !rows.length) return null;
+  var split = function (s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); };
+  var games = rows.map(function (x) {
+    var t = x.title, us1 = (t.Team1 === me);
+    return { usWin: (t.WinTeam === me), usBans: split(us1 ? t.Team1Bans : t.Team2Bans), oppBans: split(us1 ? t.Team2Bans : t.Team1Bans), usPicks: split(us1 ? t.Team1Picks : t.Team2Picks), oppPicks: split(us1 ? t.Team2Picks : t.Team1Picks) };
+  });
+  var us = games.filter(function (g) { return g.usWin; }).length;
+  return { score: { us: us, them: games.length - us }, games: games };
+}
+async function ssEnsureResult(id) {
+  window._ssResFetch = window._ssResFetch || {};
+  if (window._ssResFetch[id]) return; window._ssResFetch[id] = true;
+  var m0 = ssData().matches.find(function (x) { return x.id === id; }); if (!m0) { window._ssResFetch[id] = false; return; }
+  var r = await ssFetchResult(m0).catch(function () { return null; });
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) { window._ssResFetch[id] = false; return; }
+  m.result = r || { none: true }; ssWrite(d); window._ssResFetch[id] = false;
+  if (window._ssOpen === id) { var el = document.getElementById('ss-result'); if (el) el.innerHTML = ssResultHtml(m); }
+  else { var c = document.getElementById('sscard-' + id); if (c) { var dd = ssData(); c.outerHTML = ssMatchCard(m, dd.myTeam && dd.myTeam.name ? dd.myTeam : null, ssActiveSeason(dd)); } }
+}
+function ssRealChampImg(name) { return '<span class="ss-rchamp" title="' + anEsc(name) + '"><img src="' + champImgUrl(name) + '" alt="' + anEsc(name) + '" onerror="this.style.display=\'none\'"></span>'; }
+function ssRealSide(label, bans, picks) {
+  return '<div class="ss-rside"><span class="ss-rside-t">' + anEsc(label) + '</span>'
+    + '<span class="ss-rgrp"><span class="faint ss-rgl">Bans</span>' + (bans.map(ssRealChampImg).join('') || '<span class="faint">—</span>') + '</span>'
+    + '<span class="ss-rgrp"><span class="faint ss-rgl">Picks</span>' + (picks.map(ssRealChampImg).join('') || '<span class="faint">—</span>') + '</span></div>';
+}
+function ssResultHtml(m) {
+  if (!m.result || m.result.none || !m.result.score) return '<div class="faint" style="font-size:12.5px">Résultat indisponible pour ce match (date ou données introuvables dans la base compét).</div>';
+  var r = m.result, win = r.score.us > r.score.them;
+  var h = '<div class="ss-score ' + (win ? 'w' : 'l') + '"><span class="ss-score-lbl">' + (win ? 'Victoire' : 'Défaite') + '</span><span class="ss-score-num">' + r.score.us + ' – ' + r.score.them + '</span></div>';
+  r.games.forEach(function (g, i) {
+    h += '<div class="ss-rgame"><div class="ss-rgame-t">Game ' + (i + 1) + ' · <span style="color:' + (g.usWin ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + ';font-weight:800">' + (g.usWin ? 'Gagnée' : 'Perdue') + '</span></div>'
+      + ssRealSide('Nous', g.usBans, g.usPicks) + ssRealSide((m.opp && m.opp.name) || 'Adversaire', g.oppBans, g.oppPicks) + '</div>';
+  });
+  return h;
+}
 
 /* ════════════════════════════════════════════
    AVANT-MATCH — dossier adversaire via API Riot
