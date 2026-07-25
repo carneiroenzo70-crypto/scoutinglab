@@ -886,6 +886,15 @@ body:not(.theme-dark) .ss-sel{ background:rgba(255,255,255,.6); border-color:rgb
 .ss-rin{ flex:1; min-width:0; height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; }
 body:not(.theme-dark) .ss-rin{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .ss-rin:focus{ outline:0; border-color:var(--vs-emerald-500); }
+/* Sous-onglets du détail d'un match (Draft / Avant-match / Résultat) */
+.ss-mtabs{ display:flex; gap:4px; flex-wrap:wrap; margin:16px 0 12px; border-bottom:1px solid var(--vs-forest-500); }
+body:not(.theme-dark) .ss-mtabs{ border-bottom-color:rgba(31,71,64,.14); }
+.ss-mtab{ position:relative; border:0; background:transparent; cursor:pointer; padding:9px 14px 10px; font-family:var(--font-display); font-weight:700; font-size:12.5px; letter-spacing:.02em; color:var(--vs-fg-3); transition:color .14s var(--ease-out); }
+.ss-mtab:hover{ color:var(--vs-fg-1); }
+.ss-mtab.on{ color:var(--vs-emerald-300); }
+body:not(.theme-dark) .ss-mtab.on{ color:var(--vs-emerald-500); }
+.ss-mtab.on::after{ content:''; position:absolute; left:10px; right:10px; bottom:-1px; height:2px; border-radius:2px 2px 0 0; background:var(--vs-emerald-400); }
+.ss-mtab:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:-3px; border-radius:8px; }
 /* Feuille de route (déroulé du jour J + consignes par joueur) */
 .ss-pl-t{ font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:8px; }
 body:not(.theme-dark) .ss-pl-t{ color:var(--vs-emerald-500); }
@@ -7045,8 +7054,9 @@ function ssMatchCard(m, team, season) {
 function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); var name = prompt('Nom de la saison :', 'Saison ' + (yr % 100) + '-' + ((yr + 1) % 100)); if (!name) return; var s = { id: ssId(), name: name.trim(), splits: [{ id: ssId(), name: 'Split 1' }] }; d.seasons.push(s); d.activeSeason = s.id; ssWrite(d); renderSeasons(); }
 function ssSetSeason(id) { var d = ssData(); d.activeSeason = id; ssWrite(d); renderSeasons(); }
 function ssAddSplit() { var d = ssData(); var s = ssActiveSeason(d); if (!s) return; var name = prompt('Nom du split :', 'Split ' + ((s.splits.length || 0) + 1)); if (!name) return; s.splits.push({ id: ssId(), name: name.trim() }); ssWrite(d); renderSeasons(); }
-function ssOpenMatch(id) { window._ssOpen = id; renderSeasons(); }
-function ssBackCal() { window._ssOpen = null; window._ssSlot = null; renderSeasons(); }
+// On ouvre toujours sur la draft, quel que soit l'onglet quitté au match précédent.
+function ssOpenMatch(id) { window._ssOpen = id; window._ssTab = 'draft'; renderSeasons(); }
+function ssBackCal() { window._ssOpen = null; window._ssSlot = null; window._ssTab = 'draft'; renderSeasons(); }
 function ssDeleteMatch(id) { if (!confirm('Supprimer ce match ?')) return; var d = ssData(); d.matches = d.matches.filter(function (m) { return m.id !== id; }); ssWrite(d); window._ssOpen = null; renderSeasons(); }
 // ── Sélecteur d'équipe (mon équipe + adversaire) ──
 var _ssOppTimer = null;
@@ -7122,32 +7132,57 @@ async function ssAutoRoster(mid) {
   var r = await ssTeamRoster((ssData().matches.find(function (x) { return x.id === mid; }) || {}).opp.name).catch(function () { return null; });
   if (r && r.length) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (m) { m.oppRoster = ssDedupeRoster(r); ssWrite(d); if (window._ssOpen === mid) renderSeasons(); } }
 }
-// ── Détail d'un match : roster adverse + draft ──
+// ── Détail d'un match : sous-onglets Draft / Avant-match / Résultat ──
+// La draft est l'onglet d'arrivée : c'est le travail que le coach fait le plus
+// souvent. L'avant-match (roster adverse + feuille de route) et le résultat
+// vivent dans leurs propres onglets pour ne pas repousser la draft vers le bas.
+function ssSetTab(t) {
+  window._ssTab = t; renderSeasons();
+  // Sans ça, on change d'onglet en restant à la hauteur de défilement de
+  // l'ancien contenu et on atterrit au milieu de nulle part.
+  var el = document.querySelector('.ss-mtabs'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'start' });
+}
 function ssRenderMatchDetail(root, id) {
   var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; });
   if (!m) { window._ssOpen = null; ssRenderCalendar(root); return; }
   var team = (d.myTeam && d.myTeam.name) ? d.myTeam : { name: 'Mon équipe', image: '' };
   var dt = new Date(m.date);
   var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  var isPast = !isNaN(dt) && dt < new Date();
+  var tab = window._ssTab || 'draft';
+  if (tab === 'result' && !isPast) tab = 'draft';   // onglet Résultat réservé aux matchs joués
   var h = '<button class="btn btn-ghost btn-sm" onclick="ssBackCal()" style="margin-bottom:14px">← Retour au calendrier</button>';
   h += '<div class="card ss-detail-head"><div class="ss-dh-teams">' + ssLogoImg(team, 44) + '<div class="ss-dh-vs">vs</div>' + ssLogoImg(m.opp, 44) + '<div style="min-width:0"><div class="ss-dh-name">' + anEsc((m.opp && m.opp.name) || '—') + '</div><div class="faint" style="font-size:12px">' + anEsc(m.competition || '') + ' · BO' + (m.bo || 1) + '</div></div></div>'
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="faint" style="font-size:12.5px;text-transform:capitalize">' + anEsc(dateStr) + '</span><button class="btn btn-ghost btn-xs" onclick="ssDeleteMatch(\'' + m.id + '\')" style="color:var(--vs-red-400)">Supprimer</button></div></div>';
-  var isPast = !isNaN(dt) && dt < new Date();
-  if (isPast) h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Chargement du résultat…</div>') + '</div></div>';
-  h += '<div class="card" style="padding:16px 20px;margin-top:14px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div><div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
-  h += '<div class="card" style="padding:16px 20px;margin-top:14px">'
-    + '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Feuille de route</h3>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier la feuille équipe</button>'
-    + '<button class="btn btn-cta btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF équipe</button></div></div>'
-    + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Copier » donne un texte prêt à coller dans WhatsApp ou Discord ; chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
-    + '<div id="ss-plan">' + ssPlanHtml(m) + '</div></div>';
-  h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3><div id="ss-draft"></div></div>';
+  // Barre d'onglets
+  var tabDef = [{ k: 'draft', l: 'Préparation de draft' }, { k: 'prematch', l: 'Avant-match' }];
+  if (isPast) tabDef.push({ k: 'result', l: 'Résultat' });
+  h += '<div class="ss-mtabs">' + tabDef.map(function (t) {
+    return '<button class="ss-mtab' + (t.k === tab ? ' on' : '') + '" onclick="ssSetTab(\'' + t.k + '\')">' + t.l + '</button>';
+  }).join('') + '</div>';
+  if (tab === 'draft') {
+    h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3></div>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Sélectionne un emplacement (ban ou pick) puis un champion dans le pool. Le pool suit le patch en cours, tous les champions y sont. Clic droit sur un emplacement pour le vider.</p>'
+      + '<div id="ss-draft"></div></div>';
+  } else if (tab === 'prematch') {
+    h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div>'
+      + '<p class="faint" style="font-size:11.5px;margin:-4px 0 12px;line-height:1.55">Chargé automatiquement depuis la base compét. Corrige un nom si l\'équipe a changé de titulaire — c\'est ce roster qui alimente les matchups ci-dessous.</p>'
+      + '<div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
+    h += '<div class="card" style="padding:16px 20px;margin-top:14px">'
+      + '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Feuille de route</h3>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier la feuille équipe</button>'
+      + '<button class="btn btn-cta btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF équipe</button></div></div>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Copier » donne un texte prêt à coller dans WhatsApp ou Discord ; chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
+      + '<div id="ss-plan">' + ssPlanHtml(m) + '</div></div>';
+  } else {
+    h += '<div class="card" style="padding:16px 20px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Recherche du résultat dans la base compét…</div>') + '</div></div>';
+  }
   root.innerHTML = h;
-  ssRenderDraft(m);
-  // Roster adverse : affichage AUTOMATIQUE (plus de saisie manuelle nécessaire).
-  if (!m.oppRoster || !m.oppRoster.length) ssReloadRoster(m.id);
-  if (isPast && !m.result) ssEnsureResult(m.id);
+  if (tab === 'draft') ssRenderDraft(m);
+  // Roster adverse : chargement AUTOMATIQUE (plus de saisie manuelle nécessaire).
+  if (tab === 'prematch' && (!m.oppRoster || !m.oppRoster.length)) ssReloadRoster(m.id);
+  if (tab === 'result' && !m.result) ssEnsureResult(m.id);
 }
 function ssRosterHtml(m) {
   var rows = SS_ROLES.map(function (role) {
