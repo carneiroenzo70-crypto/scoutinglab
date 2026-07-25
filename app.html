@@ -825,20 +825,50 @@ body:not(.theme-dark) .stb-jtime{ color:var(--vs-emerald-500); }
 .ss-logo.ss-logo-fb .ss-logo-ini{ display:inline; }
 body:not(.theme-dark) .ss-logo.ss-logo-fb{ background:rgba(31,71,64,.08); border-color:rgba(31,71,64,.16); }
 body:not(.theme-dark) .ss-logo.ss-logo-fb .ss-logo-ini{ color:var(--vs-emerald-500); }
-.ss-sec-t{ font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:10px; }
+.ss-sec-t{ display:flex; align-items:center; gap:8px; font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:11px; }
 body:not(.theme-dark) .ss-sec-t{ color:var(--vs-emerald-500); }
-.ss-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
-.ss-card{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px; background:rgba(4,18,15,.28); cursor:pointer; transition:border-color .14s, transform .14s; display:flex; flex-direction:column; align-items:center; gap:8px; }
-body:not(.theme-dark) .ss-card{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
-.ss-card:hover{ border-color:var(--vs-emerald-500); transform:translateY(-2px); }
-.ss-card-top{ display:flex; justify-content:space-between; width:100%; align-items:center; }
-.ss-comp{ font-size:10.5px; font-weight:700; letter-spacing:.03em; color:var(--vs-emerald-300); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-sec-t::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--vs-forest-500),transparent); }
+.ss-sec-n{ font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--vs-fg-3); background:rgba(45,212,167,.1); border-radius:999px; padding:1px 7px; letter-spacing:0; }
+.ss-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:13px; }
+/* Carte de match : accent d'état (--ss-acc) posé en JS — émeraude à venir,
+   ambre le jour J, vert/rouge selon le résultat pour les matchs passés. */
+.ss-card{ position:relative; overflow:hidden; border:1px solid var(--vs-forest-500); border-radius:15px; padding:15px 14px 13px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:9px;
+  background:linear-gradient(168deg, rgba(9,32,27,.62) 0%, rgba(4,18,15,.34) 62%);
+  transition:border-color .16s var(--ease-out), transform .16s var(--ease-out), box-shadow .16s var(--ease-out); }
+body:not(.theme-dark) .ss-card{ background:linear-gradient(168deg, rgba(31,71,64,.07) 0%, rgba(31,71,64,.02) 62%); border-color:rgba(31,71,64,.13); }
+/* Filet d'accent à gauche + halo diffus dans l'angle : donne du relief sans image */
+.ss-card::before{ content:''; position:absolute; top:0; bottom:0; left:0; width:3px; background:var(--ss-acc,var(--vs-forest-500)); opacity:.85; }
+.ss-card::after{ content:''; position:absolute; top:-46px; right:-46px; width:132px; height:132px; border-radius:50%; background:var(--ss-acc,transparent); opacity:.07; pointer-events:none; transition:opacity .18s var(--ease-out); }
+.ss-card:hover{ border-color:var(--ss-acc,var(--vs-emerald-500)); transform:translateY(-3px); box-shadow:0 10px 26px -14px rgba(0,0,0,.55); }
+.ss-card:hover::after{ opacity:.14; }
+.ss-card:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:2px; }
+.ss-card-past{ opacity:.9; }
+.ss-card-past:hover{ opacity:1; }
+.ss-card-top{ display:flex; justify-content:space-between; width:100%; align-items:flex-start; gap:8px; }
+.ss-comp{ display:flex; flex-direction:column; gap:2px; min-width:0; font-size:10.5px; font-weight:700; letter-spacing:.04em; color:var(--vs-emerald-300); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 body:not(.theme-dark) .ss-comp{ color:var(--vs-emerald-500); }
+.ss-split{ font-size:9.5px; font-weight:600; letter-spacing:.03em; color:var(--vs-fg-3); text-transform:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ss-bo{ font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--vs-fg-2); background:rgba(45,212,167,.12); border-radius:5px; padding:1px 6px; flex:none; }
-.ss-vs{ display:flex; align-items:center; gap:10px; margin:2px 0; }
-.ss-vs-x{ font-family:var(--font-mono); font-size:11px; color:var(--vs-fg-3); }
-.ss-oppname{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--vs-fg-1); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
-.ss-date{ font-size:11px; text-align:center; }
+.ss-vs{ display:flex; align-items:center; gap:11px; margin:3px 0 1px; }
+.ss-vs-x{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); }
+.ss-oppname{ font-family:var(--font-display); font-weight:800; font-size:14.5px; color:var(--vs-fg-1); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.ss-date{ font-size:11px; text-align:center; color:var(--vs-fg-3); text-transform:capitalize; font-variant-numeric:tabular-nums; }
+.ss-card-foot{ display:flex; justify-content:center; width:100%; margin-top:1px; min-height:22px; }
+/* Pastille d'état : compte à rebours (à venir) ou résultat (passé) */
+.ss-pill{ font-family:var(--font-mono); font-size:10.5px; font-weight:700; letter-spacing:.02em; padding:3px 10px; border-radius:999px; white-space:nowrap; }
+.ss-pill b{ font-weight:800; }
+.ss-pill.jx{ color:var(--vs-emerald-300); background:rgba(45,212,167,.13); box-shadow:inset 0 0 0 1px rgba(45,212,167,.24); }
+.ss-pill.j0{ color:#E8A317; background:rgba(232,163,23,.14); box-shadow:inset 0 0 0 1px rgba(232,163,23,.3); }
+.ss-pill.w{ color:#04211C; background:var(--vs-emerald-400); }
+.ss-pill.l{ color:#fff; background:#C0503A; }
+.ss-pill.d{ color:var(--vs-fg-2); background:rgba(255,255,255,.08); }
+.ss-pill.none{ color:var(--vs-fg-3); background:rgba(255,255,255,.05); box-shadow:inset 0 0 0 1px var(--vs-forest-500); }
+body:not(.theme-dark) .ss-pill.d,
+body:not(.theme-dark) .ss-pill.none{ background:rgba(31,71,64,.06); }
+/* Affordance « Préparer » : révélée au survol, jamais en concurrence avec la pastille */
+.ss-card-go{ position:absolute; bottom:11px; right:12px; display:inline-flex; align-items:center; gap:3px; font-family:var(--font-display); font-weight:700; font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--vs-emerald-300); opacity:0; transform:translateX(-4px); transition:opacity .16s var(--ease-out), transform .16s var(--ease-out); pointer-events:none; }
+.ss-card:hover .ss-card-go{ opacity:1; transform:none; }
+@media (hover:none){ .ss-card-go{ display:none; } }
 /* Recherche d'équipe (modale) */
 .ss-oppres{ max-height:220px; overflow-y:auto; border-radius:8px; }
 .ss-oppitem{ display:flex; align-items:center; gap:9px; padding:7px 9px; cursor:pointer; border-radius:8px; font-size:13px; color:var(--vs-fg-1); }
@@ -856,6 +886,27 @@ body:not(.theme-dark) .ss-sel{ background:rgba(255,255,255,.6); border-color:rgb
 .ss-rin{ flex:1; min-width:0; height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; }
 body:not(.theme-dark) .ss-rin{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .ss-rin:focus{ outline:0; border-color:var(--vs-emerald-500); }
+/* Feuille de route (déroulé du jour J + consignes par joueur) */
+.ss-pl-t{ font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:8px; }
+body:not(.theme-dark) .ss-pl-t{ color:var(--vs-emerald-500); }
+.ss-pl-list{ display:flex; flex-direction:column; gap:6px; }
+.ss-pl-row{ display:flex; align-items:center; gap:8px; }
+.ss-pl-time,.ss-pl-lbl,.ss-pl-me,.ss-pl-mu,.ss-pl-ta{ height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; }
+body:not(.theme-dark) .ss-pl-time, body:not(.theme-dark) .ss-pl-lbl, body:not(.theme-dark) .ss-pl-me,
+body:not(.theme-dark) .ss-pl-mu, body:not(.theme-dark) .ss-pl-ta{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.ss-pl-time:focus,.ss-pl-lbl:focus,.ss-pl-me:focus,.ss-pl-mu:focus,.ss-pl-ta:focus{ outline:0; border-color:var(--vs-emerald-500); }
+.ss-pl-time{ width:96px; flex:none; font-family:var(--font-mono); font-weight:700; font-variant-numeric:tabular-nums; }
+.ss-pl-lbl{ flex:1; min-width:0; }
+.ss-pl-del{ width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--vs-fg-3); cursor:pointer; transition:.14s; }
+.ss-pl-del:hover{ color:var(--vs-red-400,#E0785F); border-color:var(--vs-forest-500); background:rgba(192,80,58,.1); }
+.ss-pl-ta{ display:block; width:100%; height:auto; min-height:56px; padding:8px 10px; line-height:1.5; resize:vertical; box-sizing:border-box; }
+.ss-pl-player{ border:1px solid var(--vs-forest-600); border-radius:11px; padding:10px 12px; margin-bottom:8px; display:flex; flex-direction:column; gap:7px; }
+body:not(.theme-dark) .ss-pl-player{ border-color:rgba(31,71,64,.1); }
+.ss-pl-ph{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.ss-pl-me{ width:150px; flex:0 1 150px; min-width:110px; }
+.ss-pl-vs{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); flex:none; }
+.ss-pl-opp{ font-weight:800; font-size:13px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
+.ss-pl-mu{ width:100%; box-sizing:border-box; }
 /* Draft */
 .ss-sctabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .ss-sctab{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:11.5px; padding:5px 11px; border-radius:8px; cursor:pointer; transition:.14s; }
@@ -885,18 +936,21 @@ body:not(.theme-dark) .ss-slot{ background:rgba(31,71,64,.04); border-color:rgba
 body:not(.theme-dark) .ss-pool-wrap{ border-top-color:rgba(31,71,64,.1); }
 .ss-champq{ height:34px; padding:0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-size:13px; min-width:180px; }
 body:not(.theme-dark) .ss-champq{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
-.ss-champgrid{ display:flex; flex-wrap:wrap; gap:6px; max-height:230px; overflow-y:auto; padding:2px; }
+.ss-champgrid{ display:flex; flex-wrap:wrap; gap:6px; max-height:300px; overflow-y:auto; padding:2px; }
 .ss-champ{ width:52px; border:0; background:transparent; cursor:pointer; padding:2px; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:2px; transition:background .1s; }
 .ss-champ:hover{ background:rgba(45,212,167,.1); }
 .ss-champ img{ width:40px; height:40px; border-radius:7px; }
 .ss-champ span{ font-size:8px; color:var(--vs-fg-3); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* KPIs (haut du calendrier) */
-.ss-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:22px; }
-.ss-kpi{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:13px 16px; background:rgba(4,18,15,.28); }
-body:not(.theme-dark) .ss-kpi{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.ss-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin-bottom:22px; }
+.ss-kpi{ position:relative; overflow:hidden; border:1px solid var(--vs-forest-500); border-radius:13px; padding:13px 16px;
+  background:linear-gradient(160deg, rgba(9,32,27,.6), rgba(4,18,15,.3)); }
+body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,.06), rgba(31,71,64,.02)); border-color:rgba(31,71,64,.12); }
+.ss-kpi::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--vs-emerald-500),transparent 78%); opacity:.5; }
 .ss-kpi .k{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
-.ss-kpi .v{ font-family:var(--font-mono); font-weight:800; font-size:22px; color:var(--vs-fg-1); margin-top:3px; }
-.ss-kpi-next .v{ font-family:var(--font-sans); }
+.ss-kpi .v{ font-family:var(--font-mono); font-weight:800; font-size:22px; color:var(--vs-fg-1); margin-top:3px; line-height:1.15; }
+.ss-kpi .s{ font-size:10.5px; color:var(--vs-fg-3); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-kpi-next .v{ font-family:var(--font-sans); font-size:14px; display:flex; align-items:center; gap:7px; min-width:0; }
 /* Badge résultat sur la carte */
 .ss-res{ margin-top:2px; font-family:var(--font-mono); font-weight:800; font-size:11.5px; padding:2px 10px; border-radius:999px; }
 .ss-res.w{ color:#04211C; background:var(--vs-emerald-400); }
@@ -6831,17 +6885,38 @@ function ssData() { var d = ssRead(); if (!Array.isArray(d.seasons)) d.seasons =
 function ssWrite(d) { try { localStorage.setItem('vs_seasons', JSON.stringify(d)); } catch (_) {} if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('seasons'); }
 function ssId() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function ssActiveSeason(d) { return d.seasons.find(function (s) { return s.id === d.activeSeason; }) || d.seasons[0] || null; }
+// Horodatage local au format des <input type="datetime-local"> (pas d'UTC ici).
+function ssNowLocal() { var d = new Date(), p = function (n) { return String(n).padStart(2, '0'); }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+// ── Version Data Dragon ──
+// Elle était codée en dur (14.24.1) : tous les champions sortis depuis étaient
+// invisibles dans le pool de draft (Mel, Locke…). On lit désormais la dernière
+// version chez Riot, mise en cache localStorage pour que le 1er rendu soit juste.
+const DD_FALLBACK = '16.14.1';
+function ddVer() { return window._ddVer || localStorage.getItem('vs_dd_ver') || DD_FALLBACK; }
+async function ddVerLoad() {
+  if (window._ddVer) return window._ddVer;
+  if (!window._ddVerP) window._ddVerP = (async function () {
+    try {
+      var r = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      var v = (await r.json())[0];
+      if (v && /^\d/.test(v)) { window._ddVer = v; try { localStorage.setItem('vs_dd_ver', v); } catch (_) {} }
+    } catch (_) {}
+    return ddVer();
+  })();
+  return window._ddVerP;
+}
 // ── Sources de données ──
 async function ssChampList() {
   if (window._ssChamps) return window._ssChamps;
   try {
-    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/14.24.1/data/en_US/champion.json');
+    var v = await ddVerLoad();
+    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + v + '/data/en_US/champion.json');
     var j = await r.json();
     var list = Object.keys(j.data || {}).map(function (k) { var c = j.data[k]; return { key: c.id, name: c.name }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
     window._ssChamps = list; return list;
   } catch (_) { return []; }
 }
-function ssChampImg(key) { return 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/' + key + '.png'; }
+function ssChampImg(key) { return 'https://ddragon.leagueoflegends.com/cdn/' + ddVer() + '/img/champion/' + key + '.png'; }
 async function ssTeamSearch(q) {
   if (!q || q.length < 2) return [];
   var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region,Image&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=12&format=json&origin=*';
@@ -6887,45 +6962,84 @@ function ssRenderCalendar(root) {
     + '<button class="btn btn-cta btn-sm" style="margin-left:auto" onclick="ssOpenAddMatch()">+ Ajouter un match</button>'
     + '</div>';
   var matches = d.matches.filter(function (m) { return m.seasonId === season.id; }).sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
-  var now = new Date().toISOString().slice(0, 16);
+  // Comparaison en heure LOCALE : les dates saisies sont des datetime-local, un
+  // now en UTC laissait les matchs du soir « à venir » pendant 2 h de trop.
+  var now = ssNowLocal();
   var upcoming = matches.filter(function (m) { return (m.date || '') >= now; });
   var past = matches.filter(function (m) { return (m.date || '') < now; });
   var kpis = ssKpisHtml(matches, upcoming, past, team);
+  var secT = function (label, n, top) { return '<div class="ss-sec-t"' + (top ? ' style="margin-top:24px"' : '') + '>' + label + '<span class="ss-sec-n">' + n + '</span></div>'; };
   var body = '';
   if (!matches.length) body = '<div class="card" style="padding:40px 20px;text-align:center"><div class="muted">Aucun match dans cette saison. Clique « Ajouter un match ».</div></div>';
   else {
-    if (upcoming.length) body += '<div class="ss-sec-t">À venir</div><div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
-    if (past.length) body += '<div class="ss-sec-t" style="margin-top:22px">Passés</div><div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+    if (upcoming.length) body += secT('À venir', upcoming.length) + '<div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+    if (past.length) body += secT('Passés', past.length, upcoming.length > 0) + '<div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
   }
   root.innerHTML = head + toolbar + kpis + body;
   // Résultats réels des matchs passés — récupérés en tâche de fond (une fois).
   past.forEach(function (m) { if (!m.result) ssEnsureResult(m.id); });
 }
-function ssKpi(label, val) { return '<div class="ss-kpi"><div class="k">' + label + '</div><div class="v">' + val + '</div></div>'; }
+function ssKpi(label, val, sub) { return '<div class="ss-kpi"><div class="k">' + label + '</div><div class="v">' + val + '</div>' + (sub ? '<div class="s">' + sub + '</div>' : '') + '</div>'; }
 function ssKpisHtml(matches, upcoming, past, team) {
-  var wins = past.filter(function (m) { return m.result && m.result.score && m.result.score.us > m.result.score.them; }).length;
-  var losses = past.filter(function (m) { return m.result && m.result.score && m.result.score.us < m.result.score.them; }).length;
+  var played = past.filter(function (m) { return m.result && m.result.score; });
+  var wins = played.filter(function (m) { return m.result.score.us > m.result.score.them; }).length;
+  var losses = played.filter(function (m) { return m.result.score.us < m.result.score.them; }).length;
+  var wr = (wins + losses) ? Math.round(wins * 100 / (wins + losses)) : null;
   var next = upcoming[0] || null;
-  var nextHtml = next ? (ssLogoImg(next.opp, 20) + ' <b style="font-weight:800">' + anEsc(next.opp.name) + '</b>') : '<span class="faint">—</span>';
+  var nextHtml = next
+    ? (ssLogoImg(next.opp, 22) + '<b style="font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + anEsc(next.opp.name) + '</b>')
+    : '<span class="faint">—</span>';
+  var nextSub = next ? (ssCountdownLabel(next.date) + ' · ' + ssTimeStr(next.date)) : 'Aucun match programmé';
   return '<div class="ss-kpis">'
-    + ssKpi('Matchs', matches.length)
-    + ssKpi('À venir', upcoming.length)
-    + ssKpi('Bilan', (wins + losses) ? (wins + 'V – ' + losses + 'D') : '—')
-    + '<div class="ss-kpi ss-kpi-next"><div class="k">Prochain adversaire</div><div class="v" style="font-size:14px;display:flex;align-items:center;gap:7px;min-width:0">' + nextHtml + '</div></div>'
+    + ssKpi('Matchs', matches.length, (past.length + ' joué' + (past.length > 1 ? 's' : '')))
+    + ssKpi('À venir', upcoming.length, next ? ssCountdownLabel(next.date) : '—')
+    + ssKpi('Bilan', (wins + losses) ? (wins + 'V – ' + losses + 'D') : '—', wr === null ? 'Pas encore de résultat' : (wr + ' % de victoires'))
+    + '<div class="ss-kpi ss-kpi-next"><div class="k">Prochain adversaire</div><div class="v">' + nextHtml + '</div><div class="s">' + anEsc(nextSub) + '</div></div>'
     + '</div>';
 }
+// ── Repères de temps ──
+function ssDayDiff(date) {   // écart en jours calendaires (négatif = passé)
+  var dt = new Date(date); if (isNaN(dt)) return null;
+  var a = new Date(); a.setHours(0, 0, 0, 0);
+  var b = new Date(dt); b.setHours(0, 0, 0, 0);
+  return Math.round((b - a) / 86400000);
+}
+function ssCountdownLabel(date) {
+  var n = ssDayDiff(date);
+  if (n === null) return '—';
+  if (n === 0) return "Aujourd'hui";
+  if (n === 1) return 'Demain';
+  if (n === -1) return 'Hier';
+  return n > 0 ? ('Dans ' + n + ' jours') : ('Il y a ' + (-n) + ' jours');
+}
+function ssTimeStr(date) { var dt = new Date(date); return isNaN(dt) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+function ssDateStr(date) { var dt = new Date(date); return isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }); }
+// Accent de la carte : émeraude à venir, ambre le jour J, résultat pour le passé.
+function ssMatchAccent(m) {
+  if (m.result && m.result.score) return m.result.score.us > m.result.score.them ? 'var(--vs-emerald-400)' : (m.result.score.us < m.result.score.them ? '#C0503A' : 'var(--vs-fg-3)');
+  var n = ssDayDiff(m.date);
+  if (n === 0) return '#E8A317';
+  return n !== null && n > 0 ? 'var(--vs-emerald-500)' : 'var(--vs-forest-500)';
+}
 function ssMatchCard(m, team, season) {
-  var dt = new Date(m.date);
-  var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  var n = ssDayDiff(m.date);
   var split = ''; if (season) { var sp = season.splits.find(function (x) { return x.id === m.splitId; }); split = sp ? sp.name : ''; }
-  var res = '';
-  if (m.result && m.result.score) { var win = m.result.score.us > m.result.score.them; res = '<div class="ss-res ' + (win ? 'w' : 'l') + '">' + (win ? 'Victoire' : 'Défaite') + ' ' + m.result.score.us + '–' + m.result.score.them + '</div>'; }
-  return '<div class="ss-card" id="sscard-' + m.id + '" onclick="ssOpenMatch(\'' + m.id + '\')">'
-    + '<div class="ss-card-top"><span class="ss-comp">' + anEsc(m.competition || '') + '</span><span class="ss-bo">BO' + (m.bo || 1) + '</span></div>'
-    + '<div class="ss-vs">' + ssLogoImg(team || { name: '?' }, 34) + '<span class="ss-vs-x">vs</span>' + ssLogoImg(m.opp, 34) + '</div>'
+  var isPast = n !== null && n < 0;
+  // Pastille d'état : compte à rebours pour les matchs à venir, résultat pour les passés.
+  var pill = '';
+  if (m.result && m.result.score) {
+    var sc = m.result.score, win = sc.us > sc.them, draw = sc.us === sc.them;
+    pill = '<span class="ss-pill ' + (draw ? 'd' : (win ? 'w' : 'l')) + '">' + (draw ? 'Nul' : (win ? 'Victoire' : 'Défaite')) + ' <b>' + sc.us + '–' + sc.them + '</b></span>';
+  } else if (n === 0) pill = '<span class="ss-pill j0">Aujourd\'hui · ' + anEsc(ssTimeStr(m.date)) + '</span>';
+  else if (n !== null && n > 0) pill = '<span class="ss-pill jx">J-' + n + '</span>';
+  else if (isPast) pill = '<span class="ss-pill none">Résultat en attente</span>';
+  return '<div class="ss-card' + (isPast ? ' ss-card-past' : '') + (n === 0 ? ' ss-card-today' : '') + '" id="sscard-' + m.id + '" style="--ss-acc:' + ssMatchAccent(m) + '" onclick="ssOpenMatch(\'' + m.id + '\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\')ssOpenMatch(\'' + m.id + '\')">'
+    + '<div class="ss-card-top"><span class="ss-comp">' + anEsc(m.competition || '') + (split ? ('<span class="ss-split">' + anEsc(split) + '</span>') : '') + '</span><span class="ss-bo">BO' + (m.bo || 1) + '</span></div>'
+    + '<div class="ss-vs">' + ssLogoImg(team || { name: '?' }, 38) + '<span class="ss-vs-x">vs</span>' + ssLogoImg(m.opp, 38) + '</div>'
     + '<div class="ss-oppname">' + anEsc((m.opp && m.opp.name) || '—') + '</div>'
-    + '<div class="ss-date faint">' + anEsc(dateStr) + (split ? (' · ' + anEsc(split)) : '') + '</div>'
-    + res
+    + '<div class="ss-date">' + anEsc(ssDateStr(m.date)) + ' · ' + anEsc(ssTimeStr(m.date)) + '</div>'
+    + '<div class="ss-card-foot">' + pill + '</div>'
+    + '<span class="ss-card-go">Préparer<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>'
     + '</div>';
 }
 function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); var name = prompt('Nom de la saison :', 'Saison ' + (yr % 100) + '-' + ((yr + 1) % 100)); if (!name) return; var s = { id: ssId(), name: name.trim(), splits: [{ id: ssId(), name: 'Split 1' }] }; d.seasons.push(s); d.activeSeason = s.id; ssWrite(d); renderSeasons(); }
@@ -7021,6 +7135,13 @@ function ssRenderMatchDetail(root, id) {
   var isPast = !isNaN(dt) && dt < new Date();
   if (isPast) h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Chargement du résultat…</div>') + '</div></div>';
   h += '<div class="card" style="padding:16px 20px;margin-top:14px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div><div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
+  h += '<div class="card" style="padding:16px 20px;margin-top:14px">'
+    + '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Feuille de route</h3>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier la feuille équipe</button>'
+    + '<button class="btn btn-cta btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF équipe</button></div></div>'
+    + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Copier » donne un texte prêt à coller dans WhatsApp ou Discord ; chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
+    + '<div id="ss-plan">' + ssPlanHtml(m) + '</div></div>';
   h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3><div id="ss-draft"></div></div>';
   root.innerHTML = h;
   ssRenderDraft(m);
@@ -7042,7 +7163,11 @@ async function ssReloadRoster(id) {
   var r = await ssTeamRoster(m0.opp.name).catch(function () { return null; });
   var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
   if (r && r.length) { m.oppRoster = ssDedupeRoster(r); ssWrite(d); }
-  if (window._ssOpen === id) { var b = document.getElementById('ss-roster'); if (b) b.innerHTML = ssRosterHtml(m); if (!r || !r.length) { if (typeof showToast === 'function') showToast('Roster introuvable — vérifie le nom exact de l\'équipe', 'warning'); } }
+  if (window._ssOpen === id) {
+    var b = document.getElementById('ss-roster'); if (b) b.innerHTML = ssRosterHtml(m);
+    ssPlanRefresh(id);   // les matchups de la feuille de route citent le roster adverse
+    if (!r || !r.length) { if (typeof showToast === 'function') showToast('Roster introuvable — vérifie le nom exact de l\'équipe', 'warning'); }
+  }
 }
 // ── Draft ──
 function ssEmptyGame() { return { bb: ['', '', '', '', ''], rb: ['', '', '', '', ''], bp: ['', '', '', '', ''], rp: ['', '', '', '', ''] }; }
@@ -7066,7 +7191,7 @@ function ssRenderDraft(m) {
     h += '<div class="ss-game"><div class="ss-game-t">Game ' + (gi + 1) + '</div>' + ssTeamDraft(mm.id, gi, 'b', 'Bleu', g) + ssTeamDraft(mm.id, gi, 'r', 'Rouge', g) + '</div>';
   });
   h += '</div>';
-  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:6px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
+  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:6px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><span class="faint" style="font-size:10.5px;font-family:var(--font-mono)" id="ss-champcount"></span><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
   box.innerHTML = h;
   ssRenderChampGrid();
   ssUpdateSlotInfo();
@@ -7101,35 +7226,92 @@ async function ssRenderChampGrid() {
   var list = await ssChampList();
   var qq = (window._ssChampQ || '').toLowerCase();
   var f = qq ? list.filter(function (c) { return c.name.toLowerCase().indexOf(qq) >= 0; }) : list;
-  grid.innerHTML = f.slice(0, 90).map(function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
+  // Pas de troncature : la grille scrolle. Un slice(0,90) masquait tout le bas de
+  // l'alphabet (les champions récents s'y trouvent souvent) — ils semblaient absents.
+  grid.innerHTML = f.map(function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
+  var info = document.getElementById('ss-champcount');
+  if (info) info.textContent = f.length ? (f.length + ' champions') : '';
 }
 function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; var dr = ssDraftEnsure(m); dr.scenarios.push(ssNewScenario(m.bo, 'Scénario ' + (dr.scenarios.length + 1))); dr.active = dr.scenarios.length - 1; ssWrite(d); ssRenderDraft(m); }
 function ssSetScenario(mid, i) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; ssDraftEnsure(m); m.draft.active = i; ssWrite(d); ssRenderDraft(m); }
 // ── Résultat réel + draft réelle des matchs passés (base compét) ──
+// Pourquoi pas Flashscore / un autre site de score : aucun d'eux n'expose d'API
+// publique, leurs pages bloquent les requêtes navigateur (CORS) et leurs CGU
+// interdisent le scraping. La base compét (Leaguepedia) reste la seule source
+// libre qui donne AUSSI la draft réelle. On la requête donc beaucoup plus
+// tolérant qu'avant, et à défaut le coach saisit le score à la main.
+// pmCargo renvoie [] quand la base n'a rien, et null quand la requête a échoué
+// (rate-limit Leaguepedia, réseau). SS_ERR distingue les deux : une panne
+// passagère ne doit JAMAIS être mémorisée comme « ce match n'a pas de résultat ».
+const SS_ERR = 'ss-transient-error';
+function ssCargoGames(where) {
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardGames'
+    + '&fields=Team1,Team2,WinTeam,Team1Bans,Team2Bans,Team1Picks,Team2Picks,DateTime_UTC'
+    + '&where=' + encodeURIComponent(where) + '&order_by=DateTime_UTC&limit=60&format=json&origin=*';
+  return pmCargo(url);
+}
 async function ssFetchResult(m) {
-  var d = ssData(); var me = ((d.myTeam && d.myTeam.name) || '').trim().replace(/"/g, ''); var opp = ((m.opp && m.opp.name) || '').trim().replace(/"/g, '');
+  var d = ssData();
+  var me = ((d.myTeam && d.myTeam.name) || '').trim().replace(/"/g, '');
+  var opp = ((m.opp && m.opp.name) || '').trim().replace(/"/g, '');
   if (!me || !opp) return null;
-  var day = (m.date || '').slice(0, 10);
-  var where = '((Team1="' + me + '" AND Team2="' + opp + '") OR (Team1="' + opp + '" AND Team2="' + me + '"))';
-  if (/^\d{4}-\d{2}-\d{2}$/.test(day)) where += ' AND DateTime_UTC LIKE "' + day + '%"';
-  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardGames&fields=Team1,Team2,WinTeam,Team1Bans,Team2Bans,Team1Picks,Team2Picks,DateTime_UTC&where=' + encodeURIComponent(where) + '&order_by=DateTime_UTC&limit=7&format=json&origin=*';
-  var rows = await pmCargo(url);
-  if (!rows || !rows.length) return null;
+  // 1) noms exacts, AUCUN filtre de date. Filtrer sur le jour exact faisait
+  //    manquer les matchs du soir (datés du lendemain en UTC) et les reports.
+  var rows = await ssCargoGames('((Team1="' + me + '" AND Team2="' + opp + '") OR (Team1="' + opp + '" AND Team2="' + me + '"))');
+  if (rows === null) return SS_ERR;
+  // 2) repli : noms approchants (alias, suffixes de région, casse).
+  if (!rows.length) {
+    rows = await ssCargoGames('((Team1 LIKE "%' + me + '%" AND Team2 LIKE "%' + opp + '%") OR (Team1 LIKE "%' + opp + '%" AND Team2 LIKE "%' + me + '%"))');
+    if (rows === null) return SS_ERR;
+  }
+  if (!rows.length) return null;
+  var isMine = function (name) { var n = String(name || '').toLowerCase(), k = me.toLowerCase(); return n === k || n.indexOf(k) >= 0 || k.indexOf(n) >= 0; };
+  // Regroupe les games par journée, puis retient la journée la plus proche de la
+  // date du match (tolérance 3 jours) — c'est ce qui isole la bonne rencontre
+  // quand les deux équipes se croisent plusieurs fois dans la saison.
+  var byDay = {};
+  rows.forEach(function (x) { var day = (x.title.DateTime_UTC || '').slice(0, 10); if (!day) return; (byDay[day] = byDay[day] || []).push(x.title); });
+  var days = Object.keys(byDay).sort();
+  if (!days.length) return null;
+  var target = (m.date || '').slice(0, 10), pickDay = null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(target)) {
+    var tt = new Date(target + 'T12:00:00Z').getTime(), best = Infinity;
+    days.forEach(function (dy) { var diff = Math.abs(new Date(dy + 'T12:00:00Z').getTime() - tt); if (diff < best) { best = diff; pickDay = dy; } });
+    if (best > 3 * 86400000) pickDay = null;   // trop loin : ce n'est pas ce match
+  }
+  if (!pickDay) pickDay = days[days.length - 1];   // à défaut, la rencontre la plus récente
   var split = function (s) { return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); };
-  var games = rows.map(function (x) {
-    var t = x.title, us1 = (t.Team1 === me);
-    return { usWin: (t.WinTeam === me), usBans: split(us1 ? t.Team1Bans : t.Team2Bans), oppBans: split(us1 ? t.Team2Bans : t.Team1Bans), usPicks: split(us1 ? t.Team1Picks : t.Team2Picks), oppPicks: split(us1 ? t.Team2Picks : t.Team1Picks) };
+  var games = byDay[pickDay].map(function (t) {
+    var us1 = isMine(t.Team1);
+    return { usWin: isMine(t.WinTeam), usBans: split(us1 ? t.Team1Bans : t.Team2Bans), oppBans: split(us1 ? t.Team2Bans : t.Team1Bans), usPicks: split(us1 ? t.Team1Picks : t.Team2Picks), oppPicks: split(us1 ? t.Team2Picks : t.Team1Picks) };
   });
   var us = games.filter(function (g) { return g.usWin; }).length;
-  return { score: { us: us, them: games.length - us }, games: games };
+  return { score: { us: us, them: games.length - us }, games: games, day: pickDay, approx: (pickDay !== target) };
 }
-async function ssEnsureResult(id) {
+// Les recherches de résultat passent par UNE file d'attente séquentielle : un
+// calendrier de 10 matchs passés lançait 10 requêtes Leaguepedia simultanées,
+// ce qui déclenchait le rate-limit et faisait échouer les 10 d'un coup.
+var _ssResQueue = Promise.resolve();
+function ssEnsureResult(id) {
   window._ssResFetch = window._ssResFetch || {};
-  if (window._ssResFetch[id]) return; window._ssResFetch[id] = true;
-  var m0 = ssData().matches.find(function (x) { return x.id === id; }); if (!m0) { window._ssResFetch[id] = false; return; }
-  var r = await ssFetchResult(m0).catch(function () { return null; });
-  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) { window._ssResFetch[id] = false; return; }
-  m.result = r || { none: true }; ssWrite(d); window._ssResFetch[id] = false;
+  if (window._ssResFetch[id]) return _ssResQueue;
+  window._ssResFetch[id] = true;
+  _ssResQueue = _ssResQueue.then(function () { return ssDoFetchResult(id); }).catch(function () {});
+  return _ssResQueue;
+}
+async function ssDoFetchResult(id) {
+  var m0 = ssData().matches.find(function (x) { return x.id === id; });
+  if (!m0 || (m0.result && m0.result.manual)) { window._ssResFetch[id] = false; return; }   // ne jamais écraser un score saisi par le coach
+  var r = await ssFetchResult(m0).catch(function () { return SS_ERR; });
+  window._ssResFetch[id] = false;
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
+  if (r === SS_ERR) {
+    // Panne passagère : on ne persiste RIEN (sinon le match resterait « sans
+    // résultat » à vie) et on laisse le bouton « Rechercher à nouveau ».
+    if (window._ssOpen === id) { var e2 = document.getElementById('ss-result'); if (e2) e2.innerHTML = '<div class="faint" style="font-size:12.5px">Base compét momentanément surchargée.</div>' + ssResultActions(m); }
+    return;
+  }
+  m.result = r || { none: true }; ssWrite(d);
   if (window._ssOpen === id) { var el = document.getElementById('ss-result'); if (el) el.innerHTML = ssResultHtml(m); }
   else { var c = document.getElementById('sscard-' + id); if (c) { var dd = ssData(); c.outerHTML = ssMatchCard(m, dd.myTeam && dd.myTeam.name ? dd.myTeam : null, ssActiveSeason(dd)); } }
 }
@@ -7139,15 +7321,272 @@ function ssRealSide(label, bans, picks) {
     + '<span class="ss-rgrp"><span class="faint ss-rgl">Bans</span>' + (bans.map(ssRealChampImg).join('') || '<span class="faint">—</span>') + '</span>'
     + '<span class="ss-rgrp"><span class="faint ss-rgl">Picks</span>' + (picks.map(ssRealChampImg).join('') || '<span class="faint">—</span>') + '</span></div>';
 }
+function ssResultActions(m) {
+  return '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">'
+    + '<button class="btn btn-ghost btn-xs" onclick="ssManualResult(\'' + m.id + '\')">Saisir le score à la main</button>'
+    + '<button class="btn btn-ghost btn-xs" onclick="ssRetryResult(\'' + m.id + '\')">Rechercher à nouveau</button>'
+    + '</div>';
+}
 function ssResultHtml(m) {
-  if (!m.result || m.result.none || !m.result.score) return '<div class="faint" style="font-size:12.5px">Résultat indisponible pour ce match (date ou données introuvables dans la base compét).</div>';
-  var r = m.result, win = r.score.us > r.score.them;
-  var h = '<div class="ss-score ' + (win ? 'w' : 'l') + '"><span class="ss-score-lbl">' + (win ? 'Victoire' : 'Défaite') + '</span><span class="ss-score-num">' + r.score.us + ' – ' + r.score.them + '</span></div>';
-  r.games.forEach(function (g, i) {
+  if (!m.result || m.result.none || !m.result.score) {
+    return '<div class="faint" style="font-size:12.5px">Résultat introuvable dans la base compét — soit le match n\'y est pas encore publié, soit le nom d\'équipe y diffère. Tu peux saisir le score toi-même.</div>' + ssResultActions(m);
+  }
+  var r = m.result, win = r.score.us > r.score.them, draw = r.score.us === r.score.them;
+  var h = '<div class="ss-score ' + (win ? 'w' : 'l') + '"><span class="ss-score-lbl">' + (draw ? 'Nul' : (win ? 'Victoire' : 'Défaite')) + '</span><span class="ss-score-num">' + r.score.us + ' – ' + r.score.them + '</span></div>';
+  if (r.manual) h += '<div class="faint" style="font-size:11.5px;margin-bottom:10px">Score saisi manuellement.</div>';
+  else if (r.approx && r.day) h += '<div class="faint" style="font-size:11.5px;margin-bottom:10px">Games trouvées à la date du ' + anEsc(r.day.split('-').reverse().join('/')) + ' (la base compét date les matchs en UTC).</div>';
+  (r.games || []).forEach(function (g, i) {
     h += '<div class="ss-rgame"><div class="ss-rgame-t">Game ' + (i + 1) + ' · <span style="color:' + (g.usWin ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)') + ';font-weight:800">' + (g.usWin ? 'Gagnée' : 'Perdue') + '</span></div>'
       + ssRealSide('Nous', g.usBans, g.usPicks) + ssRealSide((m.opp && m.opp.name) || 'Adversaire', g.oppBans, g.oppPicks) + '</div>';
   });
+  return h + ssResultActions(m);
+}
+// Saisie manuelle du score : dernier recours quand la base compét n'a rien
+// (match trop récent, tournoi non couvert, nom d'équipe différent).
+function ssManualResult(id) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  var cur = (m.result && m.result.score) ? m.result.score : { us: '', them: '' };
+  var ov = document.createElement('div'); ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(380px,94vw)">'
+    + '<div class="rs-modal-h">Score du match</div>'
+    + '<div class="rs-f2"><label class="rs-f"><span>Nous</span><input id="ssr-us" type="number" min="0" max="9" value="' + anEsc(String(cur.us)) + '"></label>'
+    + '<label class="rs-f"><span>' + anEsc((m.opp && m.opp.name) || 'Adversaire') + '</span><input id="ssr-them" type="number" min="0" max="9" value="' + anEsc(String(cur.them)) + '"></label></div>'
+    + '<div class="rs-modal-note">La draft réelle ne peut pas être saisie à la main : elle n\'apparaîtra que si la base compét publie le match.</div>'
+    + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button><button class="btn btn-cta btn-sm" onclick="ssSaveManualResult(\'' + id + '\')">Enregistrer</button></div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function ssSaveManualResult(id) {
+  var gv = function (k) { var el = document.getElementById(k); return el ? parseInt(el.value, 10) : NaN; };
+  var us = gv('ssr-us'), them = gv('ssr-them');
+  if (isNaN(us) || isNaN(them)) { if (typeof showToast === 'function') showToast('Renseigne les deux scores', 'warning'); return; }
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
+  // On garde les games déjà trouvées (draft réelle) si elles existent.
+  var games = (m.result && m.result.games) || [];
+  m.result = { score: { us: us, them: them }, games: games, manual: true };
+  ssWrite(d);
+  var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+  renderSeasons();
+}
+function ssRetryResult(id) {
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
+  delete m.result; ssWrite(d);
+  window._ssResFetch = window._ssResFetch || {}; window._ssResFetch[id] = false;
+  var el = document.getElementById('ss-result'); if (el) el.innerHTML = '<div class="faint" style="font-size:12.5px">Recherche dans la base compét…</div>';
+  ssEnsureResult(id);
+}
+
+/* ════════════════════════════════════════════
+   FEUILLE DE ROUTE D'AVANT-MATCH
+   ─────────────────────────────────────────────
+   Ce que le coach prépare pour le jour J : le déroulé de la journée (scrim,
+   repas, revue de draft, coup d'envoi, débrief), les consignes collectives, et
+   pour chaque poste le matchup + ses consignes personnelles.
+   Sortie : texte prêt à coller (WhatsApp/Discord) ou PDF, soit pour toute
+   l'équipe, soit pour un seul joueur. Aucun contact n'est stocké — c'est le
+   coach qui diffuse, le produit ne détient pas les numéros des joueurs.
+   Stocké dans m.plan (même domaine 'seasons').
+════════════════════════════════════════════ */
+// Déroulé type, en minutes par rapport au coup d'envoi.
+const SS_PLAN_TPL = [
+  { off: -300, label: 'Scrim / entraînement' },
+  { off: -150, label: "Repas d'équipe" },
+  { off: -90, label: 'Revue de draft & consignes' },
+  { off: -45, label: 'Arrivée en jeu, échauffement' },
+  { off: 0, label: "Coup d'envoi" },
+  { off: 90, label: 'Débrief à chaud' }
+];
+function ssHM(d) { var p = function (n) { return String(n).padStart(2, '0'); }; return p(d.getHours()) + ':' + p(d.getMinutes()); }
+function ssPlanDefault(m) {
+  var base = new Date(m.date);
+  return SS_PLAN_TPL.map(function (t) {
+    return { id: ssId(), time: isNaN(base) ? '' : ssHM(new Date(base.getTime() + t.off * 60000)), label: t.label };
+  });
+}
+function ssPlanEnsure(m) {
+  if (!m.plan || typeof m.plan !== 'object') m.plan = {};
+  var p = m.plan;
+  if (!Array.isArray(p.items) || !p.items.length) p.items = ssPlanDefault(m);
+  if (typeof p.teamNotes !== 'string') p.teamNotes = '';
+  if (!p.players || typeof p.players !== 'object') p.players = {};
+  // Nom de nos joueurs prérempli depuis le roster actif, jamais écrasé ensuite.
+  var ros = (typeof rsActive === 'function') ? rsActive() : null;
+  SS_ROLES.forEach(function (r) {
+    if (!p.players[r]) {
+      var s = (ros && ros.slots) ? ros.slots[r] : null;
+      var nm = s ? (s.proName || String(s.pseudo || '').split('#')[0]) : '';
+      p.players[r] = { me: nm || '', matchup: '', notes: '' };
+    }
+  });
+  return p;
+}
+function ssPlanSet(id, fn) {
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return null;
+  var p = ssPlanEnsure(m); fn(p, m); ssWrite(d); return m;
+}
+function ssOppAt(m, role) { var p = (m.oppRoster || []).find(function (x) { return x.role === role; }); return p ? p.name : ''; }
+// ── Rendu de l'éditeur ──
+function ssPlanHtml(m) {
+  var p = ssPlanEnsure(m);
+  var rows = p.items.map(function (it) {
+    return '<div class="ss-pl-row">'
+      + '<input class="ss-pl-time" type="time" value="' + anEsc(it.time || '') + '" onchange="ssPlanTime(\'' + m.id + '\',\'' + it.id + '\',this.value)">'
+      + '<input class="ss-pl-lbl" value="' + anEsc(it.label || '') + '" placeholder="Étape…" oninput="ssPlanLabel(\'' + m.id + '\',\'' + it.id + '\',this.value)">'
+      + '<button class="ss-pl-del" title="Retirer cette étape" onclick="ssPlanDel(\'' + m.id + '\',\'' + it.id + '\')" aria-label="Retirer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'
+      + '</div>';
+  }).join('');
+  var h = '<div class="ss-pl-t">Déroulé de la journée</div>'
+    + '<div class="ss-pl-list">' + rows + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 16px">'
+    + '<button class="btn btn-ghost btn-xs" onclick="ssPlanAdd(\'' + m.id + '\')">+ Ajouter une étape</button>'
+    + '<button class="btn btn-ghost btn-xs" onclick="ssPlanReset(\'' + m.id + '\')">Recalculer depuis l\'heure du match</button>'
+    + '</div>'
+    + '<div class="ss-pl-t">Consignes d\'équipe</div>'
+    + '<textarea class="ss-pl-ta" rows="3" placeholder="Objectifs du match, plan de jeu, points de vigilance…" oninput="ssPlanTeamNotes(\'' + m.id + '\',this.value)">' + anEsc(p.teamNotes || '') + '</textarea>'
+    + '<div class="ss-pl-t" style="margin-top:16px">Par joueur</div>';
+  h += SS_ROLES.map(function (role) {
+    var pl = p.players[role], opp = ssOppAt(m, role);
+    return '<div class="ss-pl-player">'
+      + '<div class="ss-pl-ph"><span class="rs-rolechip">' + role + '</span>'
+      + '<input class="ss-pl-me" value="' + anEsc(pl.me || '') + '" placeholder="Notre joueur" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'me\',this.value)">'
+      + '<span class="ss-pl-vs">vs</span>'
+      + '<span class="ss-pl-opp' + (opp ? '' : ' faint') + '">' + anEsc(opp || '—') + '</span>'
+      + '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier sa feuille</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button></div>'
+      + '<input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Matchup : champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)">'
+      + '<textarea class="ss-pl-ta" rows="2" placeholder="Ses consignes : une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea>'
+      + '</div>';
+  }).join('');
   return h;
+}
+// ── Édition (sans re-render : on ne perd jamais le focus de la frappe) ──
+function ssPlanTime(id, itId, v) { ssPlanSet(id, function (p) { var it = p.items.find(function (x) { return x.id === itId; }); if (it) it.time = v; }); }
+function ssPlanLabel(id, itId, v) { ssPlanSet(id, function (p) { var it = p.items.find(function (x) { return x.id === itId; }); if (it) it.label = v; }); }
+function ssPlanTeamNotes(id, v) { ssPlanSet(id, function (p) { p.teamNotes = v; }); }
+function ssPlanPl(id, role, field, v) { ssPlanSet(id, function (p) { if (p.players[role]) p.players[role][field] = v; }); }
+function ssPlanAdd(id) { ssPlanSet(id, function (p) { p.items.push({ id: ssId(), time: '', label: '' }); }); ssPlanRefresh(id); }
+function ssPlanDel(id, itId) { ssPlanSet(id, function (p) { p.items = p.items.filter(function (x) { return x.id !== itId; }); }); ssPlanRefresh(id); }
+function ssPlanReset(id) {
+  if (!confirm('Recalculer le déroulé type à partir de l\'heure du match ? Les étapes actuelles seront remplacées.')) return;
+  ssPlanSet(id, function (p, m) { p.items = ssPlanDefault(m); }); ssPlanRefresh(id);
+}
+function ssPlanRefresh(id) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  var box = document.getElementById('ss-plan'); if (box) box.innerHTML = ssPlanHtml(m);
+}
+// ── Génération de la feuille (texte) ──
+// role = null → feuille ÉQUIPE (déroulé + consignes collectives + tous les postes)
+// role = 'Mid' → feuille JOUEUR (déroulé + consignes collectives + son bloc détaillé)
+function ssSheetText(m, role) {
+  var d = ssData(), p = ssPlanEnsure(m);
+  var me = (d.myTeam && d.myTeam.name) || 'Mon équipe';
+  var opp = (m.opp && m.opp.name) || 'Adversaire';
+  var dt = new Date(m.date);
+  var when = isNaN(dt) ? '—' : (dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' · ' + ssHM(dt));
+  var L = [];
+  L.push('FEUILLE DE ROUTE — ' + me + ' vs ' + opp);
+  L.push((m.competition || '') + ' · BO' + (m.bo || 1) + ' · ' + when);
+  if (role) L.push('Destinataire : ' + role + (p.players[role] && p.players[role].me ? (' — ' + p.players[role].me) : ''));
+  L.push('');
+  L.push('DÉROULÉ DE LA JOURNÉE');
+  var items = p.items.filter(function (it) { return (it.time || it.label); });
+  if (!items.length) L.push('(à compléter)');
+  items.forEach(function (it) { L.push('  ' + (it.time || '--:--') + '  ' + (it.label || '')); });
+  if ((p.teamNotes || '').trim()) { L.push(''); L.push("CONSIGNES D'ÉQUIPE"); (p.teamNotes || '').split('\n').forEach(function (l) { if (l.trim()) L.push('  - ' + l.trim()); }); }
+  var block = function (r) {
+    var pl = p.players[r] || {}, oppName = ssOppAt(m, r);
+    L.push('');
+    L.push(r.toUpperCase() + ' — ' + (pl.me || '?') + '  vs  ' + (oppName || '?'));
+    if ((pl.matchup || '').trim()) L.push('  Matchup : ' + pl.matchup.trim());
+    if ((pl.notes || '').trim()) { L.push('  Consignes :'); pl.notes.split('\n').forEach(function (l) { if (l.trim()) L.push('    - ' + l.trim()); }); }
+  };
+  if (role) block(role); else SS_ROLES.forEach(block);
+  L.push('');
+  L.push('— préparé avec VisionScore');
+  return L.join('\n');
+}
+function ssCopy(txt, okMsg) {
+  var done = function () { if (typeof showToast === 'function') showToast(okMsg || 'Feuille copiée', 'success'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(txt).then(done).catch(function () { ssCopyFallback(txt, done); }); }
+  else ssCopyFallback(txt, done);
+}
+function ssCopyFallback(txt, done) {
+  try {
+    var ta = document.createElement('textarea'); ta.value = txt;
+    ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); ta.remove(); done();
+  } catch (_) { if (typeof showToast === 'function') showToast('Copie impossible — sélectionne le texte à la main', 'error'); }
+}
+function ssSheetCopy(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  ssCopy(ssSheetText(m, role || null), role ? ('Feuille ' + role + ' copiée') : 'Feuille équipe copiée');
+}
+// ── Génération de la feuille (PDF) ──
+// Page claire (elle est faite pour être imprimée / lue sur téléphone), bandeau
+// forêt et titres émeraude : la charte sans fond sombre qui vide les cartouches.
+function ssSheetPdf(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  if (!window.jspdf) { if (typeof showToast === 'function') showToast('Librairie PDF non chargée — vérifie ta connexion.', 'error'); return; }
+  var d = ssData(), p = ssPlanEnsure(m);
+  var me = (d.myTeam && d.myTeam.name) || 'Mon équipe', opp = (m.opp && m.opp.name) || 'Adversaire';
+  var dt = new Date(m.date);
+  var when = isNaN(dt) ? '—' : (dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + '  ·  ' + ssHM(dt));
+  var doc = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  var W = 210, M = 16, y = 0;
+  var page = function () { doc.addPage(); y = M; };
+  var need = function (h) { if (y + h > 285) page(); };
+  // Bandeau
+  doc.setFillColor(11, 47, 42); doc.rect(0, 0, W, 30, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text('FEUILLE DE ROUTE', M, 13);
+  doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+  doc.text(me + '  vs  ' + opp, M, 20);
+  doc.setFontSize(8.5); doc.setTextColor(160, 205, 195);
+  doc.text((m.competition || '') + '  ·  BO' + (m.bo || 1) + '  ·  ' + when, M, 26);
+  if (role) {
+    var who = (p.players[role] && p.players[role].me) ? (role + ' — ' + p.players[role].me) : role;
+    doc.setFillColor(45, 212, 167); doc.rect(0, 30, W, 9, 'F');
+    doc.setTextColor(4, 33, 28); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.text(who.toUpperCase(), M, 36.2);
+    y = 48;
+  } else y = 40;
+  var sect = function (title) {
+    need(14); doc.setTextColor(21, 128, 106); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.text(title.toUpperCase(), M, y);
+    doc.setDrawColor(45, 212, 167); doc.setLineWidth(0.4); doc.line(M, y + 1.8, W - M, y + 1.8);
+    y += 8;
+  };
+  var body = function (txt, indent, bold) {
+    doc.setTextColor(38, 38, 38); doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(9.5);
+    doc.splitTextToSize(String(txt), W - M * 2 - (indent || 0)).forEach(function (l) { need(6); doc.text(l, M + (indent || 0), y); y += 4.9; });
+  };
+  sect('Déroulé de la journée');
+  var items = p.items.filter(function (it) { return (it.time || it.label); });
+  if (!items.length) body('(à compléter)', 0);
+  items.forEach(function (it) {
+    need(6.5);
+    doc.setFont('courier', 'bold'); doc.setFontSize(9.5); doc.setTextColor(11, 47, 42);
+    doc.text(it.time || '--:--', M, y);
+    doc.setFont('helvetica', 'normal'); doc.setTextColor(38, 38, 38);
+    doc.text(String(it.label || ''), M + 16, y);
+    y += 5.6;
+  });
+  y += 3;
+  if ((p.teamNotes || '').trim()) { sect("Consignes d'équipe"); (p.teamNotes || '').split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); y += 3; }
+  var block = function (r) {
+    var pl = p.players[r] || {}, oppName = ssOppAt(m, r);
+    sect(r + '  —  ' + (pl.me || '?') + '   vs   ' + (oppName || '?'));
+    if ((pl.matchup || '').trim()) body('Matchup : ' + pl.matchup.trim(), 2);
+    if ((pl.notes || '').trim()) { pl.notes.split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); }
+    if (!(pl.matchup || '').trim() && !(pl.notes || '').trim()) body('(rien de renseigné)', 2);
+    y += 3;
+  };
+  if (role) block(role); else SS_ROLES.forEach(block);
+  need(10); doc.setTextColor(140, 140, 140); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+  doc.text('Préparé avec VisionScore — visionscore.gg', M, Math.min(y + 4, 290));
+  var safe = function (s) { return String(s).replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, ''); };
+  doc.save('feuille-de-route-' + safe(opp) + (role ? ('-' + safe(role)) : '-equipe') + '.pdf');
+  if (typeof showToast === 'function') showToast('PDF généré', 'success');
 }
 
 /* ════════════════════════════════════════════
@@ -13110,7 +13549,8 @@ function champToDDragon(name) {
 }
 
 function champImgUrl(name) {
-  return `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champToDDragon(name)}.png`;
+  const v = (typeof ddVer === 'function') ? ddVer() : '16.14.1';
+  return `https://ddragon.leagueoflegends.com/cdn/${v}/img/champion/${champToDDragon(name)}.png`;
 }
 
 function buildChampTable(champDetails, total) {

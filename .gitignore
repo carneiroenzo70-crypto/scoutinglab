@@ -8,3 +8,6 @@ _assemble_index.js
 
 # Documents commerciaux internes — NE JAMAIS déployer publiquement
 commercial/
+
+# Config locale de l aperçu (serveur de dev) — pas dans le dépôt
+.claude/
