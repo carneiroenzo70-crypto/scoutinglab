@@ -4,7 +4,7 @@
 // Clé Upstash : vs_data:<compte>:<domaine>. Le compte vient du token (jamais du client).
 const { verifyToken, getBearer, upstash } = require('./_auth');
 
-const DOMAINS = ['fiches', 'rosters', 'crm', 'structures'];
+const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons'];
 const MAX_BYTES = 1024 * 1024; // 1 Mo / domaine
 
 module.exports = async function handler(req, res) {

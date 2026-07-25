@@ -44,6 +44,7 @@ const VS_STORE_DOMAINS = {
   rosters:    ['vs_rosters', 'vs_active_roster'],
   crm:        ['spes_crm_pipeline'],
   structures: ['spes_crm_structures'],
+  seasons:    ['vs_seasons'],
 };
 const vsStore = (function () {
   const timers = {};
@@ -812,6 +813,81 @@ body:not(.theme-dark) .stb-jtime{ color:var(--vs-emerald-500); }
 .stb-jdel:hover{ color:var(--vs-red-400); background:rgba(255,90,51,.1); }
 .stb-jempty{ font-size:12px; }
 @media (max-width:560px){ .stb-jnote{ min-width:120px; } }
+/* ════ SEASONS — calendrier compétitif + préparation de match ════ */
+.ss-head{ display:flex; justify-content:space-between; align-items:flex-end; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+.ss-toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+.ss-logo{ display:inline-flex; align-items:center; justify-content:center; border-radius:7px; overflow:hidden; flex:none; position:relative; vertical-align:middle; background:rgba(255,255,255,.04); }
+.ss-logo img{ width:100%; height:100%; object-fit:contain; display:block; }
+.ss-logo .ss-logo-ini{ display:none; font-family:var(--font-display); font-weight:800; font-size:.7em; color:var(--vs-emerald-300); }
+.ss-logo.ss-logo-fb{ background:var(--vs-forest-600); border:1px solid var(--vs-forest-500); }
+.ss-logo.ss-logo-fb .ss-logo-ini{ display:inline; }
+body:not(.theme-dark) .ss-logo.ss-logo-fb{ background:rgba(31,71,64,.08); border-color:rgba(31,71,64,.16); }
+body:not(.theme-dark) .ss-logo.ss-logo-fb .ss-logo-ini{ color:var(--vs-emerald-500); }
+.ss-sec-t{ font-family:var(--font-display); font-weight:700; font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:10px; }
+body:not(.theme-dark) .ss-sec-t{ color:var(--vs-emerald-500); }
+.ss-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.ss-card{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px; background:rgba(4,18,15,.28); cursor:pointer; transition:border-color .14s, transform .14s; display:flex; flex-direction:column; align-items:center; gap:8px; }
+body:not(.theme-dark) .ss-card{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.ss-card:hover{ border-color:var(--vs-emerald-500); transform:translateY(-2px); }
+.ss-card-top{ display:flex; justify-content:space-between; width:100%; align-items:center; }
+.ss-comp{ font-size:10.5px; font-weight:700; letter-spacing:.03em; color:var(--vs-emerald-300); text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+body:not(.theme-dark) .ss-comp{ color:var(--vs-emerald-500); }
+.ss-bo{ font-family:var(--font-mono); font-size:10px; font-weight:700; color:var(--vs-fg-2); background:rgba(45,212,167,.12); border-radius:5px; padding:1px 6px; flex:none; }
+.ss-vs{ display:flex; align-items:center; gap:10px; margin:2px 0; }
+.ss-vs-x{ font-family:var(--font-mono); font-size:11px; color:var(--vs-fg-3); }
+.ss-oppname{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--vs-fg-1); text-align:center; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100%; }
+.ss-date{ font-size:11px; text-align:center; }
+/* Recherche d'équipe (modale) */
+.ss-oppres{ max-height:220px; overflow-y:auto; border-radius:8px; }
+.ss-oppitem{ display:flex; align-items:center; gap:9px; padding:7px 9px; cursor:pointer; border-radius:8px; font-size:13px; color:var(--vs-fg-1); }
+.ss-oppitem:hover{ background:rgba(45,212,167,.08); }
+body:not(.theme-dark) .ss-oppitem:hover{ background:rgba(31,71,64,.06); }
+.ss-sel{ height:38px; padding:0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:14px; }
+body:not(.theme-dark) .ss-sel{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+/* Détail du match */
+.ss-detail-head{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; padding:16px 20px; }
+.ss-dh-teams{ display:flex; align-items:center; gap:12px; min-width:0; }
+.ss-dh-vs{ font-family:var(--font-mono); font-size:12px; color:var(--vs-fg-3); }
+.ss-dh-name{ font-family:var(--font-display); font-weight:800; font-size:18px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-roster-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:8px; }
+.ss-rrow{ display:flex; align-items:center; gap:8px; }
+.ss-rin{ flex:1; min-width:0; height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; }
+body:not(.theme-dark) .ss-rin{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.ss-rin:focus{ outline:0; border-color:var(--vs-emerald-500); }
+/* Draft */
+.ss-sctabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.ss-sctab{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:11.5px; padding:5px 11px; border-radius:8px; cursor:pointer; transition:.14s; }
+.ss-sctab.on{ background:var(--vs-emerald-500); color:#04211C; border-color:var(--vs-emerald-500); }
+.ss-sctab:not(.on):hover{ color:var(--vs-fg-1); }
+.ss-sctab-add{ border-style:dashed; color:var(--vs-fg-3); }
+.ss-games{ display:flex; flex-direction:column; gap:14px; }
+.ss-game{ border:1px solid var(--vs-forest-600); border-radius:12px; padding:12px; }
+body:not(.theme-dark) .ss-game{ border-color:rgba(31,71,64,.1); }
+.ss-game-t{ font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--vs-fg-2); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em; }
+.ss-side{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:6px 0; }
+.ss-side + .ss-side{ border-top:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .ss-side + .ss-side{ border-top-color:rgba(31,71,64,.08); }
+.ss-side-t{ width:52px; flex:none; font-weight:800; font-size:12px; }
+.ss-side-b .ss-side-t{ color:#48A0FF; }
+.ss-side-r .ss-side-t{ color:#FF6B5A; }
+.ss-slots{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.ss-slabel{ font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; width:34px; flex:none; }
+.ss-slot{ width:38px; height:38px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.03); cursor:pointer; padding:0; overflow:hidden; flex:none; display:flex; align-items:center; justify-content:center; transition:border-color .12s, transform .1s; position:relative; }
+body:not(.theme-dark) .ss-slot{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.14); }
+.ss-slot img{ width:100%; height:100%; object-fit:cover; }
+.ss-slot-b{ border-radius:50%; }
+.ss-slot.sel{ border-color:var(--vs-emerald-400); box-shadow:0 0 0 2px rgba(45,212,167,.35); }
+.ss-slot:hover{ border-color:var(--vs-emerald-500); }
+.ss-slot-role{ font-family:var(--font-mono); font-size:8.5px; color:var(--vs-fg-3); }
+.ss-pool-wrap{ border-top:1px solid var(--vs-forest-600); margin-top:14px; padding-top:12px; }
+body:not(.theme-dark) .ss-pool-wrap{ border-top-color:rgba(31,71,64,.1); }
+.ss-champq{ height:34px; padding:0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-size:13px; min-width:180px; }
+body:not(.theme-dark) .ss-champq{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.ss-champgrid{ display:flex; flex-wrap:wrap; gap:6px; max-height:230px; overflow-y:auto; padding:2px; }
+.ss-champ{ width:52px; border:0; background:transparent; cursor:pointer; padding:2px; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:2px; transition:background .1s; }
+.ss-champ:hover{ background:rgba(45,212,167,.1); }
+.ss-champ img{ width:40px; height:40px; border-radius:7px; }
+.ss-champ span{ font-size:8px; color:var(--vs-fg-3); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .nm{ font-weight:800; font-size:14.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .rs-card .sub{ font-size:11px; color:var(--vs-fg-3); display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
 .rs-sugg{ border-top:1px solid var(--vs-forest-600); padding-top:10px; display:flex; flex-direction:column; gap:6px; }
@@ -3378,6 +3454,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <nav class="hd-nav" id="hd-nav-main">
     <span class="hd-nav-ind" aria-hidden="true"></span>
     <div class="hd-sep" aria-hidden="true"></div>
+    <button class="hd-nav-item" id="nav-seasons" onclick="switchPanel('seasons')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Seasons</button>
     <button class="hd-nav-item active" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouting</button>
     <button class="hd-nav-item" id="nav-top50" onclick="switchPanel('top50')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Top 30</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM Agent</button>
@@ -3742,6 +3819,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       </div><!-- /wq-container -->
     </div><!-- /panel-welcome -->
+
+    <!-- ══ PANEL : SEASONS — calendrier compétitif + préparation de match ══ -->
+    <div id="panel-seasons" class="panel">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
+        <div id="seasons-root"><div class="faint" style="padding:40px;text-align:center">Chargement…</div></div>
+      </div>
+    </div><!-- /panel-seasons -->
 
     <div id="panel-scout" class="panel">
 
@@ -6699,6 +6783,275 @@ function stbJournalDel(i) {
 }
 
 /* ════════════════════════════════════════════
+   SEASONS — calendrier compétitif + préparation de match (Phase 1 + draft)
+   ─────────────────────────────────────────────
+   Onglet en 1re position. Une structure suit SES saisons/splits, ajoute ses
+   matchs (compétition, date, format BO, adversaire choisi dans la base avec
+   logo officiel), visualise le calendrier passé/à venir, et prépare chaque
+   match : roster adverse auto + brouillon de draft (pool de champions, bans/
+   picks qui grandissent selon le BO, plusieurs scénarios).
+   Données par compte : localStorage 'vs_seasons' → vsStore.save('seasons').
+   Équipes/rosters/logos : base compét (pmCargo). Champions : Data Dragon.
+════════════════════════════════════════════ */
+const SS_ROLES = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
+const SS_COMPETS = ['LFL', 'LFL Division 2', 'EMEA Masters', 'LEC', 'First Stand', 'MSI', 'Worlds', 'Autre'];
+function ssRead() { try { var d = JSON.parse(localStorage.getItem('vs_seasons') || 'null'); return (d && typeof d === 'object') ? d : {}; } catch (_) { return {}; } }
+function ssData() { var d = ssRead(); if (!Array.isArray(d.seasons)) d.seasons = []; if (!Array.isArray(d.matches)) d.matches = []; if (!d.myTeam || typeof d.myTeam !== 'object') d.myTeam = { name: '', image: '' }; return d; }
+function ssWrite(d) { try { localStorage.setItem('vs_seasons', JSON.stringify(d)); } catch (_) {} if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('seasons'); }
+function ssId() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function ssActiveSeason(d) { return d.seasons.find(function (s) { return s.id === d.activeSeason; }) || d.seasons[0] || null; }
+// ── Sources de données ──
+async function ssChampList() {
+  if (window._ssChamps) return window._ssChamps;
+  try {
+    var r = await fetch('https://ddragon.leagueoflegends.com/cdn/14.24.1/data/en_US/champion.json');
+    var j = await r.json();
+    var list = Object.keys(j.data || {}).map(function (k) { var c = j.data[k]; return { key: c.id, name: c.name }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    window._ssChamps = list; return list;
+  } catch (_) { return []; }
+}
+function ssChampImg(key) { return 'https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/' + key + '.png'; }
+async function ssTeamSearch(q) {
+  if (!q || q.length < 2) return [];
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region,Image&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=12&format=json&origin=*';
+  var rows = await pmCargo(url); if (!rows) return null;
+  return rows.map(function (r) { return { name: r.title.Name || '', region: r.title.Region || '', image: r.title.Image || '' }; }).filter(function (t) { return t.name; });
+}
+function ssTeamLogo(t) { return (t && t.image) ? ('https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(t.image)) : ''; }
+async function ssTeamRoster(name) {
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role&where=Team%3D%22' + encodeURIComponent(String(name).replace(/"/g, '')) + '%22&format=json&origin=*&limit=30';
+  var rows = await pmCargo(url); if (!rows) return null;
+  var rm = { Top: 'Top', Jungle: 'Jgl', Mid: 'Mid', Bot: 'ADC', 'AD Carry': 'ADC', ADC: 'ADC', Support: 'Sup' };
+  return rows.map(function (r) { return { name: r.title.ID || '', role: rm[r.title.Role] || r.title.Role || '' }; }).filter(function (p) { return p.name; });
+}
+function ssDedupeRoster(list) {
+  var out = [];
+  SS_ROLES.forEach(function (role) { var p = list.find(function (x) { return x.role === role; }); if (p) out.push({ name: p.name, role: role }); });
+  list.forEach(function (p) { if (SS_ROLES.indexOf(p.role) < 0 && !out.find(function (o) { return o.name === p.name; })) out.push(p); });
+  return out.slice(0, 7);
+}
+function ssLogoImg(t, size) {
+  var s = size || 24, url = ssTeamLogo(t), ini = anEsc((((t && t.name) || '?').charAt(0) || '?').toUpperCase());
+  if (url) return '<span class="ss-logo" style="width:' + s + 'px;height:' + s + 'px"><img src="' + url + '" alt="" onerror="this.parentNode.classList.add(\'ss-logo-fb\');this.remove()"><span class="ss-logo-ini">' + ini + '</span></span>';
+  return '<span class="ss-logo ss-logo-fb" style="width:' + s + 'px;height:' + s + 'px"><span class="ss-logo-ini">' + ini + '</span></span>';
+}
+// ── Rendu principal ──
+function renderSeasons() {
+  var root = document.getElementById('seasons-root'); if (!root) return;
+  if (window._ssOpen) { ssRenderMatchDetail(root, window._ssOpen); return; }
+  ssRenderCalendar(root);
+}
+function ssRenderCalendar(root) {
+  var d = ssData();
+  var team = (d.myTeam && d.myTeam.name) ? d.myTeam : null;
+  var teamBtn = '<button class="btn btn-ghost btn-sm" onclick="ssSetMyTeam()">' + (team ? (ssLogoImg(team, 20) + ' ' + anEsc(team.name)) : 'Définir mon équipe') + '</button>';
+  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Clique un match pour préparer l\'affrontement.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + '</div></div>';
+  if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; return; }
+  var season = ssActiveSeason(d);
+  var seasonOpts = d.seasons.map(function (s) { return '<option value="' + s.id + '"' + (s.id === season.id ? ' selected' : '') + '>' + anEsc(s.name) + '</option>'; }).join('');
+  var toolbar = '<div class="ss-toolbar">'
+    + '<div class="ctrl select" style="height:38px;width:auto;min-width:160px"><select onchange="ssSetSeason(this.value)">' + seasonOpts + '</select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>'
+    + '<button class="btn btn-ghost btn-sm" onclick="ssNewSeason()">+ Saison</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="ssAddSplit()">+ Split</button>'
+    + '<button class="btn btn-cta btn-sm" style="margin-left:auto" onclick="ssOpenAddMatch()">+ Ajouter un match</button>'
+    + '</div>';
+  var matches = d.matches.filter(function (m) { return m.seasonId === season.id; }).sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
+  var now = new Date().toISOString().slice(0, 16);
+  var upcoming = matches.filter(function (m) { return (m.date || '') >= now; });
+  var past = matches.filter(function (m) { return (m.date || '') < now; });
+  var body = '';
+  if (!matches.length) body = '<div class="card" style="padding:40px 20px;text-align:center"><div class="muted">Aucun match dans cette saison. Clique « Ajouter un match ».</div></div>';
+  else {
+    if (upcoming.length) body += '<div class="ss-sec-t">À venir</div><div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+    if (past.length) body += '<div class="ss-sec-t" style="margin-top:22px">Passés</div><div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+  }
+  root.innerHTML = head + toolbar + body;
+}
+function ssMatchCard(m, team, season) {
+  var dt = new Date(m.date);
+  var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  var split = ''; if (season) { var sp = season.splits.find(function (x) { return x.id === m.splitId; }); split = sp ? sp.name : ''; }
+  return '<div class="ss-card" onclick="ssOpenMatch(\'' + m.id + '\')">'
+    + '<div class="ss-card-top"><span class="ss-comp">' + anEsc(m.competition || '') + '</span><span class="ss-bo">BO' + (m.bo || 1) + '</span></div>'
+    + '<div class="ss-vs">' + ssLogoImg(team || { name: '?' }, 34) + '<span class="ss-vs-x">vs</span>' + ssLogoImg(m.opp, 34) + '</div>'
+    + '<div class="ss-oppname">' + anEsc((m.opp && m.opp.name) || '—') + '</div>'
+    + '<div class="ss-date faint">' + anEsc(dateStr) + (split ? (' · ' + anEsc(split)) : '') + '</div>'
+    + '</div>';
+}
+function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); var name = prompt('Nom de la saison :', 'Saison ' + (yr % 100) + '-' + ((yr + 1) % 100)); if (!name) return; var s = { id: ssId(), name: name.trim(), splits: [{ id: ssId(), name: 'Split 1' }] }; d.seasons.push(s); d.activeSeason = s.id; ssWrite(d); renderSeasons(); }
+function ssSetSeason(id) { var d = ssData(); d.activeSeason = id; ssWrite(d); renderSeasons(); }
+function ssAddSplit() { var d = ssData(); var s = ssActiveSeason(d); if (!s) return; var name = prompt('Nom du split :', 'Split ' + ((s.splits.length || 0) + 1)); if (!name) return; s.splits.push({ id: ssId(), name: name.trim() }); ssWrite(d); renderSeasons(); }
+function ssOpenMatch(id) { window._ssOpen = id; renderSeasons(); }
+function ssBackCal() { window._ssOpen = null; window._ssSlot = null; renderSeasons(); }
+function ssDeleteMatch(id) { if (!confirm('Supprimer ce match ?')) return; var d = ssData(); d.matches = d.matches.filter(function (m) { return m.id !== id; }); ssWrite(d); window._ssOpen = null; renderSeasons(); }
+// ── Sélecteur d'équipe (mon équipe + adversaire) ──
+var _ssOppTimer = null;
+function ssOppSearch(q) {
+  clearTimeout(_ssOppTimer);
+  var box = document.getElementById('ssm-oppres'); if (!box) return;
+  q = (q || '').trim();
+  if (q.length < 2) { box.innerHTML = ''; return; }
+  box.innerHTML = '<div class="faint" style="padding:6px 8px;font-size:12px">Recherche…</div>';
+  _ssOppTimer = setTimeout(async function () {
+    var res = await ssTeamSearch(q);
+    var b = document.getElementById('ssm-oppres'); if (!b) return;
+    if (res === null) { b.innerHTML = '<div class="faint" style="padding:6px 8px;font-size:12px">Service momentanément indisponible, réessaie.</div>'; return; }
+    if (!res.length) { b.innerHTML = '<div class="faint" style="padding:6px 8px;font-size:12px">Aucune équipe trouvée.</div>'; return; }
+    window._ssOppResults = res;
+    b.innerHTML = res.map(function (t, i) { return '<div class="ss-oppitem" onclick="ssPickOpp(' + i + ')">' + ssLogoImg(t, 22) + '<span>' + anEsc(t.name) + '</span><span class="faint" style="margin-left:auto;font-size:11px">' + anEsc(t.region || '') + '</span></div>'; }).join('');
+  }, 600);
+}
+function ssPickOpp(i) {
+  var t = (window._ssOppResults || [])[i]; if (!t) return;
+  window._ssPickOpp = t;
+  var sel = document.getElementById('ssm-oppsel'); if (sel) { sel.classList.remove('faint'); sel.innerHTML = ssLogoImg(t, 22) + ' <b>' + anEsc(t.name) + '</b>'; }
+  var res = document.getElementById('ssm-oppres'); if (res) res.innerHTML = '';
+  var inp = document.getElementById('ssm-opp') || document.getElementById('ssmt-inp'); if (inp) inp.value = t.name;
+}
+function ssSetMyTeam() {
+  window._ssPickOpp = null;
+  var ov = document.createElement('div'); ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" style="width:min(440px,94vw)"><div class="rs-modal-h">Mon équipe</div>'
+    + '<label class="rs-f"><span>Rechercher l\'équipe</span><input id="ssmt-inp" placeholder="Nom de ton équipe…" autocomplete="off" oninput="ssOppSearch(this.value)"></label>'
+    + '<div id="ssm-oppres" class="ss-oppres"></div>'
+    + '<div id="ssm-oppsel" class="faint" style="font-size:12px">Aucune équipe sélectionnée.</div>'
+    + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button><button class="btn btn-cta btn-sm" onclick="ssSaveMyTeam()">Enregistrer</button></div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function ssSaveMyTeam() { var t = window._ssPickOpp; if (!t) { if (typeof showToast === 'function') showToast('Choisis une équipe dans la liste', 'warning'); return; } var d = ssData(); d.myTeam = { name: t.name, image: t.image }; ssWrite(d); var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove(); renderSeasons(); }
+// ── Ajouter un match ──
+function ssOpenAddMatch() {
+  var d = ssData(); var season = ssActiveSeason(d); if (!season) { ssNewSeason(); return; }
+  window._ssPickOpp = null;
+  var splitOpts = season.splits.map(function (sp) { return '<option value="' + sp.id + '">' + anEsc(sp.name) + '</option>'; }).join('');
+  var compOpts = SS_COMPETS.map(function (c) { return '<option>' + c + '</option>'; }).join('');
+  var ov = document.createElement('div'); ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(460px,94vw)">'
+    + '<div class="rs-modal-h">Ajouter un match</div>'
+    + '<label class="rs-f"><span>Compétition</span><select id="ssm-comp" class="ss-sel">' + compOpts + '</select></label>'
+    + '<div class="rs-f2"><label class="rs-f"><span>Split</span><select id="ssm-split" class="ss-sel">' + splitOpts + '</select></label>'
+    + '<label class="rs-f"><span>Format</span><select id="ssm-bo" class="ss-sel"><option value="1">BO1</option><option value="3">BO3</option><option value="5">BO5</option></select></label></div>'
+    + '<label class="rs-f"><span>Date &amp; heure</span><input id="ssm-date" type="datetime-local"></label>'
+    + '<label class="rs-f"><span>Adversaire</span><input id="ssm-opp" placeholder="Rechercher une équipe…" autocomplete="off" oninput="ssOppSearch(this.value)"></label>'
+    + '<div id="ssm-oppres" class="ss-oppres"></div>'
+    + '<div id="ssm-oppsel" class="faint" style="font-size:12px">Aucun adversaire sélectionné.</div>'
+    + '<div class="rs-modal-note">Le logo officiel et le roster adverse se chargent automatiquement une fois le match créé.</div>'
+    + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button><button class="btn btn-cta btn-sm" onclick="ssSaveMatch()">Ajouter</button></div>'
+    + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+function ssSaveMatch() {
+  var d = ssData(); var season = ssActiveSeason(d); if (!season) return;
+  var g = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+  var opp = window._ssPickOpp;
+  if (!opp) { if (typeof showToast === 'function') showToast('Choisis un adversaire dans la liste', 'warning'); return; }
+  var date = g('ssm-date'); if (!date) { if (typeof showToast === 'function') showToast('Renseigne la date du match', 'warning'); return; }
+  var m = { id: ssId(), seasonId: season.id, splitId: g('ssm-split'), competition: g('ssm-comp'), date: date, bo: parseInt(g('ssm-bo') || '1'), opp: { name: opp.name, image: opp.image, region: opp.region }, oppRoster: [], draft: null };
+  d.matches.push(m); ssWrite(d);
+  var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+  renderSeasons();
+  ssAutoRoster(m.id);
+}
+async function ssAutoRoster(mid) {
+  var r = await ssTeamRoster((ssData().matches.find(function (x) { return x.id === mid; }) || {}).opp.name).catch(function () { return null; });
+  if (r && r.length) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (m) { m.oppRoster = ssDedupeRoster(r); ssWrite(d); if (window._ssOpen === mid) renderSeasons(); } }
+}
+// ── Détail d'un match : roster adverse + draft ──
+function ssRenderMatchDetail(root, id) {
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; });
+  if (!m) { window._ssOpen = null; ssRenderCalendar(root); return; }
+  var team = (d.myTeam && d.myTeam.name) ? d.myTeam : { name: 'Mon équipe', image: '' };
+  var dt = new Date(m.date);
+  var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  var h = '<button class="btn btn-ghost btn-sm" onclick="ssBackCal()" style="margin-bottom:14px">← Retour au calendrier</button>';
+  h += '<div class="card ss-detail-head"><div class="ss-dh-teams">' + ssLogoImg(team, 44) + '<div class="ss-dh-vs">vs</div>' + ssLogoImg(m.opp, 44) + '<div style="min-width:0"><div class="ss-dh-name">' + anEsc((m.opp && m.opp.name) || '—') + '</div><div class="faint" style="font-size:12px">' + anEsc(m.competition || '') + ' · BO' + (m.bo || 1) + '</div></div></div>'
+    + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="faint" style="font-size:12.5px;text-transform:capitalize">' + anEsc(dateStr) + '</span><button class="btn btn-ghost btn-xs" onclick="ssDeleteMatch(\'' + m.id + '\')" style="color:var(--vs-red-400)">Supprimer</button></div></div>';
+  h += '<div class="card" style="padding:16px 20px;margin-top:14px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div><div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
+  h += '<div class="card" style="padding:16px 20px;margin-top:14px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3><div id="ss-draft"></div></div>';
+  root.innerHTML = h;
+  ssRenderDraft(m);
+}
+function ssRosterHtml(m) {
+  var rows = SS_ROLES.map(function (role) {
+    var p = (m.oppRoster || []).find(function (x) { return x.role === role; });
+    return '<div class="ss-rrow"><span class="rs-rolechip">' + role + '</span><input class="ss-rin" value="' + anEsc(p ? p.name : '') + '" placeholder="—" oninput="ssEditRoster(\'' + m.id + '\',\'' + role + '\',this.value)"></div>';
+  }).join('');
+  return '<div class="ss-roster-grid">' + rows + '</div>';
+}
+function ssEditRoster(id, role, val) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return; m.oppRoster = m.oppRoster || []; var p = m.oppRoster.find(function (x) { return x.role === role; }); if (p) p.name = val.trim(); else m.oppRoster.push({ role: role, name: val.trim() }); ssWrite(d); }
+async function ssReloadRoster(id) {
+  var box = document.getElementById('ss-roster'); if (box) box.innerHTML = '<div class="faint" style="font-size:12px">Chargement…</div>';
+  var m0 = ssData().matches.find(function (x) { return x.id === id; }); if (!m0) return;
+  var r = await ssTeamRoster(m0.opp.name).catch(function () { return null; });
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return;
+  if (r && r.length) { m.oppRoster = ssDedupeRoster(r); ssWrite(d); }
+  if (window._ssOpen === id) { var b = document.getElementById('ss-roster'); if (b) b.innerHTML = ssRosterHtml(m); if (!r || !r.length) { if (typeof showToast === 'function') showToast('Roster introuvable — vérifie le nom exact de l\'équipe', 'warning'); } }
+}
+// ── Draft ──
+function ssEmptyGame() { return { bb: ['', '', '', '', ''], rb: ['', '', '', '', ''], bp: ['', '', '', '', ''], rp: ['', '', '', '', ''] }; }
+function ssNewScenario(bo, name) { var g = []; for (var i = 0; i < (bo || 1); i++) g.push(ssEmptyGame()); return { id: ssId(), name: name, games: g }; }
+function ssDraftEnsure(m) {
+  if (!m.draft || !Array.isArray(m.draft.scenarios) || !m.draft.scenarios.length) m.draft = { active: 0, scenarios: [ssNewScenario(m.bo, 'Scénario 1')] };
+  var bo = m.bo || 1;
+  m.draft.scenarios.forEach(function (sc) { while (sc.games.length < bo) sc.games.push(ssEmptyGame()); sc.games = sc.games.slice(0, bo); });
+  if (m.draft.active >= m.draft.scenarios.length) m.draft.active = 0;
+  return m.draft;
+}
+function ssRenderDraft(m) {
+  var box = document.getElementById('ss-draft'); if (!box) return;
+  var d = ssData(); var mm = d.matches.find(function (x) { return x.id === m.id; }) || m;
+  var dr = ssDraftEnsure(mm); ssWrite(d);
+  var sc = dr.scenarios[dr.active] || dr.scenarios[0];
+  var tabs = dr.scenarios.map(function (s, i) { return '<button class="ss-sctab' + (i === dr.active ? ' on' : '') + '" onclick="ssSetScenario(\'' + mm.id + '\',' + i + ')">' + anEsc(s.name) + '</button>'; }).join('');
+  var h = '<div class="ss-sctabs">' + tabs + '<button class="ss-sctab ss-sctab-add" onclick="ssAddScenario(\'' + mm.id + '\')">+ Scénario</button></div>';
+  h += '<div class="ss-games">';
+  sc.games.forEach(function (g, gi) {
+    h += '<div class="ss-game"><div class="ss-game-t">Game ' + (gi + 1) + '</div>' + ssTeamDraft(mm.id, gi, 'b', 'Bleu', g) + ssTeamDraft(mm.id, gi, 'r', 'Rouge', g) + '</div>';
+  });
+  h += '</div>';
+  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:6px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
+  box.innerHTML = h;
+  ssRenderChampGrid();
+  ssUpdateSlotInfo();
+}
+function ssTeamDraft(mid, gi, side, label, g) {
+  var bans = g[side + 'b'], picks = g[side + 'p'];
+  var bh = '<div class="ss-side ss-side-' + side + '"><div class="ss-side-t">' + label + '</div><div class="ss-slots"><span class="ss-slabel faint">Bans</span>';
+  for (var i = 0; i < 5; i++) bh += ssSlot(mid, gi, side, 'b', i, bans[i], null);
+  bh += '</div><div class="ss-slots"><span class="ss-slabel faint">Picks</span>';
+  for (var j = 0; j < 5; j++) bh += ssSlot(mid, gi, side, 'p', j, picks[j], SS_ROLES[j]);
+  bh += '</div></div>';
+  return bh;
+}
+function ssSlot(mid, gi, side, type, idx, val, roleLbl) {
+  var key = gi + '|' + side + type + '|' + idx;
+  var sel = (window._ssSlot === key) ? ' sel' : '';
+  var inner = val ? '<img src="' + ssChampImg(val) + '" alt="' + anEsc(val) + '">' : (roleLbl ? '<span class="ss-slot-role">' + roleLbl + '</span>' : '');
+  return '<button class="ss-slot ss-slot-' + type + sel + '" onclick="ssSlotSelect(event,\'' + mid + '\',\'' + key + '\')" oncontextmenu="return ssClearSlot(event,\'' + mid + '\',\'' + key + '\')" title="' + (val ? anEsc(val) + ' — clic droit pour retirer' : 'Cliquer pour sélectionner') + '">' + inner + '</button>';
+}
+function ssSlotSelect(e, mid, key) { window._ssSlot = key; window._ssSlotMid = mid; document.querySelectorAll('.ss-slot.sel').forEach(function (b) { b.classList.remove('sel'); }); if (e && e.currentTarget) e.currentTarget.classList.add('sel'); ssUpdateSlotInfo(); }
+function ssClearSlot(e, mid, key) { e.preventDefault(); var p = key.split('|'), gi = +p[0], st = p[1], idx = +p[2]; var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (m && m.draft) { var sc = m.draft.scenarios[m.draft.active]; if (sc && sc.games[gi]) { sc.games[gi][st][idx] = ''; ssWrite(d); ssRenderDraft(m); } } return false; }
+function ssPlaceChamp(key) {
+  if (!window._ssSlot || !window._ssSlotMid) { if (typeof showToast === 'function') showToast('Sélectionne d\'abord un emplacement (ban/pick)', 'info'); return; }
+  var p = window._ssSlot.split('|'), gi = +p[0], st = p[1], idx = +p[2];
+  var d = ssData(); var m = d.matches.find(function (x) { return x.id === window._ssSlotMid; }); if (!m) return;
+  var dr = ssDraftEnsure(m); var sc = dr.scenarios[dr.active]; if (!sc || !sc.games[gi]) return;
+  sc.games[gi][st][idx] = key; ssWrite(d); ssRenderDraft(m);
+}
+function ssUpdateSlotInfo() { var el = document.getElementById('ss-slotinfo'); if (!el) return; if (window._ssSlot) { var p = window._ssSlot.split('|'), st = p[1]; el.textContent = 'Sélectionné : ' + (st.charAt(1) === 'b' ? 'Ban' : 'Pick') + ' ' + (st.charAt(0) === 'b' ? 'Bleu' : 'Rouge') + ' · Game ' + (+p[0] + 1) + ' — clique un champion (clic droit sur un emplacement = retirer).'; } else { el.textContent = 'Sélectionne un emplacement (ban/pick) puis un champion.'; } }
+async function ssRenderChampGrid() {
+  var grid = document.getElementById('ss-champgrid'); if (!grid) return;
+  var list = await ssChampList();
+  var qq = (window._ssChampQ || '').toLowerCase();
+  var f = qq ? list.filter(function (c) { return c.name.toLowerCase().indexOf(qq) >= 0; }) : list;
+  grid.innerHTML = f.slice(0, 90).map(function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
+}
+function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; var dr = ssDraftEnsure(m); dr.scenarios.push(ssNewScenario(m.bo, 'Scénario ' + (dr.scenarios.length + 1))); dr.active = dr.scenarios.length - 1; ssWrite(d); ssRenderDraft(m); }
+function ssSetScenario(mid, i) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; ssDraftEnsure(m); m.draft.active = i; ssWrite(d); ssRenderDraft(m); }
+
+/* ════════════════════════════════════════════
    AVANT-MATCH — dossier adversaire via API Riot
 ════════════════════════════════════════════ */
 const PM_ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
@@ -8980,13 +9333,14 @@ function switchPanel(id) {
   const panel = document.getElementById(`panel-${id}`);
   if (panel) panel.classList.add('active');
   const idx = ['scout','graphs','map','results','top50','analyse','history'].indexOf(id);
+  if (id === 'seasons' && typeof renderSeasons === 'function') renderSeasons();
   if (id === 'history') renderHistory();
   if (id === 'graphs') buildGraphs();
   if (id === 'map') initMapPanel();
   document.body.classList.remove('map-fullscreen');   // Carte = sous-onglet du Scouting : affichage inline, jamais bloqué en plein écran
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
-  const _navMap = { scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
+  const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
                     top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-analytics', scrimlab:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
