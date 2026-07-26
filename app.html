@@ -898,35 +898,62 @@ body:not(.theme-dark) .ss-mtab.on{ color:var(--vs-emerald-500); }
 .ss-mtab.on::after{ content:''; position:absolute; left:10px; right:10px; bottom:-1px; height:2px; border-radius:2px 2px 0 0; background:var(--vs-emerald-400); }
 .ss-mtab:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:-3px; border-radius:8px; }
 /* Feuille de route (déroulé du jour J + consignes par joueur) */
-.ss-pl-t{ font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:8px; }
+.ss-pl-t{ font-family:var(--font-display); font-weight:700; font-size:10.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--vs-emerald-300); margin-bottom:10px; }
 body:not(.theme-dark) .ss-pl-t{ color:var(--vs-emerald-500); }
-.ss-pl-list{ display:flex; flex-direction:column; gap:6px; }
-.ss-pl-row{ display:flex; align-items:center; gap:8px; }
+/* Déroulé : un rail vertical relie les puces, comme un vrai planning d'agenda —
+   pur CSS (::before/::after sur chaque ligne), aucun markup supplémentaire. */
+.ss-pl-list{ display:flex; flex-direction:column; gap:1px; }
+.ss-pl-row{ position:relative; display:flex; align-items:center; gap:8px; padding:3px 0 3px 18px; }
+.ss-pl-row::before{ content:''; position:absolute; left:4px; top:0; bottom:0; width:1px; background:var(--vs-forest-500); }
+body:not(.theme-dark) .ss-pl-row::before{ background:rgba(31,71,64,.16); }
+.ss-pl-row:first-child::before{ top:50%; }
+.ss-pl-row:last-child::before{ bottom:50%; }
+.ss-pl-row::after{ content:''; position:absolute; left:1px; top:50%; transform:translateY(-50%); width:7px; height:7px; border-radius:50%; background:var(--vs-emerald-400); box-shadow:0 0 0 3px var(--vs-forest-900); }
+body:not(.theme-dark) .ss-pl-row::after{ box-shadow:0 0 0 3px #F4F8F6; }
 .ss-pl-time,.ss-pl-lbl,.ss-pl-me,.ss-pl-mu,.ss-pl-ta{ height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; }
 body:not(.theme-dark) .ss-pl-time, body:not(.theme-dark) .ss-pl-lbl, body:not(.theme-dark) .ss-pl-me,
 body:not(.theme-dark) .ss-pl-mu, body:not(.theme-dark) .ss-pl-ta{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .ss-pl-time:focus,.ss-pl-lbl:focus,.ss-pl-me:focus,.ss-pl-mu:focus,.ss-pl-ta:focus{ outline:0; border-color:var(--vs-emerald-500); }
-.ss-pl-time{ width:96px; flex:none; font-family:var(--font-mono); font-weight:700; font-variant-numeric:tabular-nums; }
+.ss-pl-time{ width:90px; flex:none; font-family:var(--font-mono); font-weight:700; font-variant-numeric:tabular-nums; }
 .ss-pl-lbl{ flex:1; min-width:0; }
 .ss-pl-del{ width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--vs-fg-3); cursor:pointer; transition:.14s; }
 .ss-pl-del:hover{ color:var(--vs-red-400,#E0785F); border-color:var(--vs-forest-500); background:rgba(192,80,58,.1); }
-.ss-pl-ta{ display:block; width:100%; height:auto; min-height:56px; padding:8px 10px; line-height:1.5; resize:vertical; box-sizing:border-box; }
-.ss-pl-player{ border:1px solid var(--vs-forest-600); border-radius:11px; padding:10px 12px; margin-bottom:8px; display:flex; flex-direction:column; gap:7px; }
-body:not(.theme-dark) .ss-pl-player{ border-color:rgba(31,71,64,.1); }
-.ss-pl-ph{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.ss-pl-me{ width:150px; flex:0 1 150px; min-width:110px; }
-.ss-pl-vs{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); flex:none; }
-.ss-pl-opp{ font-weight:800; font-size:13px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
-.ss-pl-murow{ display:flex; gap:7px; align-items:center; }
-.ss-pl-mu{ flex:1; min-width:0; box-sizing:border-box; }
-/* Stats compétitives de l'adversaire (repliées par défaut, base compét) */
-.ss-cs-det{ margin-top:2px; }
+.ss-pl-ta{ display:block; width:100%; height:auto; min-height:52px; padding:8px 10px; line-height:1.5; resize:vertical; box-sizing:border-box; }
+/* Carte joueur : dégradé discret + avatars initiale (même composant .avatar
+   que le reste de l'app), pour que « notre joueur » et l'adversaire du jour
+   se lisent d'un coup d'œil plutôt qu'en texte brut aligné. */
+.ss-pl-player{ position:relative; border:1px solid var(--vs-forest-600); border-radius:13px; padding:13px 14px; margin-bottom:10px; display:flex; flex-direction:column; gap:11px;
+  background:linear-gradient(165deg, rgba(9,32,27,.4), rgba(4,18,15,.16)); }
+body:not(.theme-dark) .ss-pl-player{ border-color:rgba(31,71,64,.1); background:linear-gradient(165deg, rgba(31,71,64,.05), rgba(31,71,64,.014)); }
+.ss-pl-head{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.ss-pl-id{ display:flex; align-items:center; gap:7px; min-width:0; }
+.ss-pl-av{ width:26px; height:26px; border-radius:50%; flex:none; display:grid; place-items:center; font-size:11px; font-weight:900; font-family:var(--font-display); }
+.ss-pl-av-me{ background:linear-gradient(135deg,#1B4B43,#0F3A34); border:1px solid var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.ss-pl-av-opp{ background:linear-gradient(135deg,#3A1F1F,#2A1616); border:1px solid #7A3A30; color:#E0785F; }
+body:not(.theme-dark) .ss-pl-av-opp{ background:linear-gradient(135deg,#F7E4DF,#F2D5CD); color:#B14E38; }
+.ss-pl-av-empty{ opacity:.4; }
+.ss-pl-me{ border:0 !important; background:transparent !important; height:auto !important; padding:2px 0 !important; font-weight:700; font-size:13.5px; min-width:64px; width:auto; flex:1; }
+.ss-pl-me::placeholder{ font-weight:500; color:var(--vs-fg-3); }
+.ss-pl-vs{ font-family:var(--font-mono); font-size:10px; color:var(--vs-fg-3); flex:none; }
+.ss-pl-opp{ font-weight:800; font-size:13.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; }
+.ss-pl-acts{ margin-left:auto; display:flex; gap:6px; }
+.ss-pl-field{ display:flex; flex-direction:column; gap:5px; }
+.ss-pl-flabel{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ss-pl-auto{ border:0; background:rgba(45,212,167,.1); color:var(--vs-emerald-300); font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:.03em; text-transform:none; padding:3px 10px; border-radius:999px; cursor:pointer; transition:.14s; white-space:nowrap; }
+.ss-pl-auto:hover{ background:rgba(45,212,167,.18); }
+body:not(.theme-dark) .ss-pl-auto{ background:rgba(15,161,118,.1); color:var(--vs-emerald-500); }
+.ss-pl-mu{ width:100%; box-sizing:border-box; }
+/* Stats compétitives de l'adversaire (repliées par défaut, base compét) —
+   panneau imbriqué distinct une fois ouvert, pas du texte nu sous le résumé. */
+.ss-cs-det{ margin-top:2px; padding-top:9px; border-top:1px solid var(--vs-forest-600); }
+body:not(.theme-dark) .ss-cs-det{ border-top-color:rgba(31,71,64,.1); }
 .ss-cs-det summary{ cursor:pointer; list-style:none; font-size:11px; font-weight:700; color:var(--vs-emerald-300); display:flex; align-items:center; gap:5px; padding:2px 0; user-select:none; }
 body:not(.theme-dark) .ss-cs-det summary{ color:var(--vs-emerald-500); }
 .ss-cs-det summary::-webkit-details-marker{ display:none; }
 .ss-cs-det summary::before{ content:'▸'; font-size:9px; transition:transform .16s var(--ease-out); }
 .ss-cs-det[open] summary::before{ transform:rotate(90deg); }
-.ss-cs-body{ padding:8px 2px 2px; }
+.ss-cs-body{ padding:10px 11px 6px; margin-top:7px; border-radius:10px; background:rgba(4,18,15,.28); }
+body:not(.theme-dark) .ss-cs-body{ background:rgba(31,71,64,.035); }
 .ss-cs-summary{ display:flex; flex-wrap:wrap; gap:4px 12px; font-size:11.5px; color:var(--vs-fg-2); margin-bottom:8px; }
 .ss-cs-summary b{ color:var(--vs-fg-1); font-family:var(--font-mono); }
 .ss-cs-pool{ display:flex; flex-direction:column; gap:3px; }
@@ -952,13 +979,17 @@ body:not(.theme-dark) .ss-cs-det summary{ color:var(--vs-emerald-500); }
 .ss-sctab:not(.on):hover{ color:var(--vs-fg-1); }
 .ss-sctab-add{ border-style:dashed; color:var(--vs-fg-3); }
 .ss-games{ display:flex; flex-direction:column; gap:14px; }
-.ss-game{ border:1px solid var(--vs-forest-600); border-radius:12px; padding:12px; }
+.ss-game{ border:1px solid var(--vs-forest-600); border-radius:13px; padding:4px 12px 12px; overflow:hidden; }
 body:not(.theme-dark) .ss-game{ border-color:rgba(31,71,64,.1); }
-.ss-game-t{ font-family:var(--font-display); font-weight:700; font-size:12px; color:var(--vs-fg-2); margin-bottom:8px; text-transform:uppercase; letter-spacing:.05em; }
-.ss-side{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:6px 0; }
-.ss-side + .ss-side{ border-top:1px solid var(--vs-forest-700); }
-body:not(.theme-dark) .ss-side + .ss-side{ border-top-color:rgba(31,71,64,.08); }
-.ss-side-t{ width:52px; flex:none; font-weight:800; font-size:12px; }
+.ss-game-t{ font-family:var(--font-display); font-weight:700; font-size:11px; color:var(--vs-fg-2); margin:0 -12px 8px; padding:7px 12px; text-transform:uppercase; letter-spacing:.06em; background:rgba(45,212,167,.05); border-bottom:1px solid var(--vs-forest-600); }
+body:not(.theme-dark) .ss-game-t{ background:rgba(31,71,64,.03); border-bottom-color:rgba(31,71,64,.08); }
+/* Côtés Bleu/Rouge : liseré + fond très légèrement teintés, comme un vrai plateau
+   de draft (convention universelle du jeu) — lisible d'un coup d'œil. */
+.ss-side{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:8px 10px; margin:0 -2px; border-radius:9px; border-left:2px solid transparent; }
+.ss-side + .ss-side{ margin-top:2px; }
+.ss-side-b{ background:rgba(72,160,255,.05); border-left-color:#48A0FF; }
+.ss-side-r{ background:rgba(255,107,90,.05); border-left-color:#FF6B5A; }
+.ss-side-t{ width:48px; flex:none; font-weight:800; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; }
 .ss-side-b .ss-side-t{ color:#48A0FF; }
 .ss-side-r .ss-side-t{ color:#FF6B5A; }
 .ss-slots{ display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
@@ -6531,15 +6562,19 @@ async function ssTeamSearch(q) {
 }
 function ssTeamLogo(t) { return (t && t.image) ? ('https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(t.image)) : ''; }
 async function ssTeamRoster(name) {
-  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role&where=Team%3D%22' + encodeURIComponent(String(name).replace(/"/g, '')) + '%22&format=json&origin=*&limit=30';
+  // OverviewPage = la page wiki canonique du joueur ("Link" dans ScoreboardPlayers).
+  // Indispensable : quand deux joueurs partagent un pseudo, Leaguepedia désambiguïse
+  // le Link avec le nom complet ("Prime (Olivier Payet)") alors que l'ID affiché
+  // reste juste "Prime" — chercher ses games par l'ID brut ne trouvait alors rien.
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role,OverviewPage&where=Team%3D%22' + encodeURIComponent(String(name).replace(/"/g, '')) + '%22&format=json&origin=*&limit=30';
   var rows = await pmCargo(url); if (!rows) return null;
   var rm = { Top: 'Top', Jungle: 'Jgl', Mid: 'Mid', Bot: 'ADC', 'AD Carry': 'ADC', ADC: 'ADC', Support: 'Sup' };
-  return rows.map(function (r) { return { name: r.title.ID || '', role: rm[r.title.Role] || r.title.Role || '' }; }).filter(function (p) { return p.name; });
+  return rows.map(function (r) { return { name: r.title.ID || '', link: r.title.OverviewPage || r.title.ID || '', role: rm[r.title.Role] || r.title.Role || '' }; }).filter(function (p) { return p.name; });
 }
 function ssDedupeRoster(list) {
   var out = [];
-  SS_ROLES.forEach(function (role) { var p = list.find(function (x) { return x.role === role; }); if (p) out.push({ name: p.name, role: role }); });
-  list.forEach(function (p) { if (SS_ROLES.indexOf(p.role) < 0 && !out.find(function (o) { return o.name === p.name; })) out.push(p); });
+  SS_ROLES.forEach(function (role) { var p = list.find(function (x) { return x.role === role; }); if (p) out.push({ name: p.name, link: p.link || p.name, role: role }); });
+  list.forEach(function (p) { if (SS_ROLES.indexOf(p.role) < 0 && !out.find(function (o) { return o.name === p.name; })) out.push({ name: p.name, link: p.link || p.name, role: p.role }); });
   return out.slice(0, 7);
 }
 function ssLogoImg(t, size) {
@@ -6791,7 +6826,7 @@ function ssRosterHtml(m) {
   }).join('');
   return '<div class="ss-roster-grid">' + rows + '</div>';
 }
-function ssEditRoster(id, role, val) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return; m.oppRoster = m.oppRoster || []; var p = m.oppRoster.find(function (x) { return x.role === role; }); if (p) p.name = val.trim(); else m.oppRoster.push({ role: role, name: val.trim() }); ssWrite(d); }
+function ssEditRoster(id, role, val) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === id; }); if (!m) return; m.oppRoster = m.oppRoster || []; var v = val.trim(); var p = m.oppRoster.find(function (x) { return x.role === role; }); if (p) { p.name = v; p.link = v; } else m.oppRoster.push({ role: role, name: v, link: v }); if (window._ssCompetCache) delete window._ssCompetCache[id]; ssWrite(d); }
 async function ssReloadRoster(id) {
   var box = document.getElementById('ss-roster'); if (box) box.innerHTML = '<div class="faint" style="font-size:12px">Chargement…</div>';
   var m0 = ssData().matches.find(function (x) { return x.id === id; }); if (!m0) return;
@@ -7087,6 +7122,9 @@ function ssPlanSet(id, fn) {
   var p = ssPlanEnsure(m); fn(p, m); ssWrite(d); return m;
 }
 function ssOppAt(m, role) { var p = (m.oppRoster || []).find(function (x) { return x.role === role; }); return p ? p.name : ''; }
+// Page wiki canonique du joueur, pour interroger la base compét — distincte du
+// pseudo affiché quand Leaguepedia désambiguïse deux joueurs homonymes.
+function ssOppLink(m, role) { var p = (m.oppRoster || []).find(function (x) { return x.role === role; }); return p ? (p.link || p.name) : ''; }
 // ── Rendu de l'éditeur ──
 function ssPlanHtml(m) {
   var p = ssPlanEnsure(m);
@@ -7108,17 +7146,25 @@ function ssPlanHtml(m) {
     + '<div class="ss-pl-t" style="margin-top:16px">Par joueur</div>';
   h += SS_ROLES.map(function (role) {
     var pl = p.players[role], opp = ssOppAt(m, role);
+    var meIni = anEsc((pl.me || '?').charAt(0).toUpperCase());
+    var oppIni = anEsc((opp || '?').charAt(0).toUpperCase());
     return '<div class="ss-pl-player">'
-      + '<div class="ss-pl-ph"><span class="rs-rolechip">' + role + '</span>'
-      + '<input class="ss-pl-me" value="' + anEsc(pl.me || '') + '" placeholder="Notre joueur" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'me\',this.value)">'
-      + '<span class="ss-pl-vs">vs</span>'
-      + '<span class="ss-pl-opp' + (opp ? '' : ' faint') + '">' + anEsc(opp || '—') + '</span>'
-      + '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier sa feuille</button>'
-      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button></div>'
-      + '<div class="ss-pl-murow"><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Matchup : champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)">'
-      + (opp ? ('<button class="btn btn-ghost btn-xs" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
+      + '<div class="ss-pl-head">'
+        + '<span class="rs-rolechip">' + role + '</span>'
+        + '<div class="ss-pl-id"><div class="ss-pl-av ss-pl-av-me">' + meIni + '</div>'
+        + '<input class="ss-pl-me" value="' + anEsc(pl.me || '') + '" placeholder="Notre joueur" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'me\',this.value)"></div>'
+        + '<span class="ss-pl-vs">vs</span>'
+        + '<div class="ss-pl-id"><div class="ss-pl-av ss-pl-av-opp' + (opp ? '' : ' ss-pl-av-empty') + '">' + oppIni + '</div>'
+        + '<span class="ss-pl-opp' + (opp ? '' : ' faint') + '">' + anEsc(opp || '—') + '</span></div>'
+        + '<div class="ss-pl-acts">'
+        + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier sa feuille</button>'
+        + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button>'
+        + '</div>'
       + '</div>'
-      + '<textarea class="ss-pl-ta" rows="2" placeholder="Ses consignes : une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea>'
+      + '<label class="ss-pl-field"><span class="label ss-pl-flabel">Matchup'
+      + (opp ? ('<button type="button" class="ss-pl-auto" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
+      + '</span><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)"></label>'
+      + '<label class="ss-pl-field"><span class="label">Consignes</span><textarea class="ss-pl-ta" rows="2" placeholder="Une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea></label>'
       + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
   }).join('');
@@ -7134,8 +7180,8 @@ function ssCompetStatsHtml(mid, role) {
   var cache = (window._ssCompetCache || {})[mid];
   if (!cache) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Chargement…</div>';
   var m = ssData().matches.find(function (x) { return x.id === mid; }); if (!m) return '';
-  var name = ssOppAt(m, role);
-  var s = cache[ssCompetKey(name)];
+  var link = ssOppLink(m, role);
+  var s = cache[ssCompetKey(link)];
   if (s === SS_ERR) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Base compét momentanément surchargée — <a href="#" onclick="ssRetryCompet(\'' + mid + '\');return false" style="color:var(--vs-emerald-300)">réessayer</a>.</div>';
   if (!s) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune partie compétitive trouvée pour ce pseudo dans la base compét.</div>';
   var h = '<div class="ss-cs-summary">'
@@ -7169,7 +7215,10 @@ async function ssLoadCompetStats(mid) {
   window._ssCompetFetch = window._ssCompetFetch || {};
   if (window._ssCompetFetch[mid]) return; window._ssCompetFetch[mid] = true;
   var m = ssData().matches.find(function (x) { return x.id === mid; });
-  var names = (m && m.oppRoster || []).map(function (p) { return p.name; }).filter(Boolean);
+  // On interroge par LINK (page wiki canonique), pas par le pseudo affiché : sinon
+  // un joueur homonyme desambiguïsé par Leaguepedia ("Prime (Olivier Payet)")
+  // ne remonte jamais de résultat alors que ses games existent bien.
+  var names = (m && m.oppRoster || []).map(function (p) { return p.link || p.name; }).filter(Boolean);
   if (!names.length) { window._ssCompetFetch[mid] = false; return; }
   var raw = await pmFetchCompetBatch(names).catch(function () { return null; });
   window._ssCompetFetch[mid] = false;
@@ -7196,7 +7245,7 @@ function ssMatchupBrief(mid, role) {
   var cache = (window._ssCompetCache || {})[mid]; if (!cache) return null;
   var m = ssData().matches.find(function (x) { return x.id === mid; }); if (!m) return null;
   var name = ssOppAt(m, role); if (!name) return null;
-  var s = cache[ssCompetKey(name)];
+  var s = cache[ssCompetKey(ssOppLink(m, role))];
   if (!s || s === SS_ERR) return null;
   var pool = (s.champPool || []).slice();
   var sample = pool.filter(function (c) { return c.games >= 2; });
