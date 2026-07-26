@@ -6814,7 +6814,13 @@ function ssRenderMatchDetail(root, id) {
   if (tab === 'draft') ssRenderDraft(m);
   // Roster adverse : chargement AUTOMATIQUE (plus de saisie manuelle nécessaire).
   if (tab === 'prematch') {
-    if (!m.oppRoster || !m.oppRoster.length) ssReloadRoster(m.id);
+    // Migration silencieuse : un roster chargé avant l'ajout du champ `link`
+    // (page wiki canonique) n'a que le pseudo affiché — on le rafraîchit une
+    // fois automatiquement, sinon les joueurs homonymes désambiguïsés
+    // (ex. Prime → "Prime (Olivier Payet)") restaient bloqués sur « aucune
+    // partie trouvée » jusqu'à un clic manuel sur Recharger.
+    var needsLinkMigration = (m.oppRoster || []).length && m.oppRoster.some(function (p) { return !('link' in p); });
+    if (!m.oppRoster || !m.oppRoster.length || needsLinkMigration) ssReloadRoster(m.id);
     else if (!(window._ssCompetCache || {})[m.id]) ssLoadCompetStats(m.id);
   }
   if (tab === 'result' && !m.result) ssEnsureResult(m.id);
@@ -7183,7 +7189,7 @@ function ssCompetStatsHtml(mid, role) {
   var link = ssOppLink(m, role);
   var s = cache[ssCompetKey(link)];
   if (s === SS_ERR) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Base compét momentanément surchargée — <a href="#" onclick="ssRetryCompet(\'' + mid + '\');return false" style="color:var(--vs-emerald-300)">réessayer</a>.</div>';
-  if (!s) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune partie compétitive trouvée pour ce pseudo dans la base compét.</div>';
+  if (!s) return '<div class="faint" style="font-size:11.5px;padding:6px 2px">Aucune partie compétitive trouvée pour ce pseudo — recharge le roster (le lien wiki du joueur a pu changer) ou vérifie l\'orthographe exacte : <a href="#" onclick="ssReloadRoster(\'' + mid + '\');return false" style="color:var(--vs-emerald-300)">recharger le roster</a>.</div>';
   var h = '<div class="ss-cs-summary">'
     + '<span><b>' + s.count + '</b> games</span>'
     + '<span><b>' + s.winrate + '%</b> winrate</span>'
