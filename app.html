@@ -141,7 +141,7 @@ document.addEventListener('visibilitychange', function(){ if (!document.hidden) 
 /* ── Verrouillage par pack (plan) ── */
 function vsPlan(){ var t=vsToken(); if(!t) return 'elite'; try{ var s=t.split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.plan||'elite'; }catch(e){ return 'elite'; } }
 window.VS_PLAN_RANK = { starter:1, pro:2, elite:3 };
-window.VS_PANEL_MINRANK = { top50:2, map:2, prematch:2, scrimlab:2 };   /* Top 30, Carte, Avant-match : Pro+. Le hub Analytics est ouvert ; gating au niveau des onglets (Performance/Upgrade = Pro+, Comparer = tous) */
+window.VS_PANEL_MINRANK = { top50:2, map:2, scrimlab:2, analytics:2 };   /* Top 30, Carte, Analytics : Pro+. L'ancien "Avant-match" standalone a été retiré (il vit désormais dans Seasons, par match) et Comparer a déménagé dans CRM Agent (ouvert à tous) — Analytics n'a donc plus de contenu gratuit, tout le hub passe Pro+. */
 function vsCanAccess(panelId){ var need=window.VS_PANEL_MINRANK[panelId]||1; var have=window.VS_PLAN_RANK[vsPlan()]||1; return have>=need; }
 function vsUpsell(panelId){ var n={top50:'Le Top 30',map:'La Carte LoL'}; var msg=(n[panelId]||'Ce module')+' est réservé aux offres Pro et Elite.'; if(typeof showToast==='function'){ showToast(msg,'error'); } else { alert(msg); } }
 function applyPlanGating(){
@@ -917,7 +917,8 @@ body:not(.theme-dark) .ss-pl-player{ border-color:rgba(31,71,64,.1); }
 .ss-pl-me{ width:150px; flex:0 1 150px; min-width:110px; }
 .ss-pl-vs{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); flex:none; }
 .ss-pl-opp{ font-weight:800; font-size:13px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:170px; }
-.ss-pl-mu{ width:100%; box-sizing:border-box; }
+.ss-pl-murow{ display:flex; gap:7px; align-items:center; }
+.ss-pl-mu{ flex:1; min-width:0; box-sizing:border-box; }
 /* Stats compétitives de l'adversaire (repliées par défaut, base compét) */
 .ss-cs-det{ margin-top:2px; }
 .ss-cs-det summary{ cursor:pointer; list-style:none; font-size:11px; font-weight:700; color:var(--vs-emerald-300); display:flex; align-items:center; gap:5px; padding:2px 0; user-select:none; }
@@ -934,6 +935,16 @@ body:not(.theme-dark) .ss-cs-det summary{ color:var(--vs-emerald-500); }
 .ss-cs-wr{ margin-left:auto; font-family:var(--font-mono); font-weight:800; color:var(--vs-fg-2); }
 .ss-cs-wr.hi{ color:var(--vs-emerald-400); }
 .ss-cs-wr.lo{ color:#E0785F; }
+.ss-cs-t{ font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); margin:9px 0 5px; }
+.ss-cs-t:first-of-type{ margin-top:0; }
+.ss-cs-form{ display:flex; gap:5px; }
+.ss-cs-formg{ display:inline-flex; width:26px; height:26px; border-radius:6px; overflow:hidden; box-shadow:0 0 0 2px var(--ss-form-c,var(--vs-forest-500)); }
+.ss-cs-formg.w{ --ss-form-c:var(--vs-emerald-400); }
+.ss-cs-formg.l{ --ss-form-c:#C0503A; }
+.ss-cs-formg img{ width:100%; height:100%; object-fit:cover; }
+.ss-cs-tag{ font-size:9.5px; font-weight:700; letter-spacing:.02em; padding:1px 7px; border-radius:999px; margin-left:6px; white-space:nowrap; }
+.ss-cs-tag.ban{ color:#fff; background:#C0503A; }
+.ss-cs-tag.weak{ color:#04211C; background:var(--vs-emerald-400); }
 /* Draft */
 .ss-sctabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
 .ss-sctab{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); font-family:var(--font-display); font-weight:700; font-size:11.5px; padding:5px 11px; border-radius:8px; cursor:pointer; transition:.14s; }
@@ -4568,17 +4579,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </div>
     </div><!-- /panel-top50 -->
 
-    <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — onglet du hub Analytics) ══ -->
+    <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — désormais un onglet de CRM Agent) ══ -->
     <div id="panel-analyse" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
-        <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
-          <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
-          <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
-          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
-          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
-        </div>
+        <button class="btn btn-ghost btn-sm" onclick="switchPanel('crm')" style="align-self:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Retour au CRM Agent</button>
         <!-- Head Comparaison (maquette 05) + export -->
         <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
           <div class="page-head" style="min-width:0">
@@ -4687,6 +4691,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" id="crm-tab-pipeline" onclick="crmShowTab('pipeline')">Pipeline</button>
           <button class="an-tab chip" id="crm-tab-candidatures" onclick="crmShowTab('candidatures')">Candidatures</button>
           <button class="an-tab chip" id="crm-tab-matching" onclick="crmShowTab('matching')">Matching</button>
+          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
         </div>
 
         <!-- Page head -->
@@ -4764,13 +4769,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
-          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
-          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
         </div>
         <div class="page-head">
           <div class="eyebrow">Analytics</div>
           <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
+          <p class="muted">Analyse les parties de tes joueurs, suis ton roster et lis les timelines.</p>
         </div>
         <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
@@ -4846,53 +4849,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
       </div>
     </div><!-- /panel-analytics -->
-
-    <!-- ══ PANEL : AVANT-MATCH (dossier adversaire) ══ -->
-    <div id="panel-prematch" class="panel">
-      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <!-- Barre segmentée AU-DESSUS du titre (maquette) -->
-        <div class="rolepills an-tabbar">
-          <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
-          <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
-          <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
-          <button class="an-tab chip" data-tab="comparer" onclick="anGoTab('comparer')">Comparer</button>
-          <button class="an-tab chip" data-tab="prematch" onclick="anGoTab('prematch')">Avant-match</button>
-        </div>
-        <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, compare-les, suis ton roster et lis les timelines.</p>
-        </div>
-        <div class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
-
-        <div style="margin-bottom:2px">
-          <div class="h3" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:19px">Dossier d'avant-match <span class="pill pill-emerald">Solo Q + Compétition</span></div>
-          <p class="faint" style="font-size:.8rem;margin:4px 0 0;line-height:1.6">Saisis le roster adverse. <strong>Pseudo#TAG</strong> = stats Solo Q (API Riot). <strong>Nom pro</strong> = stats Compétition, utile quand le smurf soloq diffère du nom pro. Les deux champs sont indépendants.</p>
-        </div>
-
-        <div class="card" style="padding:18px 20px">
-          <div class="grid" style="grid-template-columns:160px 1fr auto;gap:12px;align-items:end">
-            <div class="fld">
-              <div class="label">Serveur</div>
-              <div class="ctrl select"><select id="pm-server">
-                <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
-              </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            </div>
-            <div class="fld" style="position:relative">
-              <div class="label">Équipe adverse</div>
-              <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="pm-team" autocomplete="off" placeholder="Tapez le nom de l'équipe (ex. Karmine)…"/></div>
-              <div id="pm-team-sugg" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--vs-forest-800);border:1px solid var(--vs-forest-500);border-radius:8px;z-index:60;max-height:260px;overflow-y:auto;box-shadow:0 18px 40px -18px rgba(0,0,0,.7)"></div>
-            </div>
-            <button onclick="tmLoadRoster()" class="btn btn-ghost"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Charger</button>
-          </div>
-          <div id="pm-team-status" class="faint" style="display:none;font-size:.8rem;margin-top:10px"></div>
-          <div id="pm-inputs" style="display:flex;flex-direction:column;gap:8px;margin-top:14px"></div>
-          <button id="pm-go" onclick="pmGenerate()" class="btn btn-cta" style="margin-top:14px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Générer le dossier</button>
-        </div>
-        <div id="pm-status" class="faint" style="display:none;font-size:.82rem;margin:4px 0"></div>
-        <div id="pm-dossier" style="margin-top:4px"></div>
-      </div>
-    </div><!-- /panel-prematch -->
 
     <!-- ══ PANEL : SCRIMLAB — studio d'analyse vidéo (codage Sportscode + télestration Metrica, adapté LoL) ══ -->
     <div id="panel-scrimlab" class="panel">
@@ -5646,16 +5602,18 @@ async function rsRenderCompare() {
   }
 }
 function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)' : s >= 4.5 ? 'var(--amber)' : 'var(--red)'; }
-/* Hub Analytics : 3 outils. perf/roster = Pro+ (rang 2), comparer = tous (rang 1) */
+/* Hub Analytics (Pro+ désormais, cf. VS_PANEL_MINRANK.analytics) : perf/roster/timeline.
+   Comparer a déménagé dans CRM Agent (rang 1, ouvert à tous) — reste dans ce
+   dictionnaire pour sa description, mais n'a plus de barre .an-desc à remplir
+   depuis que panel-analyse a perdu sa barre d'onglets jumelle. */
 const AN_DESC = {
   scrim: 'Studio d\'analyse vidéo de scrims : code les actions en direct (gank, dive, teamfight…), dessine sur l\'image, monte des playlists et lis la matrice — comme les staffs du foot pro.',
   perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
   roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 30) peut l\'améliorer poste par poste.',
   timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
-  prematch: 'Dossier d\'avant-match sur l\'équipe adverse : roster, picks Solo Q (API Riot) + compétitif, forme récente et menaces à cibler.',
 };
-function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'prematch') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline') ? 2 : 1; }
 function anSyncTabs(active) {
   // [data-tab] : ne toucher que les onglets Analytics — les barres segmentées
   // d'autres panneaux (CRM…) gèrent leur état actif elles-mêmes.
@@ -5727,7 +5685,7 @@ function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
     const t = b.getAttribute('data-tab');
-    if ((t === 'scrim' || t === 'perf' || t === 'roster' || t === 'timeline' || t === 'prematch') && rank < 2 && !b.querySelector('.an-lock')) {
+    if ((t === 'scrim' || t === 'perf' || t === 'roster' || t === 'timeline') && rank < 2 && !b.querySelector('.an-lock')) {
       const s = document.createElement('span');
       s.className = 'an-lock'; s.textContent = 'Pro';
       s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
@@ -5738,8 +5696,7 @@ function anDecorateTabs() {
 function anGoTab(tab) {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   if (anTabRank(tab) > rank) { vsUpsell('analytics'); return; }
-  if (tab === 'comparer') { switchPanel('analyse'); return; }   // le handler de 'analyse' resynchronise les onglets
-  if (tab === 'prematch') { switchPanel('prematch'); return; }  // Avant-match = panneau dédié, resynchronisé par switchPanel
+  if (tab === 'comparer') { switchPanel('analyse'); return; }   // panneau dédié (accessible depuis CRM Agent)
   switchPanel('analytics');
   anShowView(tab);
 }
@@ -5754,9 +5711,7 @@ function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes 
   // pause ; son studio reste dans le DOM sous #scrim-studio-legacy, non routé).
   if (view === 'scrim' && typeof renderStatsBoard === 'function') renderStatsBoard();
 }
-function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics
-  const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
-  if (rank < 2) { switchPanel('analyse'); return; }   // Starter : seul Comparer est accessible → on y va directement
+function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics — déjà gardé Pro+ par vsCanAccess('analytics')
   anShowView('scrim');
 }
 let _rsWhatIf = null; // réservé (prévisualisation what-if)
@@ -7160,7 +7115,9 @@ function ssPlanHtml(m) {
       + '<span class="ss-pl-opp' + (opp ? '' : ' faint') + '">' + anEsc(opp || '—') + '</span>'
       + '<button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier sa feuille</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button></div>'
-      + '<input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Matchup : champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)">'
+      + '<div class="ss-pl-murow"><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Matchup : champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)">'
+      + (opp ? ('<button class="btn btn-ghost btn-xs" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
+      + '</div>'
       + '<textarea class="ss-pl-ta" rows="2" placeholder="Ses consignes : une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea>'
       + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
@@ -7190,9 +7147,17 @@ function ssCompetStatsHtml(mid, role) {
     + '<span>' + Math.round(s.dmgAvg / 1000) + 'k dégâts</span>'
     + '<span>' + Math.round(s.goldAvg / 1000) + 'k or</span>'
     + '</div>';
+  var brief = ssMatchupBrief(mid, role);
+  if (brief && brief.recent.length) {
+    h += '<div class="ss-cs-t">Forme récente · ' + anEsc(brief.recentForm) + '</div>'
+      + '<div class="ss-cs-form">' + brief.recent.map(function (g) {
+        return '<span class="ss-cs-formg ' + (g.win ? 'w' : 'l') + '">' + ssRealChampImg(g.champ) + '</span>';
+      }).join('') + '</div>';
+  }
   if (s.champPool && s.champPool.length) {
-    h += '<div class="ss-cs-pool">' + s.champPool.map(function (c) {
-      return '<div class="ss-cs-champrow">' + ssRealChampImg(c.name) + '<span class="ss-cs-cn">' + anEsc(c.name) + '</span><span class="faint">' + c.games + ' games</span><span class="ss-cs-wr' + (c.wr >= 55 ? ' hi' : (c.wr < 45 ? ' lo' : '')) + '">' + c.wr + '% WR</span></div>';
+    h += '<div class="ss-cs-t">Pool de champions</div><div class="ss-cs-pool">' + s.champPool.map(function (c) {
+      var tag = brief && brief.ban && brief.ban.name === c.name ? '<span class="ss-cs-tag ban">Ban prioritaire</span>' : (brief && brief.weak && brief.weak.name === c.name ? '<span class="ss-cs-tag weak">Point faible</span>' : '');
+      return '<div class="ss-cs-champrow">' + ssRealChampImg(c.name) + '<span class="ss-cs-cn">' + anEsc(c.name) + '</span><span class="faint">' + c.games + ' games</span><span class="ss-cs-wr' + (c.wr >= 55 ? ' hi' : (c.wr < 45 ? ' lo' : '')) + '">' + c.wr + '% WR</span>' + tag + '</div>';
     }).join('') + '</div>';
   }
   if (s.byEvent && s.byEvent.length) {
@@ -7222,6 +7187,41 @@ function ssRetryCompet(mid) {
   if (window._ssCompetFetch) window._ssCompetFetch[mid] = false;
   SS_ROLES.forEach(function (role) { var box = document.getElementById('ss-cs-' + role); if (box) box.innerHTML = '<div class="faint" style="font-size:11.5px;padding:6px 2px">Chargement…</div>'; });
   ssLoadCompetStats(mid);
+}
+// ── Brief matchup data-driven : dérivé des stats compét déjà en cache ──
+// Toujours recalculé au moment de l'affichage/export à partir du CACHE live —
+// jamais figé dans m.plan — pour rester à jour si le roster adverse ou les
+// stats changent (nouveau match publié, correction de roster…).
+function ssMatchupBrief(mid, role) {
+  var cache = (window._ssCompetCache || {})[mid]; if (!cache) return null;
+  var m = ssData().matches.find(function (x) { return x.id === mid; }); if (!m) return null;
+  var name = ssOppAt(m, role); if (!name) return null;
+  var s = cache[ssCompetKey(name)];
+  if (!s || s === SS_ERR) return null;
+  var pool = (s.champPool || []).slice();
+  var sample = pool.filter(function (c) { return c.games >= 2; });
+  var ban = sample.slice().sort(function (a, b) { return b.wr - a.wr || b.games - a.games; })[0] || pool[0] || null;
+  var weakPool = sample.filter(function (c) { return !ban || c.name !== ban.name; });
+  var weak = weakPool.slice().sort(function (a, b) { return a.wr - b.wr || b.games - a.games; })[0] || null;
+  var recent = (s.games || []).slice(0, 5);   // déjà trié du plus récent au plus ancien (requête DESC)
+  var wins = recent.filter(function (g) { return g.win; }).length;
+  return { name: name, stats: s, top: pool.slice(0, 3), ban: ban, weak: weak, recent: recent, recentForm: recent.length ? (wins + 'V–' + (recent.length - wins) + 'D') : '' };
+}
+// Paragraphe texte prêt à coller dans le champ Matchup — le coach peut ensuite
+// l'éditer librement, mais il part d'un vrai constat chiffré plutôt que d'une
+// case vide qu'il faudrait remplir de mémoire.
+function ssMatchupSuggest(mid, role) {
+  var b = ssMatchupBrief(mid, role);
+  if (!b) { if (typeof showToast === 'function') showToast('Pas encore de données pour ce joueur — attends le chargement ou réessaie.', 'warning'); return; }
+  var L = [];
+  if (b.top.length) L.push('Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', ') + '.');
+  if (b.ban) L.push('Priorité ban : ' + b.ban.name + ' (' + b.ban.wr + '% WR sur ' + b.ban.games + ' games).');
+  if (b.weak) L.push('Point faible identifié : ' + b.weak.name + ' (' + b.weak.wr + '% WR sur ' + b.weak.games + ' games) — cibler si drafté en face.');
+  if (b.recentForm) L.push('Forme récente : ' + b.recentForm + ' sur les ' + b.recent.length + ' derniers matchs (' + b.recent.map(function (g) { return g.champ + ' (' + (g.win ? 'V' : 'D') + ')'; }).join(', ') + ').');
+  L.push('KDA saison ' + b.stats.kda + ' · ' + b.stats.csAvg + ' CS · ' + b.stats.visionAvg + ' vision en moyenne.');
+  ssPlanSet(mid, function (p) { if (p.players[role]) p.players[role].matchup = L.join(' '); });
+  ssPlanRefresh(mid);
+  if (typeof showToast === 'function') showToast('Matchup rempli depuis les stats de ' + b.name, 'success');
 }
 // ── Édition (sans re-render : on ne perd jamais le focus de la frappe) ──
 function ssPlanTime(id, itId, v) { ssPlanSet(id, function (p) { var it = p.items.find(function (x) { return x.id === itId; }); if (it) it.time = v; }); }
@@ -7263,6 +7263,15 @@ function ssSheetText(m, role) {
     L.push(r.toUpperCase() + ' — ' + (pl.me || '?') + '  vs  ' + (oppName || '?'));
     if ((pl.matchup || '').trim()) L.push('  Matchup : ' + pl.matchup.trim());
     if ((pl.notes || '').trim()) { L.push('  Consignes :'); pl.notes.split('\n').forEach(function (l) { if (l.trim()) L.push('    - ' + l.trim()); }); }
+    // Données live de la base compét — toujours à jour au moment de l'export,
+    // indépendamment de ce que le coach a (ou non) recopié dans « Matchup ».
+    var b = ssMatchupBrief(m.id, r);
+    if (b) {
+      if (b.top.length) L.push('  Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', '));
+      if (b.ban) L.push('  Ban prioritaire : ' + b.ban.name + ' (' + b.ban.wr + '% WR / ' + b.ban.games + 'g)');
+      if (b.weak) L.push('  Point faible : ' + b.weak.name + ' (' + b.weak.wr + '% WR / ' + b.weak.games + 'g)');
+      if (b.recentForm) L.push('  Forme récente : ' + b.recentForm + ' (' + b.recent.map(function (g) { return g.champ + ' ' + (g.win ? 'V' : 'D'); }).join(', ') + ')');
+    }
   };
   if (role) block(role); else SS_ROLES.forEach(block);
   L.push('');
@@ -7343,6 +7352,15 @@ function ssSheetPdf(id, role) {
     if ((pl.matchup || '').trim()) body('Matchup : ' + pl.matchup.trim(), 2);
     if ((pl.notes || '').trim()) { pl.notes.split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); }
     if (!(pl.matchup || '').trim() && !(pl.notes || '').trim()) body('(rien de renseigné)', 2);
+    // Données live de la base compét (toujours à jour, indépendamment du texte
+    // libre ci-dessus — c'est le brief chiffré que le coach ne doit pas recopier).
+    var b = ssMatchupBrief(m.id, r);
+    if (b) {
+      if (b.top.length) body('Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', '), 2);
+      if (b.ban) body('Ban prioritaire : ' + b.ban.name + ' (' + b.ban.wr + '% WR / ' + b.ban.games + 'g)', 2, true);
+      if (b.weak) body('Point faible : ' + b.weak.name + ' (' + b.weak.wr + '% WR / ' + b.weak.games + 'g)', 2);
+      if (b.recentForm) body('Forme récente : ' + b.recentForm + ' (' + b.recent.map(function (g) { return g.champ + ' ' + (g.win ? 'V' : 'D'); }).join(', ') + ')', 2);
+    }
     y += 3;
   };
   if (role) block(role); else SS_ROLES.forEach(block);
@@ -7354,55 +7372,13 @@ function ssSheetPdf(id, role) {
 }
 
 /* ════════════════════════════════════════════
-   AVANT-MATCH — dossier adversaire via API Riot
+   Base compét partagée — dossier avant-match adverse (via API Riot / Leaguepedia)
+   ─────────────────────────────────────────────
+   L'outil "Avant-match" autonome a été retiré (l'avant-match vit désormais dans
+   Seasons, par match programmé). Les fonctions ci-dessous restent : elles sont
+   partagées avec Seasons (ssLoadCompetStats/ssMatchupBrief) et avec le module
+   Résultats (rsPdLoadGames/rsPdLoadSplit/rsPdGameDetail).
 ════════════════════════════════════════════ */
-const PM_ROLES = ['Top', 'Jungle', 'Mid', 'ADC', 'Support'];
-let PM_WIRED = false;
-function initPrematch() {
-  const box = document.getElementById('pm-inputs');
-  if (box && !PM_WIRED) {
-    PM_WIRED = true;
-    box.innerHTML = PM_ROLES.map((r, i) =>
-      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-      '<span class="label" style="width:64px;font-size:.72rem;flex:0 0 auto">' + r + '</span>' +
-      '<div class="ctrl" style="flex:2;min-width:150px"><input id="pm-in-' + i + '" placeholder="Pseudo#TAG (soloq)"/></div>' +
-      '<div class="ctrl" style="flex:1;min-width:120px"><input id="pm-pro-' + i + '" placeholder="Nom pro (compétition)"/></div>' +
-      '</div>').join('');
-  }
-  tmInitAutocomplete();
-}
-let tmTimer = null;
-function tmInitAutocomplete() {
-  const inp = document.getElementById('pm-team');
-  if (!inp || inp._ac) return; inp._ac = true;
-  inp.addEventListener('input', () => {
-    clearTimeout(tmTimer);
-    const q = inp.value.trim();
-    if (q.length < 3) { tmHideSugg(); return; }
-    tmTimer = setTimeout(() => tmSuggest(q), 700);
-  });
-  inp.addEventListener('keydown', e => { if (e.key === 'Enter') { tmHideSugg(); tmLoadRoster(); } });
-  document.addEventListener('click', e => { if (!e.target.closest('#pm-team-sugg') && e.target !== inp) tmHideSugg(); });
-}
-function tmHideSugg() { const s = document.getElementById('pm-team-sugg'); if (s) { s.style.display = 'none'; s.innerHTML = ''; } }
-async function tmSuggest(q) {
-  const box = document.getElementById('pm-team-sugg'); if (!box) return;
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=8&format=json&origin=*';
-  const rows = await pmCargo(url);
-  if (rows === null) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Service momentanément surchargé, réessayez dans un instant…</div>'; box.style.display = 'block'; return; }
-  if (!rows.length) { box.innerHTML = '<div style="padding:8px 10px;color:var(--sub);font-size:.78rem">Aucune équipe trouvée</div>'; box.style.display = 'block'; return; }
-  const names = rows.map(r => r.title.Name || '').filter(Boolean);
-  window._tmSugg = names;
-  // On affiche la Région (déjà renvoyée par la requête Teams ci-dessus) au lieu de
-  // relancer une requête « ligues » par frappe : ça divisait le rate-limit Leaguepedia
-  // par ~2 et provoquait les « surchargé ». La ligue précise n'est pas indispensable ici.
-  box.innerHTML = rows.map((r, i) => {
-    const nm = r.title.Name || '';
-    const lvl = r.title.Region || '';
-    return '<div onclick="tmPick(' + i + ')" style="padding:8px 10px;cursor:pointer;font-size:.82rem;color:var(--text);display:flex;justify-content:space-between;gap:8px" onmouseover="this.style.background=\'var(--surf2)\'" onmouseout="this.style.background=\'transparent\'">' + anEsc(nm) + '<span style="color:var(--sub);font-size:.7rem">' + anEsc(lvl) + '</span></div>';
-  }).join('');
-  box.style.display = 'block';
-}
 // Événements internationaux/exhibition : ce n'est pas un niveau de championnat
 const TM_INTL = ['EMEA Masters', 'Esports World Cup', 'Worlds', 'World Championship', 'MSI', 'Mid-Season', 'First Stand', 'Red Bull'];
 function tmLeagueOf(pages) {   // pages triées du + récent au + ancien → retourne la ligue domestique la + récente
@@ -7423,55 +7399,6 @@ async function tmLeagues(names) {   // 1 requête groupée → {team: ligue}
     }
   } catch (_) {}
   return out;
-}
-function tmPick(i) {
-  const name = (window._tmSugg || [])[i]; if (!name) return;
-  const inp = document.getElementById('pm-team'); if (inp) inp.value = name;
-  tmHideSugg(); tmLoadRoster();
-}
-async function tmLoadRoster() {
-  const team = (document.getElementById('pm-team').value || '').trim();
-  if (!team) { showToast('Entrez le nom de l\'équipe', 'warning'); return; }
-  const st = document.getElementById('pm-team-status'); st.style.display = 'block'; st.textContent = 'Chargement du roster de ' + team + '…';
-  const roleIdx = { Top: 0, Jungle: 1, Mid: 2, Bot: 3, ADC: 3, 'AD Carry': 3, Support: 4 };
-  try {
-    const q = encodeURIComponent(team);
-    const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,Role,Team&where=Team%3D%22' + q + '%22&format=json&origin=*&limit=30';
-    const rows = await pmCargo(url);
-    if (rows === null) { st.innerHTML = '<span style="color:var(--amber,#E8A317)">Service momentanément surchargé</span> — recliquez sur « Charger » dans quelques secondes.'; return; }
-    if (!rows.length) { st.textContent = 'Équipe introuvable — vérifiez le nom exact (ex. « Karmine Corp Blue » pour l\'académie).'; return; }
-    let filled = 0; const names = [];
-    rows.forEach(r => { const t = r.title; const idx = roleIdx[t.Role]; if (idx !== undefined && t.ID) { const el = document.getElementById('pm-pro-' + idx); if (el) { el.value = t.ID; filled++; names.push(t.ID + ' (' + PM_ROLES[idx] + ')'); } } });
-    st.innerHTML = filled ? ('<span style="color:var(--lime)">Roster chargé :</span> ' + anEsc(names.join(', ')) + ' — cliquez « Générer le dossier ».') : 'Aucun joueur (rôle de jeu) trouvé pour cette équipe.';
-  } catch (e) { st.textContent = 'Erreur de chargement du roster.'; }
-}
-async function pmFetchPlayer(pseudo, tag, server) {
-  const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
-  const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag));
-  if (!acc || !acc.puuid) throw new Error('Riot ID introuvable');
-  const leagueRaw = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
-  const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw && leagueRaw.entries) || [];
-  const soloQ = league.find(e => e.queueType === 'RANKED_SOLO_5x5');
-  const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=20&type=ranked');
-  const matches = (ids && ids.length) ? await fetchMatchesInBatches(regional, ids, undefined, () => {}) : [];
-  const champs = {}, roles = {}; let w = 0, n = 0, kS = 0, dS = 0, aS = 0; const form = [];
-  matches.forEach(m => {
-    const p = ((m && m.info && m.info.participants) || []).find(x => x.puuid === acc.puuid);
-    if (!p) return;
-    n++; if (p.win) w++; kS += p.kills || 0; dS += p.deaths || 0; aS += p.assists || 0;
-    const c = p.championName || '?'; champs[c] = champs[c] || { games: 0, wins: 0 }; champs[c].games++; if (p.win) champs[c].wins++;
-    const r = p.teamPosition || p.individualPosition || ''; if (r && r !== 'Invalid') roles[r] = (roles[r] || 0) + 1;
-    form.push(p.win);
-  });
-  const champPool = Object.entries(champs).map(([name, v]) => ({ name, games: v.games, wr: Math.round(v.wins / v.games * 100) })).sort((a, b) => b.games - a.games);
-  const mainRole = (Object.entries(roles).sort((a, b) => b[1] - a[1])[0] || [])[0] || '?';
-  return {
-    pseudo, tag, found: true,
-    rank: soloQ ? (soloQ.tier + ' ' + soloQ.rank + ' · ' + soloQ.leaguePoints + ' LP') : 'Non classé',
-    games: n, winrate: n ? Math.round(w / n * 100) : 0,
-    kda: dS ? ((kS + aS) / dS).toFixed(2) : (kS + aS).toFixed(2),
-    mainRole, champPool: champPool.slice(0, 5), form: form.slice(0, 7).reverse(),
-  };
 }
 function pmAggCompet(games) {   // agrégats compétition (partagé batch + individuel)
   if (!games || !games.length) return null;
@@ -7509,97 +7436,6 @@ async function pmFetchCompetBatch(names) {   // 1 requête pour plusieurs joueur
   });
   return result;
 }
-async function pmGenerate() {
-  const server = document.getElementById('pm-server').value;
-  const entries = [];
-  PM_ROLES.forEach((r, i) => {
-    const v = ((document.getElementById('pm-in-' + i) || {}).value || '').trim();
-    const pro = ((document.getElementById('pm-pro-' + i) || {}).value || '').trim();
-    if (v || pro) entries.push({ role: r, raw: v, pro: pro });
-  });
-  if (!entries.length) { showToast('Saisissez au moins un joueur (Pseudo#TAG ou nom pro)', 'warning'); return; }
-  const btn = document.getElementById('pm-go'), status = document.getElementById('pm-status'), out = document.getElementById('pm-dossier');
-  btn.disabled = true; status.style.display = 'block'; out.innerHTML = '';
-  // Pré-chargement groupé des stats compétition (1 requête pour tous les noms pro connus)
-  status.textContent = 'Chargement des données de compétition…';
-  const batch = await pmFetchCompetBatch(entries.map(e => e.pro || (e.raw && e.raw.indexOf('#') < 0 ? e.raw : '')).filter(Boolean));
-  const results = [];
-  for (let k = 0; k < entries.length; k++) {
-    const e = entries[k], m = e.raw ? e.raw.match(/^(.*?)#(.+)$/) : null;
-    status.textContent = 'Analyse ' + (k + 1) + '/' + entries.length + ' — ' + (e.raw || e.pro) + '…';
-    const d = { role: e.role, pseudo: m ? m[1].trim() : (e.raw || e.pro), tag: m ? m[2].trim() : '' };
-    // Solo Q (si un Riot ID est fourni)
-    if (e.raw) {
-      if (m) { try { d.soloq = await pmFetchPlayer(m[1].trim(), m[2].trim(), server); } catch (err) { d.soloqError = (err && err.message) || 'Erreur'; } }
-      else { d.soloqError = 'Format attendu : Pseudo#TAG'; }
-    }
-    // Compétition : d'abord le lot groupé, sinon résolution individuelle (repli)
-    try {
-      let pn = e.pro || (m ? m[1].trim() : e.raw);
-      let c = pn ? (batch[pn.toLowerCase()] || null) : null;
-      if (!c && pn) {
-        c = await pmFetchCompet(pn);
-        if (!c && !e.pro) { const rr = await pmResolveProName(pn); if (rr && rr !== pn) { c = await pmFetchCompet(rr); pn = rr; } }
-      }
-      if (c) { d.compet = c; d.proName = pn; }
-    } catch (_) {}
-    results.push(d);
-  }
-  status.style.display = 'none'; btn.disabled = false;
-  out.innerHTML = results.map(pmCard).join('');
-}
-function pmChampPills(pool) {
-  return pool.map(c => '<span style="display:inline-flex;align-items:center;gap:4px;background:var(--surf3);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.74rem;margin:0 4px 4px 0;color:var(--text)">' + anEsc(c.name) + ' <span style="color:var(--sub)">' + c.games + 'g·' + c.wr + '%</span></span>').join('');
-}
-function pmSubhead(txt, tag) {
-  return '<div style="display:flex;align-items:center;gap:8px;margin:14px 0 8px"><span style="font-weight:700;color:var(--text);font-size:.85rem">' + txt + '</span><span style="font-size:.6rem;color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 6px">' + tag + '</span></div>';
-}
-function pmCard(d) {
-  const s = d.soloq;
-  let html = '<div class="card" style="padding:16px;margin-bottom:12px">';
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:2px">' +
-    '<div><span class="h3" style="font-size:1.05rem">' + anEsc(d.pseudo) + '</span> <span class="pill pill-soft" style="text-transform:none;letter-spacing:0;margin-left:4px">' + d.role + '</span>' + (d.proName ? ' <span style="font-size:.72rem;color:var(--rank-diamond);margin-left:6px">★ ' + anEsc(d.proName) + '</span>' : '') + '</div>' +
-    (s ? '<div style="font-size:.8rem;color:var(--sub2)">' + anEsc(s.rank) + '</div>' : '') + '</div>';
-  // ── Solo Q ──
-  html += pmSubhead('Solo Q', 'API Riot');
-  if (s) {
-    const formDots = s.form.map(w => '<span style="display:inline-block;width:16px;height:16px;border-radius:4px;margin-right:3px;font-size:.6rem;line-height:16px;text-align:center;font-weight:700;color:#0B2F2A;background:' + (w ? 'var(--lime)' : 'var(--red)') + '">' + (w ? 'V' : 'D') + '</span>').join('');
-    html += '<div style="display:flex;gap:18px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:8px">' +
-      '<span>Rôle : <strong style="color:var(--text)">' + s.mainRole + '</strong></span>' +
-      '<span>WR : <strong style="color:' + (s.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + s.winrate + '%</strong> (' + s.games + 'g)</span>' +
-      '<span>KDA : <strong style="color:var(--text)">' + s.kda + '</strong></span></div>' +
-      '<div style="margin-bottom:6px">' + (pmChampPills(s.champPool) || '<span style="color:var(--sub);font-size:.78rem">—</span>') + '</div>' +
-      '<div>' + formDots + '</div>';
-  } else {
-    html += '<div style="color:var(--sub);font-size:.78rem">' + anEsc(d.soloqError || 'Aucune donnée soloq') + '</div>';
-  }
-  // ── Compétition ──
-  html += pmSubhead('Compétition', 'officiel');
-  if (d.compet) {
-    const c = d.compet;
-    const rows = c.games.map(g => '<div style="display:flex;align-items:center;gap:8px;font-size:.76rem;padding:4px 0;border-bottom:1px solid var(--border)">' +
-      '<span style="width:14px;height:14px;border-radius:3px;flex-shrink:0;background:' + (g.win ? 'var(--lime)' : 'var(--red)') + '"></span>' +
-      '<span style="flex:1;color:var(--text)">' + anEsc(g.champ) + '</span>' +
-      '<span style="color:var(--sub);width:64px">' + g.k + '/' + g.d + '/' + g.a + '</span>' +
-      '<span style="color:var(--sub);flex:1;text-align:right">vs ' + anEsc(g.vs || '?') + '</span>' +
-      '<span style="color:var(--sub2);width:60px;text-align:right;font-size:.7rem">' + anEsc(g.event || '') + '</span></div>').join('');
-    const stat = (lbl, val) => '<span>' + lbl + ' : <strong style="color:var(--text)">' + val + '</strong></span>';
-    html += '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:.8rem;color:var(--sub);margin-bottom:8px">' +
-      '<span>WR : <strong style="color:' + (c.winrate >= 50 ? 'var(--lime)' : 'var(--red)') + '">' + c.winrate + '%</strong> (' + c.count + 'g)</span>' +
-      stat('KDA', c.kda) + stat('CS/g', c.csAvg) + stat('Vision/g', c.visionAvg) + stat('Dégâts/g', (c.dmgAvg || 0).toLocaleString('fr-FR')) + '</div>';
-    if (c.byEvent && c.byEvent.length) {
-      html += '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:4px">Par compétition</div>' +
-        '<div style="margin-bottom:8px">' + c.byEvent.map(e => '<div style="display:flex;gap:8px;font-size:.76rem;padding:2px 0"><span style="flex:1;color:var(--text)">' + anEsc(e.event) + '</span><span style="color:var(--sub);width:40px;text-align:right">' + e.games + 'g</span><span style="color:' + (e.wr >= 50 ? 'var(--lime)' : 'var(--red)') + ';width:48px;text-align:right">' + e.wr + '%</span></div>').join('') + '</div>';
-    }
-    html += '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:5px">Picks en compétition</div>' +
-      '<div style="margin-bottom:8px">' + (pmChampPills(c.champPool) || '—') + '</div>' +
-      '<div style="font-size:.66rem;color:var(--sub);text-transform:uppercase;margin-bottom:3px">Parties récentes</div>' + rows;
-  } else {
-    html += '<div style="color:var(--sub);font-size:.78rem">Aucune donnée de compétition trouvée (joueur non identifié comme pro, ou pseudo soloq différent de son nom pro).</div>';
-  }
-  html += '</div>';
-  return html;
-}
 const _pmCargoCache = {};   // cache mémoire (session) pour dédoublonner les requêtes identiques
 async function pmCargo(url) {   // via proxy /api/lp : cache Redis 6 h + retry rate-limit côté serveur
   if (_pmCargoCache[url] !== undefined) return _pmCargoCache[url];
@@ -7612,12 +7448,6 @@ async function pmCargo(url) {   // via proxy /api/lp : cache Redis 6 h + retry r
     await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
   }
   return null;
-}
-async function pmResolveProName(gameName) {
-  const q = encodeURIComponent(gameName);
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields=ID,OverviewPage&where=ID%3D%22' + q + '%22&format=json&origin=*&limit=1';
-  const rows = await pmCargo(url); if (!rows || !rows.length) return null;
-  return rows[0].title.OverviewPage || rows[0].title.ID || null;
 }
 async function pmFetchCompet(proName) {
   const q = encodeURIComponent(proName);
@@ -9576,14 +9406,14 @@ function switchPanel(id) {
   document.body.classList.remove('map-fullscreen');   // Carte = sous-onglet du Scouting : affichage inline, jamais bloqué en plein écran
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
-  const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-analytics',
-                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', prematch:'nav-analytics', scrimlab:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
+  // 'analyse' (Comparer) pointe sur nav-crm : l'outil vit désormais dans CRM Agent.
+  const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-crm',
+                    top50:'nav-top50', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
-  if (id === 'prematch') { initPrematch(); if (typeof anSyncTabs === 'function') anSyncTabs('prematch'); }
   if (id === 'scrimlab' && typeof slOnEnterStudio === 'function') slOnEnterStudio();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
@@ -17446,7 +17276,7 @@ function vsdToggleDrawer(open){
   s.classList.toggle('open', !!open);
   if(open){
     var act=((document.querySelector('.panel.active')||{}).id||'').replace('panel-','');
-    var actParent={ graphs:'scout', map:'scout', results:'scout', prematch:'analytics', analyse:'analytics', scrimlab:'analytics' }[act] || act;
+    var actParent={ graphs:'scout', map:'scout', results:'scout', analyse:'crm', scrimlab:'analytics' }[act] || act;
     document.querySelectorAll('.vsd-drawer-item[data-nav]').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-nav')===actParent); });
     var cm=document.documentElement.getAttribute('data-cursor')||'systeme';
     document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===cm); });
