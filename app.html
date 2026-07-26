@@ -277,13 +277,7 @@ html[data-cursor="classique"], html[data-cursor="classique"] *{ cursor:url('/ass
    Le rôle sélectionné teinte le canvas et incruste son glyphe dans l'espace
    négatif derrière le dossier. N'apparaît que sur Scouter / Résultats. */
 .role-bg{ position:fixed; inset:0; z-index:-1; overflow:hidden; pointer-events:none; opacity:0; transition:opacity .45s cubic-bezier(.2,0,0,1); }
-/* :not(.welcome-active) : garde-fou. rolebg-on n'est basculé que par
-   switchPanel ; les retours à l'accueil (resetToWelcome…) ne passant pas par
-   là, la classe restait active et les glyphes de rôle persistaient sur
-   l'accueil. On gate donc l'affichage sur welcome-active, le drapeau qui
-   atteste réellement qu'on est sur l'accueil — robuste quel que soit le
-   chemin de retour. */
-body.rolebg-on:not(.welcome-active) .role-bg{ opacity:1; }
+body.rolebg-on .role-bg{ opacity:1; }
 .role-bg-layer{ position:absolute; inset:0; opacity:0; transition:opacity .5s cubic-bezier(.2,0,0,1); will-change:opacity; }
 .role-bg-layer.on{ opacity:1; }
 .role-bg-wash{ position:absolute; inset:0; background:
@@ -1262,24 +1256,7 @@ body:not(.theme-dark) .vsd-scrim{ background:rgba(20,54,48,.32); }
 .vsd-cursor-opt img, .vsd-cursor-opt svg{ width:22px; height:22px; }
 .vsd-cursor-opt span{ font-size:10px; font-weight:700; letter-spacing:.03em; }
 
-/* ════ Accueil ludique ════ */
-.vsd .hero{ position:relative; padding:36px 0 30px; overflow:hidden; text-align:center; }
-/* Pas de watermark centré ici : l'accueil utilise le même fond que les autres
-   pages (.logo-bg — grand emblème à droite + écho en bas-gauche). */
-.vsd .hero > *{ position:relative; z-index:1; }
-.vsd .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:rgba(15,58,52,.6); border:1px solid var(--vs-forest-500); border-radius:14px; padding:10px; -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); }
-.vsd .entry-card{ background:rgba(6,30,26,.46); border:1px solid var(--vs-forest-500); border-radius:12px; padding:20px; text-align:left; cursor:pointer; display:flex; flex-direction:column; gap:16px; transition:transform .2s var(--ease-out), border-color .2s, box-shadow .2s; font-family:inherit; color:var(--vs-fg-1); -webkit-backdrop-filter:blur(40px); backdrop-filter:blur(40px); }
-.vsd .entry-card:hover{ border-color:var(--vs-emerald-500); box-shadow:var(--glow-emerald-sm); transform:translateY(-3px); }
-.vsd .entry-card:hover .between > svg:last-child{ transform:translateX(5px); }
-.vsd .entry-card .between > svg{ transition:transform .2s var(--ease-out); }
-.vsd .entry-mini{ display:grid; grid-template-columns:auto auto; gap:26px; padding-top:14px; border-top:1px solid var(--vs-forest-600); }
-.vsd .delta-up{ color:var(--vs-emerald-400); font-weight:700; font-family:var(--font-mono); }
-.vsd .delta-down{ color:var(--vs-red-400); font-weight:700; font-family:var(--font-mono); }
-.vsd .card-foot{ background:var(--vs-forest-800); border-top:1px solid var(--vs-forest-600); }
 .vsd .chip-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
-.vsd .nav-link{ font-weight:600; font-size:13px; color:var(--vs-fg-2); background:none; border:0; padding:4px 8px; border-radius:6px; cursor:pointer; font-family:inherit; }
-.vsd .nav-link:hover{ color:var(--vs-fg-1); background:var(--vs-forest-700); }
-@media (max-width:860px){ .vsd .home-grid-main{ grid-template-columns:1fr !important; } .vsd .home-entry-grid{ grid-template-columns:1fr 1fr !important; } .vsd .home-prospects{ grid-template-columns:1fr !important; } }
 
 /* ════ MODE CLAIR — palette platine (comme la wireframe) ════ */
 body:not(.theme-dark) .vsd{
@@ -1296,23 +1273,7 @@ body:not(.theme-dark) .vsd{
 /* surfaces "verre" hardcodées → claires */
 body:not(.theme-dark) .vsd .card,
 body:not(.theme-dark) .vsd .dim-section{ background:#FFFFFF; border:1px solid var(--vs-forest-500); -webkit-backdrop-filter:none; backdrop-filter:none; box-shadow:0 2px 8px rgba(31,60,55,.10); }
-/* Cartes de module de l'accueil : mêmes couches que les cartes du scouting
-   (le bloc « Le même verre, en clair » plus bas), reprises ici parce qu'elles
-   ne portent pas la classe .card. */
-body:not(.theme-dark) .vsd .entry-card{
-  background:
-    radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.12), transparent 70%),
-    linear-gradient(150deg, rgba(255,255,255,.30), rgba(255,255,255,.13) 42%, rgba(31,71,64,.05)),
-    rgba(255,255,255,.38);
-  border-color:rgba(31,71,64,.10);
-  -webkit-backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
-          backdrop-filter:blur(3px) saturate(140%) brightness(1.02);
-}
-body:not(.theme-dark) .vsd .entry-card:hover{ box-shadow:0 12px 30px rgba(20,54,48,.20); }
-body:not(.theme-dark) .vsd .hero .toolbar{ background:rgba(255,255,255,.78); }
-body:not(.theme-dark) .vsd .toolbar{ background:#FFFFFF; }
 body:not(.theme-dark) .vsd .vsd-dropzone{ background:rgba(255,255,255,.55); }
-body:not(.theme-dark) .vsd .card-foot{ background:var(--vs-forest-800); }
 body:not(.theme-dark) .vsd .avatar{ background:var(--vs-emerald-400); color:#FFFFFF; border-color:var(--vs-emerald-500); }
 body:not(.theme-dark) .vsd .btn-cta{ color:#FFFFFF; }
 body:not(.theme-dark) .vsd .dim-header{ background:transparent !important; border-bottom:1px solid var(--vs-forest-500) !important; }
@@ -1456,52 +1417,6 @@ button:has(.vs-star).vs-pressed{
 }
 @media (prefers-reduced-motion: reduce){
   button:has(.vs-star).vs-pressed{ animation:none; }
-}
-/* Accueil : le ressort sur TOUS les boutons, cartes de module et cartes
-   joueur comprises (l'écouteur global les excluait, cf. son commentaire).
-   animation-composition:add est la clé : les cartes de module montent de
-   translateY(-3px) au survol, or chipPop n'anime que « transform ». Sans
-   composition, l'animation remplacerait ce soulèvement — la carte
-   retomberait au clic puis resauterait à la fin. En mode « add »,
-   l'écrasement s'ADDITIONNE à la valeur sous-jacente : la carte reste haute
-   pendant qu'elle se comprime. Et si elle n'est pas survolée (tactile), la
-   valeur sous-jacente est nulle et le rendu reste juste — un seul jeu de
-   règles couvre les deux cas.
-   Volontairement limité à l'accueil : le menu burger a été essayé avec le même
-   traitement et le rendu était moins bon — ses entrées gardent le ressort
-   discret (btnPress) et naviguent sans attendre. */
-#panel-welcome button.vs-pressed{
-  animation:chipPop 560ms cubic-bezier(.2,0,0,1);
-  animation-composition:add;
-  transform-origin:center center;
-}
-@media (prefers-reduced-motion: reduce){
-  #panel-welcome button.vs-pressed{ animation:none; }
-}
-/* Version DOUCE pour les gros boutons-cartes de l'accueil (modules + cartes
-   joueur). chipPop est calibré sur des pastilles de 51px : son étirement de
-   12% (scaleX 1.12 / scaleY .90) devient caoutchouteux sur une carte de 200px
-   et plus — l'effet « too much » signalé. On retire donc la distorsion
-   étirement/écrasement (le scaleX≠scaleY qui fait le rebond élastique) au
-   profit d'un simple enfoncement uniforme, amplitude ~1,5% : le geste se sent
-   sans déformer la carte. Spécificité (1,2,0) > (1,1,1) de la règle ci-dessus,
-   la bascule est franche. animation-composition:add conservé pour préserver le
-   soulèvement au survol (translateY(-3px)). */
-@keyframes chipPopSoft{
-  0%   { transform:scale(1); }
-  30%  { transform:scale(.985); }
-  64%  { transform:scale(1.005); }
-  100% { transform:scale(1); }
-}
-#panel-welcome .entry-card.vs-pressed,
-#panel-welcome .card.vs-pressed{
-  animation:chipPopSoft 440ms cubic-bezier(.2,0,0,1);
-  animation-composition:add;
-  transform-origin:center center;
-}
-@media (prefers-reduced-motion: reduce){
-  #panel-welcome .entry-card.vs-pressed,
-  #panel-welcome .card.vs-pressed{ animation:none; }
 }
 /* ── Barre d'onglets segmentée (maquette) : conteneur bordé + pilule émeraude glissante ── */
 .vsd .an-tabbar{ position:relative; display:flex; gap:0; flex-wrap:nowrap; align-items:stretch; width:fit-content; max-width:100%; margin-left:auto; margin-right:auto; align-self:center; padding:5px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(4,18,15,.5); overflow-x:auto; scrollbar-width:none; }
@@ -1755,14 +1670,7 @@ body.theme-dark .hd {
   box-shadow: none !important;
 }
 body.theme-dark .dim-header { background: rgba(15,19,32,.5) !important; }
-body.theme-dark .welcome-mode-card {
-  background: rgba(11,14,24,.85) !important;
-  border-color: rgba(184,196,224,.07) !important;
-  box-shadow: none !important;
-}
 body.theme-dark .card-title { color: rgba(184,196,224,.35) !important; }
-body.theme-dark .welcome-check-item { color: rgba(184,196,224,.45) !important; }
-body.theme-dark .welcome-stat-lbl { color: rgba(184,196,224,.35) !important; }
 body.theme-dark .map-tooltip { background: rgba(8,11,16,.95) !important; box-shadow: none !important; }
 body.theme-dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08) !important; }
 body.theme-dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14) !important; }
@@ -1791,7 +1699,7 @@ body {
 /* Titres & UI labels → Aquavit */
 h1,h2,h3,h4,h5,h6,
 .hd-nav-item, .role-pill, .view-tab,
-.card-title, .player-name, .welcome-mode-card,
+.card-title, .player-name,
 button, .btn, select,
 .api-title, .hero-name, .hero-verdict,
 .dim-title, .dim-head, .score-lbl, .s-bar-label {
@@ -2649,129 +2557,6 @@ button { transition:all .18s ease; }
   to   { opacity:1; transform:translateY(0); }
 }
 
-/* ── Welcome screen ── */
-/* Pas de fond propre : il peindrait var(--bg) (opaque) par-dessus .logo-bg,
-   qui est en z-index:-1 — l'accueil perdrait les emblèmes visibles partout
-   ailleurs. Panneau transparent = même fond que les autres pages. */
-#panel-welcome {
-  background:transparent;
-}
-body.welcome-active .sb { display:none !important; }
-body.welcome-active .main {
-  max-width:none !important;
-  padding:0 !important;
-}
-body.welcome-active #hd-nav-main { display:none !important; }
-body.welcome-active #panel-welcome.active {
-  display:block !important;
-  padding:0 !important;
-}
-.welcome-mode-card {
-  background:var(--surf1);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:2rem 1.5rem;
-  cursor:pointer;
-  transition:all .22s ease;
-  text-align:center;
-}
-.welcome-mode-card:hover {
-  transform:translateY(-4px);
-  box-shadow:0 12px 40px rgba(0,0,0,.45);
-}
-.welcome-mode-card.agent:hover {
-  border-color:var(--lime-bd);
-  background:rgba(45,212,167,.05);
-}
-.welcome-mode-card.coach:hover {
-  border-color:rgba(167,139,250,.4);
-  background:rgba(167,139,250,.04);
-}
-/* ── Welcome 4-quadrant cube ── */
-.wq-container {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  min-height:calc(100vh - 52px); padding:2.5rem 2rem; gap:2.5rem; box-sizing:border-box;
-}
-.wq-logo-top {
-  display:flex; align-items:center; gap:20px; flex-shrink:0;
-}
-.wq-grid {
-  display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr;
-  width:100%; max-width:840px; gap:14px; position:relative;
-}
-.wq {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  cursor:pointer; padding:2.5rem 2rem; position:relative; overflow:hidden;
-  user-select:none; transition:border-color .28s ease, box-shadow .28s ease;
-  background:rgba(45,212,167,.025); border:1px solid rgba(255,255,255,.07); border-radius:18px;
-  min-height:190px;
-}
-.wq::after { content:''; position:absolute; inset:0; opacity:0; transition:opacity .3s; border-radius:18px; }
-.wq:hover::after { opacity:1; }
-.wq-scout:hover  { border-color:rgba(45,212,167,.4); box-shadow:0 0 32px rgba(45,212,167,.12); }
-.wq-scout::after  { background:radial-gradient(circle at 30% 30%, rgba(45,212,167,.1), transparent 65%); }
-.wq-results:hover { border-color:rgba(74,158,255,.4); box-shadow:0 0 32px rgba(74,158,255,.12); }
-.wq-results::after { background:radial-gradient(circle at 70% 30%, rgba(74,158,255,.1), transparent 65%); }
-.wq-compare:hover { border-color:rgba(45,212,191,.4); box-shadow:0 0 32px rgba(45,212,191,.12); }
-.wq-compare::after { background:radial-gradient(circle at 30% 70%, rgba(45,212,191,.1), transparent 65%); }
-.wq-agent:hover  { border-color:rgba(245,166,35,.4); box-shadow:0 0 32px rgba(245,166,35,.12); }
-.wq-agent::after  { background:radial-gradient(circle at 70% 70%, rgba(245,166,35,.1), transparent 65%); }
-.wq-icon-wrap {
-  width:60px; height:60px; border-radius:14px;
-  display:flex; align-items:center; justify-content:center;
-  margin-bottom:1rem; transition:transform .28s;
-}
-.wq:hover .wq-icon-wrap { transform:scale(1.1) translateY(-3px); }
-.wq-name {
-  font-size:1.45rem; font-weight:900; letter-spacing:-.02em;
-  margin-bottom:.3rem; font-family:'AquavitVSD','Helvetica Neue',sans-serif;
-}
-.wq-desc { font-size:.72rem; color:var(--sub); letter-spacing:.06em; text-transform:uppercase; }
-.wq-corner-arrow {
-  position:absolute; bottom:1.25rem; right:1.5rem;
-  opacity:0; transition:opacity .25s, transform .25s; transform:translateX(-6px);
-  font-size:.85rem; color:var(--sub);
-}
-.wq:hover .wq-corner-arrow { opacity:.7; transform:translateX(0); }
-.wq-center-btn {
-  position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  width:156px; height:156px; border-radius:50%;
-  background:var(--bg); border:2px solid rgba(45,212,167,.5);
-  box-shadow:0 0 0 12px var(--bg), 0 0 50px rgba(45,212,167,.22), inset 0 0 26px rgba(45,212,167,.07);
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  cursor:pointer; z-index:10; transition:all .28s ease; gap:6px;
-}
-.wq-center-btn:hover {
-  border-color:var(--lime);
-  box-shadow:0 0 0 12px var(--bg), 0 0 72px rgba(45,212,167,.45), inset 0 0 30px rgba(45,212,167,.12);
-  transform:translate(-50%,-50%) scale(1.07);
-}
-.wq-center-lbl {
-  font-size:.56rem; letter-spacing:.14em; color:var(--lime);
-  text-transform:uppercase; opacity:0; transition:opacity .2s; font-weight:700;
-}
-.wq-center-btn:hover .wq-center-lbl { opacity:1; }
-/* Stats bottom bar on welcome */
-.welcome-stats {
-  display:flex; gap:1.5rem; justify-content:center; flex-wrap:wrap;
-  margin-top:2rem; padding-top:1.5rem;
-  border-top:1px solid var(--border);
-}
-.welcome-stat {
-  text-align:center;
-}
-.welcome-stat-val {
-  font-size:1.1rem; font-weight:700; color:var(--text);
-  font-family:'AquavitVSD', 'Helvetica Neue', sans-serif;
-  letter-spacing:-.01em;
-}
-.welcome-stat-lbl {
-  font-size:.66rem; color:rgba(80,100,140,.55); text-transform:uppercase;
-  letter-spacing:.1em; margin-top:3px;
-  font-family:monospace;
-}
-
 /* ════════════════════════════════
    LANDING PAGE MARKETING
 ════════════════════════════════ */
@@ -3034,17 +2819,6 @@ body:not(.theme-dark) #t50-table.thead-collee thead th {
 @keyframes fadeIn {
   from { opacity:0; }
   to   { opacity:1; }
-}
-
-/* ── Mode badge ── */
-#mode-badge {
-  font-family:monospace;
-  font-size:.68rem;
-  letter-spacing:.07em;
-  padding:2px 9px;
-  border-radius:4px;
-  border:1px solid;
-  animation:fadeIn .3s ease;
 }
 
 /* ── Rank icons ── */
@@ -3477,45 +3251,6 @@ body.theme-dark :is(#panel-scout, #panel-top50) .ctrl.select select:-webkit-auto
   background:linear-gradient(90deg, var(--lime), var(--teal));
 }
 
-/* ── Welcome screen ultra ── */
-.welcome-mode-card {
-  border-radius:14px;
-  padding:2.25rem 1.75rem;
-  background:rgba(255,255,255,.88);
-  border:1px solid rgba(100,120,160,.12);
-  backdrop-filter:blur(12px);
-  box-shadow:0 2px 20px rgba(100,120,160,.10);
-  position:relative;
-  overflow:hidden;
-}
-.welcome-mode-card::after {
-  content:'';
-  position:absolute;
-  bottom:0; left:0; right:0;
-  height:2px;
-  opacity:0;
-  transition:opacity .22s;
-}
-.welcome-mode-card.agent::after {
-  background:linear-gradient(90deg, var(--lime), var(--teal));
-}
-.welcome-mode-card.coach::after {
-  background:linear-gradient(90deg, #8A7FF5, #A78BFA);
-}
-.welcome-mode-card:hover::after { opacity:1; }
-.welcome-mode-card:hover {
-  transform:translateY(-5px);
-  box-shadow:0 16px 48px rgba(0,0,0,.5);
-}
-
-/* ── Welcome check items pro ── */
-.welcome-check-item {
-  display:flex; align-items:center; gap:.45rem;
-  font-size:.72rem; color:rgba(70,90,130,.55);
-  justify-content:center;
-}
-.welcome-check-item svg { flex-shrink:0; }
-
 /* ── Scrollbar minimal ── */
 ::-webkit-scrollbar { width:3px; height:3px; }
 ::-webkit-scrollbar-thumb { background:rgba(100,120,160,.22); border-radius:2px; }
@@ -3568,8 +3303,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 <header class="hd">
   <button class="vsd-burger" onclick="vsdToggleDrawer(true)" title="Menu" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
   <div class="hd-logo">
-    <button type="button" class="hd-mark hd-home" onclick="resetToWelcome()" title="Accueil — changer de mode" aria-label="Accueil">
-      <!-- Logo principal cliquable — retour à l'accueil -->
+    <button type="button" class="hd-mark hd-home" onclick="switchPanel('seasons')" title="VisionScore — Seasons" aria-label="VisionScore">
+      <!-- Logo principal cliquable — ramène sur Seasons, plus de page d'accueil intermédiaire -->
       <svg style="height:28px;width:auto" viewBox="0 0 1321.3 252.15" fill="var(--text)" xmlns="http://www.w3.org/2000/svg">
         <path d="M147.48,5.73h-35.23c8.31,13.46,12.32,28.07,12.32,43.24,0,12.03-2.29,24.62-10.03,46.68l-28.07,82.77-36.08-110.54C38.08,30.35,32.07,10.6,32.07,5.73H0l65.87,197.89h24.05l37.23-104.82c13.17-36.65,21.48-56.99,21.48-79.9,0-5.44-.57-9.73-1.15-13.17Z"/>
         <path d="M181.56,0l-20.33,20.33,20.33,19.76,20.34-19.76L181.56,0ZM166.67,202.48h29.78c-.57-2.86-.86-21.48-.86-54.41V59l-29.5,5.72c.86,2.58,1.43,21.2,1.43,54.13v29.21c0,32.93-.29,51.55-.86,54.41Z"/>
@@ -3640,12 +3375,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <img src="/assets/logos/logo.svg" alt="VisionScore" style="height:22px;display:block"/>
       <button class="btn-icon" onclick="vsdToggleDrawer(false)" style="background:none;border:0;color:var(--vs-fg-2);cursor:pointer;padding:4px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
-    <button class="vsd-drawer-item home" data-nav="welcome" onclick="vsdDrawerGo('welcome')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span>Accueil</span></button>
     <div class="vsd-drawer-label">Plateforme</div>
-    <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
-    <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 30</span></button>
-    <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
+    <button class="vsd-drawer-item" data-nav="seasons" onclick="vsdDrawerGo('seasons')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Seasons</span></button>
     <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
+    <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
+    <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
+    <button class="vsd-drawer-item" data-nav="top50" onclick="vsdDrawerGo('top50')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg><span>Top 30</span></button>
     <div style="flex:1"></div>
     <div class="vsd-drawer-sep"></div>
     <div class="vsd-drawer-label" style="display:flex;align-items:center;gap:6px">Curseur <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><path d="M12 2l2.9 6.3 6.9.7-5.1 4.6 1.4 6.8L12 17.8 5.9 20.4l1.4-6.8L2.2 9l6.9-.7z"/></svg></div>
@@ -3840,127 +3575,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       </footer>
 
     </div><!-- /panel-landing -->
-
-    <div id="panel-welcome" class="panel" style="padding:0">
-     <div class="vsd">
-      <div class="vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 60px;gap:0">
-        <!-- Hero -->
-        <div class="hero">
-          <div class="eyebrow">Scouting e-sport · League of Legends</div>
-          <h1 class="h1" style="font-size:44px;max-width:760px;margin:8px auto 10px">Repère le prochain pro talent.</h1>
-          <p class="muted" style="font-size:17px;max-width:520px;margin:0 auto 22px">Scoute, note et compare les joueurs ranked de chaque région.</p>
-          <div class="toolbar" style="max-width:720px;margin:0 auto">
-            <div class="ctrl" style="flex:1;height:48px;border:0;background:transparent"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-emerald-400)"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="home-search" placeholder="Rechercher un summoner — ex. « Caliste #EUW9 »" onkeydown="if(event.key==='Enter')vsdHomeScout()" style="font-size:16px"/></div>
-            <button class="btn btn-cta" onclick="vsdHomeScout()">Scouter</button>
-          </div>
-        </div>
-
-        <!-- 4 cartes d'entrée -->
-        <div class="grid home-entry-grid" style="grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:30px">
-          <button class="entry-card" onclick="vsdGo('scout')">
-            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
-            <div><div class="h3" style="font-size:19px">Scouting</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Trouver un joueur, importer 50/100/200 parties, le noter sur 5 dimensions SPES.</p></div>
-            <div class="entry-mini"><div><div class="label" style="font-size:10px">Parties</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">50–200</div></div><div><div class="label" style="font-size:10px">Sortie</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">Fiche SPES</div></div></div>
-          </button>
-          <button class="entry-card" onclick="vsdGo('top50')">
-            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0z"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
-            <div><div class="h3" style="font-size:19px">Top 30</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Générer un classement de 30 joueurs selon tes critères.</p></div>
-            <div class="entry-mini"><div><div class="label" style="font-size:10px">Critères</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">10</div></div><div><div class="label" style="font-size:10px">Rôles</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">5</div></div></div>
-          </button>
-          <button class="entry-card" onclick="vsdGo('crm')">
-            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
-            <div><div class="h3" style="font-size:19px">CRM Agent</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Fiches prospects + pipeline de recrutement.</p></div>
-            <div class="entry-mini"><div><div class="label" style="font-size:10px">Prospects</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">12</div></div><div><div class="label" style="font-size:10px">En essai</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">1</div></div></div>
-          </button>
-          <button class="entry-card" onclick="vsdGo('analytics')">
-            <div class="between"><div class="entry-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--vs-fg-3)"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></div>
-            <div><div class="h3" style="font-size:19px">Analytics</div><p class="muted" style="font-size:13.5px;line-height:1.5;margin:6px 0 0">Performance .rofl, comparaison, upgrade finder et timeline.</p></div>
-            <div class="entry-mini"><div><div class="label" style="font-size:10px">Onglets</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">4</div></div><div><div class="label" style="font-size:10px">Replay</div><div class="stat-v" style="font-size:16px;color:var(--vs-emerald-300);margin-top:2px">.rofl</div></div></div>
-          </button>
-        </div>
-
-        <!-- Prospects en hausse + panneau latéral -->
-        <div class="grid home-grid-main" style="grid-template-columns:1fr 320px;gap:18px;align-items:start">
-          <div>
-            <div class="section-head" style="margin-bottom:14px"><div><div class="eyebrow">Prospects en hausse</div><h2 class="h2" style="font-size:24px">Ça grimpe sur la ladder</h2></div><button class="btn btn-secondary btn-sm" onclick="vsdGo('top50')">Voir le Top 30</button></div>
-            <div class="grid home-prospects" style="grid-template-columns:1fr 1fr;gap:12px" id="home-prospects"></div>
-          </div>
-          <div style="display:flex;flex-direction:column;gap:14px">
-            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Régions suivies</div><div class="chip-row" id="home-region-chips"><span class="chip on" data-region="EUW" onclick="vsToggleRegion(this)" style="cursor:pointer">EUW</span><span class="chip on" data-region="EUNE" onclick="vsToggleRegion(this)" style="cursor:pointer">EUNE</span><span class="chip on" data-region="KR" onclick="vsToggleRegion(this)" style="cursor:pointer">KR</span><span class="chip on" data-region="NA" onclick="vsToggleRegion(this)" style="cursor:pointer">NA</span><span class="chip on" data-region="BR" onclick="vsToggleRegion(this)" style="cursor:pointer">BR</span></div></div>
-            <div class="card" style="padding:16px"><div class="label" style="margin-bottom:10px">Activité</div>
-              <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Joueurs scoutés</span><span class="stat-v" style="font-size:15px" id="home-act-scout">—</span></div>
-              <div class="between" style="padding:7px 0;border-bottom:1px solid var(--vs-forest-600)"><span class="muted" style="font-size:14px">Fiches SPES</span><span class="stat-v" style="font-size:15px" id="home-act-fiches">—</span></div>
-              <div class="between" style="padding:7px 0"><span class="muted" style="font-size:14px">Rosters</span><span class="stat-v" style="font-size:15px" id="home-act-rosters">—</span></div>
-            </div>
-            <div class="card" style="padding:16px;display:flex;gap:12px;align-items:center;background:var(--vs-forest-800)"><div class="entry-ico" style="background:rgba(255,51,0,.12);color:var(--vs-red-400)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg></div><div style="flex:1"><div style="font-weight:700;font-size:14px">Outils</div><div class="faint" style="font-size:12px">Carte LoL · Graphiques</div></div><button class="nav-link" onclick="vsdGo('map')">Ouvrir →</button></div>
-          </div>
-        </div>
-      </div>
-     </div>
-    </div><!-- /panel-welcome -->
-
-    <div id="panel-welcome-OLD" class="panel" style="display:none;padding:0;overflow:hidden">
-      <div class="wq-container">
-
-        <!-- Logo VisionScore centré en haut -->
-        <div class="wq-logo-top">
-          <svg width="80" height="80" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg>
-          <svg style="height:42px;width:auto" viewBox="0 0 1321.3 252.15" fill="var(--text)" xmlns="http://www.w3.org/2000/svg">        <path d="M147.48,5.73h-35.23c8.31,13.46,12.32,28.07,12.32,43.24,0,12.03-2.29,24.62-10.03,46.68l-28.07,82.77-36.08-110.54C38.08,30.35,32.07,10.6,32.07,5.73H0l65.87,197.89h24.05l37.23-104.82c13.17-36.65,21.48-56.99,21.48-79.9,0-5.44-.57-9.73-1.15-13.17Z"/>         <path d="M181.56,0l-20.33,20.33,20.33,19.76,20.34-19.76L181.56,0ZM166.67,202.48h29.78c-.57-2.86-.86-21.48-.86-54.41V59l-29.5,5.72c.86,2.58,1.43,21.2,1.43,54.13v29.21c0,32.93-.29,51.55-.86,54.41Z"/>         <path d="M322.75,162.95c0,27.2-23.77,43.53-51.26,43.53-20.91,0-40.96-9.73-56.99-24.63l20.05-24.05c9.73,20.62,24.34,36.37,40.66,36.37,12.03,0,21.77-7.73,21.77-21.2,0-18.71-20.36-26.55-39.77-36.31-2.19-1.1-4.38-2.23-6.52-3.4h0c-15.14-8.29-28.16-18.73-28.16-37.89,0-22.91,20.04-38.66,49.83-38.66,21.19,0,37.81,8.31,49.26,17.47l-18.9,21.76c-7.73-13.74-18.9-27.2-34.94-27.2-12.31,0-19.76,7.16-19.76,17.76,0,21.23,30.01,26.94,52,40.52,2.9,1.79,5.65,3.71,8.18,5.82.39.33.78.67,1.17,1,.59.52,1.17,1.05,1.72,1.6.48.46.94.94,1.4,1.42,2.16,2.29,4.05,4.78,5.61,7.53,2.94,5.18,4.67,11.26,4.67,18.58Z"/>         <path d="M376.02,152.3c-.86-.22-1.78-.43-2.76-.64-2.02-.42-4.3-.81-7-1.2-3.41-.5-7.01-.93-10.81-1.38-2.44-.29-4.95-.6-7.49-.92,0,32.87-.29,51.46-.86,54.32h29.78c-.54-2.74-.83-19.88-.86-50.17ZM346.52,64.72c.86,2.58,1.43,21.2,1.43,54.13v2.08c2.74-.34,5.52-.65,8.21-.96,3.58-.4,6.96-.78,10.28-1.21,2.84-.37,5.13-.72,7.2-1.09.84-.15,1.64-.3,2.38-.45v-58.22l-29.5,5.72ZM361.99,0l-20.34,20.33,20.34,19.76,20.33-19.76L361.99,0Z"/>         <path d="M582.21,148.81l-.64.08c-2.04.24-4.09.47-6.09.69-2.34.26-4.62.52-6.84.79-2.33.28-4.6.57-6.81.9-1.89.29-3.57.56-5.12.86-.92.18-1.78.36-2.57.54-.02,30.05-.31,47.07-.86,49.8h29.78c-.56-2.84-.85-21.2-.86-53.66Z"/>         <path d="M674.42,202.48h-30.65c0-4.3-1.43-21.2-5.73-53.84l-.79-6.11-.88-6.72-.12-.89h0s-.91-7-.91-7l-3.31-25.39c-2.29-18.04-9.73-25.2-19.19-25.2-8.59,0-17.18,6.3-30.64,22.34v21.53c-2.01-.26-4-.5-5.94-.73-5.06-.61-9.85-1.18-14.19-1.91-1.87-.32-3.48-.64-4.93-.96-1.09-.25-2.09-.51-3.01-.77v-11.71c0-14.89-1.15-28.07-3.15-40.39l27.77-5.72c1.43,8.3,2,16.89,2.29,25.77,17.47-19.47,30.64-26.35,44.67-26.35,18.04,0,31.22,11.17,34.94,38.66l4.51,34.62.98,7.53,8.25,63.25Z"/>         <path d="M582.21,134.87v.26c-2.24.28-4.51.54-6.79.79-2.27.26-4.54.51-6.79.77-3,.35-5.96.73-8.82,1.15-1.95.29-3.84.6-5.67.96-10.68,2.06-19.15,5.36-21.71,12.11-3.91-11.42-6.39-13.47-21.15-16.05-.16-.03-.33-.05-.5-.09.17-.03.33-.05.5-.08,1.58-.26,3.15-.66,4.59-1.37,8.59-4.27,13.25-12.99,9.78-22.36-1.2-3.24-2.56-6.52-4.26-9.54-3.23-5.73-6.76-10.49-11.36-15.2-4.87-4.97-5.12-5.21-10.56-9.56-.01-.01-.03-.03-.05-.03-.64-.5-2.6-1.74-3.27-2.04l3.48,1.38c.24.11.49.22.73.33,19.36,8.84,30.61,23.73,36.46,42.39,1.16,3.73,3.4,6.77,6.48,8.4,3.04,1.6,6.73,2.79,10.85,3.73,1.81.41,3.71.77,5.67,1.11,2.82.48,5.78.89,8.82,1.27,2.23.29,4.49.56,6.79.83,2.25.27,4.52.54,6.79.84Z"/>         <path d="M482.04,68.23c-11.42,3.91-13.47,6.39-16.05,21.15-.03.16-.05.33-.09.49-.03-.17-.05-.33-.08-.5-.26-1.58-.66-3.15-1.37-4.6-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.11.37-6.23,1.15-3.24,1.2-6.52,2.57-9.54,4.27-5.73,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.5.64-1.74,2.61-2.04,3.28l1.38-3.49c.11-.24.22-.49.33-.73,8.84-19.36,23.73-30.6,42.4-36.44,3.72-1.16,6.76-3.4,8.39-6.48,4.85-9.18,5.86-24.31,7.83-39.33.03-.22.06-.43.09-.65.03.22.05.43.08.66,2.67,21.35,3.57,45.52,15.83,50.18Z"/>         <path d="M526.07,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.39,36.44-3.72,1.16-6.77,3.4-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.05.43-.08.66-.03-.22-.05-.43-.09-.66-2.67-21.36-3.56-45.52-15.83-50.18,11.42-3.91,13.48-6.39,16.05-21.15.03-.17.05-.33.08-.5.03.17.05.34.08.5.26,1.58.67,3.15,1.38,4.6,3.3,6.64,9.26,10.93,16.13,10.93,2.02,0,4.1-.37,6.22-1.15,3.25-1.19,6.52-2.56,9.55-4.26,5.73-3.23,10.49-6.76,15.19-11.36,4.98-4.87,5.21-5.12,9.57-10.56.01-.01.02-.03.03-.04.49-.63,1.73-2.61,2.03-3.28Z"/>         <path d="M435.62,194.95l-3.48-1.37c-.24-.11-.49-.22-.73-.34-19.36-8.84-30.6-23.73-36.44-42.39-1.17-3.72-3.4-6.77-6.48-8.39-3.43-1.81-7.7-3.09-12.48-4.08-2.48-.52-5.1-.95-7.81-1.34-6.04-.88-12.56-1.55-19.05-2.41-.22-.03-.43-.05-.65-.08.22-.03.43-.05.65-.09,6.3-.78,12.84-1.42,19.05-2.23,2.68-.35,5.29-.73,7.81-1.19,11.43-2.03,20.64-5.31,23.34-12.41,3.91,11.42,6.39,13.48,21.15,16.05.16.03.33.06.49.09-.17.03-.33.06-.5.08-1.58.26-3.16.66-4.6,1.38-8.59,4.26-13.25,12.99-9.78,22.36,1.2,3.25,2.57,6.52,4.27,9.55,3.23,5.73,6.76,10.49,11.36,15.19,4.87,4.98,5.12,5.21,10.55,9.57.01.01.03.03.05.03.64.5,2.61,1.73,3.27,2.03Z"/>         <path d="M823.19,137.12c1.28,4.42,1.91,9.09,1.91,14.03,0,33.22-28.92,54.98-64.43,54.98s-58.71-20.62-68.74-49.83l27.5-11.45c7.45,29.78,24.05,48.11,46.11,48.11,18.61,0,33.79-12.6,33.79-32.08,0-14.31-8.31-28.64-34.08-41.23l-26.06-12.6c-27.78-13.46-41.53-32.36-41.53-54.7,0-31.79,27.78-52.12,60.43-52.12s58.13,19.76,72.74,52.41l-28.35,7.74c-9.16-28.07-24.05-47.55-48.4-47.55-18.33,0-31.79,11.17-31.79,29.79,0,14.89,8.59,28.35,34.08,41.23l26.34,12.89c20.04,9.92,32.93,21.41,38.76,35.48.67,1.6,1.24,3.23,1.72,4.9Z"/>         <path d="M1148.71,148.33l-1.21.16-.31.04-.37.05c-2.93.36-5.9.69-8.78,1.02-4.83.54-9.39,1.05-13.68,1.69-.54.08-1.07.16-1.58.24-.75.12-1.47.24-2.15.36-.02,30.15-.31,47.22-.85,49.96h29.78c-.56-2.84-.86-21.14-.86-53.51Z"/>         <path d="M1279,182.81c-21.75.59-38.52-15.57-45.24-41.45l19.16-5.95.59-.19,67.18-20.86c-6.66-34.2-28.22-57.96-58.28-57.15-32.9.89-57.54,31.42-57.29,73.21,0,.75.01,1.5.03,2.25.09,3.43.34,6.76.74,10,4.72,38.38,30.31,62.79,62.52,61.92,26.05-.71,43.36-17.51,52.89-35.81l-4.24-8.48c-9.94,14.02-23.47,22.12-38.07,22.52ZM1230.56,118.52c-.83-30.63,10.71-48.71,27.6-49.17,17.75-.48,29.18,19.27,33.52,42.06l-60.22,19.11c-.39-4-.79-8-.9-12.01Z"/>         <path d="M1202.26,60.94l-5.44,33.22c-8.88-4.58-15.18-7.73-19.47-7.73-5.61,0-10.4,4.38-18.9,18.52-1.59,2.63-3.3,5.6-5.17,8.94-1.35,2.42-2.78,5.04-4.31,7.86l-1.48-.19-.22-.03-.37-.05c-2.71-.35-5.43-.68-8.06-1-5.08-.6-9.88-1.18-14.24-1.92-.5-.09-1.01-.18-1.52-.26-.86-.16-1.67-.31-2.44-.48v-13.34c0-14.31-1.15-27.49-3.43-40.38l27.78-5.73c1.72,14.89,2.57,28.64,2.57,45.82,1.24-2.6,2.42-5.07,3.56-7.41,4.17-8.61,7.72-15.5,11-20.95,8.02-13.33,14.4-18.03,24.39-18.03,5.15,0,10.31,1.15,15.75,3.15Z"/>         <path d="M1145.79,135.02c-.22.03-.43.05-.65.08-7.57.94-15.51,1.67-22.8,2.76-.57.09-1.13.18-1.7.26-12.5,2-22.81,5.24-25.68,12.81-3.91-11.42-6.39-13.48-21.16-16.05-.16-.03-.33-.05-.49-.09.17-.03.33-.05.5-.08,1.57-.26,3.15-.66,4.59-1.38,8.59-4.26,13.25-12.98,9.78-22.36-1.2-3.24-2.57-6.52-4.27-9.54-3.23-5.73-6.75-10.49-11.36-15.2-4.87-4.98-5.12-5.21-10.55-9.56-.01-.01-.03-.03-.05-.03-.64-.51-2.61-1.74-3.27-2.04l3.48,1.37c.25.11.5.22.74.34,19.36,8.84,30.59,23.73,36.43,42.4,1.17,3.71,3.41,6.76,6.48,8.39,3.98,2.1,9.09,3.48,14.82,4.53.56.1,1.13.2,1.7.3,7.05,1.19,14.94,1.96,22.8,2.99.22.03.43.06.65.09Z"/>         <path d="M998.15,194.95l-3.48-1.37c-.25-.11-.5-.22-.74-.34-19.36-8.84-30.59-23.73-36.43-42.39-1.17-3.72-3.41-6.77-6.48-8.39-5.21-2.76-12.34-4.27-20.28-5.43-6.04-.88-12.55-1.55-19.04-2.4-.22-.03-.43-.06-.65-.09.22-.03.43-.05.65-.08,6.29-.79,12.83-1.42,19.04-2.23,14.87-1.95,27.86-4.94,31.14-13.6,3.91,11.42,6.39,13.48,21.16,16.05.16.03.32.06.49.09-.17.03-.34.05-.5.08-1.58.26-3.15.66-4.59,1.38-8.59,4.26-13.25,12.98-9.78,22.36,1.2,3.25,2.56,6.52,4.26,9.54,3.23,5.74,6.76,10.49,11.36,15.2,4.88,4.98,5.12,5.21,10.56,9.56.01.01.03.03.05.03.64.51,2.61,1.74,3.27,2.04Z"/>         <path d="M1044.57,68.24c-11.42,3.9-13.48,6.38-16.05,21.15-.03.16-.05.33-.08.49-.03-.17-.05-.33-.08-.5-.26-1.58-.67-3.15-1.38-4.59-3.3-6.64-9.26-10.93-16.13-10.93-2.02,0-4.1.37-6.22,1.15-3.25,1.2-6.52,2.57-9.54,4.27-5.74,3.23-10.49,6.76-15.2,11.36-4.98,4.87-5.21,5.12-9.56,10.55-.01.01-.03.03-.03.05-.51.64-1.74,2.61-2.04,3.27l1.37-3.48c.11-.25.22-.5.34-.74,8.84-19.36,23.73-30.59,42.39-36.43,3.72-1.17,6.77-3.4,8.39-6.48,4.85-9.17,5.86-24.31,7.83-39.32.03-.22.05-.43.09-.65.03.22.05.43.08.65,2.67,21.36,3.56,45.53,15.83,50.19Z"/>         <path d="M870.35,117.64c0,2.82.11,5.61.32,8.34.18,2.29.43,4.54.75,6.75.05.39.11.77.17,1.15.07.45.14.89.22,1.33.07.43.15.85.22,1.27.44,2.4.96,4.74,1.57,7.01,6.18,23.21,20.88,39.73,41.14,39.73,13.46,0,25.11-7.2,32.97-19.62,1.49,3.54,3.16,6.9,5.02,10.08-9.08,17.21-25.64,31.02-48.87,31.02-31.81,0-56.51-26.64-59.3-64.88-.18-2.38-.26-4.82-.26-7.29,0-1.07.01-2.14.05-3.21,1.23-39.24,24.93-71.82,59.23-71.82,22.37,0,41.2,13.38,51.14,41.76.24.68.48,1.36.7,2.06l-1.62.38-25.3,5.93c-5.44-22.05-15.47-38.38-30.08-38.38-17.18,0-28.07,20.62-28.07,48.4Z"/>         <path d="M1088.6,165.04l-1.37,3.48c-.11.25-.22.5-.34.74-8.84,19.36-23.73,30.59-42.4,36.43-3.71,1.17-6.76,3.41-8.39,6.48-4.85,9.18-5.86,24.31-7.83,39.32-.03.22-.06.43-.09.65-.03-.22-.05-.43-.08-.65-2.67-21.36-3.57-45.53-15.83-50.19,11.42-3.9,13.47-6.38,16.05-21.14.03-.16.06-.33.09-.5.03.17.05.33.08.5.26,1.58.66,3.15,1.38,4.59,3.3,6.64,9.26,10.93,16.13,10.93,2.01,0,4.1-.37,6.22-1.15,3.25-1.2,6.52-2.56,9.54-4.27,5.74-3.22,10.49-6.76,15.2-11.36,4.98-4.87,5.21-5.12,9.56-10.55.01-.01.03-.03.03-.05.5-.64,1.74-2.61,2.04-3.27Z"/></svg>
-        </div>
-
-        <!-- Cube 4 quadrants -->
-        <div class="wq-grid">
-
-          <!-- TL : Scouter -->
-          <div class="wq wq-scout" onclick="setAppMode('agent');setTimeout(()=>switchPanel('scout'),60)">
-            <div class="wq-icon-wrap" style="background:rgba(45,212,167,.1)">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2DD4A7" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg>
-            </div>
-            <div class="wq-name" style="color:#2DD4A7">Scouter</div>
-            <div class="wq-desc">Analyser un joueur</div>
-            <div class="wq-corner-arrow" style="color:#2DD4A7">&#x2192;</div>
-          </div>
-
-          <!-- TR : Résultats -->
-          <div class="wq wq-results" onclick="setAppMode('agent');setTimeout(()=>showDossier(),60)">
-            <div class="wq-icon-wrap" style="background:rgba(74,158,255,.1)">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4A9EFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-            </div>
-            <div class="wq-name" style="color:#4A9EFF">R&#xe9;sultats</div>
-            <div class="wq-desc">Rapport &amp; scores SPES</div>
-            <div class="wq-corner-arrow" style="color:#4A9EFF">&#x2192;</div>
-          </div>
-
-          <!-- BL : Comparer -->
-          <div class="wq wq-compare" onclick="setAppMode('agent');setTimeout(()=>switchPanel('analyse'),60)">
-            <div class="wq-icon-wrap" style="background:rgba(45,212,191,.1)">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#2DD4BF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/></svg>
-            </div>
-            <div class="wq-name" style="color:#2DD4BF">Comparer</div>
-            <div class="wq-desc">Analyse multi-joueurs</div>
-            <div class="wq-corner-arrow" style="color:#2DD4BF">&#x2192;</div>
-          </div>
-
-          <!-- BR : Agent -->
-          <div class="wq wq-agent" onclick="setAppMode('agent');setTimeout(()=>switchPanel('crm'),60)">
-            <div class="wq-icon-wrap" style="background:rgba(245,166,35,.1)">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#F5A623" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <div class="wq-name" style="color:#F5A623">Agent</div>
-            <div class="wq-desc">CRM &amp; structures</div>
-            <div class="wq-corner-arrow" style="color:#F5A623">&#x2192;</div>
-          </div>
-
-          <!-- Centre : Logo → Top 30 -->
-          <div class="wq-center-btn" onclick="setAppMode('agent');setTimeout(()=>switchPanel('top50'),60)">
-            <svg width="82" height="82" viewBox="0 0 391.43 391.43" fill="var(--lime)" xmlns="http://www.w3.org/2000/svg"><path d="M298.54,242.29l-2.33,5.96c-14.94,33.89-40.55,53.52-72.81,63.73-6.35,2.01-11.54,5.85-14.3,11.11-8.24,15.7-9.88,41.57-13.17,67.22-.05.37-.1.74-.14,1.12-.05-.37-.1-.74-.14-1.12-4.68-36.48-6.36-73.22-27.33-81.11,19.49-6.73,23.02-15.52,27.33-40.76.05-.28.1-.56.14-.84.05.29.1.57.14.85,1.6,9.46,3.05,20.11,8.57,28.23,1.63,2.4,3.71,4.45,6.04,6.16,4.21,3.11,8.69,4.44,13.79,2.79,3.52-1.14,7.09-2.32,10.56-3.62,5.54-2.07,11.13-4.42,16.28-7.34,9.78-5.55,18.71-12.56,26.41-20.75,7.83-8.33,14.38-17.85,19.34-28.15.56-1.15,1.09-2.32,1.61-3.49Z"/><path d="M92.89,149.14l2.33-5.96c14.94-33.89,40.55-53.52,72.81-63.73,6.35-2.01,11.54-5.85,14.3-11.11,8.24-15.7,9.88-41.57,13.17-67.22.05-.37.1-.74.14-1.12.05.37.1.74.14,1.12,4.68,36.48,6.36,73.22,27.33,81.11-19.49,6.73-23.02,15.52-27.33,40.76-.05.28-.1.56-.14.84-.05-.29-.1-.57-.14-.85-1.6-9.46-3.05-20.11-8.57-28.23-1.63-2.4-3.71-4.45-6.04-6.16-4.21-3.11-8.69-4.44-13.79-2.79-3.52,1.14-7.09,2.32-10.56,3.62-5.54,2.07-11.13,4.42-16.28,7.34-9.78,5.55-18.71,12.56-26.41,20.75-7.83,8.33-14.38,17.85-19.34,28.15-.56,1.15-1.09,2.32-1.61,3.49Z"/><path d="M242.6,93.03l5.95,2.35c33.84,15.04,53.4,40.71,63.51,73.01,1.99,6.35,5.81,11.56,11.07,14.33,15.68,8.28,41.54,10.01,67.18,13.38.37.05.74.1,1.12.15-.37.05-.74.09-1.12.14-36.49,4.57-73.24,6.14-81.19,27.09-6.67-19.51-15.45-23.07-40.67-27.46-.28-.05-.56-.1-.84-.15.29-.05.57-.09.85-.14,9.46-1.57,20.12-2.99,28.25-8.49,2.4-1.62,4.46-3.7,6.18-6.02,3.12-4.2,4.46-8.67,2.83-13.78-1.13-3.53-2.3-7.1-3.59-10.57-2.05-5.55-4.38-11.14-7.29-16.31-5.52-9.79-12.51-18.75-20.67-26.48-8.3-7.86-17.81-14.43-28.09-19.43-1.15-.56-2.32-1.1-3.49-1.62Z"/><path d="M148.82,298.39l-5.95-2.35c-33.84-15.04-53.4-40.71-63.51-73.01-1.99-6.35-5.81-11.56-11.07-14.33-15.68-8.28-41.54-10.01-67.18-13.38-.37-.05-.74-.1-1.12-.15.37-.05.74-.09,1.12-.14,36.49-4.57,73.24-6.14,81.19-27.09,6.67,19.51,15.45,23.07,40.67,27.46.28.05.56.1.84.15-.29.05-.57.09-.85.14-9.46,1.57-20.12,2.99-28.25,8.49-2.4,1.62-4.46,3.7-6.18,6.02-3.12,4.2-4.46,8.67-2.83,13.78,1.13,3.53,2.3,7.1,3.59,10.57,2.05,5.55,4.38,11.14,7.29,16.31,5.52,9.79,12.51,18.75,20.67,26.48,8.3,7.86,17.81,14.43,28.09,19.43,1.15.56,2.32,1.1,3.49,1.62Z"/></svg>
-            <div class="wq-center-lbl">Top 30</div>
-          </div>
-
-        </div><!-- /wq-grid -->
-
-      </div><!-- /wq-container -->
-    </div><!-- /panel-welcome -->
 
     <!-- ══ PANEL : SEASONS — calendrier compétitif + préparation de match ══ -->
     <div id="panel-seasons" class="panel">
@@ -4260,13 +3874,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         // soulignement qui glisse (.hd-nav-ind). Deux mouvements simultanés
         // sur le même clic se parasiteraient.
         if (b.classList.contains('hd-nav-item') || b.closest('.rolepills-anim')) return;
-        // Les boutons-cartes sont écartés partout SAUF sur l'accueil, dont
-        // les dix cartes doivent aussi répondre au clic. Leur soulèvement au
-        // survol n'est plus un obstacle : la règle #panel-welcome utilise
-        // animation-composition:add, qui compose au lieu d'écraser.
-        if (!b.closest('#panel-welcome') &&
-            (b.closest('.entry-card') || b.classList.contains('card') ||
-             b.classList.contains('entry-card') || b.classList.contains('wq'))) return;
+        // Boutons-cartes écartés : ils pilotent déjà leur propre transform au survol.
+        if (b.closest('.entry-card') || b.classList.contains('card') ||
+            b.classList.contains('entry-card') || b.classList.contains('wq')) return;
         b.classList.remove('vs-pressed');
         void b.offsetWidth;                 // reflow forcé, sinon pas de rejeu
         b.classList.add('vs-pressed');
@@ -4275,31 +3885,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         // chipPop aussi : les .btn-pop rejouent ce keyframe-là au clic.
         if (e.animationName === 'btnPress' || e.animationName === 'chipPop' || e.animationName === 'chipPopSoft') e.target.classList.remove('vs-pressed');
       });
-
-      // Accueil : laisser le ressort s'achever AVANT de changer de page.
-      // Sans ça, switchPanel masque #panel-welcome pendant l'animation et le
-      // mouvement est tranché net — le bouton disparaît en pleine compression.
-      // Écouteur en phase de CAPTURE : il s'exécute avant le onclick inline du
-      // bouton, qu'on suspend le temps de l'animation. On se raccroche à la
-      // promesse « finished » et non à un délai figé : si l'animation est
-      // interrompue (elle rejette alors), la navigation part quand même —
-      // mieux vaut un mouvement écourté qu'un bouton qui ne répond plus.
-      // Limité à l'accueil. Le menu burger a été essayé avec cette attente et
-      // le rendu était moins bon : ses entrées repartent sans délai.
-      document.addEventListener('click', function(e){
-        var b = e.target.closest('button');
-        if (!b || !b.closest('#panel-welcome')) return;
-        if (b.dataset.vsDiffere === '1') { delete b.dataset.vsDiffere; return; }  // second passage : on laisse filer
-        // chipPop OU chipPopSoft : les gros boutons-cartes utilisent la variante
-        // douce. Ne chercher que 'chipPop' laissait leur navigation partir sans
-        // attendre — c'est justement eux qu'il faut laisser s'achever.
-        var anim = b.getAnimations().find(function(a){ return a.animationName === 'chipPop' || a.animationName === 'chipPopSoft'; });
-        if (!anim || anim.playState === 'finished') return;
-        e.preventDefault();
-        e.stopPropagation();
-        var relancer = function(){ b.dataset.vsDiffere = '1'; b.click(); };
-        anim.finished.then(relancer, relancer);
-      }, true);
       if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ vsdSegSlide(); hdNavSlide(); });
       else { vsdSegSlide(); hdNavSlide(); }
       function vsdStep(id, d){
@@ -9084,8 +8669,6 @@ function buildAllDims() {
 // GLOBAL SCORE UPDATE
 // ════════════════════════════════════════════
 
-// Mode app géré par le bloc MODE_CONFIG ci-dessous
-
 function updateGlobal() {
   const rankIdx = getCurrentRankIdx();
   const rankEl  = document.getElementById('d-rank');
@@ -9970,77 +9553,13 @@ function toggleDim(id) {
 // ════════════════════════════════════════════
 // NAVIGATION
 // ════════════════════════════════════════════
-// ════════════════════════════════════════════════════════════
-// MODE APP — Agent vs Coach
-// ════════════════════════════════════════════════════════════
-let appMode = localStorage.getItem('spes_mode') || 'welcome';
-
-const MODE_CONFIG = {
-  agent: {
-    nav: ['scout','top50','crm','analyse'],
-    label: 'Agent',
-    accent: 'var(--lime)',
-  },
-  coach: {
-    nav: ['scout','analyse','top50'],
-    label: 'Coach',
-    accent: '#A78BFA',
-  },
-};
-
-function setAppMode(mode) {
-  appMode = mode;
-  try { localStorage.setItem('spes_mode', mode); } catch(e) {}
-
-  // Masquer l'écran d'accueil
-  document.body.classList.remove('welcome-active');
-  const welcome = document.getElementById('panel-welcome');
-  if (welcome) { welcome.classList.remove('active'); welcome.style.display = 'none'; }
-
-  // Badge mode dans la nav
-  const modeBadge = document.getElementById('mode-badge');
-  if (modeBadge) {
-    const cfg = MODE_CONFIG[mode];
-    modeBadge.textContent = cfg.label;
-    modeBadge.style.color = cfg.accent;
-    modeBadge.style.borderColor = cfg.accent + '55';
-    modeBadge.style.background = cfg.accent + '12';
-    modeBadge.style.display = 'inline-block';
-  }
-
-  // Mettre à jour les boutons mode dans le header
-  ['agent','coach'].forEach(m => {
-    const btn = document.getElementById('mode-btn-' + m);
-    if (btn) {
-      btn.style.opacity = m === mode ? '1' : '0.35';
-      btn.style.fontWeight = m === mode ? '700' : '400';
-    }
-  });
-
-  // Pas de redirection automatique — chaque carte welcome gère sa propre navigation
-}
-
-function resetToWelcome() {
-  appMode = 'welcome';
-  try { localStorage.removeItem('spes_mode'); } catch(e) {}
-  document.body.classList.remove('landing-active');
-  document.body.classList.remove('rolebg-on');   // état honnête : plus sur le scouting
-  document.body.classList.add('welcome-active');
-  const welcome = document.getElementById('panel-welcome');
-  if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
-  document.querySelectorAll('.panel').forEach(p => {
-    if (p.id !== 'panel-welcome') { p.classList.remove('active'); p.style.display = ''; }
-  });
-}
-
+// Point d'entrée depuis la vitrine publique (panel-landing, hors app) : plus de
+// page d'accueil intermédiaire, on ouvre directement Seasons.
 function goToWelcome() {
   document.body.classList.remove('landing-active');
-  document.body.classList.remove('rolebg-on');
-  document.body.classList.add('welcome-active');
   const landing = document.getElementById('panel-landing');
   if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
-  const welcome = document.getElementById('panel-welcome');
-  if (welcome) { welcome.classList.add('active'); welcome.style.display = 'flex'; }
+  switchPanel('seasons');
 }
 
 function switchPanel(id) {
@@ -13072,18 +12591,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // ── Init au démarrage ─────────────────────────────────────
 (function initApp() {
-  // Au démarrage on affiche TOUJOURS la page d'accueil ludique (top ladder, etc.).
-  // L'utilisateur navigue ensuite via le menu, la nav ou les cartes d'entrée.
+  // Au démarrage on ouvre directement Seasons (1er onglet, le plus utilisé) —
+  // il n'y a plus de page d'accueil intermédiaire à traverser.
   document.body.classList.remove('landing-active');
-  document.body.classList.add('welcome-active');
   const landing = document.getElementById('panel-landing');
   if (landing) { landing.classList.remove('active'); landing.style.display = 'none'; }
-  document.querySelectorAll('.panel').forEach(p => {
-    if (p.id === 'panel-welcome') { p.classList.add('active'); p.style.display = ''; }
-    else { p.classList.remove('active'); }
-  });
-  document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
-  if (typeof hdNavSlide === 'function') hdNavSlide();   // plus d'onglet actif → barre effacée
+  switchPanel('seasons');
 })();
 
 // Recalcule toutes les fiches sauvegardées avec le barème actuel.
@@ -17940,13 +17453,11 @@ function vsdToggleDrawer(open){
   }
 }
 function vsdGo(panel){
-  if(panel==='welcome'){ if(typeof resetToWelcome==='function') resetToWelcome(); return; }
-  if(typeof setAppMode==='function') setAppMode('agent');
   if(typeof switchPanel==='function') switchPanel(panel);
 }
 function vsdDrawerGo(panel){
   vsdToggleDrawer(false);
-  setTimeout(function(){ if(panel==='welcome'){ if(typeof resetToWelcome==='function') resetToWelcome(); } else vsdGo(panel); }, 80);
+  setTimeout(function(){ vsdGo(panel); }, 80);
 }
 function vsdSetCursor(mode){
   if(mode==='systeme') document.documentElement.removeAttribute('data-cursor');
@@ -17982,102 +17493,8 @@ function vsdApplyCursor(){
     setTimeout(function(){ try{ s.remove(); }catch(_){} }, 460);
   }, { passive:true });
 })();
-function vsdHomeScout(){
-  var el=document.getElementById('home-search'); var v=(el&&el.value||'').trim();
-  vsdGo('scout');
-  if(!v) return;
-  var m=v.split('#');
-  var p=document.getElementById('d-pseudo'), t=document.getElementById('d-tag');
-  if(p) p.value=m[0].trim();
-  if(t) t.value=(m[1]||'').replace(/[^a-zA-Z0-9]/g,'').trim();
-  if(typeof onIdentityChange==='function'){ try{ onIdentityChange(); }catch(e){} }
-  // Lance directement l'import Riot (auto-détecte rang, rôle, région, stats) —
-  // l'utilisateur n'a plus qu'à compléter l'âge et le rang d'il y a 1 an.
-  if(p && p.value && typeof fetchRiotData==='function'){ setTimeout(function(){ try{ fetchRiotData(); }catch(e){} }, 300); }
-}
-// ── Régions suivies (filtre de l'accueil) ─────────────────────────────────────
-var VS_REGION_MAP={ EUW:['euw1'], EUNE:['eun1'], KR:['kr'], NA:['na1'], BR:['br1'] };
-function vsFollowedRegions(){
-  try{ var s=JSON.parse(localStorage.getItem('vs_regions')||'null'); if(Array.isArray(s)&&s.length) return s; }catch(e){}
-  return ['EUW','EUNE','KR','NA','BR'];
-}
-function vsSyncRegionChips(){
-  var set=vsFollowedRegions();
-  var chips=document.querySelectorAll('#home-region-chips .chip');
-  Array.prototype.forEach.call(chips, function(c){ c.classList.toggle('on', set.indexOf(c.getAttribute('data-region'))>=0); });
-}
-function vsToggleRegion(el){
-  var r=el.getAttribute('data-region'); var set=vsFollowedRegions(); var i=set.indexOf(r);
-  if(i>=0){ if(set.length<=1) return; set.splice(i,1); } else { set.push(r); }
-  try{ localStorage.setItem('vs_regions', JSON.stringify(set)); }catch(e){}
-  vsSyncRegionChips(); try{ vsdRenderHome(); }catch(e){}
-}
-function vsdRenderHome(){
-  var box=document.getElementById('home-prospects'); if(!box) return;
-  vsSyncRegionChips();
-
-  // Vrai ladder : les meilleurs prospects réellement scannés (Top 30 SPES)
-  var data=[];
-  try{ if(typeof top50Data!=='undefined' && Array.isArray(top50Data)) data=top50Data.slice(); }catch(e){}
-
-  // Filtre par régions suivies (les chips à droite) — l'accueil bouge selon le ladder suivi
-  var hadData=data.length;
-  var reg=vsFollowedRegions(), okServers={};
-  reg.forEach(function(r){ (VS_REGION_MAP[r]||[]).forEach(function(s){ okServers[s]=1; }); });
-  data=data.filter(function(p){ return !p.server || okServers[p.server]; });
-
-  var titleCase=function(s){ s=String(s||'').toLowerCase(); return s.charAt(0).toUpperCase()+s.slice(1); };
-  var tierCol=function(t){ try{ if(typeof TIER_COLOR!=='undefined' && TIER_COLOR[t]) return TIER_COLOR[t]; }catch(e){} return 'var(--vs-fg-2)'; };
-  var ageMultOf=function(a){ try{ if(a && typeof ageBonus==='function') return ageBonus(a); }catch(e){} return 1; };
-
-  if(!data.length){
-    // Pas de fond factice : on invite à lancer le scan Top 30 (véritables joueurs)
-    box.style.gridTemplateColumns='1fr';
-    var emptyMsg = hadData
-      ? {t:'Aucun prospect dans ces régions', d:'Aucun joueur scanné pour les régions suivies. Ajoute une région ci-contre ou lance un scan du ladder.'}
-      : {t:'Aucun prospect scanné pour l\'instant', d:'Lance un scan du ladder pour peupler ton Top 30 avec de vrais joueurs, notés par le modèle SPES.'};
-    box.innerHTML='<div class="card" style="padding:26px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px;border:1px dashed var(--vs-forest-500)">'
-      +'<div class="entry-ico" style="width:44px;height:44px"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>'
-      +'<div><div class="h3" style="font-size:16px">'+emptyMsg.t+'</div>'
-      +'<div class="faint" style="font-size:12.5px;max-width:340px;margin:6px auto 0">'+emptyMsg.d+'</div></div>'
-      +'<button class="btn btn-cta btn-sm" onclick="vsdGo(\'top50\')" style="margin-top:2px">Générer le Top 30 →</button>'
-      +'</div>';
-    box.__ladderReal=false;
-  } else {
-    // Tri par score final (avec bonus d\'âge, comme le Top 30) puis top 6
-    data.forEach(function(p){ var m=ageMultOf(p.age); p.__sf=p.age?Math.min(10,parseFloat(p.score||0)*m):parseFloat(p.score||0); });
-    data.sort(function(a,b){ return b.__sf-a.__sf; });
-    var pros=data.slice(0,6);
-    box.style.gridTemplateColumns='1fr 1fr';
-    box.innerHTML=pros.map(function(p){
-      var sf=(p.__sf||0);
-      var scCol=sf>=8?'var(--vs-emerald-400)':sf>=6.5?'var(--rank-gold)':'var(--vs-fg-2)';
-      var rankStr=titleCase(p.tier)+' '+(p.rank||'')+(p.lp!=null?' · '+p.lp+'LP':'');
-      var isPep=false; try{ isPep=p.scorePotentiel && p.age && p.age<=19 && (p.scorePotentiel-Math.min(parseFloat(p.score),(typeof RANG_PLAFOND!=='undefined'?(RANG_PLAFOND[(TIER_IDX[p.tier]||6)]||8.2):8.2)))>=1.5; }catch(e){}
-      var badge=isPep
-        ? '<span class="delta-up" style="font-size:12px" title="Pépite — fort potentiel">◆ pép.</span>'
-        : (p.age?'<span class="faint" style="font-size:11px;font-family:var(--font-mono)">'+p.age+' ans</span>':'');
-      return '<button class="card" onclick="vsdGo(\'top50\')" style="text-align:left;padding:0;overflow:hidden;cursor:pointer;border:1px solid var(--vs-forest-500)">'
-        +'<div style="display:flex;align-items:center;gap:11px;padding:12px 14px">'
-          +'<div class="avatar" style="width:40px;height:40px;font-size:16px">'+(p.name||'?').charAt(0).toUpperCase()+'</div>'
-          +'<div style="min-width:0"><div style="font-weight:900;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(p.name||'?')+'</div><div class="faint" style="font-size:11px;font-family:var(--font-mono)">'+(p.tag?'#'+p.tag+' · ':'')+(p.age?p.age+' ans':'')+'</div></div>'
-          +'<div style="margin-left:auto;text-align:right"><div style="display:flex;align-items:center;gap:5px;justify-content:flex-end"><span class="stat-v" style="font-size:20px;color:'+scCol+'">'+sf.toFixed(1)+'</span>'+badge+'</div><div class="label" style="font-size:9px">VisionScore™</div></div>'
-        +'</div>'
-        +'<div class="card-foot" style="display:flex;align-items:center;justify-content:space-between;padding:9px 14px"><span style="font-weight:700;font-size:10.5px;color:'+tierCol(p.tier)+';letter-spacing:.01em">'+rankStr+'</span><span class="pill pill-soft" style="text-transform:none;letter-spacing:0">'+(p.role||'?')+'</span></div>'
-      +'</button>';
-    }).join('');
-    box.__ladderReal=true;
-  }
-  // Activité (données réelles si dispo)
-  var scouted=0,fiches=0,rosters=0;
-  try{ var h=JSON.parse(localStorage.getItem('vs_history')||'[]'); if(Array.isArray(h)){ fiches=h.length; scouted=h.length; } }catch(e){}
-  try{ if(typeof rsAll==='function') rosters=rsAll().length; }catch(e){}
-  var set=function(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; };
-  set('home-act-scout', scouted); set('home-act-fiches', fiches); set('home-act-rosters', rosters);
-}
 document.addEventListener('keydown', function(e){ if(e.key==='Escape') vsdToggleDrawer(false); });
 try{ vsdApplyCursor(); }catch(e){}
-try{ vsdRenderHome(); }catch(e){}
 try{ vsdSetRoleBg('Mid'); }catch(e){}
 /* ── Mode démo sans compte (/app?demo=1) : bannière + joueur exemple + scouting ── */
 (function vsDemoInit(){
@@ -18093,7 +17510,6 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
     var mainEl=document.querySelector('.main'); if(mainEl) mainEl.style.paddingBottom='72px';
     // charge un dossier exemple complet (Caliste) + atterrit sur le dossier
     try{
-      document.body.classList.remove('welcome-active');
       if(typeof vsDemoLoadDossier==='function') vsDemoLoadDossier();
       setTimeout(function(){ if(typeof showDossier==='function') showDossier(); }, 200);
     }catch(e){}
