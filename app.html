@@ -4877,14 +4877,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
 
         <div id="an-view-timeline" style="display:none">
+          <div class="rs-modesw" role="group" aria-label="Mode de données" style="margin-bottom:12px">
+            <button data-vsmode="compet" onclick="vsSetDataMode('compet')" class="rs-modebtn">Compét</button>
+            <button data-vsmode="soloq" onclick="vsSetDataMode('soloq')" class="rs-modebtn">Solo Q</button>
+          </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-            <div class="ctrl" style="flex:1;min-width:160px"><input id="tl-id" placeholder="Pseudo#TAG"/></div>
-            <div class="ctrl select" style="width:auto;min-width:110px"><select id="tl-server">
+            <div class="ctrl" id="tl-input-soloq" style="flex:1;min-width:160px"><input id="tl-id" placeholder="Pseudo#TAG"/></div>
+            <div class="ctrl select" id="tl-input-server" style="width:auto;min-width:110px"><select id="tl-server">
               <option value="euw1">EUW</option><option value="eun1">EUNE</option><option value="na1">NA</option><option value="kr">KR</option><option value="br1">BR</option><option value="la1">LAN</option><option value="la2">LAS</option><option value="tr1">TR</option><option value="oc1">OCE</option>
             </select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
-            <button id="tl-go" onclick="tlGenerate()" class="btn btn-cta">Analyser la dernière partie</button>
+            <div class="ctrl" id="tl-input-compet" style="flex:1;min-width:160px;display:none"><input id="tl-pro" placeholder="Pseudo esport"/></div>
+            <button id="tl-go" onclick="tlSearch()" class="btn btn-cta">Voir les dernières parties</button>
           </div>
           <div id="tl-status" class="faint" style="display:none;font-size:.82rem;margin-bottom:12px"></div>
+          <div id="tl-list"></div>
           <div id="tl-result"></div>
         </div>
       </div>
@@ -5747,6 +5753,7 @@ function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes 
   });
   anSyncTabs(view);
   if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
+  if (view === 'timeline' && typeof tlSyncInputs === 'function') tlSyncInputs();
   // La vue 'scrim' est désormais le TABLEAU STATS ÉQUIPE (l'analyse vidéo est en
   // pause ; son studio reste dans le DOM sous #scrim-studio-legacy, non routé).
   if (view === 'scrim' && typeof renderStatsBoard === 'function') renderStatsBoard();
@@ -5790,6 +5797,7 @@ function vsSetDataMode(m){
   // écouter cet événement pour se re-rendre dans le mode courant.
   document.dispatchEvent(new CustomEvent('vs-data-mode', { detail: next }));
   if (document.getElementById('an-roster') && typeof renderRoster === 'function') renderRoster();
+  if (document.getElementById('an-view-timeline') && typeof tlSyncInputs === 'function') tlSyncInputs();
 }
 vsApplyDataModeClass();
 // Synchro initiale + à chaque changement de panneau (les toggles de l'en-tête
@@ -7539,37 +7547,86 @@ async function pmFetchCompet(proName) {
    TIMELINE — analyse d'une partie classée (match-v5 timeline)
 ════════════════════════════════════════════ */
 function tlMMSS(ms) { const s = Math.floor((ms || 0) / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
-async function tlGenerate() {
+// Bascule Compét/Solo Q du Timeline — suit le socle commun vsDataMode (même
+// mécanique que le Roster). Affiche le bon champ de saisie, vide les résultats
+// précédents (les deux modes n'ont pas les mêmes parties).
+function tlSyncInputs() {
+  const compet = window.vsDataMode === 'compet';
+  const a = document.getElementById('tl-input-soloq'); if (a) a.style.display = compet ? 'none' : '';
+  const b = document.getElementById('tl-input-server'); if (b) b.style.display = compet ? 'none' : '';
+  const c = document.getElementById('tl-input-compet'); if (c) c.style.display = compet ? '' : 'none';
+  const list = document.getElementById('tl-list'); if (list) list.innerHTML = '';
+  const out = document.getElementById('tl-result'); if (out) out.innerHTML = '';
+}
+document.addEventListener('vs-data-mode', function () {
+  const v = document.getElementById('an-view-timeline');
+  if (v && v.style.display !== 'none' && typeof tlSyncInputs === 'function') tlSyncInputs();
+});
+function tlSearch() { return (window.vsDataMode === 'compet') ? tlSearchCompet() : tlSearchSoloq(); }
+
+/* ═══ SOLO Q : liste des dernières classées, puis timeline complète d'une partie ═══ */
+async function tlSearchSoloq() {
   const raw = (document.getElementById('tl-id').value || '').trim();
   const m = raw.match(/^(.*?)#(.+)$/);
   if (!m) { showToast('Format attendu : Pseudo#TAG', 'warning'); return; }
   const server = document.getElementById('tl-server').value;
   const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
-  const btn = document.getElementById('tl-go'), status = document.getElementById('tl-status'), out = document.getElementById('tl-result');
-  btn.disabled = true; status.style.display = 'block'; status.textContent = 'Recherche de la dernière partie classée…'; out.innerHTML = '';
+  const btn = document.getElementById('tl-go'), status = document.getElementById('tl-status');
+  const listEl = document.getElementById('tl-list'), out = document.getElementById('tl-result');
+  btn.disabled = true; status.style.display = 'block'; status.textContent = 'Recherche du joueur…'; listEl.innerHTML = ''; out.innerHTML = '';
   try {
     const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(m[1].trim()) + '/' + encodeURIComponent(m[2].trim()));
     if (!acc || !acc.puuid) throw new Error('Riot ID introuvable');
-    const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=1&type=ranked');
+    status.textContent = 'Chargement des 10 dernières classées…';
+    const ids = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + acc.puuid + '/ids?queue=420&count=10&type=ranked');
     if (!ids || !ids.length) throw new Error('Aucune partie classée récente');
-    status.textContent = 'Chargement de la partie…';
-    const match = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + ids[0]);
-    status.textContent = 'Chargement de la timeline…';
-    const tl = await riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + ids[0] + '/timeline');
-    tlRender(match, tl, acc.puuid);
+    const matches = await fetchMatchesInBatches(regional, ids, undefined, () => {});
+    window._tlPuuid = acc.puuid; window._tlRegional = regional; window._tlRiotId = raw;
+    window._tlServerLbl = (document.getElementById('tl-server').selectedOptions[0] || {}).textContent || '';
+    window._tlMatches = matches;
+    tlRenderList(matches, acc.puuid);
   } catch (err) {
     out.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + anEsc((err && err.message) || 'Erreur') + '</div>';
   }
   status.style.display = 'none'; btn.disabled = false;
+}
+function tlRenderList(matches, puuid) {
+  const listEl = document.getElementById('tl-list');
+  const rows = matches.map((match, i) => {
+    const p = (match.info.participants || []).find(x => x.puuid === puuid); if (!p) return '';
+    const kda = (p.deaths ? ((p.kills + p.assists) / p.deaths).toFixed(1) : (p.kills + p.assists).toFixed(1));
+    const when = match.info.gameCreation ? new Date(match.info.gameCreation) : null;
+    const dateStr = when ? when.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+    const durMin = Math.floor((match.info.gameDuration || 0) / 60);
+    return '<div class="rs-pd-game rs-pd-game-clk" onclick="tlShowSoloqGame(' + i + ')" title="Voir la timeline complète">'
+      + '<span class="rs-pd-res ' + (p.win ? 'w' : 'l') + '">' + (p.win ? 'V' : 'D') + '</span>'
+      + '<span class="rs-pd-champ" title="' + anEsc(p.championName) + '">' + anEsc(p.championName) + '</span>'
+      + '<span class="rs-pd-kdanum"><b>' + p.kills + '</b>/<b>' + p.deaths + '</b>/<b>' + p.assists + '</b> <span class="faint">(' + kda + ')</span></span>'
+      + '<span class="rs-pd-gvs faint">' + durMin + ' min</span>'
+      + '<span class="rs-pd-gdate faint">' + anEsc(dateStr) + '</span>'
+      + '</div>';
+  }).join('');
+  listEl.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Dernières classées de ' + anEsc(window._tlRiotId || '') + ' <span class="faint" style="font-weight:400;text-transform:none">— clique une partie pour la timeline complète</span></div><div class="rs-pd-glist">' + rows + '</div>';
+}
+async function tlShowSoloqGame(idx) {
+  const match = (window._tlMatches || [])[idx]; if (!match) return;
+  const out = document.getElementById('tl-result');
+  out.innerHTML = '<div class="faint" style="font-size:.85rem;padding:8px">Chargement de la timeline…</div>';
+  try {
+    const tl = await riotFetch('https://' + window._tlRegional + '.api.riotgames.com/lol/match/v5/matches/' + match.metadata.matchId + '/timeline');
+    tlRender(match, tl, window._tlPuuid);
+  } catch (err) { out.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + anEsc((err && err.message) || 'Erreur') + '</div>'; }
 }
 function tlRender(match, tl, puuid) {
   const out = document.getElementById('tl-result');
   const parts = (match.info && match.info.participants) || [];
   const me = parts.find(p => p.puuid === puuid);
   const myTeam = me ? me.teamId : 100;
-  const pidTeam = {}; parts.forEach(p => pidTeam[p.participantId] = p.teamId);
+  const pidTeam = {}, pidInfo = {};
+  parts.forEach(p => { pidTeam[p.participantId] = p.teamId; pidInfo[p.participantId] = { champ: p.championName, name: p.riotIdGameName || p.summonerName || '?', team: p.teamId }; });
   const frames = (tl.info && tl.info.frames) || [];
   const objs = [];
+  const kills = [];
   frames.forEach(f => (f.events || []).forEach(e => {
     if (e.type === 'BUILDING_KILL' && e.buildingType === 'TOWER_BUILDING') {
       const destroyer = e.teamId === 100 ? 200 : 100;
@@ -7579,11 +7636,16 @@ function tlRender(match, tl, puuid) {
       const label = mt === 'DRAGON' ? ('Dragon' + (e.monsterSubType ? ' ' + e.monsterSubType.replace('_DRAGON', '').toLowerCase() : ''))
         : mt === 'BARON_NASHOR' ? 'Baron' : mt === 'RIFTHERALD' ? 'Herald' : mt === 'HORDE' ? 'Voidgrub' : (mt || '?').toLowerCase();
       objs.push({ t: e.timestamp, label, team: e.killerTeamId });
+    } else if (e.type === 'CHAMPION_KILL') {
+      const killer = pidInfo[e.killerId] || null;
+      const victim = pidInfo[e.victimId] || null;
+      const assists = (e.assistingParticipantIds || []).map(id => pidInfo[id] && pidInfo[id].champ).filter(Boolean);
+      kills.push({ t: e.timestamp, killer, victim, assists, team: victim ? (victim.team === 100 ? 200 : 100) : null });
     }
   }));
   objs.sort((a, b) => a.t - b.t);
+  kills.sort((a, b) => a.t - b.t);
   const myWin = me ? me.win : null;
-  const colT = t => t === myTeam ? 'var(--vs-emerald-400)' : 'var(--vs-red-400)';
   const sideChip = t => t === myTeam
     ? '<span style="font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.3);color:var(--vs-emerald-300)">Nous</span>'
     : '<span style="font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(255,51,0,.1);border:1px solid rgba(255,90,51,.3);color:var(--vs-red-400)">Eux</span>';
@@ -7596,8 +7658,8 @@ function tlRender(match, tl, puuid) {
   const cs = me ? ((me.totalMinionsKilled || 0) + (me.neutralMinionsKilled || 0)) : null;
   const when = match.info.gameCreation ? new Date(match.info.gameCreation) : null;
   const whenStr = when ? when.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) + ' à ' + when.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
-  const riotId = (document.getElementById('tl-id').value || '').trim();
-  const serverLbl = (document.getElementById('tl-server').selectedOptions[0] || {}).textContent || '';
+  const riotId = window._tlRiotId || (document.getElementById('tl-id').value || '').trim();
+  const serverLbl = window._tlServerLbl || (document.getElementById('tl-server').selectedOptions[0] || {}).textContent || '';
   const resBadge = myWin === true
     ? '<span style="font-size:.72rem;font-weight:800;letter-spacing:.06em;padding:4px 12px;border-radius:999px;background:var(--vs-emerald-500);color:#04231D">VICTOIRE</span>'
     : myWin === false
@@ -7612,15 +7674,28 @@ function tlRender(match, tl, puuid) {
     + (kda ? '<span class="stat-v" style="font-size:.95rem;color:var(--vs-emerald-300)">' + kda + '</span>' : '')
     + (cs != null ? '<span class="faint" style="font-size:.78rem;font-family:var(--font-mono)">' + cs + ' CS</span>' : '')
     + '</div>'
-    + '<div class="faint" style="font-size:.78rem;margin-top:5px">' + resWord + 'Dernière partie classée (Solo/Duo) de <strong style="color:var(--vs-fg-1)">' + anEsc(riotId) + '</strong> · ' + serverLbl + ' · ' + durMin + ' min' + (whenStr ? ' · ' + whenStr : '') + '</div>'
+    + '<div class="faint" style="font-size:.78rem;margin-top:5px">' + resWord + 'Partie classée (Solo/Duo) de <strong style="color:var(--vs-fg-1)">' + anEsc(riotId) + '</strong> · ' + serverLbl + ' · ' + durMin + ' min' + (whenStr ? ' · ' + whenStr : '') + '</div>'
     + '</div>';
   html += '<div class="label" style="margin-left:auto">Timeline API Riot</div></div>';
 
   // ── Courbe d'avance d'or ──
   html += '<div class="card" style="padding:16px 18px;margin-bottom:14px"><div class="between" style="margin-bottom:8px"><span class="label">Avance d\'or — nous vs eux</span><span class="faint" style="font-size:.72rem">au-dessus de 0 = avantage</span></div><div style="height:210px"><canvas id="tl-gold-chart"></canvas></div></div>';
 
+  // ── Feed des éliminations (qui tue qui, quand) ──
+  html += '<div class="card" style="padding:14px 8px 4px;margin-bottom:14px">';
+  html += '<div class="label" style="padding:0 12px;margin-bottom:8px">Éliminations (' + kills.length + ')</div>';
+  html += '<div style="max-height:260px;overflow-y:auto">' + (kills.map(k => '<div class="tl-obj-row" style="display:flex;align-items:center;gap:12px;font-size:.83rem;padding:7px 12px;border-radius:8px;flex-wrap:wrap">' +
+    '<span style="font-family:var(--font-mono);color:var(--vs-fg-3);width:46px;font-size:.78rem">' + tlMMSS(k.t) + '</span>' +
+    '<span style="flex:1;min-width:180px;color:var(--vs-fg-1)">' +
+      (k.killer ? '<b>' + anEsc(k.killer.champ) + '</b>' : '<span class="faint">Exécution</span>') +
+      ' <span class="faint">élimine</span> ' + (k.victim ? '<b>' + anEsc(k.victim.champ) + '</b>' : '?') +
+      (k.assists.length ? ' <span class="faint">(assist : ' + k.assists.map(anEsc).join(', ') + ')</span>' : '') +
+    '</span>' +
+    (k.team != null ? sideChip(k.team) : '') + '</div>').join('') || '<div class="faint" style="font-size:.8rem;padding:0 12px 12px">Aucune élimination.</div>') + '</div>';
+  html += '</div>';
+
   // ── Objectifs ──
-  html += '<div class="card" style="padding:14px 8px 4px">';
+  html += '<div class="card" style="padding:14px 8px 4px;margin-bottom:14px">';
   html += '<div class="label" style="padding:0 12px;margin-bottom:8px">Objectifs (' + objs.length + ')</div>';
   html += objs.map(o => '<div class="tl-obj-row" style="display:flex;align-items:center;gap:12px;font-size:.84rem;padding:8px 12px;border-radius:8px">' +
     '<span style="font-family:var(--font-mono);color:var(--vs-fg-3);width:46px;font-size:.78rem">' + tlMMSS(o.t) + '</span>' +
@@ -7629,6 +7704,13 @@ function tlRender(match, tl, puuid) {
     sideChip(o.team) + '</div>').join('') ||
     '<div class="faint" style="font-size:.8rem;padding:0 12px 12px">Aucun objectif détecté.</div>';
   html += '</div>';
+
+  // ── Box-score complet (10 joueurs, comme un vrai scoreboard de fin de partie) ──
+  html += '<div class="card" style="padding:16px 18px">';
+  html += '<div class="label" style="margin-bottom:10px">Scoreboard complet</div>';
+  html += tlBoxScoreHtml(parts, myTeam, puuid);
+  html += '</div>';
+
   out.innerHTML = html;
   // courbe d'avance d'or (notre équipe - adverse)
   if (window.Chart) {
@@ -7641,6 +7723,94 @@ function tlRender(match, tl, puuid) {
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#A9C4BD', maxTicksLimit: 12 }, grid: { display: false } }, y: { ticks: { color: '#A9C4BD' }, grid: { color: 'rgba(36,92,82,.35)' } } } },
     });
   }
+}
+// Scoreboard 10 joueurs (2 équipes, triées par poste) — réutilisé pour Solo Q
+// (déjà en mémoire, aucun appel réseau) et pour le détail d'une game compét
+// (via pmFetchGamePlayers). Même composant visuel que la fiche joueur du Roster.
+const _TL_ROLEORD = { TOP: 0, JUNGLE: 1, MIDDLE: 2, BOTTOM: 3, UTILITY: 4 };
+function tlBoxScoreHtml(parts, myTeam, puuid) {
+  const byTeam = {}; parts.forEach(p => (byTeam[p.teamId] = byTeam[p.teamId] || []).push(p));
+  const teamBlock = (tid) => {
+    const list = (byTeam[tid] || []).slice().sort((a, b) => (_TL_ROLEORD[a.teamPosition] ?? 9) - (_TL_ROLEORD[b.teamPosition] ?? 9));
+    if (!list.length) return '';
+    const won = list[0].win;
+    let h = '<div class="rs-pd-team"><div class="rs-pd-teamh"><span class="rs-pd-res ' + (won ? 'w' : 'l') + '">' + (won ? 'V' : 'D') + '</span><span class="rs-pd-teamnm">' + (tid === myTeam ? 'Notre équipe' : 'Équipe adverse') + '</span></div>';
+    h += list.map(p => {
+      const kda = (p.deaths ? ((p.kills + p.assists) / p.deaths).toFixed(1) : (p.kills + p.assists).toFixed(1));
+      const cs = (p.totalMinionsKilled || 0) + (p.neutralMinionsKilled || 0);
+      const nm = p.riotIdGameName || p.summonerName || '?';
+      return '<div class="rs-pd-pl' + (p.puuid === puuid ? ' hl' : '') + '">'
+        + '<span class="rs-pd-plrole faint">' + anEsc((p.teamPosition || '').slice(0, 3)) + '</span>'
+        + '<span class="rs-pd-plchamp" title="' + anEsc(p.championName) + '">' + anEsc(p.championName) + '</span>'
+        + '<span class="rs-pd-plname faint" title="' + anEsc(nm) + '">' + anEsc(nm) + '</span>'
+        + '<span class="rs-pd-plkda"><b>' + p.kills + '</b>/<b>' + p.deaths + '</b>/<b>' + p.assists + '</b> <span class="faint">(' + kda + ')</span></span>'
+        + '<span class="rs-pd-plcs faint">' + cs + ' CS</span>'
+        + '<span class="rs-pd-plgold faint">' + (p.goldEarned ? (p.goldEarned / 1000).toFixed(1) + 'k' : '—') + '</span>'
+        + '</div>';
+    }).join('');
+    h += '</div>'; return h;
+  };
+  return '<div class="rs-pd-teams">' + teamBlock(myTeam) + teamBlock(myTeam === 100 ? 200 : 100) + '</div>';
+}
+
+// Ligne de game compét pour le Timeline — même rendu que rsPdGameRow (Roster)
+// mais pointe vers tlShowCompetGame (le conteneur cible n'est pas le même).
+function tlPdGameRow(g) {
+  const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
+  const open = g.gameId
+    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="tlShowCompetGame(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le scoreboard complet">'
+    : '<div class="rs-pd-game">';
+  return open
+    + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
+    + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
+    + '<span class="rs-pd-kdanum"><b>' + g.k + '</b>/<b>' + g.d + '</b>/<b>' + g.a + '</b> <span class="faint">(' + kda + ')</span></span>'
+    + '<span class="rs-pd-gvs faint">vs ' + anEsc(g.vs || '?') + '</span>'
+    + '<span class="rs-pd-gev faint" title="' + anEsc(g.page || g.event || '') + '">' + anEsc(g.event || '') + '</span>'
+    + '<span class="rs-pd-gdate faint">' + anEsc(g.date || '') + '</span>'
+    + '</div>';
+}
+/* ═══ COMPÉT : liste des dernières games Leaguepedia, puis scoreboard complet ═══ */
+async function tlSearchCompet() {
+  const proName = (document.getElementById('tl-pro').value || '').trim();
+  if (!proName) { showToast('Renseigne le pseudo esport du joueur', 'warning'); return; }
+  const btn = document.getElementById('tl-go'), status = document.getElementById('tl-status');
+  const listEl = document.getElementById('tl-list'), out = document.getElementById('tl-result');
+  btn.disabled = true; status.style.display = 'block'; status.textContent = 'Recherche des games compétitives…'; listEl.innerHTML = ''; out.innerHTML = '';
+  try {
+    const games = await pmFetchCompetRaw(proName, 15);
+    if (!games || !games.length) throw new Error('Aucune game compétitive trouvée pour ' + proName);
+    window._tlProName = proName;
+    listEl.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Dernières games compétitives de ' + anEsc(proName) + ' <span class="faint" style="font-weight:400;text-transform:none">— clique une partie pour le scoreboard complet</span></div><div class="rs-pd-glist">' + games.map(tlPdGameRow).join('') + '</div>';
+  } catch (err) {
+    out.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + anEsc((err && err.message) || 'Erreur') + '</div>';
+  }
+  status.style.display = 'none'; btn.disabled = false;
+}
+// Détail d'une game compét : scoreboard 10 joueurs réel (Leaguepedia), même
+// composant visuel que la Solo Q. Pas de courbe d'or ni d'objectifs horodatés
+// possible ici — Leaguepedia n'expose que les totaux de fin de partie.
+async function tlShowCompetGame(gameIdEnc) {
+  const gameId = decodeURIComponent(gameIdEnc);
+  const out = document.getElementById('tl-result');
+  out.innerHTML = '<div class="faint" style="font-size:.85rem;padding:8px">Chargement du scoreboard…</div>';
+  const players = await pmFetchGamePlayers(gameId).catch(() => null);
+  if (!players || !players.length) { out.innerHTML = '<div class="faint" style="font-size:.85rem;padding:8px">Détail momentanément indisponible — réessaie dans un instant.</div>'; return; }
+  const sides = {}; players.forEach(p => (sides[p.side] = sides[p.side] || []).push(p));
+  const order = Object.keys(sides).sort();
+  const pro = (window._tlProName || '').toLowerCase();
+  const teamBlock = (side) => {
+    const list = sides[side].slice().sort((a, b) => (_PD_ROLEORD[a.role] ?? 9) - (_PD_ROLEORD[b.role] ?? 9));
+    const teamName = list[0] ? list[0].team : '';
+    const won = list[0] ? list[0].win : false;
+    return '<div class="rs-pd-team"><div class="rs-pd-teamh"><span class="rs-pd-res ' + (won ? 'w' : 'l') + '">' + (won ? 'V' : 'D') + '</span><span class="rs-pd-teamnm">' + anEsc(teamName) + '</span></div>'
+      + list.map(p => rsPdPlayerRow(p, pro && p.link.toLowerCase() === pro)).join('') + '</div>';
+  };
+  const meta = players[0];
+  let html = '<div class="card" style="padding:16px 18px">'
+    + '<div class="faint" style="font-size:.8rem;margin-bottom:12px">' + anEsc((meta.page || '').replace(/_/g, ' ')) + ' · ' + anEsc(meta.date || '') + ' <span class="label" style="margin-left:8px">Leaguepedia — totaux de fin de partie</span></div>'
+    + '<div class="rs-pd-teams">' + order.map(teamBlock).join('') + '</div>'
+    + '</div>';
+  out.innerHTML = html;
 }
 
 // ════════════════════════════════════════════
