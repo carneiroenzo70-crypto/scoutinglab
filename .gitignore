@@ -11,3 +11,7 @@ commercial/
 
 # Config locale de l aperçu (serveur de dev) — pas dans le dépôt
 .claude/
+
+# Secrets locaux — ne jamais commiter (les vraies valeurs vivent dans Vercel)
+.env
+.env.*
