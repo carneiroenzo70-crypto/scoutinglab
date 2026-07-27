@@ -7778,9 +7778,18 @@ async function tlSearchCompet() {
   btn.disabled = true; status.style.display = 'block'; status.textContent = 'Recherche des games compétitives…'; listEl.innerHTML = ''; out.innerHTML = '';
   try {
     const games = await pmFetchCompetRaw(proName, 15);
-    if (!games || !games.length) throw new Error('Aucune game compétitive trouvée pour ' + proName);
-    window._tlProName = proName;
-    listEl.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Dernières games compétitives de ' + anEsc(proName) + ' <span class="faint" style="font-weight:400;text-transform:none">— clique une partie pour le scoreboard complet</span></div><div class="rs-pd-glist">' + games.map(tlPdGameRow).join('') + '</div>';
+    // pmFetchCompetRaw distingue déjà les deux cas côté retour (via pmCargo) :
+    // null = erreur/rate-limit transitoire Leaguepedia, [] = vraiment aucune
+    // game trouvée pour ce pseudo. Les confondre affiche « aucune game » alors
+    // que Leaguepedia est simplement surchargé — message trompeur, corrigé ici.
+    if (games === null) {
+      out.innerHTML = '<div class="faint" style="font-size:.85rem;padding:6px 2px">Leaguepedia est momentanément surchargé (rate-limit) — ce n\'est pas forcément que le pseudo est introuvable. <a href="#" onclick="tlSearchCompet();return false" style="color:var(--vs-emerald-300)">réessayer</a>.</div>';
+    } else if (!games.length) {
+      out.innerHTML = '<div class="faint" style="font-size:.85rem;padding:6px 2px">Aucune game compétitive trouvée pour <b>' + anEsc(proName) + '</b> — vérifie l\'orthographe exacte du pseudo esport (celui utilisé sur Leaguepedia, pas forcément le pseudo Solo Q).</div>';
+    } else {
+      window._tlProName = proName;
+      listEl.innerHTML = '<div class="rs-pd-h" style="margin-bottom:8px">Dernières games compétitives de ' + anEsc(proName) + ' <span class="faint" style="font-weight:400;text-transform:none">— clique une partie pour le scoreboard complet</span></div><div class="rs-pd-glist">' + games.map(tlPdGameRow).join('') + '</div>';
+    }
   } catch (err) {
     out.innerHTML = '<div style="color:var(--red);font-size:.85rem">' + anEsc((err && err.message) || 'Erreur') + '</div>';
   }
