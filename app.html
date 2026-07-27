@@ -608,6 +608,11 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
 .btn-xs{ height:26px; padding:0 10px; font-size:11px; }
 /* ── Roster (refonte charte) : héro d'équipe + cartes de postes ── */
+.rs-toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+.rs-iconbtn{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, color .15s, background .15s; }
+.rs-iconbtn:hover{ border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.rs-iconbtn.danger:hover{ border-color:rgba(255,90,51,.55); color:var(--vs-red-400); }
+body:not(.theme-dark) .rs-iconbtn{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.14); }
 .rs-hero{ display:flex; align-items:center; gap:18px; padding:18px 22px; flex-wrap:wrap; margin-bottom:14px; }
 .rs-hero-kpis{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
 .rs-hero-kpis .crm-kpi{ min-width:110px; }
@@ -715,6 +720,10 @@ body:not(.theme-dark) .rs-pd-stat{ background:rgba(255,255,255,.5); border-color
 .rs-pd-aggline{ display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:10px; }
 .rs-pd-agstat{ font-size:12px; color:var(--vs-fg-2); }
 .rs-pd-agstat b{ color:var(--vs-fg-1); font-weight:800; }
+.rs-pd-pool, .rs-pd-events{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.rs-pd-poolchip, .rs-pd-eventchip{ font-size:11px; color:var(--vs-fg-2); background:rgba(45,212,167,.08); border:1px solid var(--vs-forest-600); border-radius:7px; padding:4px 9px; }
+.rs-pd-poolchip b{ color:var(--vs-fg-1); font-weight:700; }
+body:not(.theme-dark) .rs-pd-poolchip, body:not(.theme-dark) .rs-pd-eventchip{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.12); }
 .rs-pd-glist{ display:flex; flex-direction:column; gap:4px; }
 .rs-pd-glist-full{ max-height:280px; overflow-y:auto; padding-right:4px; }
 .rs-pd-game{ display:flex; align-items:center; gap:9px; font-size:11.5px; padding:5px 9px; border:1px solid var(--vs-forest-600); border-radius:8px; background:rgba(255,255,255,.02); }
@@ -5796,12 +5805,12 @@ async function renderRoster() {
   const list = rsAll();
   rsSyncTrack();   // enregistre les rosters suivis côté serveur (pour le cron) à chaque ouverture
 
-  let html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">';
+  let html = '<div class="rs-toolbar">';
   html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderRoster()">';
   list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
   html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
   // Icônes SVG (charte — pas d'emojis)
-  const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
+  const _ic = (p) => '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
   // Bascule Compét / Solo Q — le mode global (cf. socle vsDataMode). « Construire
   // les deux et voir l'avancée jour par jour » : chaque mode a ses propres stats
   // et ses propres instantanés, on bascule d'une vue à l'autre.
@@ -5810,13 +5819,15 @@ async function renderRoster() {
        +    '<button data-vsmode="compet" onclick="vsSetDataMode(\'compet\')" class="rs-modebtn' + (_cpt ? ' on' : '') + '">Compét</button>'
        +    '<button data-vsmode="soloq" onclick="vsSetDataMode(\'soloq\')" class="rs-modebtn' + (!_cpt ? ' on' : '') + '">Solo Q</button>'
        +  '</div>';
-  html += '<button onclick="rsUiNew()" class="btn btn-ghost btn-sm">' + _ic('<path d="M12 5v14M5 12h14"/>') + ' Nouveau</button>';
-  html += '<button onclick="rsUiRename()" class="btn btn-ghost btn-sm">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + ' Renommer</button>';
-  html += '<button onclick="rsUiDelete()" class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + ' Supprimer</button>';
-  html += '<button onclick="rsUiSnapshot()" title="Enregistre les stats du moment pour le suivi" class="btn btn-ghost btn-sm">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + ' Instantané</button>';
-  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px;display:inline-flex;align-items:center;gap:6px">' + _ic('<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>') + ' Évolution</button>';
-  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px;display:inline-flex;align-items:center;gap:6px">' + _ic('<rect x="2" y="4" width="9" height="16" rx="2"/><rect x="13" y="4" width="9" height="16" rx="2"/>') + ' Comparer</button>';
-  html += '<button onclick="recomputeAllScores()" title="Recalcule les fiches sauvegardées avec le barème actuel" class="btn btn-ghost btn-sm" style="margin-left:auto">' + _ic('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>') + ' Recalculer</button>';
+  // Actions secondaires (gestion du roster) : icône seule + tooltip — la barre
+  // reste lisible, l'action principale (Instantané/Évolution/Comparer) prime.
+  html += '<button onclick="rsUiNew()" class="rs-iconbtn" title="Nouveau roster">' + _ic('<path d="M12 5v14M5 12h14"/>') + '</button>';
+  html += '<button onclick="rsUiRename()" class="rs-iconbtn" title="Renommer ce roster">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + '</button>';
+  html += '<button onclick="rsUiDelete()" class="rs-iconbtn danger" title="Supprimer ce roster">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + '</button>';
+  html += '<button onclick="rsUiSnapshot()" class="rs-iconbtn" title="Enregistrer un instantané pour le suivi">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + '</button>';
+  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px">Évolution</button>';
+  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px">Comparer</button>';
+  html += '<button onclick="recomputeAllScores()" class="rs-iconbtn" style="margin-left:auto" title="Recalculer les scores avec le barème actuel">' + _ic('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>') + '</button>';
   html += '</div>';
 
   box.innerHTML = html + '<div id="rs-body" class="faint" style="font-size:.85rem">Calcul du roster…</div>';
@@ -5828,8 +5839,7 @@ async function renderRoster() {
   let body = '';
   body += '<div class="card rs-hero">';
   body += rsGauge(ts.team, 72);
-  body += '<div><div class="eyebrow" style="margin-bottom:2px">VisionScore™ équipe</div><div class="h3" style="font-size:17px">' + anEsc(roster.name) + '</div>'
-       + '<div class="faint" style="font-size:.76rem;margin-top:3px">Moyenne des titulaires · fiches Scout prioritaires, sinon Solo Q en direct</div></div>';
+  body += '<div><div class="eyebrow" style="margin-bottom:2px">VisionScore™ équipe</div><div class="h3" style="font-size:17px">' + anEsc(roster.name) + '</div></div>';
   body += '<div class="rs-hero-kpis">';
   body += '<div class="crm-kpi"><div class="k">Postes pourvus</div><div class="v">' + filled + '<span style="font-size:13px;color:var(--vs-fg-3)">/5</span></div></div>';
   body += '<div class="crm-kpi"><div class="k">Maillon faible</div><div class="v" style="font-size:17px;color:var(--rank-gold)">' + (ts.weakest || '—') + '</div></div>';
@@ -6195,7 +6205,20 @@ async function rsPdLoadGames(proName) {
     + '<span class="rs-pd-agstat"><b>' + agg.winrate + '%</b> WR</span>'
     + '<span class="rs-pd-agstat"><b>' + agg.kda + '</b> KDA</span>'
     + (agg.csAvg ? '<span class="rs-pd-agstat"><b>' + agg.csAvg + '</b> CS</span>' : '')
+    + (agg.visionAvg ? '<span class="rs-pd-agstat"><b>' + agg.visionAvg + '</b> vision</span>' : '')
+    + (agg.dmgAvg ? '<span class="rs-pd-agstat"><b>' + (agg.dmgAvg / 1000).toFixed(1) + 'k</b> dégâts</span>' : '')
+    + (agg.goldAvg ? '<span class="rs-pd-agstat"><b>' + (agg.goldAvg / 1000).toFixed(1) + 'k</b> gold</span>' : '')
     + '</div>';
+  if (agg.champPool && agg.champPool.length) {
+    h += '<div class="rs-pd-pool">' + agg.champPool.map(c =>
+      '<span class="rs-pd-poolchip"><b>' + anEsc(c.name) + '</b> <span class="faint">' + c.games + 'g · ' + c.wr + '%</span></span>'
+    ).join('') + '</div>';
+  }
+  if (agg.byEvent && agg.byEvent.length > 1) {
+    h += '<div class="rs-pd-events">' + agg.byEvent.map(e =>
+      '<span class="rs-pd-eventchip" title="' + anEsc(e.event.replace(/_/g, ' ')) + '">' + anEsc(e.event.replace(/_/g, ' ')) + ' <span class="faint">' + e.games + 'g · ' + e.wr + '%</span></span>'
+    ).join('') + '</div>';
+  }
   h += '<div class="rs-pd-glist">' + agg.games.map(rsPdGameRow).join('') + '</div>';
   h += '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" id="rspd-split-btn" onclick="rsPdLoadSplit()">Voir tout le split</button></div>';
   // remplace tout le corps (garde le titre)
