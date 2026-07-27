@@ -7627,7 +7627,28 @@ function tlRender(match, tl, puuid) {
   const frames = (tl.info && tl.info.frames) || [];
   const objs = [];
   const kills = [];
-  frames.forEach(f => (f.events || []).forEach(e => {
+  const myPid = me ? me.participantId : null;
+  const myEvents = [];
+  // Dégâts infligés PAR un participant donné À la victime d'un kill (itemisés
+  // dans victimDamageReceived — vraie donnée Riot, pas une estimation).
+  const dmgByPid = (e, pid) => {
+    if (!Array.isArray(e.victimDamageReceived)) return null;
+    const mine = e.victimDamageReceived.filter(d => d.participantId === pid);
+    if (!mine.length) return null;
+    return Math.round(mine.reduce((s, d) => s + (d.physicalDamage || 0) + (d.magicDamage || 0) + (d.trueDamage || 0), 0));
+  };
+  // Qui a le plus endommagé la victime — utile pour une mort (« tué surtout par… »).
+  const topDamager = (e, excludePid) => {
+    if (!Array.isArray(e.victimDamageReceived)) return null;
+    const byPid = {};
+    e.victimDamageReceived.forEach(d => {
+      if (d.participantId === excludePid) return;
+      byPid[d.participantId] = (byPid[d.participantId] || 0) + (d.physicalDamage || 0) + (d.magicDamage || 0) + (d.trueDamage || 0);
+    });
+    const top = Object.entries(byPid).sort((a, b) => b[1] - a[1])[0];
+    return top ? { pid: +top[0], dmg: Math.round(top[1]) } : null;
+  };
+  frames.forEach((f, fi) => (f.events || []).forEach(e => {
     if (e.type === 'BUILDING_KILL' && e.buildingType === 'TOWER_BUILDING') {
       const destroyer = e.teamId === 100 ? 200 : 100;
       objs.push({ t: e.timestamp, label: 'Tour ' + (e.laneType || '').replace('_LANE', '').toLowerCase(), team: destroyer });
@@ -7641,10 +7662,30 @@ function tlRender(match, tl, puuid) {
       const victim = pidInfo[e.victimId] || null;
       const assists = (e.assistingParticipantIds || []).map(id => pidInfo[id] && pidInfo[id].champ).filter(Boolean);
       kills.push({ t: e.timestamp, killer, victim, assists, team: victim ? (victim.team === 100 ? 200 : 100) : null });
+      // Section dédiée : uniquement les kills/morts/assists impliquant le joueur suivi.
+      if (myPid != null) {
+        const isKiller = e.killerId === myPid;
+        const isVictim = e.victimId === myPid;
+        const isAssist = (e.assistingParticipantIds || []).includes(myPid);
+        if (isKiller || isVictim || isAssist) {
+          const role = isKiller ? 'kill' : isVictim ? 'death' : 'assist';
+          const opponent = isVictim ? killer : victim;
+          const pf = f.participantFrames && f.participantFrames[myPid];
+          const ev = {
+            t: e.timestamp, role, opponent,
+            assists: assists.filter(c => !(isKiller && killer && c === killer.champ)),
+            level: pf ? pf.level : null, gold: pf ? pf.totalGold : null,
+          };
+          if (isKiller || isAssist) ev.dmg = dmgByPid(e, myPid);
+          if (isVictim) { const top = topDamager(e, myPid); ev.killedBy = top ? (pidInfo[top.pid] || null) : null; ev.killedByDmg = top ? top.dmg : null; }
+          myEvents.push(ev);
+        }
+      }
     }
   }));
   objs.sort((a, b) => a.t - b.t);
   kills.sort((a, b) => a.t - b.t);
+  myEvents.sort((a, b) => a.t - b.t);
   const myWin = me ? me.win : null;
   const sideChip = t => t === myTeam
     ? '<span style="font-size:.68rem;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(45,212,167,.12);border:1px solid rgba(45,212,167,.3);color:var(--vs-emerald-300)">Nous</span>'
@@ -7680,6 +7721,34 @@ function tlRender(match, tl, puuid) {
 
   // ── Courbe d'avance d'or ──
   html += '<div class="card" style="padding:16px 18px;margin-bottom:14px"><div class="between" style="margin-bottom:8px"><span class="label">Avance d\'or — nous vs eux</span><span class="faint" style="font-size:.72rem">au-dessus de 0 = avantage</span></div><div style="height:210px"><canvas id="tl-gold-chart"></canvas></div></div>';
+
+  // ── Kills du joueur suivi (kills/morts/assists où IL est impliqué, avec
+  //    contexte réel : dégâts infligés/reçus, niveau et gold au moment des faits) ──
+  if (me) {
+    const roleLbl = { kill: 'KILL', death: 'MORT', assist: 'ASSIST' };
+    const roleCol = { kill: 'var(--vs-emerald-500)', death: 'rgba(255,51,0,.85)', assist: '#4A9EFF' };
+    const nK = myEvents.filter(e => e.role === 'kill').length, nD = myEvents.filter(e => e.role === 'death').length, nA = myEvents.filter(e => e.role === 'assist').length;
+    html += '<div class="card" style="padding:14px 8px 4px;margin-bottom:14px">';
+    html += '<div class="between" style="padding:0 12px;margin-bottom:8px"><span class="label">Kills de ' + (me ? anEsc(me.championName) : 'ce joueur') + ' (' + myEvents.length + ')</span><span class="faint" style="font-size:.72rem">' + nK + ' kills · ' + nD + ' morts · ' + nA + ' assists</span></div>';
+    html += '<div style="max-height:300px;overflow-y:auto">' + (myEvents.map(e => {
+      const oppLbl = e.opponent ? anEsc(e.opponent.champ) : '?';
+      let detail = '';
+      if (e.role === 'death') {
+        detail = e.killedBy ? '<span class="faint">tué par <b style="color:var(--vs-fg-1)">' + anEsc(e.killedBy.champ) + '</b>' + (e.killedByDmg ? ' (' + e.killedByDmg + ' dégâts)' : '') + '</span>' : '<span class="faint">élimination</span>';
+      } else {
+        detail = (e.role === 'kill' ? 'sur ' : 'aide sur ') + '<b style="color:var(--vs-fg-1)">' + oppLbl + '</b>' + (e.dmg != null ? ' <span class="faint">(' + e.dmg + ' dégâts infligés)</span>' : '');
+      }
+      const ctx = (e.level != null ? 'niv. ' + e.level : '') + (e.gold != null ? (e.level != null ? ' · ' : '') + Math.round(e.gold / 100) / 10 + 'k gold' : '');
+      return '<div class="tl-obj-row" style="display:flex;align-items:center;gap:12px;font-size:.83rem;padding:7px 12px;border-radius:8px;flex-wrap:wrap">'
+        + '<span style="font-family:var(--font-mono);color:var(--vs-fg-3);width:46px;font-size:.78rem">' + tlMMSS(e.t) + '</span>'
+        + '<span style="font-size:.66rem;font-weight:800;letter-spacing:.05em;padding:2px 8px;border-radius:999px;background:' + roleCol[e.role] + ';color:' + (e.role === 'death' ? '#fff' : '#04231D') + ';flex:none">' + roleLbl[e.role] + '</span>'
+        + '<span style="flex:1;min-width:180px;color:var(--vs-fg-1)">' + detail
+          + (e.assists && e.assists.length ? ' <span class="faint">(assist : ' + e.assists.map(anEsc).join(', ') + ')</span>' : '') + '</span>'
+        + (ctx ? '<span class="faint" style="font-family:var(--font-mono);font-size:.74rem">' + ctx + '</span>' : '')
+        + '</div>';
+    }).join('') || '<div class="faint" style="font-size:.8rem;padding:0 12px 12px">Aucun kill/mort/assist pour ce joueur.</div>') + '</div>';
+    html += '</div>';
+  }
 
   // ── Feed des éliminations (qui tue qui, quand) ──
   html += '<div class="card" style="padding:14px 8px 4px;margin-bottom:14px">';
