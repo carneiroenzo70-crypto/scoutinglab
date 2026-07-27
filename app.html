@@ -8877,6 +8877,17 @@ window.vsDemoLoadDossier = function(){
   try{ buildResults(); }catch(e){}
 };
 
+// Avatar générique (cartes CRM/Top 50/Comparer/Roster) : photo d'icône Solo Q réelle
+// si l'iconId est connu (capturé lors d'un import Riot), sinon repli sur l'initiale —
+// jamais de photo inventée. Communitydragon "latest" ne nécessite pas de version DDragon,
+// utilisable directement dans du HTML généré en série (listes/tableaux).
+function vsAvatarHtml(iconId, name, size) {
+  const s = size || 36;
+  const initial = anEsc(((name || '?').trim().charAt(0) || '?').toUpperCase());
+  const style = 'width:' + s + 'px;height:' + s + 'px;font-size:' + Math.round(s * 0.42) + 'px;flex:none';
+  if (iconId == null) return '<div class="avatar" style="' + style + '">' + initial + '</div>';
+  return '<div class="avatar" style="' + style + '"><img src="https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/' + iconId + '.jpg" alt="" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.outerHTML=\'' + initial + '\'"></div>';
+}
 // Rend la photo de profil LoL (icône d'invocateur DDragon) dans le cercle d'avatar.
 // Repli sur l'initiale si aucun iconId ou si l'image ne charge pas.
 function vsSetAvatarPhoto(elId, iconId, fallback) {
@@ -9620,6 +9631,7 @@ function compareSnapshotCurrent() {
     pseudo, tag, server, age, rankLbl, rankIdx,
     role: currentRole,
     global, dimScores, stats, adv, champs,
+    profileIconId: (window.vsProfileIconId != null) ? window.vsProfileIconId : null,
     date: new Date().toISOString(),
   };
 }
@@ -12043,7 +12055,7 @@ function crmRenderPipeline() {
     const st = crmStageOf(p.stage), rk = crmRankOf(p), sc = crmScoreNum(p);
     const filled = (p.stage === 'signe');
     return '<tr class="' + (crmSelId === p.id ? 'sel' : '') + '" onclick="crmSelectProspect(' + p.id + ')">' +
-      '<td><div style="display:flex;align-items:center;gap:9px"><div class="avatar" style="width:28px;height:28px;font-size:12px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div><div style="min-width:0"><div style="font-weight:700;color:var(--vs-fg-1)">' + anEsc(p.playerName||'?') + '</div>' + (p.playerTag ? '<div class="faint" style="font-size:10px;font-family:var(--font-mono)">#' + anEsc(p.playerTag) + '</div>' : '') + '</div></div></td>' +
+      '<td><div style="display:flex;align-items:center;gap:9px">' + vsAvatarHtml(p.profileIconId, p.playerName, 28) + '<div style="min-width:0"><div style="font-weight:700;color:var(--vs-fg-1)">' + anEsc(p.playerName||'?') + '</div>' + (p.playerTag ? '<div class="faint" style="font-size:10px;font-family:var(--font-mono)">#' + anEsc(p.playerTag) + '</div>' : '') + '</div></div></td>' +
       '<td><span class="chip" style="padding:2px 10px;font-size:10.5px">' + anEsc(p.role||'?') + '</span></td>' +
       '<td>' + (rk.tier ? '<span style="display:inline-flex;align-items:center;gap:6px">' + (typeof rankIcon === 'function' ? rankIcon(rk.tier, 'rank-icon-sm') : '') + '<span style="font-weight:700;color:' + rk.color + ';font-size:12px">' + anEsc(rk.label) + '</span></span>' : '<span class="faint">—</span>') + '</td>' +
       '<td><span class="crm-stage-chip' + (filled ? ' filled' : '') + '" style="color:' + st.color + ';border-color:' + st.color + (filled ? ';background:' + st.color : '') + '">' + st.label + '</span></td>' +
@@ -12091,7 +12103,7 @@ function crmRenderFiche(){
   el.innerHTML =
     '<div class="between" style="margin-bottom:12px"><div class="label" style="font-size:10px">Fiche prospect</div><button class="btn btn-ghost btn-sm" style="padding:2px 8px" onclick="crmSelectProspect(' + p.id + ')">✕</button></div>' +
     '<div style="display:flex;align-items:flex-start;gap:11px">' +
-      '<div class="avatar" style="width:38px;height:38px;font-size:15px;flex:none">' + (p.playerName||'?').charAt(0).toUpperCase() + '</div>' +
+      vsAvatarHtml(p.profileIconId, p.playerName, 38) +
       '<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:16px;color:var(--vs-fg-1)">' + anEsc(p.playerName||'?') + '</div>' +
         '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">' +
           (rk.tier ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:' + rk.color + '">' + (typeof rankIcon === 'function' ? rankIcon(rk.tier, 'rank-icon-sm') : '') + anEsc(rk.label) + '</span>' : '') +
@@ -12142,7 +12154,7 @@ function crmSendToCompare(id){
   analyseSlots.push({
     pseudo: p.playerName, tag: p.playerTag || 'EUW', server: p.server || 'euw1',
     age: p.age || '—', rankLbl: crmRankOf(p).tier || 'Diamond', rankIdx: (p.rankIdx != null ? p.rankIdx : 6),
-    role: p.role || 'Mid', global: sc,
+    role: p.role || 'Mid', global: sc, profileIconId: (p.profileIconId != null ? p.profileIconId : null),
     dimScores: p.dims || { d1:null, d2:null, d3:null, d4:null, d5:null },
     stats: {}, adv: {}, champs: [], date: new Date().toISOString(),
   });
@@ -12584,6 +12596,7 @@ function addCurrentToCrm() {
     region: SRV_REGION[snap ? snap.server : document.getElementById('d-server')?.value] || '',
     rankLbl: snap ? snap.rankLbl : '', rankIdx: snap ? snap.rankIdx : null,
     dims: snap ? snap.dimScores : null,
+    profileIconId: (window.vsProfileIconId != null) ? window.vsProfileIconId : null,
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté depuis la fiche' }]
   });
@@ -12609,6 +12622,7 @@ function saveToHistory() {
     rawData:   { ...rawData },
     score:     (typeof globalScore === 'function') ? globalScore() : null,
     potentiel: (window._scorePotentiel != null) ? window._scorePotentiel : null,
+    profileIconId: (window.vsProfileIconId != null) ? window.vsProfileIconId : null,
   };
 
   let history = [];
@@ -15394,7 +15408,7 @@ async function top50Scan() {
         if (!matchData.length) continue;
 
         // Stats
-        let wins=0, k=0, d=0, a=0, cs=0, dur=0, vis=0, kp=0, dmg=0, gc=0;
+        let wins=0, k=0, d=0, a=0, cs=0, dur=0, vis=0, kp=0, dmg=0, gc=0, iconId=null;
         const champMap = {};
         const roleCounts = {};
 
@@ -15402,6 +15416,7 @@ async function top50Scan() {
           if (!m?.info?.participants?.length) return;
           const p = m.info.participants.find(x => x.puuid === puuid);
           if (!p || (m.info.gameDuration || 0) < 240) return;
+          if (iconId == null && p.profileIcon != null) iconId = p.profileIcon;   // match le + récent → icône la + fraîche
           gc++;
           if (p.win) wins++;
           k+=p.kills; d+=p.deaths; a+=p.assists;
@@ -15442,7 +15457,7 @@ async function top50Scan() {
           tier: entry.tier || tier, rank: entry.rank || 'I', lp,
           wr, kda: parseFloat(kda.toFixed(2)), csMin: parseFloat(csMin.toFixed(2)),
           visAvg: parseFloat(visAvg.toFixed(2)), kpAvg: parseFloat(kpAvg.toFixed(1)),
-          dmgAvg: parseFloat(dmgAvg.toFixed(1)), role, champs,
+          dmgAvg: parseFloat(dmgAvg.toFixed(1)), role, champs, profileIconId: iconId,
           score: parseFloat(parseFloat(score).toFixed(2)),
           age:       existing?.age       ?? null,
           ageStatus: existing?.ageStatus ?? '—',
@@ -15754,7 +15769,7 @@ function top50AddRoster(name, tag, server, role) {
   rsSetSlot(r.id, rk, { pseudo: name, tag: tag || 'EUW', server: server || 'euw1', proName: '', ficheId: null });
   showToast(name + ' ajouté au roster « ' + r.name + ' » · ' + rk, 'success');
 }
-function top50AddCrm(name, tag, role, score, age) {
+function top50AddCrm(name, tag, role, score, age, profileIconId) {
   const rk = T50_ROLE[role] || role || 'Mid';
   if (typeof crmLoad === 'function') crmLoad();
   if (typeof crmPipeline === 'undefined') { showToast('CRM indisponible', 'error'); return; }
@@ -15763,6 +15778,7 @@ function top50AddCrm(name, tag, role, score, age) {
   crmPipeline.push({
     id: Date.now(), structureId: null, structureName: 'Sans structure',
     playerName: name, playerTag: tag || '', role: rk, score: (score != null ? String(score) : ''), age: age || '',
+    profileIconId: (profileIconId != null ? profileIconId : null),
     stage: 'repere', notes: '', dateRelance: '',
     addedAt: new Date().toISOString(),
     history: [{ date: new Date().toISOString(), action: 'Ajouté depuis le Top 30' }]
@@ -15863,7 +15879,6 @@ function top50RenderTable() {
                    : sf >= 5 ? {lbl:'B',  col:'#D4714A', bg:'rgba(212,113,74,.10)'}
                    :           {lbl:'C',  col:'var(--sub2)', bg:'var(--surf3)'};
     const pepiteBg = isPepite ? 'background:linear-gradient(90deg,rgba(45,212,167,.05),transparent);' : '';
-    const initT50 = (p.name||'?').charAt(0).toUpperCase();
     // VisionScore = note /10, cohérente avec le roster/la fiche et avec la
     // pastille S/A/B ci-dessus (qui utilise déjà scoreFinal). Plus de /100.
     const vsNum = parseFloat(scoreFinal);
@@ -15877,7 +15892,7 @@ function top50RenderTable() {
       <td><span class="stat-v" style="font-size:15px;color:var(--vs-emerald-300)">${String(i+1).padStart(2,'0')}</span></td>
       <td>
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="avatar" style="width:34px;height:34px;font-size:14px">${initT50}</div>
+          ${vsAvatarHtml(p.profileIconId, p.name, 34)}
           <div>
             <div style="font-weight:700;line-height:1.15">${p.name}</div>
             <div class="faint" style="font-size:11px;font-family:var(--font-mono)">${p.tag?'#'+p.tag:''}${p.server?' · '+({euw1:'EUW',eun1:'EUNE',na1:'NA',kr:'KR'}[p.server]||p.server.toUpperCase()):''}</div>
@@ -15898,7 +15913,7 @@ function top50RenderTable() {
       <td style="text-align:center"><span class="stat-v">${visTxt}</span></td>
       <td style="text-align:center"><span class="stat-v" style="font-weight:800;font-size:19px;color:${vsCol}">${vs}</span></td>
       <td style="text-align:right;white-space:nowrap">
-        <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}')" class="btn btn-ghost btn-sm" title="Ajouter au CRM" style="display:inline-flex;align-items:center;gap:5px">
+        <button onclick="top50AddCrm('${p.name.replace(/'/g,"\'")}','${(p.tag||'EUW').replace(/'/g,"\'")}','${(p.role||'Mid').replace(/'/g,"\'")}','${scoreFinal}','${p.age||''}',${p.profileIconId != null ? p.profileIconId : 'null'})" class="btn btn-ghost btn-sm" title="Ajouter au CRM" style="display:inline-flex;align-items:center;gap:5px">
           <svg class="vs-star" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> CRM
         </button>
       </td>
