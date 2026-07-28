@@ -150,6 +150,7 @@ function renderUsers(users){
       '<td><span class="pill '+(on?'pill-on':'pill-off')+'">'+(on?'● Actif':'● Désactivé')+'</span></td>'+
       '<td class="muted">'+created+'</td>'+
       '<td><div class="actions">'+
+        '<button class="btn-sm" onclick="setOrg(\''+esc(u.username)+'\',\''+esc(u.org||u.username)+'\')">Structure</button>'+
         (on
           ? '<button class="btn-sm btn-warn" onclick="setActive(\''+esc(u.username)+'\',false)">Désactiver</button>'
           : '<button class="btn-sm btn-ok" onclick="setActive(\''+esc(u.username)+'\',true)">Réactiver</button>')+
@@ -180,6 +181,20 @@ async function setActive(username, active){
     var res=await fetch('/api/admin-users',{ method:'PATCH', headers:H(), body:JSON.stringify({username,active}) });
     var d=await res.json();
     if(res.ok){ setMsg('Compte « '+username+' » '+(active?'réactivé':'désactivé')+'.',true); loadUsers(); }
+    else setMsg(d.error||'Erreur.',false);
+  }catch(e){ setMsg('Erreur réseau.',false); }
+}
+
+async function setOrg(username, current){
+  var org=prompt('Structure de rattachement pour « '+username+' »\n\n'+
+    'Mettre l\'identifiant du compte principal pour partager ses données.\n'+
+    'Laisser vide pour que ce compte redevienne autonome.\n\n'+
+    'Attention : ce compte lira désormais les données de cette structure, et devra se reconnecter.', current);
+  if(org===null) return;
+  try{
+    var res=await fetch('/api/admin-users',{ method:'PATCH', headers:H(), body:JSON.stringify({username,org:org.trim().toLowerCase()}) });
+    var d=await res.json();
+    if(res.ok){ setMsg('« '+username+' » rattaché à « '+(d.org||username)+' ». Ce compte doit se reconnecter.',true); loadUsers(); }
     else setMsg(d.error||'Erreur.',false);
   }catch(e){ setMsg('Erreur réseau.',false); }
 }

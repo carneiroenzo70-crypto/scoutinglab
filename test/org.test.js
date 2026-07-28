@@ -256,3 +256,52 @@ test('admin-users accepte un identifiant e-mail comme structure par defaut', asy
   assert.equal(res._status, 200, 'les identifiants e-mail existants doivent rester creables');
   assert.equal(JSON.parse(store['vs_user:enzo.carneiro@visionscore.gg']).org, 'enzo.carneiro@visionscore.gg');
 });
+
+// Rattacher un compte EXISTANT a une autre structure sans reinitialiser son mot de passe
+// (un POST le ferait). C'est l'operation reelle : relier le compte de Mateo a celui d'Enzo.
+test('PATCH rattache un compte existant sans toucher a son mot de passe', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  const { salt, hash } = hashPassword('motdepasse123');
+  store['vs_user:mateo'] = JSON.stringify({ username: 'mateo', org: 'mateo', plan: 'elite', salt, hash, active: true });
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'mateo', org: 'enzo' }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:mateo']);
+  assert.equal(rec.org, 'enzo', 'le compte doit etre rattache a la structure d\'Enzo');
+  assert.equal(rec.salt, salt, 'le mot de passe ne doit PAS etre reinitialise');
+  assert.equal(rec.hash, hash, 'le mot de passe ne doit PAS etre reinitialise');
+  assert.equal(rec.active, true, 'l\'etat actif doit etre preserve');
+});
+
+test('PATCH active seul continue de fonctionner', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:bob'] = JSON.stringify({ username: 'bob', org: 'bob', plan: 'pro', active: true });
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'bob', active: false }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:bob']);
+  assert.equal(rec.active, false);
+  assert.equal(rec.org, 'bob', 'la structure ne doit pas changer');
+});
+
+test('PATCH sans active ni org est refuse', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  mockUpstash({});
+  const res = mockRes();
+  await adminHandler({ method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' }, body: { username: 'bob' } }, res);
+  assert.equal(res._status, 400);
+});

@@ -78,15 +78,31 @@ module.exports = async function handler(req, res) {
     if (req.method === 'PATCH') {
       const username = ((body && body.username) || '').trim().toLowerCase();
       if (!username) return res.status(400).json({ error: 'username requis' });
-      if (typeof (body && body.active) !== 'boolean') return res.status(400).json({ error: 'active (true|false) requis' });
+      const hasActive = typeof (body && body.active) === 'boolean';
+      const hasOrg = !!body && typeof body.org === 'string';
+      if (!hasActive && !hasOrg) return res.status(400).json({ error: 'active (true|false) ou org requis' });
+
       const ur = await upstash(['GET', 'vs_user:' + username]);
       const user = ur.result ? JSON.parse(ur.result) : null;
       if (!user) return res.status(404).json({ error: 'Compte introuvable' });
-      user.active = body.active;
-      if (body.active) { delete user.deactivatedAt; }
-      else { user.deactivatedAt = new Date().toISOString(); }
+
+      if (hasActive) {
+        user.active = body.active;
+        if (body.active) { delete user.deactivatedAt; }
+        else { user.deactivatedAt = new Date().toISOString(); }
+      }
+      if (hasOrg) {
+        // Rattache un compte EXISTANT à une autre structure, sans toucher à son mot de
+        // passe (un POST le réinitialiserait). Vide → le compte redevient autonome.
+        // ⚠️ Le compte lira désormais les données de la nouvelle structure ; les siennes
+        // restent en base mais deviennent invisibles pour lui. Son token portant l'ancienne
+        // structure, api/session.js le refusera : il devra se reconnecter.
+        const org = body.org.trim().toLowerCase() || username;
+        if (/[:\s]/.test(org)) return res.status(400).json({ error: 'structure invalide (ni deux-points ni espace)' });
+        user.org = org;
+      }
       await upstash(['SET', 'vs_user:' + username, JSON.stringify(user)]);
-      return res.status(200).json({ success: true, username, active: user.active });
+      return res.status(200).json({ success: true, username, active: user.active !== false, org: user.org || username });
     }
 
     if (req.method === 'DELETE') {
