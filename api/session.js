@@ -31,7 +31,11 @@ module.exports = async function handler(req, res) {
 
   // Garantit la correspondance code d'ingestion → STRUCTURE (idempotent). Le lien est
   // celui de la structure : tous ses coachs voient et partagent le même formulaire.
-  const org = orgOfUser(user);
+  // Repli sur le compte du token : quelques enregistrements anciens n'ont pas de champ
+  // `username` (admin-users prévoit déjà ce cas). Sans ce repli, `org` vaudrait null et
+  // la clé d'ingestion changerait — le Google Form d'une structure en service cesserait
+  // silencieusement d'alimenter ses candidatures.
+  const org = orgOfUser(user) || payload.u;
   const ik = ingestKey(org);
   try { await upstash(['SET', 'vs_ingest:' + ik, org]); } catch (_) { /* non bloquant */ }
 

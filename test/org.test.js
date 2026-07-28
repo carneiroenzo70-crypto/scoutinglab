@@ -5,7 +5,7 @@ process.env.SESSION_SECRET = 'test-secret';
 process.env.UPSTASH_URL = 'https://mock';
 process.env.UPSTASH_TOKEN = 'mock';
 
-const { orgOfUser, orgOfToken } = require('../api/_auth');
+const { orgOfUser, orgOfToken, ingestKey } = require('../api/_auth');
 
 test('orgOfUser : repli sur le nom de compte quand org est absent', () => {
   assert.equal(orgOfUser({ username: 'galions' }), 'galions');
@@ -157,4 +157,20 @@ test('les candidatures listees sont celles de la structure', async () => {
 
   assert.equal(res._json.length, 1);
   assert.equal(res._json[0].pseudo, 'Zoelys', 'Alan doit voir les candidatures de sa structure');
+});
+
+// Garde-fou : certains enregistrements anciens n'ont pas de champ `username`
+// (api/admin-users.js prévoit déjà ce cas avec `rec.username || u`). Pour eux,
+// orgOfUser renvoie null — et sans repli la clé d'ingestion changerait, coupant
+// silencieusement le Google Form d'une structure déjà en service.
+test('un compte ancien sans champ username garde son lien de candidatures', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:vieuxclub'] = JSON.stringify({ plan: 'elite', label: 'Vieux Club', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'vieuxclub' }, 3600) } }, res);
+
+  assert.equal(res._json.ingestKey, ingestKey('vieuxclub'), 'la cle du formulaire ne doit PAS changer');
+  assert.equal(store['vs_ingest:' + res._json.ingestKey], 'vieuxclub', 'la correspondance doit rester valide');
 });
