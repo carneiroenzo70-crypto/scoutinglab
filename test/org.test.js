@@ -89,3 +89,39 @@ test('un compte sans org devient sa propre organisation dans le token', async ()
   const payload = verifyToken(res._json.token);
   assert.equal(payload.org, 'acme');
 });
+
+const snapshotsHandler = require('../api/snapshots');
+const trackHandler = require('../api/roster-track');
+
+test('les snapshots de roster sont partages au sein d\'une structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'galions', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+
+  await snapshotsHandler({
+    method: 'POST', headers: { authorization: 'Bearer ' + tEnzo }, query: {},
+    body: { rosterId: 'r1', snapshot: { date: '2026-07-28T10:00:00Z', players: [{ role: 'Top', pseudo: 'X' }] } }
+  }, mockRes());
+
+  assert.ok(store['vs_snaps:galions:r1'], 'la cle doit porter la structure');
+
+  const res = mockRes();
+  await snapshotsHandler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { roster: 'r1' } }, res);
+  assert.equal(res._json.length, 1, 'Alan doit voir le snapshot de sa structure');
+});
+
+test('roster-track enregistre le suivi sous la structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+
+  const res = mockRes();
+  await trackHandler({
+    method: 'POST', headers: { authorization: 'Bearer ' + tAlan },
+    body: { rosters: [{ rosterId: 'r1', name: 'Titulaires', players: [{ pseudo: 'Canna', tag: 'EUW' }] }] }
+  }, res);
+
+  assert.equal(res._status, 200);
+  assert.ok(store['vs_track:galions'], 'doit etre enregistre sous la structure, pas sous le coach');
+});
