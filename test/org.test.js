@@ -125,3 +125,36 @@ test('roster-track enregistre le suivi sous la structure', async () => {
   assert.equal(res._status, 200);
   assert.ok(store['vs_track:galions'], 'doit etre enregistre sous la structure, pas sous le coach');
 });
+
+const sessionHandler = require('../api/session');
+const candidatesHandler = require('../api/candidates');
+
+test('tous les coachs d\'une structure partagent le meme lien de candidatures', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'galions', plan: 'elite', label: 'Alan', active: true });
+  store['vs_user:galions'] = JSON.stringify({ username: 'galions', plan: 'elite', label: 'Galions', active: true });
+
+  const rAlan = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, rAlan);
+
+  const rGal = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'galions', org: 'galions' }, 3600) } }, rGal);
+
+  assert.equal(rAlan._json.ingestKey, rGal._json.ingestKey, 'meme structure = meme lien');
+  assert.equal(store['vs_ingest:' + rAlan._json.ingestKey], 'galions', 'la correspondance pointe vers la structure');
+});
+
+test('les candidatures listees sont celles de la structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_candidates:galions'] = [JSON.stringify({ id: '1', pseudo: 'Zoelys' })];
+
+  const res = mockRes();
+  await candidatesHandler({
+    method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) }, query: {}
+  }, res);
+
+  assert.equal(res._json.length, 1);
+  assert.equal(res._json[0].pseudo, 'Zoelys', 'Alan doit voir les candidatures de sa structure');
+});
