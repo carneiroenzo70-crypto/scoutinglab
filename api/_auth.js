@@ -53,6 +53,16 @@ function ingestKey(username) {
   return crypto.createHmac('sha256', SESSION_SECRET).update('ingest:' + username).digest('hex').slice(0, 16);
 }
 
+// ── Organisation (structure cliente) d'un compte ──────────────────────────
+// Plusieurs comptes coach peuvent partager la même organisation : ce sont eux qui
+// voient et modifient les mêmes données. Le repli sur le nom de compte fait que les
+// comptes créés AVANT l'ajout de `org` sont leur propre organisation — leurs clés de
+// données ne changent donc pas et aucune migration n'est nécessaire.
+// Le repli côté token est indispensable : les tokens déjà émis (valables 30 jours)
+// ne contiennent pas `org`, et sans lui leurs porteurs perdraient l'accès à leurs données.
+function orgOfUser(user) { return (user && user.org) || (user && user.username) || null; }
+function orgOfToken(payload) { return (payload && payload.org) || (payload && payload.u) || null; }
+
 // ── Commande Upstash Redis via REST (POST single-command) ─
 async function upstash(cmd) {
   const { UPSTASH_URL, UPSTASH_TOKEN } = process.env;
@@ -66,4 +76,4 @@ async function upstash(cmd) {
   return res.json();
 }
 
-module.exports = { hashPassword, verifyPassword, signToken, verifyToken, getBearer, upstash, ingestKey };
+module.exports = { hashPassword, verifyPassword, signToken, verifyToken, getBearer, upstash, ingestKey, orgOfUser, orgOfToken };
