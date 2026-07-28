@@ -1,4 +1,4 @@
-// /api/snapshots — historique des snapshots de roster (côté serveur, par compte)
+// /api/snapshots — historique des snapshots de roster (côté serveur, par structure)
 //   GET  ?roster=<id>            → liste des snapshots du roster
 //   POST { rosterId, snapshot }  → ajoute un snapshot (capture manuelle)
 // Snapshot = { date, players:[{ role, pseudo, tier, lp, wr, kda, cs, vision }] }

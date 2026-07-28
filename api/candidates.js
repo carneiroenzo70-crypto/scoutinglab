@@ -1,7 +1,7 @@
 // /api/candidates — candidatures par compte (une seule fonction : GET + POST)
-//   GET                    → liste des candidatures du compte connecté (token requis)
+//   GET                    → liste des candidatures de la structure du compte connecté
 //   POST ?to=<ingestKey>   → ingestion publique depuis le Google Form d'une structure,
-//                            routée vers le compte correspondant (vs_candidates:<compte>)
+//                            routée vers celle-ci (vs_candidates:<structure>)
 // Fusionné avec l'ancien /api/candidate pour rester sous la limite de fonctions Vercel.
 const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
