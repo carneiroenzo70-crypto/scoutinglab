@@ -52,7 +52,8 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── GET : liste du compte connecté. Chaque compte ne voit QUE ses candidatures. ──
+  // ── GET : liste de la structure du compte connecté. Une structure ne voit QUE ses
+  //    candidatures ; tous ses coachs voient la même liste. ──
   if (req.method === 'GET') {
     const payload = verifyToken(getBearer(req));
     if (!payload || !payload.u) {

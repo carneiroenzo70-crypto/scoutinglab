@@ -206,3 +206,53 @@ test('sans org, le compte est sa propre structure', async () => {
   const rec = JSON.parse(store['vs_user:acme']);
   assert.equal(rec.org, 'acme');
 });
+
+// Le token fige la structure. Si le compte est rattaché ailleurs entre-temps, servir
+// l'ancienne structure en données et la nouvelle en lien d'ingestion ferait disparaître
+// des candidatures sans erreur visible : on force une reconnexion.
+test('un token dont la structure a change est refuse', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'nouveau-club', plan: 'elite', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, res);
+
+  assert.equal(res._status, 401, 'le token perime doit etre refuse');
+});
+
+test('un token dont la structure est inchangee reste accepte', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'galions', plan: 'elite', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, res);
+
+  assert.equal(res._status, 200);
+});
+
+// `org` est concaténé dans les clés Upstash : un deux-points la rendrait ambiguë.
+test('admin-users refuse une structure qui casserait les cles', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  mockUpstash({});
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'bob', password: 'motdepasse123', org: 'gali:ons' }
+  }, res);
+  assert.equal(res._status, 400);
+});
+
+test('admin-users accepte un identifiant e-mail comme structure par defaut', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'enzo.carneiro@visionscore.gg', password: 'motdepasse123' }
+  }, res);
+  assert.equal(res._status, 200, 'les identifiants e-mail existants doivent rester creables');
+  assert.equal(JSON.parse(store['vs_user:enzo.carneiro@visionscore.gg']).org, 'enzo.carneiro@visionscore.gg');
+});

@@ -111,7 +111,7 @@ const vsStore = (function () {
       const r = await fetch('/api/store?domains=' + domains.join(','), { headers: vsAuthHeaders() });
       if (r.ok) server = await r.json();
     } catch (_) { return; /* Upstash indispo → on garde le cache local (mode dégradé) */ }
-    const migratedFlag = 'vs_migrated:' + vsAccount();
+    const migratedFlag = 'vs_migrated:' + vsOrg();   // la migration douce vaut pour la structure
     let migratedAny = false;
     domains.forEach(d => {
       if (server[d] != null) {

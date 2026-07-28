@@ -1,6 +1,7 @@
 // /api/admin-users — gestion manuelle des comptes (protégée par X-Admin-Secret)
 //   GET    → liste détaillée des comptes (username, label, plan, active, dates)
-//   POST   → crée un compte { username, password, label, plan }
+//   POST   → crée un compte { username, password, label, plan, org }
+//            org = structure de rattachement (vide → le compte est sa propre structure)
 //   PATCH  → active/désactive un compte { username, active:true|false }
 //            (révocation d'accès sans supprimer le compte — contrat suspendu/terminé)
 //   DELETE → supprime un compte { username }
@@ -61,6 +62,11 @@ module.exports = async function handler(req, res) {
       // Rattachement à une structure. Vide → le compte est sa propre structure,
       // ce qui préserve le comportement de tous les comptes existants.
       const org = ((body && body.org) || '').trim().toLowerCase() || username;
+      // `org` est concaténé dans les clés Upstash (vs_data:<org>:<domaine>…) : un
+      // deux-points ou une espace rendrait la clé ambiguë. On ne restreint QUE ça —
+      // les identifiants existants sont des adresses e-mail, une règle plus stricte
+      // rejetterait la valeur par défaut (org = identifiant).
+      if (/[:\s]/.test(org)) return res.status(400).json({ error: 'structure invalide (ni deux-points ni espace)' });
 
       const { salt, hash } = hashPassword(password);
       const user = { username, label: label || username, plan, org, salt, hash, active: true, createdAt: new Date().toISOString() };

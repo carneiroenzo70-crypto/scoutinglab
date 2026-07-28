@@ -1,7 +1,7 @@
 // GET /api/session — vérifie que la session est toujours valide ET que le compte
 // est toujours actif (révocation d'accès prise en compte même token encore valide).
 // Renvoie 200 { ok:true, ... } si OK, sinon 401 (session) / 403 (compte désactivé).
-const { verifyToken, getBearer, upstash, ingestKey, orgOfUser } = require('./_auth');
+const { verifyToken, getBearer, upstash, ingestKey, orgOfUser, orgOfToken } = require('./_auth');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,6 +36,16 @@ module.exports = async function handler(req, res) {
   // la clé d'ingestion changerait — le Google Form d'une structure en service cesserait
   // silencieusement d'alimenter ses candidatures.
   const org = orgOfUser(user) || payload.u;
+
+  // Le token fige la structure au moment de son émission (valable 30 jours). Si le
+  // compte a été rattaché à une AUTRE structure depuis, le token est périmé : les
+  // données seraient lues sous l'ancienne structure pendant que le lien d'ingestion
+  // afficherait la nouvelle — les candidatures disparaîtraient sans erreur visible.
+  // On force donc une reconnexion plutôt que de servir un état incohérent.
+  if (orgOfToken(payload) !== org) {
+    return res.status(401).json({ ok: false, error: 'Session à renouveler (structure modifiée)' });
+  }
+
   const ik = ingestKey(org);
   try { await upstash(['SET', 'vs_ingest:' + ik, org]); } catch (_) { /* non bloquant */ }
 
