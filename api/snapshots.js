@@ -1,8 +1,8 @@
-// /api/snapshots — historique des snapshots de roster (côté serveur, par compte)
+// /api/snapshots — historique des snapshots de roster (côté serveur, par structure)
 //   GET  ?roster=<id>            → liste des snapshots du roster
 //   POST { rosterId, snapshot }  → ajoute un snapshot (capture manuelle)
 // Snapshot = { date, players:[{ role, pseudo, tier, lp, wr, kda, cs, vision }] }
-const { verifyToken, getBearer, upstash } = require('./_auth');
+const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
 const CAP = 90;
 
@@ -20,7 +20,7 @@ module.exports = async function handler(req, res) {
 
   const payload = verifyToken(getBearer(req));
   if (!payload || !payload.u) return res.status(401).json({ error: 'Non authentifié' });
-  const u = payload.u;
+  const u = orgOfToken(payload);   // les snapshots appartiennent à la structure
 
   try {
     if (req.method === 'GET') {

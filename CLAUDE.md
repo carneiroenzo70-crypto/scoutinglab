@@ -71,17 +71,33 @@ docs/superpowers/ specs & plans des chantiers
 tokens **HMAC-SHA256** signés avec expiration. Env Vercel : `SESSION_SECRET`, `ADMIN_SECRET`,
 `UPSTASH_URL`, `UPSTASH_TOKEN`, `RIOT_API_KEY`.
 
-### Données par compte (multi-tenant, livré 19/07/2026)
-**1 compte = 1 structure cliente.** Chaque compte ne voit QUE ses données.
+### Données par structure (multi-tenant, livré 19/07/2026 · couche `org` 28/07/2026)
+**Les données appartiennent à une STRUCTURE, pas à un compte.** Plusieurs comptes coach
+peuvent être rattachés à la même structure et voient alors exactement les mêmes données
+(pas de système de rôles : un coach a les mêmes droits que le compte principal).
 
-- Clés Upstash : `vs_data:<compte>:{fiches|rosters|crm|structures}`, `vs_candidates:<compte>`,
-  `vs_snaps:<compte>:<rosterId>`. **Le compte vient toujours du token côté serveur, jamais du client.**
+- Chaque utilisateur porte un champ **`org`**. **Repli capital** : `org` absent → le compte
+  est sa propre structure (`orgOfUser` / `orgOfToken` dans `api/_auth.js`). C'est ce qui a
+  permis d'introduire la couche sans aucune migration de données — et c'est indispensable
+  côté token, car les tokens déjà émis (30 j) ne contiennent pas `org`.
+- Créer un compte coach : `POST /api/admin-users` avec `org` = identifiant de la structure
+  (champ « Structure » sur `/admin`). Vide → compte autonome.
+- Clés Upstash : `vs_data:<org>:{fiches|rosters|crm|structures|seasons}`, `vs_candidates:<org>`,
+  `vs_snaps:<org>:<rosterId>`, `vs_track:<org>`. **L'org vient toujours du token côté serveur,
+  jamais du client.**
+- `api/session.js` refuse (401) un token dont l'`org` ne correspond plus à celle du compte,
+  pour éviter de lire une structure et d'afficher le lien d'ingestion d'une autre.
+- ⚠️ **Limite connue** : `api/store.js` écrit le domaine **en bloc, dernier écrivain gagne**.
+  Deux coachs qui modifient le même domaine en même temps peuvent s'écraser. C'est ce que la
+  couche d'opérations granulaires de la salle de draft doit régler
+  (`docs/superpowers/specs/2026-07-28-salle-draft-collaborative-design.md` § 4.4).
 - Endpoint unique `api/store.js` : `GET ?domains=…` + `PUT {domain,data}`.
 - Client : module **`vsStore`** dans `app.html` (près de `vsLogout`) — le `localStorage`
   n'est qu'un **cache**, le serveur est la source de vérité. `vsStore.save(domain)` est
   débouncé ~1 s ; `loadAll()` tourne au boot. Migration douce au 1er login.
-- Garde-fou : le cache local est estampillé `vs_cache_owner` et **purgé** si un autre
-  compte se connecte sur le même navigateur (sinon fuite de données entre comptes).
+- Garde-fou : le cache local est estampillé `vs_cache_owner` (par **structure**) et **purgé**
+  si une autre structure se connecte sur le même navigateur (sinon fuite de données entre
+  clients). Deux coachs d'une même structure ne se purgent pas — ils partagent ces données.
 - **Si tu ajoutes un nouveau type de données persistantes** : l'ajouter à `VS_STORE_DOMAINS`
   ET appeler `vsStore.save('<domaine>')` après chaque écriture localStorage, sinon la donnée
   ne suivra pas le compte d'un appareil à l'autre.

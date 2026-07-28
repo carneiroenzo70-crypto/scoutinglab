@@ -1,6 +1,7 @@
 // /api/admin-users — gestion manuelle des comptes (protégée par X-Admin-Secret)
 //   GET    → liste détaillée des comptes (username, label, plan, active, dates)
-//   POST   → crée un compte { username, password, label, plan }
+//   POST   → crée un compte { username, password, label, plan, org }
+//            org = structure de rattachement (vide → le compte est sa propre structure)
 //   PATCH  → active/désactive un compte { username, active:true|false }
 //            (révocation d'accès sans supprimer le compte — contrat suspendu/terminé)
 //   DELETE → supprime un compte { username }
@@ -36,6 +37,7 @@ module.exports = async function handler(req, res) {
               username: rec.username || u,
               label: rec.label || u,
               plan: rec.plan || 'elite',
+              org: rec.org || rec.username || u,
               active: rec.active !== false,           // active absent = actif
               createdAt: rec.createdAt || null,
               deactivatedAt: rec.deactivatedAt || null
@@ -57,25 +59,50 @@ module.exports = async function handler(req, res) {
       if (password.length < 8) return res.status(400).json({ error: 'Mot de passe trop court (min. 8 caractères)' });
       if (!['starter', 'pro', 'elite'].includes(plan)) return res.status(400).json({ error: "plan invalide (starter, pro ou elite)" });
 
+      // Rattachement à une structure. Vide → le compte est sa propre structure,
+      // ce qui préserve le comportement de tous les comptes existants.
+      const org = ((body && body.org) || '').trim().toLowerCase() || username;
+      // `org` est concaténé dans les clés Upstash (vs_data:<org>:<domaine>…) : un
+      // deux-points ou une espace rendrait la clé ambiguë. On ne restreint QUE ça —
+      // les identifiants existants sont des adresses e-mail, une règle plus stricte
+      // rejetterait la valeur par défaut (org = identifiant).
+      if (/[:\s]/.test(org)) return res.status(400).json({ error: 'structure invalide (ni deux-points ni espace)' });
+
       const { salt, hash } = hashPassword(password);
-      const user = { username, label: label || username, plan, salt, hash, active: true, createdAt: new Date().toISOString() };
+      const user = { username, label: label || username, plan, org, salt, hash, active: true, createdAt: new Date().toISOString() };
       await upstash(['SET', 'vs_user:' + username, JSON.stringify(user)]);
       await upstash(['SADD', 'vs_users', username]);
-      return res.status(200).json({ success: true, username, label: user.label, plan: user.plan, active: true });
+      return res.status(200).json({ success: true, username, label: user.label, plan: user.plan, org, active: true });
     }
 
     if (req.method === 'PATCH') {
       const username = ((body && body.username) || '').trim().toLowerCase();
       if (!username) return res.status(400).json({ error: 'username requis' });
-      if (typeof (body && body.active) !== 'boolean') return res.status(400).json({ error: 'active (true|false) requis' });
+      const hasActive = typeof (body && body.active) === 'boolean';
+      const hasOrg = !!body && typeof body.org === 'string';
+      if (!hasActive && !hasOrg) return res.status(400).json({ error: 'active (true|false) ou org requis' });
+
       const ur = await upstash(['GET', 'vs_user:' + username]);
       const user = ur.result ? JSON.parse(ur.result) : null;
       if (!user) return res.status(404).json({ error: 'Compte introuvable' });
-      user.active = body.active;
-      if (body.active) { delete user.deactivatedAt; }
-      else { user.deactivatedAt = new Date().toISOString(); }
+
+      if (hasActive) {
+        user.active = body.active;
+        if (body.active) { delete user.deactivatedAt; }
+        else { user.deactivatedAt = new Date().toISOString(); }
+      }
+      if (hasOrg) {
+        // Rattache un compte EXISTANT à une autre structure, sans toucher à son mot de
+        // passe (un POST le réinitialiserait). Vide → le compte redevient autonome.
+        // ⚠️ Le compte lira désormais les données de la nouvelle structure ; les siennes
+        // restent en base mais deviennent invisibles pour lui. Son token portant l'ancienne
+        // structure, api/session.js le refusera : il devra se reconnecter.
+        const org = body.org.trim().toLowerCase() || username;
+        if (/[:\s]/.test(org)) return res.status(400).json({ error: 'structure invalide (ni deux-points ni espace)' });
+        user.org = org;
+      }
       await upstash(['SET', 'vs_user:' + username, JSON.stringify(user)]);
-      return res.status(200).json({ success: true, username, active: user.active });
+      return res.status(200).json({ success: true, username, active: user.active !== false, org: user.org || username });
     }
 
     if (req.method === 'DELETE') {

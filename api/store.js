@@ -1,8 +1,9 @@
 // /api/store — stockage par compte des données de l'app (multi-tenant)
 //   GET  ?domains=fiches,rosters,crm,structures  → { fiches:<data|null>, ... }
 //   PUT  { domain, data }                         → { ok:true }
-// Clé Upstash : vs_data:<compte>:<domaine>. Le compte vient du token (jamais du client).
-const { verifyToken, getBearer, upstash } = require('./_auth');
+// Clé Upstash : vs_data:<structure>:<domaine>. La structure vient du token (jamais du
+// client) : tous les comptes coach d'une même structure partagent ces données.
+const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
 const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons'];
 const MAX_BYTES = 1024 * 1024; // 1 Mo / domaine
@@ -15,7 +16,9 @@ module.exports = async function handler(req, res) {
 
   const payload = verifyToken(getBearer(req));
   if (!payload || !payload.u) return res.status(401).json({ error: 'Non authentifié' });
-  const u = payload.u;
+  // Les données appartiennent à la STRUCTURE, pas au compte : tous les coachs
+  // d'une même organisation voient et modifient le même jeu de données.
+  const u = orgOfToken(payload);
 
   try {
     if (req.method === 'GET') {

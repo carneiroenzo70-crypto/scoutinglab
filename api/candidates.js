@@ -1,9 +1,9 @@
 // /api/candidates — candidatures par compte (une seule fonction : GET + POST)
-//   GET                    → liste des candidatures du compte connecté (token requis)
+//   GET                    → liste des candidatures de la structure du compte connecté
 //   POST ?to=<ingestKey>   → ingestion publique depuis le Google Form d'une structure,
-//                            routée vers le compte correspondant (vs_candidates:<compte>)
+//                            routée vers celle-ci (vs_candidates:<structure>)
 // Fusionné avec l'ancien /api/candidate pour rester sous la limite de fonctions Vercel.
-const { verifyToken, getBearer, upstash } = require('./_auth');
+const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -52,14 +52,15 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // ── GET : liste du compte connecté. Chaque compte ne voit QUE ses candidatures. ──
+  // ── GET : liste de la structure du compte connecté. Une structure ne voit QUE ses
+  //    candidatures ; tous ses coachs voient la même liste. ──
   if (req.method === 'GET') {
     const payload = verifyToken(getBearer(req));
     if (!payload || !payload.u) {
       return res.status(401).json({ error: 'Non authentifié' });
     }
     try {
-      const r = await upstash(['LRANGE', 'vs_candidates:' + payload.u, '0', '-1']);
+      const r = await upstash(['LRANGE', 'vs_candidates:' + orgOfToken(payload), '0', '-1']);
       const candidates = ((r && r.result) || []).map(item => {
         try { return JSON.parse(decodeURIComponent(item)); } catch (_) {
           try { return JSON.parse(item); } catch (_) { return null; }

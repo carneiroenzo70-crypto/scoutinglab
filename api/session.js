@@ -1,7 +1,7 @@
 // GET /api/session — vérifie que la session est toujours valide ET que le compte
 // est toujours actif (révocation d'accès prise en compte même token encore valide).
 // Renvoie 200 { ok:true, ... } si OK, sinon 401 (session) / 403 (compte désactivé).
-const { verifyToken, getBearer, upstash, ingestKey } = require('./_auth');
+const { verifyToken, getBearer, upstash, ingestKey, orgOfUser, orgOfToken } = require('./_auth');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -29,10 +29,25 @@ module.exports = async function handler(req, res) {
   if (!user) return res.status(403).json({ ok: false, error: 'Compte introuvable' });
   if (user.active === false) return res.status(403).json({ ok: false, error: 'Compte désactivé' });
 
-  // Garantit la correspondance code d'ingestion → compte (idempotent), pour le routage
-  // des candidatures du formulaire propre à la structure.
-  const ik = ingestKey(payload.u);
-  try { await upstash(['SET', 'vs_ingest:' + ik, payload.u]); } catch (_) { /* non bloquant */ }
+  // Garantit la correspondance code d'ingestion → STRUCTURE (idempotent). Le lien est
+  // celui de la structure : tous ses coachs voient et partagent le même formulaire.
+  // Repli sur le compte du token : quelques enregistrements anciens n'ont pas de champ
+  // `username` (admin-users prévoit déjà ce cas). Sans ce repli, `org` vaudrait null et
+  // la clé d'ingestion changerait — le Google Form d'une structure en service cesserait
+  // silencieusement d'alimenter ses candidatures.
+  const org = orgOfUser(user) || payload.u;
 
-  return res.status(200).json({ ok: true, plan: user.plan || payload.plan, label: user.label || payload.label, ingestKey: ik });
+  // Le token fige la structure au moment de son émission (valable 30 jours). Si le
+  // compte a été rattaché à une AUTRE structure depuis, le token est périmé : les
+  // données seraient lues sous l'ancienne structure pendant que le lien d'ingestion
+  // afficherait la nouvelle — les candidatures disparaîtraient sans erreur visible.
+  // On force donc une reconnexion plutôt que de servir un état incohérent.
+  if (orgOfToken(payload) !== org) {
+    return res.status(401).json({ ok: false, error: 'Session à renouveler (structure modifiée)' });
+  }
+
+  const ik = ingestKey(org);
+  try { await upstash(['SET', 'vs_ingest:' + ik, org]); } catch (_) { /* non bloquant */ }
+
+  return res.status(200).json({ ok: true, plan: user.plan || payload.plan, label: user.label || payload.label, org, ingestKey: ik });
 };

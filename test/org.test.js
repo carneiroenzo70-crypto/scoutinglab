@@ -1,0 +1,307 @@
+const test = require('node:test');
+const assert = require('node:assert');
+
+process.env.SESSION_SECRET = 'test-secret';
+process.env.UPSTASH_URL = 'https://mock';
+process.env.UPSTASH_TOKEN = 'mock';
+
+const { orgOfUser, orgOfToken, ingestKey } = require('../api/_auth');
+
+test('orgOfUser : repli sur le nom de compte quand org est absent', () => {
+  assert.equal(orgOfUser({ username: 'galions' }), 'galions');
+});
+
+test('orgOfUser : renvoie org quand il est présent', () => {
+  assert.equal(orgOfUser({ username: 'alan', org: 'galions' }), 'galions');
+});
+
+test('orgOfToken : repli sur u pour les tokens émis avant la migration', () => {
+  assert.equal(orgOfToken({ u: 'galions' }), 'galions');
+});
+
+test('orgOfToken : renvoie org quand il est présent', () => {
+  assert.equal(orgOfToken({ u: 'alan', org: 'galions' }), 'galions');
+});
+
+const { hashPassword, signToken, verifyToken } = require('../api/_auth');
+const loginHandler = require('../api/login');
+
+function mockRes() {
+  return {
+    _status: 0, _json: null,
+    setHeader() {}, status(c) { this._status = c; return this; },
+    json(o) { this._json = o; return this; }, end() { return this; }
+  };
+}
+
+// Faux Upstash en mémoire, piloté via global.fetch (comme _auth.upstash).
+function mockUpstash(store) {
+  global.fetch = async (_url, opts) => {
+    const cmd = JSON.parse(opts.body);
+    const op = cmd[0], key = cmd[1], val = cmd[2];
+    let result = null;
+    if (op === 'GET') result = store[key] != null ? store[key] : null;
+    else if (op === 'SET') { store[key] = val; result = 'OK'; }
+    else if (op === 'DEL') { delete store[key]; result = 1; }
+    else if (op === 'INCR') { store[key] = String((+store[key] || 0) + 1); result = +store[key]; }
+    else if (op === 'EXPIRE') result = 1;
+    else if (op === 'SADD') result = 1;
+    else if (op === 'SMEMBERS') result = [];
+    else if (op === 'MGET') result = cmd.slice(1).map(k => (store[k] != null ? store[k] : null));
+    else if (op === 'LPUSH') { (store[key] = store[key] || []).unshift(val); result = store[key].length; }
+    else if (op === 'LRANGE') result = store[key] || [];
+    return { ok: true, json: async () => ({ result }) };
+  };
+}
+
+test('le token de connexion porte l\'organisation du compte coach', async () => {
+  const store = {};
+  mockUpstash(store);
+  const { salt, hash } = hashPassword('motdepasse123');
+  store['vs_user:alan'] = JSON.stringify({
+    username: 'alan', label: 'Alan', plan: 'elite', org: 'galions', salt, hash, active: true
+  });
+
+  const res = mockRes();
+  await loginHandler(
+    { method: 'POST', headers: {}, socket: {}, body: { username: 'alan', password: 'motdepasse123' } },
+    res
+  );
+
+  assert.equal(res._status, 200);
+  const payload = verifyToken(res._json.token);
+  assert.equal(payload.u, 'alan', 'le compte reste celui du coach');
+  assert.equal(payload.org, 'galions', 'l\'organisation doit être dans le token');
+});
+
+test('un compte sans org devient sa propre organisation dans le token', async () => {
+  const store = {};
+  mockUpstash(store);
+  const { salt, hash } = hashPassword('motdepasse123');
+  store['vs_user:acme'] = JSON.stringify({ username: 'acme', plan: 'elite', salt, hash, active: true });
+
+  const res = mockRes();
+  await loginHandler(
+    { method: 'POST', headers: {}, socket: {}, body: { username: 'acme', password: 'motdepasse123' } },
+    res
+  );
+
+  const payload = verifyToken(res._json.token);
+  assert.equal(payload.org, 'acme');
+});
+
+const snapshotsHandler = require('../api/snapshots');
+const trackHandler = require('../api/roster-track');
+
+test('les snapshots de roster sont partages au sein d\'une structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'galions', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+
+  await snapshotsHandler({
+    method: 'POST', headers: { authorization: 'Bearer ' + tEnzo }, query: {},
+    body: { rosterId: 'r1', snapshot: { date: '2026-07-28T10:00:00Z', players: [{ role: 'Top', pseudo: 'X' }] } }
+  }, mockRes());
+
+  assert.ok(store['vs_snaps:galions:r1'], 'la cle doit porter la structure');
+
+  const res = mockRes();
+  await snapshotsHandler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { roster: 'r1' } }, res);
+  assert.equal(res._json.length, 1, 'Alan doit voir le snapshot de sa structure');
+});
+
+test('roster-track enregistre le suivi sous la structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+
+  const res = mockRes();
+  await trackHandler({
+    method: 'POST', headers: { authorization: 'Bearer ' + tAlan },
+    body: { rosters: [{ rosterId: 'r1', name: 'Titulaires', players: [{ pseudo: 'Canna', tag: 'EUW' }] }] }
+  }, res);
+
+  assert.equal(res._status, 200);
+  assert.ok(store['vs_track:galions'], 'doit etre enregistre sous la structure, pas sous le coach');
+});
+
+const sessionHandler = require('../api/session');
+const candidatesHandler = require('../api/candidates');
+
+test('tous les coachs d\'une structure partagent le meme lien de candidatures', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'galions', plan: 'elite', label: 'Alan', active: true });
+  store['vs_user:galions'] = JSON.stringify({ username: 'galions', plan: 'elite', label: 'Galions', active: true });
+
+  const rAlan = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, rAlan);
+
+  const rGal = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'galions', org: 'galions' }, 3600) } }, rGal);
+
+  assert.equal(rAlan._json.ingestKey, rGal._json.ingestKey, 'meme structure = meme lien');
+  assert.equal(store['vs_ingest:' + rAlan._json.ingestKey], 'galions', 'la correspondance pointe vers la structure');
+});
+
+test('les candidatures listees sont celles de la structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_candidates:galions'] = [JSON.stringify({ id: '1', pseudo: 'Zoelys' })];
+
+  const res = mockRes();
+  await candidatesHandler({
+    method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) }, query: {}
+  }, res);
+
+  assert.equal(res._json.length, 1);
+  assert.equal(res._json[0].pseudo, 'Zoelys', 'Alan doit voir les candidatures de sa structure');
+});
+
+// Garde-fou : certains enregistrements anciens n'ont pas de champ `username`
+// (api/admin-users.js prévoit déjà ce cas avec `rec.username || u`). Pour eux,
+// orgOfUser renvoie null — et sans repli la clé d'ingestion changerait, coupant
+// silencieusement le Google Form d'une structure déjà en service.
+test('un compte ancien sans champ username garde son lien de candidatures', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:vieuxclub'] = JSON.stringify({ plan: 'elite', label: 'Vieux Club', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'vieuxclub' }, 3600) } }, res);
+
+  assert.equal(res._json.ingestKey, ingestKey('vieuxclub'), 'la cle du formulaire ne doit PAS changer');
+  assert.equal(store['vs_ingest:' + res._json.ingestKey], 'vieuxclub', 'la correspondance doit rester valide');
+});
+
+const adminHandler = require('../api/admin-users');
+
+test('creation d\'un compte coach rattache a une structure', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'alan', password: 'motdepasse123', label: 'Alan', plan: 'elite', org: 'galions' }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:alan']);
+  assert.equal(rec.org, 'galions');
+});
+
+test('sans org, le compte est sa propre structure', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'acme', password: 'motdepasse123', plan: 'pro' }
+  }, mockRes());
+
+  const rec = JSON.parse(store['vs_user:acme']);
+  assert.equal(rec.org, 'acme');
+});
+
+// Le token fige la structure. Si le compte est rattaché ailleurs entre-temps, servir
+// l'ancienne structure en données et la nouvelle en lien d'ingestion ferait disparaître
+// des candidatures sans erreur visible : on force une reconnexion.
+test('un token dont la structure a change est refuse', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'nouveau-club', plan: 'elite', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, res);
+
+  assert.equal(res._status, 401, 'le token perime doit etre refuse');
+});
+
+test('un token dont la structure est inchangee reste accepte', async () => {
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:alan'] = JSON.stringify({ username: 'alan', org: 'galions', plan: 'elite', active: true });
+
+  const res = mockRes();
+  await sessionHandler({ method: 'GET', headers: { authorization: 'Bearer ' + signToken({ u: 'alan', org: 'galions' }, 3600) } }, res);
+
+  assert.equal(res._status, 200);
+});
+
+// `org` est concaténé dans les clés Upstash : un deux-points la rendrait ambiguë.
+test('admin-users refuse une structure qui casserait les cles', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  mockUpstash({});
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'bob', password: 'motdepasse123', org: 'gali:ons' }
+  }, res);
+  assert.equal(res._status, 400);
+});
+
+test('admin-users accepte un identifiant e-mail comme structure par defaut', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'enzo.carneiro@visionscore.gg', password: 'motdepasse123' }
+  }, res);
+  assert.equal(res._status, 200, 'les identifiants e-mail existants doivent rester creables');
+  assert.equal(JSON.parse(store['vs_user:enzo.carneiro@visionscore.gg']).org, 'enzo.carneiro@visionscore.gg');
+});
+
+// Rattacher un compte EXISTANT a une autre structure sans reinitialiser son mot de passe
+// (un POST le ferait). C'est l'operation reelle : relier le compte de Mateo a celui d'Enzo.
+test('PATCH rattache un compte existant sans toucher a son mot de passe', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  const { salt, hash } = hashPassword('motdepasse123');
+  store['vs_user:mateo'] = JSON.stringify({ username: 'mateo', org: 'mateo', plan: 'elite', salt, hash, active: true });
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'mateo', org: 'enzo' }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:mateo']);
+  assert.equal(rec.org, 'enzo', 'le compte doit etre rattache a la structure d\'Enzo');
+  assert.equal(rec.salt, salt, 'le mot de passe ne doit PAS etre reinitialise');
+  assert.equal(rec.hash, hash, 'le mot de passe ne doit PAS etre reinitialise');
+  assert.equal(rec.active, true, 'l\'etat actif doit etre preserve');
+});
+
+test('PATCH active seul continue de fonctionner', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+  store['vs_user:bob'] = JSON.stringify({ username: 'bob', org: 'bob', plan: 'pro', active: true });
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'bob', active: false }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:bob']);
+  assert.equal(rec.active, false);
+  assert.equal(rec.org, 'bob', 'la structure ne doit pas changer');
+});
+
+test('PATCH sans active ni org est refuse', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  mockUpstash({});
+  const res = mockRes();
+  await adminHandler({ method: 'PATCH', headers: { 'x-admin-secret': 'admin-secret' }, body: { username: 'bob' } }, res);
+  assert.equal(res._status, 400);
+});

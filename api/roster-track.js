@@ -1,6 +1,6 @@
 // POST /api/roster-track — le client enregistre les rosters à suivre (pour le cron)
 // Body : { rosters: [ { rosterId, name, players: [ { pseudo, tag, server, role } ] } ] }
-const { verifyToken, getBearer, upstash } = require('./_auth');
+const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
 
   const payload = verifyToken(getBearer(req));
   if (!payload || !payload.u) return res.status(401).json({ error: 'Non authentifié' });
-  const u = payload.u;
+  const u = orgOfToken(payload);   // le cron suit les rosters d'une structure
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (_) { body = null; } }

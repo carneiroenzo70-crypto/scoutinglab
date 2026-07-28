@@ -68,3 +68,38 @@ test('refuse un domaine inconnu en PUT', async () => {
   await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + token }, body: { domain: 'hack', data: 1 } }, res);
   assert.equal(res._status, 400);
 });
+
+test('deux comptes de la MÊME structure partagent les données', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'galions', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + tEnzo }, body: { domain: 'seasons', data: ['draft'] } }, mockRes());
+
+  const res = mockRes();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { domains: 'seasons' } }, res);
+  assert.deepEqual(res._json.seasons, ['draft'], 'Alan doit voir les donnees de sa structure');
+});
+
+test('deux structures differentes restent isolees', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tGalions = signToken({ u: 'alan', org: 'galions' }, 3600);
+  const tAutre = signToken({ u: 'bob', org: 'autre-club' }, 3600);
+
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + tGalions }, body: { domain: 'seasons', data: ['secret'] } }, mockRes());
+
+  const res = mockRes();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer ' + tAutre }, query: { domains: 'seasons' } }, res);
+  assert.equal(res._json.seasons, null, 'une autre structure ne doit rien voir');
+});
+
+test('un ancien token sans org reste rattache a son propre compte', async () => {
+  const store = {};
+  mockUpstash(store);
+  const ancien = signToken({ u: 'acme' }, 3600);   // token emis avant la migration
+
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + ancien }, body: { domain: 'crm', data: [1] } }, mockRes());
+  assert.ok(store['vs_data:acme:crm'], 'la cle doit rester vs_data:acme:crm');
+});

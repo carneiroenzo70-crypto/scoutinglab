@@ -1,5 +1,5 @@
 // POST /api/login — vérifie identifiant + mot de passe, renvoie un token de session
-const { verifyPassword, signToken, upstash } = require('./_auth');
+const { verifyPassword, signToken, upstash, orgOfUser } = require('./_auth');
 
 // Anti brute-force : compte les échecs par IP dans une fenêtre glissante (clé Upstash, TTL auto).
 const RL_MAX_ATTEMPTS = 8;
@@ -58,6 +58,7 @@ module.exports = async function handler(req, res) {
 
   const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 jours ou 1 jour
   const plan = user.plan || 'elite';
-  const token = signToken({ u: username, label: user.label || username, plan }, maxAge);
-  return res.status(200).json({ token, username, label: user.label || username, plan, expiresIn: maxAge });
+  const org = orgOfUser(user);
+  const token = signToken({ u: username, org, label: user.label || username, plan }, maxAge);
+  return res.status(200).json({ token, username, org, label: user.label || username, plan, expiresIn: maxAge });
 };
