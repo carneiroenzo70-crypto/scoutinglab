@@ -174,3 +174,35 @@ test('un compte ancien sans champ username garde son lien de candidatures', asyn
   assert.equal(res._json.ingestKey, ingestKey('vieuxclub'), 'la cle du formulaire ne doit PAS changer');
   assert.equal(store['vs_ingest:' + res._json.ingestKey], 'vieuxclub', 'la correspondance doit rester valide');
 });
+
+const adminHandler = require('../api/admin-users');
+
+test('creation d\'un compte coach rattache a une structure', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+
+  const res = mockRes();
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'alan', password: 'motdepasse123', label: 'Alan', plan: 'elite', org: 'galions' }
+  }, res);
+
+  assert.equal(res._status, 200);
+  const rec = JSON.parse(store['vs_user:alan']);
+  assert.equal(rec.org, 'galions');
+});
+
+test('sans org, le compte est sa propre structure', async () => {
+  process.env.ADMIN_SECRET = 'admin-secret';
+  const store = {};
+  mockUpstash(store);
+
+  await adminHandler({
+    method: 'POST', headers: { 'x-admin-secret': 'admin-secret' },
+    body: { username: 'acme', password: 'motdepasse123', plan: 'pro' }
+  }, mockRes());
+
+  const rec = JSON.parse(store['vs_user:acme']);
+  assert.equal(rec.org, 'acme');
+});

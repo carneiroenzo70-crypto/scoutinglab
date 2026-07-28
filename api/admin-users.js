@@ -36,6 +36,7 @@ module.exports = async function handler(req, res) {
               username: rec.username || u,
               label: rec.label || u,
               plan: rec.plan || 'elite',
+              org: rec.org || rec.username || u,
               active: rec.active !== false,           // active absent = actif
               createdAt: rec.createdAt || null,
               deactivatedAt: rec.deactivatedAt || null
@@ -57,11 +58,15 @@ module.exports = async function handler(req, res) {
       if (password.length < 8) return res.status(400).json({ error: 'Mot de passe trop court (min. 8 caractères)' });
       if (!['starter', 'pro', 'elite'].includes(plan)) return res.status(400).json({ error: "plan invalide (starter, pro ou elite)" });
 
+      // Rattachement à une structure. Vide → le compte est sa propre structure,
+      // ce qui préserve le comportement de tous les comptes existants.
+      const org = ((body && body.org) || '').trim().toLowerCase() || username;
+
       const { salt, hash } = hashPassword(password);
-      const user = { username, label: label || username, plan, salt, hash, active: true, createdAt: new Date().toISOString() };
+      const user = { username, label: label || username, plan, org, salt, hash, active: true, createdAt: new Date().toISOString() };
       await upstash(['SET', 'vs_user:' + username, JSON.stringify(user)]);
       await upstash(['SADD', 'vs_users', username]);
-      return res.status(200).json({ success: true, username, label: user.label, plan: user.plan, active: true });
+      return res.status(200).json({ success: true, username, label: user.label, plan: user.plan, org, active: true });
     }
 
     if (req.method === 'PATCH') {
