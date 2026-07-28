@@ -36,6 +36,11 @@ function vsLogout(){ try{
 }catch(e){} location.replace('/'); }
 /* Nom de compte extrait du token (payload.u) — pour préfixer les drapeaux locaux. */
 function vsAccount(){ try{ var s=vsToken().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; return (JSON.parse(atob(s)).u)||''; }catch(_){ return ''; } }
+/* Structure propriétaire des données (payload.org). Plusieurs comptes coach peuvent
+   la partager : c'est ELLE qui possède fiches, rosters, CRM et calendrier, pas le
+   compte. Repli sur le compte pour les tokens émis avant l'ajout de `org` — sans lui
+   leurs porteurs verraient leur cache pris pour celui d'un autre, donc purgé. */
+function vsOrg(){ try{ var s=vsToken().split('.')[0].replace(/-/g,'+').replace(/_/g,'/'); while(s.length%4)s+='='; var p=JSON.parse(atob(s)); return p.org||p.u||''; }catch(_){ return ''; } }
 /* ══ vsStore — synchro des données par compte (cache localStorage + serveur) ══
    Domaines mappés vers leurs clés localStorage. Le PUT lit le cache local courant
    (les fonctions de save écrivent déjà le localStorage, puis appellent vsStore.save). */
@@ -86,10 +91,13 @@ const vsStore = (function () {
   async function loadAll() {
     if (window.VS_DEMO) return;
     const domains = Object.keys(VS_STORE_DOMAINS);
-    // Garde-fou : si le cache local appartient à un AUTRE compte (déconnexion non
+    // Garde-fou : si le cache local appartient à une AUTRE structure (déconnexion non
     // faite sur un navigateur partagé), on le purge AVANT tout — sinon la migration
-    // douce pousserait les données de ce compte-là dans le compte courant.
-    const me = vsAccount();
+    // douce pousserait les données de cette structure-là dans la structure courante.
+    // On estampille sur la STRUCTURE et non sur le compte : deux coachs d'une même
+    // structure qui se relaient sur un poste partagent les mêmes données, il n'y a
+    // donc rien à purger entre eux.
+    const me = vsOrg();
     try {
       const owner = localStorage.getItem('vs_cache_owner');
       if (owner && me && owner !== me) {
