@@ -84,6 +84,7 @@
         <div><label>Nom affiché</label><input id="n-label" placeholder="ex. Karmine Corp"></div>
         <div><label>Mot de passe</label><input id="n-pass" type="text" placeholder="min. 8 caractères"></div>
         <div><label>Offre</label><select id="n-plan"><option value="starter">Starter</option><option value="pro">Pro</option><option value="elite" selected>Elite</option></select></div>
+        <div><label>Structure</label><input id="n-org" placeholder="vide = compte autonome"></div>
       </div>
       <div style="margin-top:14px;display:flex;gap:10px;align-items:center">
         <button class="btn-cta" onclick="createUser()">Créer le compte</button>
@@ -96,8 +97,8 @@
       <h2>Comptes existants</h2>
       <div style="overflow-x:auto">
         <table>
-          <thead><tr><th>Structure</th><th>Identifiant</th><th>Offre</th><th>Statut</th><th>Créé le</th><th></th></tr></thead>
-          <tbody id="tbody"><tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Chargement…</td></tr></tbody>
+          <thead><tr><th></th><th>Identifiant</th><th>Offre</th><th>Structure</th><th>Statut</th><th>Créé le</th><th></th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="7" class="muted" style="padding:24px;text-align:center">Chargement…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -136,7 +137,7 @@ async function loadUsers(){
 
 function renderUsers(users){
   var tb=document.getElementById('tbody');
-  if(!users.length){ tb.innerHTML='<tr><td colspan="6" class="muted" style="padding:24px;text-align:center">Aucun compte.</td></tr>'; return; }
+  if(!users.length){ tb.innerHTML='<tr><td colspan="7" class="muted" style="padding:24px;text-align:center">Aucun compte.</td></tr>'; return; }
   users.sort(function(a,b){ return (a.username||'').localeCompare(b.username||''); });
   tb.innerHTML = users.map(function(u){
     var on = u.active !== false;
@@ -145,6 +146,7 @@ function renderUsers(users){
       '<td style="font-weight:700">'+esc(u.label||u.username)+'</td>'+
       '<td class="muted" style="font-family:monospace">'+esc(u.username)+'</td>'+
       '<td><span class="pill pill-plan">'+esc(u.plan||'elite')+'</span></td>'+
+      '<td class="muted" style="font-family:monospace">'+esc(u.org||u.username)+'</td>'+
       '<td><span class="pill '+(on?'pill-on':'pill-off')+'">'+(on?'● Actif':'● Désactivé')+'</span></td>'+
       '<td class="muted">'+created+'</td>'+
       '<td><div class="actions">'+
@@ -162,12 +164,13 @@ async function createUser(){
   var label=document.getElementById('n-label').value.trim();
   var password=document.getElementById('n-pass').value;
   var plan=document.getElementById('n-plan').value;
+  var org=document.getElementById('n-org').value.trim().toLowerCase();
   if(!username||!password){ setMsg('Identifiant et mot de passe requis.',false); return; }
   if(password.length<8){ setMsg('Mot de passe trop court (min. 8).',false); return; }
   try{
-    var res=await fetch('/api/admin-users',{ method:'POST', headers:H(), body:JSON.stringify({username,label,password,plan}) });
+    var res=await fetch('/api/admin-users',{ method:'POST', headers:H(), body:JSON.stringify({username,label,password,plan,org}) });
     var d=await res.json();
-    if(res.ok){ setMsg('Compte « '+username+' » créé.',true); document.getElementById('n-user').value=''; document.getElementById('n-label').value=''; document.getElementById('n-pass').value=''; loadUsers(); }
+    if(res.ok){ setMsg('Compte « '+username+' » créé.',true); document.getElementById('n-user').value=''; document.getElementById('n-label').value=''; document.getElementById('n-pass').value=''; document.getElementById('n-org').value=''; loadUsers(); }
     else setMsg(d.error||'Erreur.',false);
   }catch(e){ setMsg('Erreur réseau.',false); }
 }
