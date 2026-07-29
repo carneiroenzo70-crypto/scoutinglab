@@ -663,6 +663,7 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
 .ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
 .dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
+.dl-role-mz{ font-size:9px; font-weight:700; letter-spacing:0; text-transform:none; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:1px 7px; }
 .dl-scout{ margin-top:14px; padding-top:12px; border-top:1px solid var(--vs-forest-600); }
 .dl-sc-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
 .dl-sc-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:11.5px; }
@@ -7251,15 +7252,13 @@ async function dlRenderGrid() {
   var list = await ssChampList();
   var q = (_dlQ || '').toLowerCase();
   var f = list.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
-  // Les champions joués par l'adversaire remontent en tête : en phase de ban, c'est
-  // exactement la liste que le coach cherche.
-  f.sort(function (a, b) {
-    var ma = menaces[dlNorm(a.name)], mb = menaces[dlNorm(b.name)];
-    var ga = ma ? ma.reduce(function (t, x) { return t + x.games; }, 0) : -1;
-    var gb = mb ? mb.reduce(function (t, x) { return t + x.games; }, 0) : -1;
-    return gb - ga || a.name.localeCompare(b.name);
-  });
-  grid.innerHTML = f.map(function (c) {
+
+  var totalGames = function (c) {
+    var mz = menaces[dlNorm(c.name)];
+    return mz ? mz.reduce(function (t, x) { return t + x.games; }, 0) : -1;
+  };
+
+  var bouton = function (c) {
     var off = !!indispo[c.key];
     var mz = menaces[dlNorm(c.name)];
     var titre = anEsc(c.name) + (off ? ' — indisponible' : '');
@@ -7267,9 +7266,26 @@ async function dlRenderGrid() {
     return '<button class="ss-champ' + (off ? ' dl-off' : '') + (mz ? ' dl-menace' : '') + '"' + (off || !step ? ' disabled' : '')
       + ' onclick="dlSelect(\'' + c.key + '\')" title="' + titre + '">'
       + '<img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span>'
-      + (mz ? '<span class="dl-mz">' + mz.reduce(function (t, x) { return t + x.games; }, 0) + '</span>' : '')
+      + (mz ? '<span class="dl-mz">' + totalGames(c) + '</span>' : '')
       + '</button>';
-  }).join('');
+  };
+
+  // Regroupement par rôle : c'est ainsi qu'un coach cherche un champion à bannir.
+  // La grille elle-même est portée par .ss-champrole-grp — mettre les boutons
+  // directement dans .ss-champgrid les empilerait sur une seule colonne.
+  var groupes = {}; SS_ROLES.forEach(function (r) { groupes[r] = []; }); groupes[''] = [];
+  f.forEach(function (c) { (groupes[c.role] || groupes['']).push(c); });
+
+  grid.innerHTML = SS_ROLES.concat(['']).map(function (r) {
+    var champs = groupes[r] || []; if (!champs.length) return '';
+    // À l'intérieur d'un rôle, les champions joués par l'adversaire passent devant.
+    champs.sort(function (a, b) { return totalGames(b) - totalGames(a) || a.name.localeCompare(b.name); });
+    var menacesRole = champs.filter(function (c) { return menaces[dlNorm(c.name)]; }).length;
+    return '<div class="ss-champrole-t">' + (r ? SS_ROLE_LABEL[r] : 'Autres / non classés')
+      + '<span class="ss-champrole-n">' + champs.length + '</span>'
+      + (menacesRole ? '<span class="dl-role-mz">' + menacesRole + (menacesRole > 1 ? ' vus' : ' vu') + ' en compét</span>' : '')
+      + '</div><div class="ss-champrole-grp">' + champs.map(bouton).join('') + '</div>';
+  }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
   var info = document.getElementById('dl-info');
   if (info) {
     info.textContent = step
