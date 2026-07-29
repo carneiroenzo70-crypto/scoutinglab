@@ -145,3 +145,148 @@ test('unavailable liste bans et picks de la game courante', () => {
   assert.equal(indispo['Ambessa'], true);
   assert.equal(indispo['Vi'], undefined);
 });
+
+test('le chrono est arme a 30 s par defaut', () => {
+  const s = draftDemarree();
+  assert.equal(s.games[0].phaseEndsAt - s.games[0].phaseStartedAt, 30000);
+});
+
+test('le chrono est rearme a chaque action', () => {
+  const s0 = draftDemarree();
+  const s1 = D.apply(s0, { type: 'select', by: 'first', champion: 'Ambessa' }, T0 + 7000).state;
+  assert.equal(s1.games[0].phaseStartedAt, T0 + 7000);
+  assert.equal(s1.games[0].phaseEndsAt, T0 + 7000 + 30000);
+});
+
+test('le temps ecoule laisse l\'emplacement vide et la draft continue', () => {
+  const s = draftDemarree();
+  const r = D.apply(s, { type: 'timeout' }, T0 + 30001);
+  assert.equal(r.error, null);
+  assert.deepEqual(r.state.games[0].actions[0], { type: 'ban', by: 'first', champion: null });
+  assert.deepEqual(D.currentStep(r.state), { index: 1, type: 'ban', by: 'second' });
+});
+
+test('on ne peut pas declencher l\'expiration avant l\'echeance', () => {
+  const r = D.apply(draftDemarree(), { type: 'timeout' }, T0 + 10000);
+  assert.ok(r.error, 'le temps n\'est pas ecoule');
+  assert.equal(r.state.games[0].actions.length, 0);
+});
+
+test('la duree du tour est configurable', () => {
+  const s = D.apply(D.createState({ bo: 1, turnSeconds: 45 }), { type: 'start' }, T0).state;
+  assert.equal(s.games[0].phaseEndsAt - s.games[0].phaseStartedAt, 45000);
+});
+
+test('sans reserve, l\'echeance vaut exactement le temps de base', () => {
+  const s = draftDemarree({ bo: 1, reserveSeconds: 0 });
+  assert.equal(s.games[0].phaseEndsAt - s.games[0].phaseStartedAt, 30000);
+});
+
+test('l\'echeance inclut la reserve restante de l\'equipe qui joue', () => {
+  const s = draftDemarree({ bo: 1, reserveSeconds: 20 });
+  assert.equal(s.games[0].phaseEndsAt - s.games[0].phaseStartedAt, 50000, '30 s + 20 s de reserve');
+});
+
+test('depasser le temps de base consomme la reserve, rester dessous ne la touche pas', () => {
+  let s = draftDemarree({ bo: 1, reserveSeconds: 20 });
+  s = D.apply(s, { type: 'select', by: 'first', champion: 'A' }, T0 + 38000).state;
+  assert.equal(s.games[0].reserve.first, 12000);
+  assert.equal(s.games[0].reserve.second, 20000, 'la reserve de l\'adversaire est intacte');
+  const t1 = s.games[0].phaseStartedAt;
+  s = D.apply(s, { type: 'select', by: 'second', champion: 'B' }, t1 + 10000).state;
+  assert.equal(s.games[0].reserve.second, 20000);
+});
+
+test('la reserve epuisee ne devient jamais negative', () => {
+  let s = draftDemarree({ bo: 1, reserveSeconds: 5 });
+  s = D.apply(s, { type: 'timeout' }, T0 + 35001).state;
+  assert.equal(s.games[0].reserve.first, 0);
+});
+
+function jouerGameComplete(s, prefixe) {
+  for (let i = 0; i < 20; i++) {
+    const step = D.currentStep(s);
+    const r = D.apply(s, { type: 'select', by: step.by, champion: prefixe + i }, T0 + i * 1000);
+    assert.equal(r.error, null, 'action ' + i + ' : ' + r.error);
+    s = r.state;
+  }
+  return s;
+}
+
+test('en BO1, terminer la game termine la draft', () => {
+  const s = jouerGameComplete(draftDemarree({ bo: 1 }), 'C');
+  assert.equal(s.status, 'done');
+  assert.equal(s.usedChampions.length, 0, 'pas de fearless en BO1');
+});
+
+test('en BO3, seuls les champions PIKES sont bloques pour la suite', () => {
+  let s = jouerGameComplete(draftDemarree({ bo: 3 }), 'C');
+  const bans = D.SEQUENCE.map((st, i) => st.type === 'ban' ? 'C' + i : null).filter(Boolean);
+  const picks = D.SEQUENCE.map((st, i) => st.type === 'pick' ? 'C' + i : null).filter(Boolean);
+  assert.equal(s.usedChampions.length, 10, 'les 10 champions pikes');
+  picks.forEach(c => assert.ok(s.usedChampions.indexOf(c) >= 0, c + ' pike doit etre bloque'));
+  bans.forEach(c => assert.equal(s.usedChampions.indexOf(c), -1, c + ' banni doit rester disponible'));
+});
+
+test('les champions pikes sont bloques pour les DEUX equipes', () => {
+  let s = jouerGameComplete(draftDemarree({ bo: 3 }), 'C');
+  s = D.apply(s, { type: 'nextGame' }, T0 + 60000).state;
+  const step = D.currentStep(s);
+  const r = D.apply(s, { type: 'select', by: step.by, champion: 'C6' }, T0 + 61000);
+  assert.ok(r.error, 'un champion pike en game 1 est bloque pour tout le monde');
+});
+
+test('game suivante : nouvelle game vierge, chrono rearme, statut running', () => {
+  let s = jouerGameComplete(draftDemarree({ bo: 3 }), 'C');
+  const r = D.apply(s, { type: 'nextGame' }, T0 + 60000);
+  assert.equal(r.error, null);
+  assert.equal(r.state.gameIndex, 1);
+  assert.equal(r.state.games.length, 2);
+  assert.deepEqual(r.state.games[1].actions, []);
+  assert.equal(r.state.status, 'running');
+  assert.equal(r.state.games[1].phaseEndsAt, T0 + 60000 + 30000);
+});
+
+test('passer a la game suivante avant la fin est refuse', () => {
+  const r = D.apply(draftDemarree({ bo: 3 }), { type: 'nextGame' }, T0 + 1000);
+  assert.ok(r.error);
+});
+
+test('un BO3 se termine apres la 3e game', () => {
+  let s = draftDemarree({ bo: 3 });
+  for (let g = 0; g < 3; g++) {
+    s = jouerGameComplete(s, 'G' + g + '-');
+    if (g < 2) s = D.apply(s, { type: 'nextGame' }, T0 + (g + 1) * 60000).state;
+  }
+  assert.equal(s.status, 'done');
+  assert.ok(D.apply(s, { type: 'nextGame' }, T0 + 300000).error, 'plus de game apres la 3e');
+  assert.equal(s.usedChampions.length, 30, '3 games x 10 picks');
+});
+
+test('rejouer remet un BO1 a zero et revient au lobby', () => {
+  let s = jouerGameComplete(draftDemarree({ bo: 1 }), 'C');
+  const r = D.apply(s, { type: 'replay' }, T0 + 60000);
+  assert.equal(r.error, null);
+  assert.equal(r.state.status, 'lobby');
+  assert.equal(r.state.games.length, 1);
+  assert.deepEqual(r.state.games[0].actions, []);
+  assert.deepEqual(r.state.usedChampions, []);
+});
+
+test('rejouer est refuse en BO3 (le fearless perdrait son sens)', () => {
+  const s = jouerGameComplete(draftDemarree({ bo: 3 }), 'C');
+  assert.ok(D.apply(s, { type: 'replay' }, T0 + 60000).error);
+});
+
+test('on peut inverser cote et priorite entre deux essais', () => {
+  let s = draftDemarree({ bo: 1, firstSide: 'blue' });
+  s = D.apply(s, { type: 'replay' }, T0 + 1000).state;
+  const r = D.apply(s, { type: 'configure', firstSide: 'red' }, T0 + 2000);
+  assert.equal(r.error, null);
+  assert.deepEqual(r.state.sides, { first: 'red', second: 'blue' });
+});
+
+test('configurer une draft deja lancee est refuse', () => {
+  const r = D.apply(draftDemarree({ bo: 1 }), { type: 'configure', firstSide: 'red' }, T0 + 1000);
+  assert.ok(r.error, 'on ne change pas les regles en pleine draft');
+});
