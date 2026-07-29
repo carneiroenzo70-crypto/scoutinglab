@@ -21,3 +21,6 @@ node_modules/
 
 # Secrets locaux du serveur temps reel
 ws-server/.dev.vars
+
+# Artefacts de build de wrangler
+.wrangler/
