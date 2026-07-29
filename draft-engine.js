@@ -74,6 +74,51 @@
     game.phaseEndsAt = now + state.format.turnSeconds * 1000 + game.reserve[suivant.by];
   }
 
+  /* Champions indisponibles à cet instant. Deux sources :
+     — tout ce qui est déjà posé dans la game courante (bans ET picks) ;
+     — en fearless, les champions PIKÉS dans les games précédentes du BO, pour les
+       DEUX équipes. Les champions BANNIS, eux, redeviennent disponibles. */
+  function unavailable(state) {
+    var out = {};
+    (state.usedChampions || []).forEach(function (c) { out[c] = true; });
+    var g = state.games[state.gameIndex];
+    if (g) g.actions.forEach(function (a) { if (a.champion) out[a.champion] = true; });
+    return out;
+  }
+
+  /* Enregistre l'action courante puis arme l'étape suivante. `champion` vaut null
+     quand le temps est écoulé : l'emplacement reste vide et la draft continue. */
+  function avancer(s, now, champion) {
+    var g = s.games[s.gameIndex];
+    var step = SEQUENCE[g.actions.length];
+
+    // La réserve est un crédit : seul le dépassement du temps de base y est prélevé.
+    var base = s.format.turnSeconds * 1000;
+    var ecoule = now - g.phaseStartedAt;
+    if (ecoule > base) {
+      g.reserve[step.by] = Math.max(0, g.reserve[step.by] - (ecoule - base));
+    }
+
+    g.actions.push({ type: step.type, by: step.by, champion: champion || null });
+
+    if (g.actions.length >= SEQUENCE.length) {
+      g.done = true;
+      g.phaseStartedAt = null;
+      g.phaseEndsAt = null;
+      // Fearless : seuls les champions PIKÉS sortent du pool, et pour les DEUX équipes.
+      // Les champions bannis redeviennent disponibles à la game suivante.
+      if (s.format.fearless) {
+        g.actions.forEach(function (a) {
+          if (a.type === 'pick' && a.champion) s.usedChampions.push(a.champion);
+        });
+      }
+      if (s.gameIndex >= s.format.bo - 1) s.status = 'done';
+    } else {
+      armerChrono(s, g, now);
+    }
+    return s;
+  }
+
   function apply(state, op, now) {
     var type = op && op.type;
 
@@ -87,11 +132,66 @@
       return ok(s);
     }
 
+    if (type === 'select') {
+      var step = currentStep(state);
+      if (!step) return err(state, 'Aucune action attendue');
+      if (op.by !== step.by) return err(state, "Ce n'est pas au " + (op.by === 'first' ? '1er' : '2nd') + ' drafteur de jouer');
+      if (!op.champion) return err(state, 'Champion manquant');
+      if (unavailable(state)[op.champion]) return err(state, op.champion + " n'est plus disponible");
+      return ok(avancer(clone(state), now, op.champion));
+    }
+
+    if (type === 'timeout') {
+      var stepT = currentStep(state);
+      if (!stepT) return err(state, 'Aucune action en cours');
+      var gT = state.games[state.gameIndex];
+      if (now < gT.phaseEndsAt) return err(state, "Le temps n'est pas écoulé");
+      // Emplacement laissé vide, comme en vrai : la draft ne s'arrête pas.
+      return ok(avancer(clone(state), now, null));
+    }
+
+    if (type === 'nextGame') {
+      var gN = state.games[state.gameIndex];
+      if (!gN.done) return err(state, "La game en cours n'est pas terminée");
+      if (state.gameIndex >= state.format.bo - 1) return err(state, 'Le BO est terminé');
+      var sN = clone(state);
+      sN.gameIndex++;
+      sN.games.push(createGame());
+      var nouvelle = sN.games[sN.gameIndex];
+      nouvelle.reserve = { first: sN.format.reserveSeconds * 1000, second: sN.format.reserveSeconds * 1000 };
+      sN.status = 'running';
+      armerChrono(sN, nouvelle, now);
+      return ok(sN);
+    }
+
+    if (type === 'replay') {
+      // Réservé au BO1 : en BO3/BO5 le pool consommé par le fearless se construit d'une
+      // game à l'autre, le remettre à zéro n'aurait pas de sens.
+      if (state.format.bo !== 1) return err(state, "Rejouer n'est possible qu'en BO1");
+      var sR = clone(state);
+      sR.games = [createGame()];
+      sR.gameIndex = 0;
+      sR.usedChampions = [];
+      sR.status = 'lobby';   // retour au lobby : ils peuvent inverser côté et priorité
+      return ok(sR);
+    }
+
+    if (type === 'configure') {
+      if (state.status !== 'lobby') return err(state, 'On ne change pas les règles en pleine draft');
+      var sC = clone(state);
+      if (op.firstSide === 'blue' || op.firstSide === 'red') {
+        sC.sides = { first: op.firstSide, second: op.firstSide === 'blue' ? 'red' : 'blue' };
+      }
+      if (op.turnSeconds != null) sC.format.turnSeconds = op.turnSeconds;
+      if (op.reserveSeconds != null) sC.format.reserveSeconds = op.reserveSeconds;
+      return ok(sC);
+    }
+
     return err(state, 'Opération inconnue : ' + type);
   }
 
   return {
     SEQUENCE: SEQUENCE, createGame: createGame, createState: createState,
-    currentStep: currentStep, apply: apply
+    currentStep: currentStep, unavailable: unavailable, apply: apply
   };
 });

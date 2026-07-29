@@ -75,3 +75,73 @@ test('une operation inconnue est refusee sans rien changer', () => {
   assert.ok(r.error);
   assert.equal(r.state.status, 'lobby');
 });
+
+// Raccourci : demarre une draft et enchaine des selections valides.
+function draftDemarree(opts) {
+  return D.apply(D.createState(opts || { bo: 1 }), { type: 'start' }, T0).state;
+}
+
+test('le drafteur dont c\'est le tour peut bannir', () => {
+  const r = D.apply(draftDemarree(), { type: 'select', by: 'first', champion: 'Ambessa' }, T0 + 5000);
+  assert.equal(r.error, null);
+  assert.deepEqual(r.state.games[0].actions[0], { type: 'ban', by: 'first', champion: 'Ambessa' });
+  assert.deepEqual(D.currentStep(r.state), { index: 1, type: 'ban', by: 'second' });
+});
+
+test('jouer hors de son tour est refuse', () => {
+  const r = D.apply(draftDemarree(), { type: 'select', by: 'second', champion: 'Ambessa' }, T0 + 5000);
+  assert.ok(r.error, 'le 2nd drafteur ne peut pas jouer le premier ban');
+  assert.equal(r.state.games[0].actions.length, 0, 'rien ne doit etre enregistre');
+});
+
+test('selectionner sans champion est refuse', () => {
+  const r = D.apply(draftDemarree(), { type: 'select', by: 'first' }, T0 + 5000);
+  assert.ok(r.error);
+});
+
+test('selectionner avant le demarrage est refuse', () => {
+  const r = D.apply(D.createState({ bo: 1 }), { type: 'select', by: 'first', champion: 'Ambessa' }, T0);
+  assert.ok(r.error);
+});
+
+test('la draft complete enchaine bien les 20 actions', () => {
+  let s = draftDemarree();
+  for (let i = 0; i < 20; i++) {
+    const step = D.currentStep(s);
+    assert.ok(step, 'une etape doit exister a l\'index ' + i);
+    const r = D.apply(s, { type: 'select', by: step.by, champion: 'Champion' + i }, T0 + i * 1000);
+    assert.equal(r.error, null, 'action ' + i + ' : ' + r.error);
+    s = r.state;
+  }
+  assert.equal(s.games[0].actions.length, 20);
+  assert.equal(s.games[0].done, true);
+  assert.equal(D.currentStep(s), null, 'plus aucune action attendue');
+});
+
+test('un champion deja banni ne peut pas etre rebanni dans la meme game', () => {
+  let s = draftDemarree();
+  s = D.apply(s, { type: 'select', by: 'first', champion: 'Ambessa' }, T0 + 1000).state;
+  const r = D.apply(s, { type: 'select', by: 'second', champion: 'Ambessa' }, T0 + 2000);
+  assert.ok(r.error, 'Ambessa est deja banni');
+});
+
+test('un champion deja banni ne peut pas etre pike dans la meme game', () => {
+  let s = draftDemarree();
+  const bans = ['Ambessa', 'B', 'C', 'D', 'E', 'F'];
+  bans.forEach((c, i) => {
+    const step = D.currentStep(s);
+    s = D.apply(s, { type: 'select', by: step.by, champion: c }, T0 + i * 1000).state;
+  });
+  const step = D.currentStep(s);
+  assert.equal(step.type, 'pick', 'on doit etre en phase de picks');
+  const r = D.apply(s, { type: 'select', by: step.by, champion: 'Ambessa' }, T0 + 9000);
+  assert.ok(r.error, 'un champion banni ne peut pas etre pike');
+});
+
+test('unavailable liste bans et picks de la game courante', () => {
+  let s = draftDemarree();
+  s = D.apply(s, { type: 'select', by: 'first', champion: 'Ambessa' }, T0 + 1000).state;
+  const indispo = D.unavailable(s);
+  assert.equal(indispo['Ambessa'], true);
+  assert.equal(indispo['Vi'], undefined);
+});
