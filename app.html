@@ -664,6 +664,17 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
 .dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
 .dl-role-mz{ font-size:9px; font-weight:700; letter-spacing:0; text-transform:none; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:1px 7px; }
+/* Repère de positionnement des curseurs : sans lui ils se placeraient par rapport à la page. */
+#ss-live{ position:relative; }
+/* Couche dédiée : elle n'est jamais reconstruite, donc les curseurs survivent aux picks. */
+#dl-cursor-layer{ position:absolute; inset:0; pointer-events:none; }
+.dl-cursor{ position:absolute; top:0; left:0; pointer-events:none; z-index:40; display:flex; align-items:flex-start; gap:3px; transition:transform .08s linear; }
+.dl-cursor span{ font-size:9.5px; font-weight:800; color:#04211C; padding:1px 5px; border-radius:5px; white-space:nowrap; }
+.dl-presence{ display:inline-flex; align-items:center; gap:5px; margin-right:6px; }
+.dl-live{ font-size:10px; font-weight:800; letter-spacing:.05em; padding:3px 9px; border-radius:999px; background:var(--vs-emerald-500); color:#04211C; }
+.dl-solo{ font-size:10px; font-weight:700; padding:3px 9px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-3); }
+.dl-peer{ font-size:10px; padding:3px 8px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); }
+.dl-lobby-salle{ display:inline-flex; align-items:center; gap:6px; margin-left:auto; }
 .dl-scout{ margin-top:14px; padding-top:12px; border-top:1px solid var(--vs-forest-600); }
 .dl-sc-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
 .dl-sc-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:11.5px; }
@@ -7066,6 +7077,119 @@ function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function 
    ══════════════════════════════════════════════════════════════ */
 var _dlState = null, _dlMatch = null, _dlTimer = null, _dlQ = '';
 
+/* ── Salle partagée. Le serveur FAIT AUTORITÉ : on lui envoie des opérations et on
+   applique l'état qu'il renvoie. Hors salle, la même opération est appliquée en local
+   — la draft reste donc utilisable seul, et il n'y a qu'une seule porte d'entrée pour
+   les mutations, donc aucun risque de divergence entre les deux modes. ── */
+var _dlWS = null, _dlPeers = [], _dlCursors = {}, _dlLastCursor = 0;
+var VS_WS_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+  ? 'ws://127.0.0.1:8788' : 'wss://visionscore-draft.visionscore.workers.dev';
+
+function dlPartage() { return !!(_dlWS && _dlWS.readyState === 1); }
+function dlRoomId(m) { return 'vs-' + String(m.id).replace(/[^A-Za-z0-9_-]/g, '') + '-01'; }
+
+function dlConnect(m) {
+  dlDisconnect();
+  var t = (typeof vsToken === 'function') ? vsToken() : '';
+  if (!t) { showToast('Connecte-toi pour ouvrir une salle partagée.', 'warning'); return; }
+  var url = VS_WS_BASE + '/room/' + dlRoomId(m) + '?token=' + encodeURIComponent(t) + '&bo=' + (m.bo || 1);
+  try { _dlWS = new WebSocket(url); } catch (_) { showToast('Salle injoignable.', 'error'); return; }
+
+  _dlWS.onmessage = function (e) {
+    var msg; try { msg = JSON.parse(e.data); } catch (_) { return; }
+    if (msg.type === 'state') {
+      msg.state._matchId = m.id;
+      _dlState = msg.state;
+      dlRender(m);
+    } else if (msg.type === 'presence') {
+      _dlPeers = msg.users || [];
+      dlRenderPresence();
+    } else if (msg.type === 'cursor') {
+      dlShowCursor(msg.from, msg.x, msg.y);
+    } else if (msg.type === 'error') {
+      showToast(msg.message, 'warning');
+    }
+  };
+  _dlWS.onopen = function () { showToast('Salle partagée ouverte.', 'success'); dlRenderPresence(); };
+  _dlWS.onclose = function () { _dlWS = null; _dlPeers = []; dlRenderPresence(); };
+  _dlWS.onerror = function () { showToast('Salle injoignable — tu restes en solo.', 'warning'); };
+}
+
+function dlDisconnect() {
+  if (_dlWS) { try { _dlWS.close(); } catch (_) {} _dlWS = null; }
+  _dlPeers = []; _dlCursors = {};
+  document.querySelectorAll('.dl-cursor').forEach(function (n) { n.remove(); });
+}
+
+/* Toute mutation passe par ici. En salle on propose au serveur (qui valide et diffuse) ;
+   seul, on applique localement. */
+function dlEnvoyer(op) {
+  if (dlPartage()) { _dlWS.send(JSON.stringify({ type: 'op', op: op })); return true; }
+  var r = VSDraft.apply(_dlState, op, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return false; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+  return true;
+}
+
+function dlBarreSalleHtml() {
+  return '<span id="dl-presence" class="dl-presence"></span>'
+    + (dlPartage()
+      ? '<button class="btn btn-ghost btn-sm" onclick="dlDisconnect();dlRender(_dlMatch)">Quitter la salle</button>'
+      : '<button class="btn btn-cta btn-sm" onclick="dlConnect(_dlMatch)">Ouvrir la salle partagée</button>');
+}
+
+function dlRenderPresence() {
+  var el = document.getElementById('dl-presence'); if (!el) return;
+  el.innerHTML = dlPartage()
+    ? '<span class="dl-live">En salle</span>' + _dlPeers.map(function (u) {
+        return '<span class="dl-peer" style="border-color:' + dlCouleur(u) + '">' + anEsc(u) + '</span>'; }).join('')
+    : '<span class="dl-solo">Solo</span>';
+}
+
+/* Curseurs des autres coachs. Position en POURCENTAGE du plateau : chacun ayant une
+   fenêtre de taille différente, des pixels bruts pointeraient à côté. */
+var DL_COULEURS = ['#2DD4A7', '#4A9EFF', '#E6B23E', '#C084FC', '#FF7A5A'];
+function dlCouleur(nom) {
+  var h = 0; for (var i = 0; i < String(nom).length; i++) h = (h * 31 + String(nom).charCodeAt(i)) % 997;
+  return DL_COULEURS[h % DL_COULEURS.length];
+}
+
+function dlBindCursor() {
+  var zone = document.getElementById('ss-live'); if (!zone || zone._dlBound) return;
+  zone._dlBound = true;
+  zone.addEventListener('mousemove', function (e) {
+    if (!dlPartage()) return;
+    var t = Date.now(); if (t - _dlLastCursor < 50) return;   // ~20 envois/s suffisent à l'œil
+    _dlLastCursor = t;
+    var r = zone.getBoundingClientRect();
+    try {
+      _dlWS.send(JSON.stringify({ type: 'cursor', x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height }));
+    } catch (_) {}
+  });
+}
+
+function dlShowCursor(nom, x, y) {
+  if (!nom) return;
+  var zone = document.getElementById('dl-cursor-layer');
+  var repere = document.getElementById('ss-live');
+  if (!zone || !repere) return;
+  var el = _dlCursors[nom];
+  if (!el || !el.isConnected) {
+    el = document.createElement('div');
+    el.className = 'dl-cursor';
+    el.innerHTML = '<svg width="14" height="18" viewBox="0 0 14 18"><path d="M1 1l11 7-5 1.4L5.6 15z" fill="' + dlCouleur(nom) + '" stroke="rgba(0,0,0,.45)"/></svg>'
+      + '<span style="background:' + dlCouleur(nom) + '">' + anEsc(nom) + '</span>';
+    zone.appendChild(el);
+    _dlCursors[nom] = el;
+  }
+  var r = repere.getBoundingClientRect();
+  el.style.transform = 'translate(' + (x * r.width) + 'px,' + (y * r.height) + 'px)';
+  clearTimeout(el._t);
+  // Un curseur immobile depuis 10 s appartient sans doute à un onglet fermé.
+  el._t = setTimeout(function () { el.remove(); delete _dlCursors[nom]; }, 10000);
+}
+
 function dlStopTimer() { if (_dlTimer) { clearInterval(_dlTimer); _dlTimer = null; } }
 
 /* ── Scouting pendant la draft : c'est ce qui distingue l'outil d'un simulateur
@@ -7142,8 +7266,18 @@ function dlRender(m) {
       if (_dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
     }).catch(function () {});
   }
-  box.innerHTML = (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
+  /* Le contenu re-généré et les curseurs vivent dans deux couches SÉPARÉES : sans ça,
+     chaque pick reconstruirait le HTML et effacerait les curseurs des autres coachs,
+     qui ne réapparaîtraient qu'au prochain mouvement de souris. */
+  if (!document.getElementById('dl-board')) {
+    box.innerHTML = '<div id="dl-board"></div><div id="dl-cursor-layer"></div>';
+  }
+  document.getElementById('dl-board').innerHTML =
+    (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
+
   if (_dlState.status === 'running') { dlRenderGrid(); dlStartTimer(); } else dlStopTimer();
+  dlRenderPresence();
+  dlBindCursor();
 }
 
 function dlLobbyHtml() {
@@ -7164,6 +7298,9 @@ function dlLobbyHtml() {
       + '<label class="dl-f"><span>Temps par action</span><input id="dl-turn" type="number" min="5" max="120" value="' + s.format.turnSeconds + '"></label>'
       + '<label class="dl-f"><span>Réserve par équipe</span><input id="dl-res" type="number" min="0" max="300" value="' + s.format.reserveSeconds + '"></label>'
       + '<button class="btn btn-cta" onclick="dlStart()">Lancer la draft</button>'
+      // La salle s'ouvre AVANT le lancement : sinon un seul coach choisirait le côté et
+      // la priorité, et les autres arriveraient devant le fait accompli.
+      + '<span class="dl-lobby-salle">' + dlBarreSalleHtml() + '</span>'
     + '</div>'
     + '<div class="faint" style="font-size:11px;margin-top:8px">30 s par action est le standard du Tournament Draft. La réserve exacte dépend de la ligue — à confirmer auprès du staff.</div>'
     + '</div>';
@@ -7186,6 +7323,7 @@ function dlBoardHtml() {
   h += '<div class="dl-acts">';
   if (!step && s.status !== 'done') h += '<button class="btn btn-cta btn-sm" onclick="dlNextGame()">Game suivante</button>';
   if (s.format.bo === 1) h += '<button class="btn btn-ghost btn-sm" onclick="dlReplay()">Rejouer</button>';
+  h += dlBarreSalleHtml();
   h += '<button class="btn btn-ghost btn-sm" onclick="dlQuit()">Quitter</button>';
   h += '</div></div>';
 
@@ -7294,46 +7432,24 @@ async function dlRenderGrid() {
   }
 }
 
-function dlConfigure(side) {
-  var r = VSDraft.apply(_dlState, { type: 'configure', firstSide: side }, Date.now());
-  if (r.error) { showToast(r.error, 'warning'); return; }
-  r.state._matchId = _dlState._matchId; _dlState = r.state;
-  dlRender(_dlMatch);
-}
+function dlConfigure(side) { dlEnvoyer({ type: 'configure', firstSide: side }); }
 
 function dlStart() {
   var t = parseInt((document.getElementById('dl-turn') || {}).value, 10);
   var rs = parseInt((document.getElementById('dl-res') || {}).value, 10);
-  var cfg = VSDraft.apply(_dlState, { type: 'configure', turnSeconds: isNaN(t) ? 30 : t, reserveSeconds: isNaN(rs) ? 0 : rs }, Date.now());
-  var r = VSDraft.apply(cfg.state, { type: 'start' }, Date.now());
-  if (r.error) { showToast(r.error, 'warning'); return; }
-  r.state._matchId = _dlState._matchId; _dlState = r.state;
-  dlRender(_dlMatch);
+  dlEnvoyer({ type: 'configure', turnSeconds: isNaN(t) ? 30 : t, reserveSeconds: isNaN(rs) ? 0 : rs });
+  dlEnvoyer({ type: 'start' });
 }
 
 function dlSelect(champKey) {
   var step = VSDraft.currentStep(_dlState); if (!step) return;
-  var r = VSDraft.apply(_dlState, { type: 'select', by: step.by, champion: champKey }, Date.now());
-  if (r.error) { showToast(r.error, 'warning'); return; }
-  r.state._matchId = _dlState._matchId; _dlState = r.state;
-  dlRender(_dlMatch);
+  dlEnvoyer({ type: 'select', by: step.by, champion: champKey });
 }
 
-function dlNextGame() {
-  var r = VSDraft.apply(_dlState, { type: 'nextGame' }, Date.now());
-  if (r.error) { showToast(r.error, 'warning'); return; }
-  r.state._matchId = _dlState._matchId; _dlState = r.state;
-  dlRender(_dlMatch);
-}
+function dlNextGame() { dlEnvoyer({ type: 'nextGame' }); }
+function dlReplay() { dlEnvoyer({ type: 'replay' }); }
 
-function dlReplay() {
-  var r = VSDraft.apply(_dlState, { type: 'replay' }, Date.now());
-  if (r.error) { showToast(r.error, 'warning'); return; }
-  r.state._matchId = _dlState._matchId; _dlState = r.state;
-  dlRender(_dlMatch);
-}
-
-function dlQuit() { dlStopTimer(); _dlState = null; dlRender(_dlMatch); }
+function dlQuit() { dlStopTimer(); dlDisconnect(); _dlState = null; dlRender(_dlMatch); }
 
 /* Le chrono n'est pas synchronisé en continu : le moteur donne une ÉCHÉANCE absolue et
    l'affichage décompte localement. Aucune dérive possible, et c'est ce qui permettra au
@@ -7349,11 +7465,14 @@ function dlStartTimer() {
     el.textContent = Math.ceil(reste / 1000) + 's';
     el.classList.toggle('urgent', reste <= 5000);
     if (reste <= 0) {
-      var r = VSDraft.apply(_dlState, { type: 'timeout' }, Date.now());
-      if (!r.error) {
-        r.state._matchId = _dlState._matchId; _dlState = r.state;
-        dlRender(_dlMatch);
+      // En salle, un seul participant déclenche l'expiration — sinon chaque navigateur
+      // enverrait la sienne et les autres recevraient une erreur inutile. Le serveur
+      // rejetterait les doublons de toute façon, mais autant ne pas les émettre.
+      if (dlPartage()) {
+        var moi = (typeof vsAccount === 'function') ? vsAccount() : '';
+        if (_dlPeers.length && _dlPeers.slice().sort()[0] !== moi) return;
       }
+      dlEnvoyer({ type: 'timeout' });
     }
   }, 250);
 }
