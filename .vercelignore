@@ -23,3 +23,6 @@ _maquette.html
 _landing.css
 _scope_landing.js
 VisionScore - Standalone.html
+
+# Serveur temps reel (deploye sur Cloudflare, pas sur Vercel)
+ws-server/

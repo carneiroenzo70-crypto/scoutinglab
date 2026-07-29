@@ -15,3 +15,9 @@ commercial/
 # Secrets locaux — ne jamais commiter (les vraies valeurs vivent dans Vercel)
 .env
 .env.*
+
+# Dependances du serveur temps reel
+node_modules/
+
+# Secrets locaux du serveur temps reel
+ws-server/.dev.vars

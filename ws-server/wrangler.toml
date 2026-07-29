@@ -1,0 +1,14 @@
+name = "visionscore-draft"
+main = "src/index.js"
+compatibility_date = "2026-07-01"
+
+# Une salle de draft = un Durable Object. Les connexions WebSocket restent ouvertes
+# pendant l'hibernation : une salle inactive ne coûte aucun temps de calcul et ne
+# déconnecte personne — pas de réveil à froid en pleine draft chronométrée.
+[[durable_objects.bindings]]
+name = "DRAFT_ROOMS"
+class_name = "DraftRoom"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["DraftRoom"]
