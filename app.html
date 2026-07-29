@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <link rel="icon" type="image/svg+xml" href="/assets/logos/favicon.svg">
 <title>VisionScore — Scouting League of Legends</title>
+<!-- Règles de draft compétitive. Module partagé : le même fichier tourne côté serveur
+     WebSocket, qui applique les opérations de façon autoritaire (cf. draft-engine.js). -->
+<script src="/draft-engine.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style id="vs-hifi-type">
@@ -615,6 +618,50 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
 .btn-xs{ height:26px; padding:0 10px; font-size:11px; }
+/* ── Draft live : lobby, plateau, chrono ── */
+.dl-opts{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+.dl-opt{ flex:1; min-width:210px; text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, background .15s; }
+.dl-opt:hover{ border-color:var(--vs-emerald-500); }
+.dl-opt.on{ border-color:var(--vs-emerald-400); background:rgba(45,212,167,.1); }
+.dl-opt-t{ display:block; font-weight:800; font-size:13.5px; color:var(--vs-fg-1); }
+.dl-opt-s{ display:block; font-size:11px; color:var(--vs-fg-3); margin-top:2px; }
+body:not(.theme-dark) .dl-opt{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.14); }
+.dl-lobby-row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
+.dl-f{ display:flex; flex-direction:column; gap:4px; }
+.dl-f span{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-f input{ width:120px; height:36px; padding:0 10px; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-1); font-family:var(--font-mono); }
+body:not(.theme-dark) .dl-f input{ background:#fff; border-color:rgba(31,71,64,.16); }
+.dl-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
+.dl-game{ font-family:var(--font-display); font-weight:800; font-size:16px; color:var(--vs-fg-1); }
+.dl-turn{ font-size:12px; font-weight:800; letter-spacing:.04em; padding:5px 12px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); }
+.dl-turn.dl-blue{ color:#7DB3FF; border-color:rgba(74,158,232,.5); background:rgba(74,158,232,.1); }
+.dl-turn.dl-red{ color:var(--vs-red-400); border-color:rgba(255,90,51,.5); background:rgba(255,51,0,.08); }
+.dl-clock{ font-family:var(--font-mono); font-weight:800; font-size:26px; color:var(--vs-emerald-300); min-width:64px; }
+.dl-clock.urgent{ color:var(--vs-red-400); }
+.dl-acts{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+.dl-done{ font-size:12.5px; color:var(--vs-emerald-300); margin-bottom:10px; font-weight:700; }
+.dl-sides{ display:flex; gap:12px; flex-wrap:wrap; }
+.dl-side{ flex:1; min-width:270px; border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px; background:rgba(4,18,15,.22); }
+.dl-side-blue{ border-left:3px solid rgba(74,158,232,.65); }
+.dl-side-red{ border-left:3px solid rgba(255,90,51,.6); }
+.dl-side.actif{ border-color:var(--vs-emerald-500); box-shadow:0 0 0 1px rgba(45,212,167,.25); }
+body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
+.dl-side-h{ display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
+.dl-side-n{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--vs-fg-1); }
+.dl-side-o{ font-size:10.5px; color:var(--vs-fg-3); }
+.dl-row{ display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.dl-row-l{ width:38px; flex:none; font-size:9.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-slots{ display:flex; gap:5px; flex-wrap:wrap; }
+.dl-slot{ width:40px; height:40px; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.35); overflow:hidden; display:grid; place-items:center; flex:none; }
+.dl-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+.dl-slot-ban img{ filter:grayscale(1) brightness(.6); }
+.dl-slot.pending{ border-color:var(--vs-emerald-400); box-shadow:0 0 0 2px rgba(45,212,167,.22); }
+.dl-slot-x{ color:var(--vs-fg-3); font-size:12px; }
+.dl-fearless{ margin-top:12px; padding-top:10px; border-top:1px solid var(--vs-forest-600); }
+.dl-fl-list{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.dl-fl-list img{ width:26px; height:26px; border-radius:6px; filter:grayscale(1) brightness(.55); }
+.ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
+
 /* ── Roster (refonte charte) : héro d'équipe + cartes de postes ── */
 .rs-toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
 .rs-iconbtn{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, color .15s, background .15s; }
@@ -6588,7 +6635,22 @@ async function ssChampList() {
     var v = await ddVerLoad();
     var r = await fetch('https://ddragon.leagueoflegends.com/cdn/' + v + '/data/en_US/champion.json');
     var j = await r.json();
-    var list = Object.keys(j.data || {}).map(function (k) { var c = j.data[k]; return { key: c.id, name: c.name, role: SS_CHAMP_ROLE[c.name] || null }; }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+    // Data Dragon publie des variantes de mode de jeu sous des clés dérivées
+    // ("Jade_Ahri" à côté de "Ahri") : ~60 doublons sur 233 entrées. Les garder
+    // afficherait deux fois le même champion dans la grille, et surtout bannir
+    // « Ahri » ne bloquerait pas « Jade_Ahri » — on pourrait piker un champion
+    // déjà banni. On ne garde donc qu'une entrée par NOM de champion, en
+    // préférant la clé canonique (celle sans préfixe).
+    var parNom = {};
+    Object.keys(j.data || {}).forEach(function (k) {
+      var c = j.data[k];
+      var existant = parNom[c.name];
+      if (!existant || (existant.key.indexOf('_') >= 0 && c.id.indexOf('_') < 0)) {
+        parNom[c.name] = { key: c.id, name: c.name, role: SS_CHAMP_ROLE[c.name] || null };
+      }
+    });
+    var list = Object.keys(parNom).map(function (n) { return parNom[n]; })
+      .sort(function (a, b) { return a.name.localeCompare(b.name); });
     window._ssChamps = list; return list;
   } catch (_) { return []; }
 }
@@ -6826,7 +6888,7 @@ function ssRenderMatchDetail(root, id) {
   h += '<div class="card ss-detail-head"><div class="ss-dh-teams">' + ssLogoImg(team, 44) + '<div class="ss-dh-vs">vs</div>' + ssLogoImg(m.opp, 44) + '<div style="min-width:0"><div class="ss-dh-name">' + anEsc((m.opp && m.opp.name) || '—') + '</div><div class="faint" style="font-size:12px">' + anEsc(m.competition || '') + ' · BO' + (m.bo || 1) + '</div></div></div>'
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="faint" style="font-size:12.5px;text-transform:capitalize">' + anEsc(dateStr) + '</span><button class="btn btn-ghost btn-xs" onclick="ssDeleteMatch(\'' + m.id + '\')" style="color:var(--vs-red-400)">Supprimer</button></div></div>';
   // Barre d'onglets
-  var tabDef = [{ k: 'draft', l: 'Préparation de draft' }, { k: 'prematch', l: 'Avant-match' }];
+  var tabDef = [{ k: 'draft', l: 'Préparation de draft' }, { k: 'live', l: 'Draft live' }, { k: 'prematch', l: 'Avant-match' }];
   if (isPast) tabDef.push({ k: 'result', l: 'Résultat' });
   h += '<div class="ss-mtabs">' + tabDef.map(function (t) {
     return '<button class="ss-mtab' + (t.k === tab ? ' on' : '') + '" onclick="ssSetTab(\'' + t.k + '\')">' + t.l + '</button>';
@@ -6835,6 +6897,10 @@ function ssRenderMatchDetail(root, id) {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3></div>'
       + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Sélectionne un emplacement (ban ou pick) puis un champion dans le pool. Le pool suit le patch en cours, tous les champions y sont. Clic droit sur un emplacement pour le vider.</p>'
       + '<div id="ss-draft"></div></div>';
+  } else if (tab === 'live') {
+    h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Draft live <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ((m.bo || 1) > 1 ? ' · fearless' : '') + '</span></h3></div>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Simulation à la séquence officielle, chronométrée. Depuis 2026 le côté et l\'ordre de draft se choisissent séparément — les quatre combinaisons sont donc jouables.</p>'
+      + '<div id="ss-live"></div></div>';
   } else if (tab === 'prematch') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div>'
       + '<p class="faint" style="font-size:11.5px;margin:-4px 0 12px;line-height:1.55">Chargé automatiquement depuis la base compét. Corrige un nom si l\'équipe a changé de titulaire — c\'est ce roster qui alimente les matchups ci-dessous.</p>'
@@ -6851,6 +6917,8 @@ function ssRenderMatchDetail(root, id) {
   }
   root.innerHTML = h;
   if (tab === 'draft') ssRenderDraft(m);
+  if (tab === 'live') dlRender(m);
+  if (tab !== 'live') dlStopTimer();   // quitter l'onglet arrête le chrono
   // Roster adverse : chargement AUTOMATIQUE (plus de saisie manuelle nécessaire).
   if (tab === 'prematch') {
     // Migration silencieuse : un roster chargé avant l'ajout du champ `link`
@@ -6975,6 +7043,209 @@ async function ssRenderChampGrid() {
   if (info) info.textContent = f.length ? (f.length + ' champions') : '';
 }
 function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; var dr = ssDraftEnsure(m); dr.scenarios.push(ssNewScenario(m.bo, 'Scénario ' + (dr.scenarios.length + 1))); dr.active = dr.scenarios.length - 1; ssWrite(d); ssRenderDraft(m); }
+
+/* ══════════════════════════════════════════════════════════════
+   DRAFT LIVE — simulation chronométrée aux règles de compétition.
+   Les règles vivent dans draft-engine.js (module partagé avec le futur serveur
+   temps réel) ; ce bloc n'est QUE de l'affichage. L'état n'est pas persisté :
+   c'est un entraînement, pas une donnée de préparation.
+   ══════════════════════════════════════════════════════════════ */
+var _dlState = null, _dlMatch = null, _dlTimer = null, _dlQ = '';
+
+function dlStopTimer() { if (_dlTimer) { clearInterval(_dlTimer); _dlTimer = null; } }
+
+function dlRender(m) {
+  _dlMatch = m;
+  var box = document.getElementById('ss-live'); if (!box) return;
+  if (typeof VSDraft === 'undefined') { box.innerHTML = '<div class="faint" style="font-size:12px">Moteur de draft indisponible — recharge la page.</div>'; return; }
+  if (!_dlState || _dlState._matchId !== m.id) {
+    _dlState = VSDraft.createState({ bo: m.bo || 1, firstSide: 'blue' });
+    _dlState._matchId = m.id;
+  }
+  box.innerHTML = (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
+  if (_dlState.status === 'running') { dlRenderGrid(); dlStartTimer(); } else dlStopTimer();
+}
+
+function dlLobbyHtml() {
+  var s = _dlState, opp = (_dlMatch && _dlMatch.opp && _dlMatch.opp.name) || 'l\'adversaire';
+  var carte = function (side, titre, sous) {
+    var on = s.sides.first === side;
+    return '<button class="dl-opt' + (on ? ' on' : '') + '" onclick="dlConfigure(\'' + side + '\')">'
+      + '<span class="dl-opt-t">' + titre + '</span><span class="dl-opt-s">' + sous + '</span></button>';
+  };
+  return '<div class="dl-lobby">'
+    + '<div class="label" style="margin-bottom:8px">Qui drafte en premier ?</div>'
+    + '<p class="faint" style="font-size:11.5px;margin:0 0 10px;line-height:1.55">Depuis First Selection (2026), le côté de la carte et l\'ordre de draft ne sont plus liés : préparez les quatre combinaisons contre <strong style="color:var(--vs-fg-1)">' + anEsc(opp) + '</strong>.</p>'
+    + '<div class="dl-opts">'
+      + carte('blue', 'Bleu drafte en premier', 'first pick bleu · last pick rouge')
+      + carte('red', 'Rouge drafte en premier', 'first pick rouge · last pick bleu')
+    + '</div>'
+    + '<div class="dl-lobby-row">'
+      + '<label class="dl-f"><span>Temps par action</span><input id="dl-turn" type="number" min="5" max="120" value="' + s.format.turnSeconds + '"></label>'
+      + '<label class="dl-f"><span>Réserve par équipe</span><input id="dl-res" type="number" min="0" max="300" value="' + s.format.reserveSeconds + '"></label>'
+      + '<button class="btn btn-cta" onclick="dlStart()">Lancer la draft</button>'
+    + '</div>'
+    + '<div class="faint" style="font-size:11px;margin-top:8px">30 s par action est le standard du Tournament Draft. La réserve exacte dépend de la ligue — à confirmer auprès du staff.</div>'
+    + '</div>';
+}
+
+// Le camp affiché à gauche est toujours le bleu ; `first`/`second` désignent l'ordre.
+function dlRoleOf(side) { return _dlState.sides.first === side ? 'first' : 'second'; }
+
+function dlBoardHtml() {
+  var s = _dlState, g = s.games[s.gameIndex], step = VSDraft.currentStep(s);
+  var h = '<div class="dl-top">';
+  h += '<div class="dl-game">Game ' + (s.gameIndex + 1) + '<span class="faint"> / ' + s.format.bo + '</span></div>';
+  if (step) {
+    var qui = step.by === 'first' ? s.sides.first : s.sides.second;
+    h += '<div class="dl-turn dl-' + qui + '">' + (step.type === 'ban' ? 'Ban' : 'Pick') + ' — ' + (qui === 'blue' ? 'Bleu' : 'Rouge') + '</div>';
+    h += '<div class="dl-clock" id="dl-clock">--</div>';
+  } else {
+    h += '<div class="dl-turn">Game terminée</div>';
+  }
+  h += '<div class="dl-acts">';
+  if (!step && s.status !== 'done') h += '<button class="btn btn-cta btn-sm" onclick="dlNextGame()">Game suivante</button>';
+  if (s.format.bo === 1) h += '<button class="btn btn-ghost btn-sm" onclick="dlReplay()">Rejouer</button>';
+  h += '<button class="btn btn-ghost btn-sm" onclick="dlQuit()">Quitter</button>';
+  h += '</div></div>';
+
+  if (s.status === 'done') h += '<div class="dl-done">Draft terminée.</div>';
+
+  h += '<div class="dl-sides">' + dlSideHtml('blue', g) + dlSideHtml('red', g) + '</div>';
+
+  if (s.format.fearless && s.usedChampions.length) {
+    h += '<div class="dl-fearless"><span class="label">Fearless — déjà joués (' + s.usedChampions.length + ')</span>'
+      + '<div class="dl-fl-list">' + s.usedChampions.map(function (c) {
+        return '<img src="' + ssChampImg(c) + '" alt="' + anEsc(c) + '" title="' + anEsc(c) + '">';
+      }).join('') + '</div></div>';
+  }
+
+  h += '<div class="ss-pool-wrap" style="margin-top:14px"><div class="between" style="margin-bottom:8px;gap:10px;flex-wrap:wrap">'
+    + '<span class="faint" style="font-size:11.5px" id="dl-info"></span>'
+    + '<input id="dl-q" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(_dlQ) + '" oninput="_dlQ=this.value;dlRenderGrid()"></div>'
+    + '<div id="dl-grid" class="ss-champgrid"></div></div>';
+  return h;
+}
+
+function dlSideHtml(side, g) {
+  var role = dlRoleOf(side), s = _dlState;
+  var step = VSDraft.currentStep(s);
+  var actif = step && step.by === role;
+  // Chaque camp n'affiche QUE ses propres actions : on filtre sur le rôle
+  // (1er/2nd drafteur), pas seulement sur le type.
+  var bans = [], picks = [];
+  g.actions.forEach(function (a) { if (a.by !== role) return; (a.type === 'ban' ? bans : picks).push(a); });
+  var attendus = { ban: 5, pick: 5 };
+  var slot = function (a, type, estProchain) {
+    if (!a) return '<div class="dl-slot dl-slot-' + type + (estProchain ? ' pending' : '') + '"></div>';
+    var c = a.champion;
+    return '<div class="dl-slot dl-slot-' + type + (c ? '' : ' vide') + '">'
+      + (c ? '<img src="' + ssChampImg(c) + '" alt="' + anEsc(c) + '" title="' + anEsc(c) + '">' : '<span class="dl-slot-x">—</span>')
+      + '</div>';
+  };
+  var ligne = function (type, liste) {
+    // Le liseré « prochain » ne marque que le PREMIER emplacement vide, et
+    // seulement si c'est bien à ce camp de jouer ce type d'action.
+    var enAttente = actif && step.type === type;
+    var out = '';
+    for (var i = 0; i < attendus[type]; i++) {
+      out += slot(liste[i], type, enAttente && i === liste.length);
+    }
+    return out;
+  };
+  var mine = (side === 'blue');
+  return '<div class="dl-side dl-side-' + side + (actif ? ' actif' : '') + '">'
+    + '<div class="dl-side-h"><span class="dl-side-n">' + (mine ? 'Bleu' : 'Rouge') + '</span>'
+    + '<span class="dl-side-o">' + (role === 'first' ? '1er drafteur' : '2nd drafteur') + '</span></div>'
+    + '<div class="dl-row"><span class="dl-row-l">Bans</span><div class="dl-slots">' + ligne('ban', bans) + '</div></div>'
+    + '<div class="dl-row"><span class="dl-row-l">Picks</span><div class="dl-slots">' + ligne('pick', picks) + '</div></div>'
+    + '</div>';
+}
+
+async function dlRenderGrid() {
+  var grid = document.getElementById('dl-grid'); if (!grid) return;
+  var s = _dlState, step = VSDraft.currentStep(s);
+  var indispo = VSDraft.unavailable(s);
+  var list = await ssChampList();
+  var q = (_dlQ || '').toLowerCase();
+  var f = list.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
+  grid.innerHTML = f.map(function (c) {
+    var off = !!indispo[c.key];
+    return '<button class="ss-champ' + (off ? ' dl-off' : '') + '"' + (off || !step ? ' disabled' : '')
+      + ' onclick="dlSelect(\'' + c.key + '\')" title="' + anEsc(c.name) + (off ? ' — indisponible' : '') + '">'
+      + '<img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>';
+  }).join('');
+  var info = document.getElementById('dl-info');
+  if (info) {
+    info.textContent = step
+      ? ((step.type === 'ban' ? 'Ban' : 'Pick') + ' ' + (step.index + 1) + '/20 — clique un champion.')
+      : 'Aucune action attendue.';
+  }
+}
+
+function dlConfigure(side) {
+  var r = VSDraft.apply(_dlState, { type: 'configure', firstSide: side }, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+}
+
+function dlStart() {
+  var t = parseInt((document.getElementById('dl-turn') || {}).value, 10);
+  var rs = parseInt((document.getElementById('dl-res') || {}).value, 10);
+  var cfg = VSDraft.apply(_dlState, { type: 'configure', turnSeconds: isNaN(t) ? 30 : t, reserveSeconds: isNaN(rs) ? 0 : rs }, Date.now());
+  var r = VSDraft.apply(cfg.state, { type: 'start' }, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+}
+
+function dlSelect(champKey) {
+  var step = VSDraft.currentStep(_dlState); if (!step) return;
+  var r = VSDraft.apply(_dlState, { type: 'select', by: step.by, champion: champKey }, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+}
+
+function dlNextGame() {
+  var r = VSDraft.apply(_dlState, { type: 'nextGame' }, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+}
+
+function dlReplay() {
+  var r = VSDraft.apply(_dlState, { type: 'replay' }, Date.now());
+  if (r.error) { showToast(r.error, 'warning'); return; }
+  r.state._matchId = _dlState._matchId; _dlState = r.state;
+  dlRender(_dlMatch);
+}
+
+function dlQuit() { dlStopTimer(); _dlState = null; dlRender(_dlMatch); }
+
+/* Le chrono n'est pas synchronisé en continu : le moteur donne une ÉCHÉANCE absolue et
+   l'affichage décompte localement. Aucune dérive possible, et c'est ce qui permettra au
+   temps réel de fonctionner sans échange permanent. */
+function dlStartTimer() {
+  dlStopTimer();
+  _dlTimer = setInterval(function () {
+    var el = document.getElementById('dl-clock');
+    var step = VSDraft.currentStep(_dlState);
+    if (!el || !step) { dlStopTimer(); return; }
+    var g = _dlState.games[_dlState.gameIndex];
+    var reste = Math.max(0, g.phaseEndsAt - Date.now());
+    el.textContent = Math.ceil(reste / 1000) + 's';
+    el.classList.toggle('urgent', reste <= 5000);
+    if (reste <= 0) {
+      var r = VSDraft.apply(_dlState, { type: 'timeout' }, Date.now());
+      if (!r.error) {
+        r.state._matchId = _dlState._matchId; _dlState = r.state;
+        dlRender(_dlMatch);
+      }
+    }
+  }, 250);
+}
 function ssSetScenario(mid, i) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; ssDraftEnsure(m); m.draft.active = i; ssWrite(d); ssRenderDraft(m); }
 // ── Résultat réel + draft réelle des matchs passés (base compét) ──
 // Pourquoi pas Flashscore / un autre site de score : aucun d'eux n'expose d'API
