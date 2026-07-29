@@ -661,6 +661,19 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .dl-fl-list{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
 .dl-fl-list img{ width:26px; height:26px; border-radius:6px; filter:grayscale(1) brightness(.55); }
 .ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
+.ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
+.dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
+.dl-scout{ margin-top:14px; padding-top:12px; border-top:1px solid var(--vs-forest-600); }
+.dl-sc-list{ display:flex; flex-direction:column; gap:5px; margin-top:8px; }
+.dl-sc-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; font-size:11.5px; }
+.dl-sc-n{ font-weight:800; color:var(--vs-fg-1); min-width:86px; }
+.dl-sc-pool{ display:flex; gap:5px; flex-wrap:wrap; }
+.dl-sc-c{ font-size:10.5px; color:var(--vs-fg-2); background:rgba(45,212,167,.08); border:1px solid var(--vs-forest-600); border-radius:6px; padding:2px 7px; }
+.dl-sc-c b{ color:var(--vs-fg-1); font-weight:700; }
+body:not(.theme-dark) .dl-sc-c{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.12); }
+.dl-sc-prep{ margin-top:9px; }
+.dl-sc-prep-l{ display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+.dl-sc-prep-l img{ width:28px; height:28px; border-radius:6px; border:1px solid rgba(230,178,62,.5); }
 
 /* ── Roster (refonte charte) : héro d'équipe + cartes de postes ── */
 .rs-toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
@@ -7054,6 +7067,64 @@ var _dlState = null, _dlMatch = null, _dlTimer = null, _dlQ = '';
 
 function dlStopTimer() { if (_dlTimer) { clearInterval(_dlTimer); _dlTimer = null; } }
 
+/* ── Scouting pendant la draft : c'est ce qui distingue l'outil d'un simulateur
+   générique. Les pools adverses viennent des stats compétitives déjà chargées par
+   l'onglet Avant-match ; rien n'est inventé, un pool absent reste absent. ── */
+// Leaguepedia écrit « K'Sante », Data Dragon « KSante » : on compare sur une forme
+// normalisée, sinon la moitié des menaces ne seraient jamais reconnues.
+function dlNorm(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+
+function dlThreats() {
+  var m = _dlMatch; if (!m) return {};
+  var cache = (window._ssCompetCache || {})[m.id]; if (!cache) return {};
+  var out = {};
+  (m.oppRoster || []).forEach(function (p) {
+    var s = cache[ssCompetKey(p.link || p.name)];
+    if (!s || s === SS_ERR || !s.champPool) return;
+    s.champPool.forEach(function (c) {
+      var k = dlNorm(c.name);
+      (out[k] = out[k] || []).push({ joueur: p.name, role: p.role, games: c.games, wr: c.wr });
+    });
+  });
+  return out;
+}
+
+// Bans que le staff avait préparés dans l'onglet « Préparation de draft ».
+function dlBansPrepares() {
+  var m = _dlMatch; if (!m || !m.draft || !m.draft.scenarios) return [];
+  var sc = m.draft.scenarios[m.draft.active || 0]; if (!sc || !sc.games[0]) return [];
+  var g0 = sc.games[0];
+  return (g0.bb || []).concat(g0.rb || []).filter(Boolean);
+}
+
+function dlScoutHtml() {
+  var m = _dlMatch;
+  var roster = (m && m.oppRoster) || [];
+  if (!roster.length) {
+    return '<div class="dl-scout"><span class="label">Scouting adverse</span>'
+      + '<div class="faint" style="font-size:11.5px;margin-top:6px">Aucun roster adverse chargé. Ouvre l\'onglet « Avant-match » une fois pour le récupérer — les pools de champions s\'afficheront ici.</div></div>';
+  }
+  var cache = (window._ssCompetCache || {})[m.id] || {};
+  var lignes = roster.map(function (p) {
+    var s = cache[ssCompetKey(p.link || p.name)];
+    var pool = (s && s !== SS_ERR && s.champPool) ? s.champPool.slice(0, 4) : null;
+    return '<div class="dl-sc-row"><span class="rs-rolechip">' + anEsc(p.role || '?') + '</span>'
+      + '<span class="dl-sc-n">' + anEsc(p.name) + '</span>'
+      + '<span class="dl-sc-pool">' + (pool && pool.length
+          ? pool.map(function (c) { return '<span class="dl-sc-c"><b>' + anEsc(c.name) + '</b> ' + c.games + 'g·' + c.wr + '%</span>'; }).join('')
+          : '<span class="faint" style="font-size:10.5px">pool non chargé</span>') + '</span></div>';
+  }).join('');
+  var prepares = dlBansPrepares();
+  var h = '<div class="dl-scout"><span class="label">Scouting adverse — ' + anEsc((m.opp && m.opp.name) || '') + '</span>'
+    + '<div class="dl-sc-list">' + lignes + '</div>';
+  if (prepares.length) {
+    h += '<div class="dl-sc-prep"><span class="label" style="font-size:9.5px">Bans préparés</span><div class="dl-sc-prep-l">'
+      + prepares.map(function (k) { return '<img src="' + ssChampImg(k) + '" alt="' + anEsc(k) + '" title="' + anEsc(k) + ' — prévu dans ton scénario">'; }).join('')
+      + '</div></div>';
+  }
+  return h + '</div>';
+}
+
 function dlRender(m) {
   _dlMatch = m;
   var box = document.getElementById('ss-live'); if (!box) return;
@@ -7061,6 +7132,14 @@ function dlRender(m) {
   if (!_dlState || _dlState._matchId !== m.id) {
     _dlState = VSDraft.createState({ bo: m.bo || 1, firstSide: 'blue' });
     _dlState._matchId = m.id;
+  }
+  // Les pools adverses alimentent le panneau de scouting et le marquage de la grille.
+  // Chargement en arrière-plan : la draft reste utilisable même si la base compét
+  // est lente ou indisponible, le panneau se remplira ensuite.
+  if ((m.oppRoster || []).length && !(window._ssCompetCache || {})[m.id] && typeof ssLoadCompetStats === 'function') {
+    ssLoadCompetStats(m.id).then(function () {
+      if (_dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
+    }).catch(function () {});
   }
   box.innerHTML = (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
   if (_dlState.status === 'running') { dlRenderGrid(); dlStartTimer(); } else dlStopTimer();
@@ -7112,6 +7191,8 @@ function dlBoardHtml() {
   if (s.status === 'done') h += '<div class="dl-done">Draft terminée.</div>';
 
   h += '<div class="dl-sides">' + dlSideHtml('blue', g) + dlSideHtml('red', g) + '</div>';
+
+  h += dlScoutHtml();
 
   if (s.format.fearless && s.usedChampions.length) {
     h += '<div class="dl-fearless"><span class="label">Fearless — déjà joués (' + s.usedChampions.length + ')</span>'
@@ -7166,14 +7247,28 @@ async function dlRenderGrid() {
   var grid = document.getElementById('dl-grid'); if (!grid) return;
   var s = _dlState, step = VSDraft.currentStep(s);
   var indispo = VSDraft.unavailable(s);
+  var menaces = dlThreats();
   var list = await ssChampList();
   var q = (_dlQ || '').toLowerCase();
   var f = list.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
+  // Les champions joués par l'adversaire remontent en tête : en phase de ban, c'est
+  // exactement la liste que le coach cherche.
+  f.sort(function (a, b) {
+    var ma = menaces[dlNorm(a.name)], mb = menaces[dlNorm(b.name)];
+    var ga = ma ? ma.reduce(function (t, x) { return t + x.games; }, 0) : -1;
+    var gb = mb ? mb.reduce(function (t, x) { return t + x.games; }, 0) : -1;
+    return gb - ga || a.name.localeCompare(b.name);
+  });
   grid.innerHTML = f.map(function (c) {
     var off = !!indispo[c.key];
-    return '<button class="ss-champ' + (off ? ' dl-off' : '') + '"' + (off || !step ? ' disabled' : '')
-      + ' onclick="dlSelect(\'' + c.key + '\')" title="' + anEsc(c.name) + (off ? ' — indisponible' : '') + '">'
-      + '<img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>';
+    var mz = menaces[dlNorm(c.name)];
+    var titre = anEsc(c.name) + (off ? ' — indisponible' : '');
+    if (mz) titre += ' — joué par ' + mz.map(function (x) { return x.joueur + ' (' + x.games + 'g, ' + x.wr + '%)'; }).join(', ');
+    return '<button class="ss-champ' + (off ? ' dl-off' : '') + (mz ? ' dl-menace' : '') + '"' + (off || !step ? ' disabled' : '')
+      + ' onclick="dlSelect(\'' + c.key + '\')" title="' + titre + '">'
+      + '<img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span>'
+      + (mz ? '<span class="dl-mz">' + mz.reduce(function (t, x) { return t + x.games; }, 0) + '</span>' : '')
+      + '</button>';
   }).join('');
   var info = document.getElementById('dl-info');
   if (info) {
