@@ -7083,7 +7083,7 @@ var _dlState = null, _dlMatch = null, _dlTimer = null, _dlQ = '';
    les mutations, donc aucun risque de divergence entre les deux modes. ── */
 var _dlWS = null, _dlPeers = [], _dlCursors = {}, _dlLastCursor = 0;
 var VS_WS_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-  ? 'ws://127.0.0.1:8788' : 'wss://visionscore-draft.visionscore.workers.dev';
+  ? 'ws://127.0.0.1:8788' : 'wss://visionscore-draft.workers.dev';
 
 function dlPartage() { return !!(_dlWS && _dlWS.readyState === 1); }
 function dlRoomId(m) { return 'vs-' + String(m.id).replace(/[^A-Za-z0-9_-]/g, '') + '-01'; }
