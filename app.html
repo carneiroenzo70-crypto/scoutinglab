@@ -639,6 +639,12 @@ body:not(.theme-dark) .dl-f input{ background:#fff; border-color:rgba(31,71,64,.
 .dl-clock{ font-family:var(--font-mono); font-weight:800; font-size:26px; color:var(--vs-emerald-300); min-width:64px; }
 .dl-clock.urgent{ color:var(--vs-red-400); }
 .dl-acts{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+/* Barre de rôles : accès direct à la section de la grille sans défiler, toujours visible
+   (collée sous l'en-tête) — c'est ce que demandent des coachs qui pikent/bannissent vite. */
+.dl-rolebar{ position:sticky; top:56px; z-index:40; display:flex; gap:5px; padding:7px; margin-bottom:12px; border:1px solid var(--vs-forest-500); border-radius:12px; background:rgba(6,10,9,.92); backdrop-filter:blur(10px); }
+body:not(.theme-dark) .dl-rolebar{ background:rgba(255,255,255,.82); border-color:rgba(31,71,64,.14); }
+.dl-role-b{ flex:1; display:grid; place-items:center; padding:9px 0; border-radius:9px; border:1px solid transparent; background:none; color:#E6B23E; cursor:pointer; transition:.15s; }
+.dl-role-b:hover{ background:rgba(230,178,62,.12); border-color:rgba(230,178,62,.35); }
 .dl-done{ font-size:12.5px; color:var(--vs-emerald-300); margin-bottom:10px; font-weight:700; }
 .dl-sides{ display:flex; gap:12px; flex-wrap:wrap; }
 .dl-side{ flex:1; min-width:270px; border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px; background:rgba(4,18,15,.22); }
@@ -663,7 +669,6 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
 .ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
 .dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
-.dl-role-mz{ font-size:9px; font-weight:700; letter-spacing:0; text-transform:none; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:1px 7px; }
 /* Repère de positionnement des curseurs : sans lui ils se placeraient par rapport à la page. */
 #ss-live{ position:relative; }
 /* Couche dédiée : elle n'est jamais reconstruite, donc les curseurs survivent aux picks. */
@@ -7309,8 +7314,28 @@ function dlLobbyHtml() {
 // Le camp affiché à gauche est toujours le bleu ; `first`/`second` désignent l'ordre.
 function dlRoleOf(side) { return _dlState.sides.first === side ? 'first' : 'second'; }
 
+function dlRoleBarHtml() {
+  var svg = {
+    Top: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 5v6c0 5 3.4 9 8 11 4.6-2 8-6 8-11V5z"/></svg>',
+    Jgl: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C7 6 4 11 4 15a8 8 0 0 0 16 0c0-4-3-9-8-13z"/><path d="M12 22V9"/></svg>',
+    Mid: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 22 12 12 22 2 12z"/></svg>',
+    ADC: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>',
+    Sup: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>'
+  };
+  return '<div class="dl-rolebar">' + SS_ROLES.map(function (r) {
+    return '<button class="dl-role-b" onclick="dlJumpRole(\'' + r + '\')" title="' + SS_ROLE_LABEL[r] + '">' + svg[r] + '</button>';
+  }).join('') + '</div>';
+}
+
+// Clic sur un rôle = sauter directement à sa section de la grille, sans défiler à la main.
+function dlJumpRole(r) {
+  var el = document.getElementById('dl-role-' + r);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 function dlBoardHtml() {
   var s = _dlState, g = s.games[s.gameIndex], step = VSDraft.currentStep(s);
+  var termine = s.status === 'done';
   var h = '<div class="dl-top">';
   h += '<div class="dl-game">Game ' + (s.gameIndex + 1) + '<span class="faint"> / ' + s.format.bo + '</span></div>';
   if (step) {
@@ -7327,23 +7352,28 @@ function dlBoardHtml() {
   h += '<button class="btn btn-ghost btn-sm" onclick="dlQuit()">Quitter</button>';
   h += '</div></div>';
 
-  if (s.status === 'done') h += '<div class="dl-done">Draft terminée.</div>';
+  if (!termine) h += dlRoleBarHtml();
+  if (termine) h += '<div class="dl-done">Draft terminée.</div>';
 
   h += '<div class="dl-sides">' + dlSideHtml('blue', g) + dlSideHtml('red', g) + '</div>';
 
-  h += dlScoutHtml();
+  // Une fois la draft close, le scouting et la grille n'ont plus lieu d'être : ils
+  // n'existaient que pour préparer les picks à venir.
+  if (!termine) {
+    h += dlScoutHtml();
 
-  if (s.format.fearless && s.usedChampions.length) {
-    h += '<div class="dl-fearless"><span class="label">Fearless — déjà joués (' + s.usedChampions.length + ')</span>'
-      + '<div class="dl-fl-list">' + s.usedChampions.map(function (c) {
-        return '<img src="' + ssChampImg(c) + '" alt="' + anEsc(c) + '" title="' + anEsc(c) + '">';
-      }).join('') + '</div></div>';
+    if (s.format.fearless && s.usedChampions.length) {
+      h += '<div class="dl-fearless"><span class="label">Fearless — déjà joués (' + s.usedChampions.length + ')</span>'
+        + '<div class="dl-fl-list">' + s.usedChampions.map(function (c) {
+          return '<img src="' + ssChampImg(c) + '" alt="' + anEsc(c) + '" title="' + anEsc(c) + '">';
+        }).join('') + '</div></div>';
+    }
+
+    h += '<div class="ss-pool-wrap" style="margin-top:14px"><div class="between" style="margin-bottom:8px;gap:10px;flex-wrap:wrap">'
+      + '<span class="faint" style="font-size:11.5px" id="dl-info"></span>'
+      + '<input id="dl-q" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(_dlQ) + '" oninput="_dlQ=this.value;dlRenderGrid()"></div>'
+      + '<div id="dl-grid" class="ss-champgrid"></div></div>';
   }
-
-  h += '<div class="ss-pool-wrap" style="margin-top:14px"><div class="between" style="margin-bottom:8px;gap:10px;flex-wrap:wrap">'
-    + '<span class="faint" style="font-size:11.5px" id="dl-info"></span>'
-    + '<input id="dl-q" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(_dlQ) + '" oninput="_dlQ=this.value;dlRenderGrid()"></div>'
-    + '<div id="dl-grid" class="ss-champgrid"></div></div>';
   return h;
 }
 
@@ -7418,10 +7448,11 @@ async function dlRenderGrid() {
     var champs = groupes[r] || []; if (!champs.length) return '';
     // À l'intérieur d'un rôle, les champions joués par l'adversaire passent devant.
     champs.sort(function (a, b) { return totalGames(b) - totalGames(a) || a.name.localeCompare(b.name); });
-    var menacesRole = champs.filter(function (c) { return menaces[dlNorm(c.name)]; }).length;
-    return '<div class="ss-champrole-t">' + (r ? SS_ROLE_LABEL[r] : 'Autres / non classés')
+    // Le repère de menace reste porté par la bordure + le badge du champion lui-même
+    // (`.dl-menace` / `.dl-mz`) : un coach pro connaît la méta, inutile de le lui redire
+    // en toutes lettres à côté du nom du rôle.
+    return '<div class="ss-champrole-t" id="dl-role-' + r + '">' + (r ? SS_ROLE_LABEL[r] : 'Autres / non classés')
       + '<span class="ss-champrole-n">' + champs.length + '</span>'
-      + (menacesRole ? '<span class="dl-role-mz">' + menacesRole + (menacesRole > 1 ? ' vus' : ' vu') + ' en compét</span>' : '')
       + '</div><div class="ss-champrole-grp">' + champs.map(bouton).join('') + '</div>';
   }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
   var info = document.getElementById('dl-info');
