@@ -4872,7 +4872,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <div style="font-size:.85rem;color:var(--sub)">Candidatures reçues via Google Form — joueurs ayant postulé pour être scoutés.</div>
               <div id="crm-cand-status" style="font-size:.75rem;color:var(--teal);margin-top:4px"></div>
             </div>
-            <button onclick="crmSyncCandidatures()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualiser</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button onclick="crmExportCandidatesSheet()" class="btn btn-ghost btn-sm" title="Télécharger en tableur — compatible Google Sheets / Excel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Tableur</button>
+              <button onclick="crmSyncCandidatures()" class="btn btn-cta btn-sm"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Actualiser</button>
+            </div>
           </div>
           <div id="crm-candidatures-list" style="display:flex;flex-direction:column;gap:.75rem">
             <div class="faint" style="text-align:center;padding:2rem;font-size:.85rem">Chargement des candidatures…</div>
@@ -13035,6 +13038,29 @@ function crmImportCsvFile(file){
 }
 
 // ── MATCHING ────────────────────────────────────────────────
+// Export CSV des candidatures reçues — s'ouvre directement dans Google Sheets ou Excel.
+// Pas de synchronisation live (pas de compte de service Google à créer) : le staff
+// importe le fichier quand il en a besoin, ce qui suffit pour trier/annoter hors de l'app.
+function crmExportCandidatesSheet() {
+  const candidates = window._crmCandidates || [];
+  if (!candidates.length) { if (typeof showToast === 'function') showToast('Aucune candidature à exporter', 'warning'); return; }
+  const headers = ['Pseudo', 'Tag', 'Rôle', 'Rang déclaré', 'Rang vérifié', 'Âge', 'Pays', 'Contact', 'Expérience', 'Reçue le'];
+  const champ = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const rows = candidates.map(c => [
+    c.pseudo || '', c.tag || '', c.role || '', c.rank || '', c._verifiedRank || '',
+    c.age || '', c.pays || '', c.contact || '', c.experience || '',
+    c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : ''
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(champ).join(',')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'candidatures_' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click(); URL.revokeObjectURL(url);
+  if (typeof showToast === 'function') showToast('Tableur exporté — ' + candidates.length + ' candidature(s)', 'success');
+}
+
 // Encart « Recevoir des candidatures » : lien propre à la structure à brancher sur son Google Form.
 function crmRenderIngestLink() {
   const host = document.getElementById('crm-ingest-slot');
