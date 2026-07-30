@@ -614,6 +614,8 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .an-dimbar .v{ width:30px; flex:none; text-align:right; font-family:var(--font-mono); font-size:11px; font-weight:700; }
 /* Cartes candidature */
 .cand-card{ padding:14px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.cand-card.cand-elite{ border-left:3px solid #E6B23E; }
+.cand-elite-badge{ display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:800; letter-spacing:.03em; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:2px 8px; }
 .sl-ev-badge{ font-size:9px; font-weight:700; padding:1px 6px; border-radius:5px; flex:none; letter-spacing:.02em; }
 .sl-ev-badge.blue{ background:rgba(59,130,246,.16); color:#7DB3FF; }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
@@ -13075,46 +13077,126 @@ async function crmSyncCandidatures() {
     if (statusEl) statusEl.textContent = candidates.length + ' candidature' + (candidates.length > 1 ? 's' : '') + ' reçue' + (candidates.length > 1 ? 's' : '');
 
     if (listEl) {
-      const TIER_C = (typeof CRM_TIER_COLOR !== 'undefined') ? CRM_TIER_COLOR : {};
-      listEl.innerHTML = candidates.map((c, i) => {
-        const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '';
-        const tier = (String(c.rank||'').match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
-        const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
-        const rankColor = TIER_C[t] || 'var(--vs-fg-2)';
-        return `<div class="card cand-card">
-          <div class="avatar" style="width:38px;height:38px;font-size:15px;flex:none">${(c.pseudo||'?').charAt(0).toUpperCase()}</div>
-          <div style="flex:1;min-width:170px">
-            <div style="font-weight:800;font-size:14.5px;color:var(--vs-fg-1)">${c.pseudo}<span class="faint" style="font-weight:400;font-size:11px;font-family:var(--font-mono)"> #${c.tag||'?'}</span></div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px">
-              <span class="chip" style="padding:1px 9px;font-size:10px">${c.role||'?'}</span>
-              ${c.age ? '<span class="faint" style="font-size:11px">'+c.age+' ans</span>' : ''}
-              ${c.pays ? '<span class="faint" style="font-size:11px">· '+c.pays+'</span>' : ''}
-              ${t ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:'+rankColor+'">'+(typeof rankIcon==='function'?rankIcon(t,'rank-icon-sm'):'')+c.rank+'</span>' : ''}
-            </div>
-          </div>
-          <div style="min-width:0;max-width:230px;flex:1">
-            ${c.experience ? '<div class="faint" style="font-size:11.5px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical" title="'+String(c.experience).replace(/"/g,'&quot;')+'">'+c.experience+'</div>' : ''}
-            ${c.contact ? '<div style="font-size:11.5px;color:var(--vs-emerald-300);margin-top:3px">'+c.contact+'</div>' : ''}
-          </div>
-          <div class="faint" style="font-size:10.5px;flex:none">${dateStr}</div>
-          <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:none">
-            <button id="vrfy-${c.id}" onclick="crmVerifyRank('${c.pseudo}','${c.tag||'EUW'}','${(c.rank||'').replace(/'/g,'')}','${c.id}')" class="btn btn-ghost btn-sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Vérifier rang</button>
-            <button onclick="crmImportCandidate(${i})" data-id="${c.id}" class="btn btn-cta btn-sm">→ Pipeline</button>
-          </div>
-          <div id="vrfy-out-${c.id}" style="width:100%"></div>
-        </div>`;
-      }).join('');
+      listEl.innerHTML = candidates.map(crmCandidateCardHtml).join('');
       window._crmCandidates = candidates;
     }
 
     // Switcher vers l'onglet candidatures
     crmShowTab('candidatures');
 
+    // Diamant+ : vérification silencieuse du vrai rang puis import auto au pipeline —
+    // en tâche de fond, la liste déjà affichée n'attend pas dessus.
+    crmAutoPromoteElite(candidates);
+
   } catch(e) {
     if (listEl) listEl.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--red,#F87171);font-size:.85rem">Erreur : ' + e.message + ' — vérifiez la configuration Upstash dans Vercel.</div>';
   } finally {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Sync candidatures'; }
   }
+}
+
+// Rendu d'une carte candidature — extrait de crmSyncCandidatures pour pouvoir
+// redessiner la liste après la vérification silencieuse (badge « Diamant+ vérifié »).
+function crmCandidateCardHtml(c, i) {
+  const TIER_C = (typeof CRM_TIER_COLOR !== 'undefined') ? CRM_TIER_COLOR : {};
+  const dateStr = c.addedAt ? new Date(c.addedAt).toLocaleDateString('fr-FR') : '';
+  const tier = (String(c.rank||'').match(/^(Iron|Bronze|Silver|Gold|Platinum|Emerald|Diamond|Master|Grandmaster|Challenger)/i) || [])[1] || '';
+  const t = tier ? tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase() : '';
+  const rankColor = TIER_C[t] || 'var(--vs-fg-2)';
+  return `<div class="card cand-card${c._elite ? ' cand-elite' : ''}">
+    <div class="avatar" style="width:38px;height:38px;font-size:15px;flex:none">${(c.pseudo||'?').charAt(0).toUpperCase()}</div>
+    <div style="flex:1;min-width:170px">
+      <div style="font-weight:800;font-size:14.5px;color:var(--vs-fg-1)">${c.pseudo}<span class="faint" style="font-weight:400;font-size:11px;font-family:var(--font-mono)"> #${c.tag||'?'}</span></div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:5px">
+        <span class="chip" style="padding:1px 9px;font-size:10px">${c.role||'?'}</span>
+        ${c.age ? '<span class="faint" style="font-size:11px">'+c.age+' ans</span>' : ''}
+        ${c.pays ? '<span class="faint" style="font-size:11px">· '+c.pays+'</span>' : ''}
+        ${t ? '<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:'+rankColor+'">'+(typeof rankIcon==='function'?rankIcon(t,'rank-icon-sm'):'')+c.rank+'</span>' : ''}
+        ${c._elite ? '<span class="cand-elite-badge">Diamant+ vérifié — ' + anEsc(c._verifiedRank || '') + '</span>' : ''}
+      </div>
+    </div>
+    <div style="min-width:0;max-width:230px;flex:1">
+      ${c.experience ? '<div class="faint" style="font-size:11.5px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical" title="'+String(c.experience).replace(/"/g,'&quot;')+'">'+c.experience+'</div>' : ''}
+      ${c.contact ? '<div style="font-size:11.5px;color:var(--vs-emerald-300);margin-top:3px">'+c.contact+'</div>' : ''}
+    </div>
+    <div class="faint" style="font-size:10.5px;flex:none">${dateStr}</div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;flex:none">
+      <button id="vrfy-${c.id}" onclick="crmVerifyRank('${c.pseudo}','${c.tag||'EUW'}','${(c.rank||'').replace(/'/g,'')}','${c.id}')" class="btn btn-ghost btn-sm"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Vérifier rang</button>
+      <button onclick="crmImportCandidate(${i})" data-id="${c.id}" class="btn btn-cta btn-sm">→ Pipeline</button>
+    </div>
+    <div id="vrfy-out-${c.id}" style="width:100%"></div>
+  </div>`;
+}
+
+// Rang réel d'un candidat (compte + ladder SoloQ), sans toucher au DOM — utilisé en
+// tâche de fond par crmAutoPromoteElite (crmVerifyRank fait l'équivalent mais pilote
+// des éléments d'écran qui n'existent pas ici).
+async function crmFetchSoloQ(pseudo, tag) {
+  const acc = await riotFetch('https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag || 'EUW'));
+  if (!acc || !acc.puuid) return null;
+  const league = await riotFetch('https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
+  return (Array.isArray(league) ? league : []).find(e => e.queueType === 'RANKED_SOLO_5x5') || null;
+}
+
+const CRM_TIER_ORDER = ['IRON','BRONZE','SILVER','GOLD','PLATINUM','EMERALD','DIAMOND','MASTER','GRANDMASTER','CHALLENGER'];
+
+// Alan (Galions) : les candidatures Diamant+ doivent « ressortir et arriver directement
+// dans le CRM ». On vérifie le VRAI rang avant d'importer — un rang autodéclaré ment
+// parfois, et un candidat surcoté entrerait dans le pipeline sans que personne ne le
+// remarque avant de l'ouvrir. Tourne en tâche de fond après l'affichage de la liste.
+async function crmAutoPromoteElite(candidates) {
+  const org = (typeof vsOrg === 'function') ? vsOrg() : 'default';
+  const storeKey = 'vs_cand_checked:' + org;
+  let checked = {};
+  try { checked = JSON.parse(localStorage.getItem(storeKey) || '{}'); } catch (_) {}
+  const idxDiamond = CRM_TIER_ORDER.indexOf('DIAMOND');
+  let touched = false;
+
+  for (const c of candidates) {
+    if (!c || !c.id || checked[c.id]) continue;
+    checked[c.id] = true; touched = true;
+    try {
+      const soloQ = await crmFetchSoloQ(c.pseudo, c.tag || 'EUW');
+      if (soloQ && CRM_TIER_ORDER.indexOf(String(soloQ.tier).toUpperCase()) >= idxDiamond) {
+        c._elite = true;
+        c._verifiedRank = soloQ.tier + ' ' + soloQ.rank + ' — ' + soloQ.leaguePoints + ' LP';
+        crmAutoImportCandidate(c);
+      }
+    } catch (_) { /* compte Riot introuvable ou API indisponible : on passe au suivant */ }
+    // Clé Riot personnelle partagée avec le reste du site — on respire entre deux candidats.
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  if (touched) {
+    try { localStorage.setItem(storeKey, JSON.stringify(checked)); } catch (_) {}
+    const listEl = document.getElementById('crm-candidatures-list');
+    if (listEl && window._crmCandidates === candidates) listEl.innerHTML = candidates.map(crmCandidateCardHtml).join('');
+  }
+}
+
+function crmAutoImportCandidate(c) {
+  if (crmPipeline.find(p => p.playerName === c.pseudo && p.playerTag === (c.tag || ''))) return;
+  const entry = {
+    id: Date.now() + Math.floor(Math.random() * 1000),
+    structureId: null,
+    structureName: 'Sans structure',
+    playerName: c.pseudo,
+    playerTag: c.tag || '',
+    role: c.role || '?',
+    score: '',
+    age: c.age || '',
+    notes: c.experience || '',
+    stage: 'repere',
+    dateRelance: '',
+    addedAt: c.addedAt || new Date().toISOString(),
+    verifiedRank: c._verifiedRank,
+    rankMatch: true,
+    history: [{ date: new Date().toISOString(), action: 'Import automatique — rang vérifié ' + c._verifiedRank }]
+  };
+  crmPipeline.push(entry);
+  crmSave();
+  if (typeof showToast === 'function') showToast(c.pseudo + ' (' + c._verifiedRank.split(' ')[0] + ') importé automatiquement — rang vérifié', 'success');
+  if (typeof crmRenderPipeline === 'function') crmRenderPipeline();
 }
 
 function crmImportCandidate(idx) {
