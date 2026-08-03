@@ -6334,13 +6334,24 @@ async function rsFillPlayerDetail(role, slot) {
   window._rspdSplit = null;
   if (proName) rsPdLoadGames(proName);
 }
+// Clé d'une game pour aller chercher son détail (10 joueurs) : GameId si Leaguepedia
+// l'a renseigné, sinon repli sur OverviewPage + horodatage exact, qui identifient la
+// game tout aussi sûrement. Constaté en pratique : la LFL (contrairement au LEC/LCK,
+// parsées automatiquement) ne renseigne quasiment jamais GameId — sans ce repli,
+// aucune game LFL ne serait jamais cliquable.
+function rsGameKey(g) {
+  if (g.gameId) return 'id' + g.gameId;
+  if (g.page && g.dt) return 'pd' + g.page + '' + g.dt;
+  return '';
+}
 // Ligne « game » compétitive : V/D, champion, KDA, adversaire, événement, date.
-// Cliquable (si GameId connu) → détail complet de la game (les 10 joueurs).
+// Cliquable (si une clé de game est disponible) → détail complet (les 10 joueurs).
 function rsPdGameRow(g) {
   const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
-  const open = g.gameId
-    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="rsPdGameDetail(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le détail de la game">'
-    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié l\'identifiant de cette game — le détail n\'est pas disponible pour l\'instant.">';
+  const key = rsGameKey(g);
+  const open = key
+    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="rsPdGameDetail(\'' + encodeURIComponent(key) + '\')" title="Voir le détail de la game">'
+    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié assez d\'informations sur cette game — le détail n\'est pas disponible pour l\'instant.">';
   return open
     + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
     + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
@@ -6357,7 +6368,7 @@ async function pmFetchCompetRaw(proName, limit) {
   const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,PlayerWin,DateTime_UTC,TeamVs,OverviewPage,GameId&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=' + (limit || 100) + '&format=json&origin=*';
   const rows = await pmCargo(url);
   if (!rows) return null;
-  return rows.map(x => { const t = x.title; const page = t.OverviewPage || ''; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), page: page, event: page.split('/')[0], gameId: t.GameId || '' }; });
+  return rows.map(x => { const t = x.title; const page = t.OverviewPage || ''; return { champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), dt: t['DateTime UTC'] || '', page: page, event: page.split('/')[0], gameId: t.GameId || '' }; });
 }
 // Charge et affiche le récap compét réel + les dernières games.
 async function rsPdLoadGames(proName) {
@@ -6417,10 +6428,15 @@ async function rsPdLoadSplit() {
   h += '<div class="rs-pd-split-wrap"><button class="btn btn-ghost btn-xs" onclick="rsPdLoadGames(window._rspdPro)">Réduire</button></div>';
   box.innerHTML = h;
 }
-// Détail d'une game : les 10 joueurs (2 équipes) via Leaguepedia (GameId).
-async function pmFetchGamePlayers(gameId) {
-  const q = encodeURIComponent(gameId);
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Role,Kills,Deaths,Assists,CS,Gold,DamageToChampions,Team,Side,PlayerWin,DateTime_UTC,OverviewPage&where=GameId%3D%22' + q + '%22&limit=12&format=json&origin=*';
+// Détail d'une game : les 10 joueurs (2 équipes) via Leaguepedia. `key` vient de
+// rsGameKey() — soit un GameId direct, soit (repli LFL) OverviewPage + horodatage
+// exact, qui identifient tout aussi précisément une game unique.
+async function pmFetchGamePlayers(key) {
+  const parts = key.split('');
+  const where = parts[0] === 'id'
+    ? 'GameId%3D%22' + encodeURIComponent(parts[1]) + '%22'
+    : 'OverviewPage%3D%22' + encodeURIComponent(parts[1]) + '%22%20AND%20DateTime_UTC%3D%22' + encodeURIComponent(parts[2]) + '%22';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Role,Kills,Deaths,Assists,CS,Gold,DamageToChampions,Team,Side,PlayerWin,DateTime_UTC,OverviewPage&where=' + where + '&limit=12&format=json&origin=*';
   let rows = await pmCargo(url);
   // 2e essai si le service renvoie une erreur transitoire (surcharge / rate-limit).
   if (rows === null) { await new Promise(r => setTimeout(r, 800)); rows = await pmCargo(url); }
@@ -8470,9 +8486,10 @@ function tlBoxScoreHtml(parts, myTeam, puuid) {
 // mais pointe vers tlShowCompetGame (le conteneur cible n'est pas le même).
 function tlPdGameRow(g) {
   const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
-  const open = g.gameId
-    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="tlShowCompetGame(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le scoreboard complet">'
-    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié l\'identifiant de cette game — le détail n\'est pas disponible pour l\'instant.">';
+  const key = rsGameKey(g);
+  const open = key
+    ? '<div class="rs-pd-game rs-pd-game-clk" onclick="tlShowCompetGame(\'' + encodeURIComponent(key) + '\')" title="Voir le scoreboard complet">'
+    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié assez d\'informations sur cette game — le détail n\'est pas disponible pour l\'instant.">';
   return open
     + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
     + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
