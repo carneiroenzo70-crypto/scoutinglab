@@ -6702,7 +6702,11 @@ async function ssChampList() {
 function ssChampImg(key) { return 'https://ddragon.leagueoflegends.com/cdn/' + ddVer() + '/img/champion/' + key + '.png'; }
 async function ssTeamSearch(q) {
   if (!q || q.length < 2) return [];
-  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region,Image&where=Name%20LIKE%20%22%25' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=12&format=json&origin=*';
+  // Préfixe (LIKE "q%"), pas « contient » (LIKE "%q%") : avec seulement 2 lettres, un
+  // « contient » remonte n'importe quelle équipe portant ces deux lettres n'importe où
+  // dans son nom (ex. Fnatic contient « ic ») — ça sature la limite de 12 résultats
+  // avant même d'atteindre l'équipe cherchée, triée après par ordre alphabétique.
+  var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=Teams&fields=Name,Region,Image&where=Name%20LIKE%20%22' + encodeURIComponent(q.replace(/"/g, '')) + '%25%22%20AND%20IsDisbanded%3D%220%22&order_by=Name&limit=12&format=json&origin=*';
   var rows = await pmCargo(url); if (!rows) return null;
   return rows.map(function (r) { return { name: r.title.Name || '', region: r.title.Region || '', image: r.title.Image || '' }; }).filter(function (t) { return t.name; });
 }
