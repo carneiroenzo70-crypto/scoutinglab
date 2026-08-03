@@ -5929,6 +5929,7 @@ async function renderRoster() {
   // Actions secondaires (gestion du roster) : icône seule + tooltip — la barre
   // reste lisible, l'action principale (Instantané/Évolution/Comparer) prime.
   html += '<button onclick="rsUiNew()" class="rs-iconbtn" title="Nouveau roster">' + _ic('<path d="M12 5v14M5 12h14"/>') + '</button>';
+  html += '<button onclick="rsUiImportTeam()" class="rs-iconbtn" title="Importer une équipe depuis Leaguepedia">' + _ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>') + '</button>';
   html += '<button onclick="rsUiRename()" class="rs-iconbtn" title="Renommer ce roster">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + '</button>';
   html += '<button onclick="rsUiDelete()" class="rs-iconbtn danger" title="Supprimer ce roster">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + '</button>';
   html += '<button onclick="rsUiSnapshot()" class="rs-iconbtn" title="Enregistrer un instantané pour le suivi">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + '</button>';
@@ -6084,6 +6085,61 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
 function rsUiNew() { const n = prompt('Nom du nouveau roster :', 'Nouveau roster'); if (n) { rsCreate(n.trim()); renderRoster(); } }
 function rsUiRename() { const r = rsActive(); if (!r) return; const n = prompt('Renommer le roster :', r.name); if (n) { rsRename(r.id, n.trim()); renderRoster(); } }
 function rsUiDelete() { const r = rsActive(); if (!r) return; if (confirm('Supprimer le roster « ' + r.name + ' » ?')) { rsDelete(r.id); renderRoster(); } }
+
+// ── Import d'un roster depuis Leaguepedia ──
+// Réutilise le même modal de recherche que « Mon équipe » (Seasons) : mêmes ids
+// (ssm-opp / ssm-oppres / ssm-oppsel), donc ssOppSearch/ssPickOpp marchent tels quels.
+function rsUiImportTeam() {
+  window._ssPickOpp = null;
+  const ov = document.createElement('div'); ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" style="width:min(440px,94vw)"><div class="rs-modal-h">Importer une équipe (Leaguepedia)</div>'
+    + '<label class="rs-f"><span>Rechercher l\'équipe</span><input id="ssm-opp" placeholder="Nom de l\'équipe…" autocomplete="off" oninput="ssOppSearch(this.value)"></label>'
+    + '<div id="ssm-oppres" class="ss-oppres"></div>'
+    + '<div id="ssm-oppsel" class="faint" style="font-size:12px">Aucune équipe sélectionnée.</div>'
+    + '<div class="rs-modal-note">Récupère le nom compétitif, le poste et les vraies stats de chaque titulaire. Le compte Solo Q reste à saisir — Leaguepedia ne le publie pas, on ne l\'invente pas.</div>'
+    + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button><button class="btn btn-cta btn-sm" onclick="rsSaveImportTeam()">Importer</button></div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+async function rsSaveImportTeam() {
+  const t = window._ssPickOpp;
+  if (!t) { if (typeof showToast === 'function') showToast('Choisis une équipe dans la liste', 'warning'); return; }
+  const ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+  const r = rsActive(); if (!r) return;
+
+  if (typeof showToast === 'function') showToast('Import du roster ' + t.name + '…', 'info');
+  const roster = await ssTeamRoster(t.name);
+  if (roster === null) { if (typeof showToast === 'function') showToast('Leaguepedia momentanément indisponible, réessaie.', 'error'); return; }
+  if (!roster.length) { if (typeof showToast === 'function') showToast('Aucun titulaire trouvé pour ' + t.name + ' sur Leaguepedia.', 'warning'); return; }
+  const dedup = ssDedupeRoster(roster).filter(p => SS_ROLES.indexOf(p.role) >= 0);
+
+  let stats = {};
+  try { stats = await pmFetchCompetBatch(dedup.map(p => p.link)); } catch (_) {}
+
+  let imported = 0, skipped = 0;
+  dedup.forEach(p => {
+    // Seule donnée que Leaguepedia ne publie pas : le compte Solo Q. On le demande
+    // ici plutôt que d'inventer un pseudo — un poste sans réponse reste vide,
+    // exactement comme avant l'import, pour ne rien casser côté score/comparaison
+    // (tout le moteur suppose qu'un titulaire « existe » via slot.pseudo).
+    const pseudo = prompt('Compte Solo Q de ' + p.name + ' (' + p.role + ') — Pseudo#TAG :', '');
+    if (!pseudo) { skipped++; return; }
+    const [pn, tag] = pseudo.split('#');
+    if (!pn || !pn.trim()) { skipped++; return; }
+    const s = stats[ssCompetKey(p.link)];
+    rsSetSlot(r.id, p.role, {
+      pseudo: pn.trim(), tag: (tag || 'EUW').trim(), server: 'euw1',
+      proName: p.name, ficheId: null,
+      compet: (s && s !== SS_ERR) ? { kda: s.kda, wr: s.winrate, games: s.count } : {}
+    });
+    imported++;
+  });
+  renderRoster();
+  if (typeof showToast === 'function') {
+    const msg = imported + ' titulaire(s) importé(s) depuis ' + t.name + (skipped ? ' — ' + skipped + ' sans compte Solo Q renseigné' : '');
+    showToast(msg, imported ? 'success' : 'warning');
+  }
+}
 function rsUiPick(role) {
   const pseudo = prompt('Pseudo Solo Q pour le poste ' + role + ' (format Pseudo#TAG) :', '');
   if (!pseudo) return;
