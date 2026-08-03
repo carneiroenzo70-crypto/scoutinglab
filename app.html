@@ -838,6 +838,11 @@ body:not(.theme-dark) .rs-pd-game{ background:rgba(31,71,64,.03); border-color:r
 .rs-pd-game-clk{ cursor:pointer; transition:background .12s, border-color .12s; }
 .rs-pd-game-clk:hover{ background:rgba(45,212,167,.09); border-color:var(--vs-emerald-500); }
 body:not(.theme-dark) .rs-pd-game-clk:hover{ background:rgba(31,71,64,.07); }
+/* Leaguepedia n'a pas encore publié d'identifiant de game pour ce match (fréquent
+   sur les games très récentes) : rien à ouvrir, on l'indique plutôt que de laisser
+   une ligne qui a l'air cliquable mais ne répond pas. */
+.rs-pd-game-nodetail{ opacity:.55; }
+.rs-pd-game-nodetail .rs-pd-gdate::after{ content:'· détail indispo'; margin-left:5px; font-size:9.5px; color:var(--vs-fg-3); }
 /* Détail de game : deux équipes, 5 joueurs chacune */
 .rs-pd-gdmeta{ font-size:10.5px; margin-bottom:10px; }
 .rs-pd-teams{ display:flex; flex-direction:column; gap:12px; }
@@ -6335,7 +6340,7 @@ function rsPdGameRow(g) {
   const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
   const open = g.gameId
     ? '<div class="rs-pd-game rs-pd-game-clk" onclick="rsPdGameDetail(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le détail de la game">'
-    : '<div class="rs-pd-game">';
+    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié l\'identifiant de cette game — le détail n\'est pas disponible pour l\'instant.">';
   return open
     + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
     + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
@@ -8467,7 +8472,7 @@ function tlPdGameRow(g) {
   const kda = (g.d ? ((g.k + g.a) / g.d).toFixed(1) : (g.k + g.a).toFixed(1));
   const open = g.gameId
     ? '<div class="rs-pd-game rs-pd-game-clk" onclick="tlShowCompetGame(\'' + encodeURIComponent(g.gameId) + '\')" title="Voir le scoreboard complet">'
-    : '<div class="rs-pd-game">';
+    : '<div class="rs-pd-game rs-pd-game-nodetail" title="Leaguepedia n\'a pas encore publié l\'identifiant de cette game — le détail n\'est pas disponible pour l\'instant.">';
   return open
     + '<span class="rs-pd-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? 'V' : 'D') + '</span>'
     + '<span class="rs-pd-champ" title="' + anEsc(g.champ) + '">' + anEsc(g.champ) + '</span>'
