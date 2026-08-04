@@ -679,6 +679,13 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
 .ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
 .dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
+/* Méta pro (LCK/LPL/LEC) : coin haut-gauche, libre — .dl-menace/.dl-mz (repère
+   adverse) occupent déjà le haut-droite. Les deux peuvent s'afficher ensemble :
+   ce sont deux signaux différents, pas une redite. */
+.ss-champ.dl-counter{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(224,80,64,.75); }
+.dl-counter-badge{ position:absolute; top:2px; left:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E05040; color:#fff; }
+.ss-champ.dl-synergy{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(74,158,232,.75); }
+.dl-synergy-badge{ position:absolute; top:2px; left:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#4A9EE8; color:#fff; }
 /* Repère de positionnement des curseurs : sans lui ils se placeraient par rapport à la page. */
 #ss-live{ position:relative; }
 /* Couche dédiée : elle n'est jamais reconstruite, donc les curseurs survivent aux picks. */
@@ -7319,6 +7326,131 @@ function dlShowCursor(nom, x, y) {
 
 function dlStopTimer() { if (_dlTimer) { clearInterval(_dlTimer); _dlTimer = null; } }
 
+/* ── Suggestions de draft basées sur la vraie méta pro (LCK/LPL/LEC) ──
+   Calculé côté client depuis les picks/bans réels de la table Leaguepedia
+   PicksAndBansS7 (via /api/lp, même cache 6 h que le reste du site — pas de
+   nouveau endpoint, on est à 12/12 fonctions Vercel). Trois signaux, tous issus
+   de résultats réels, jamais d'une règle codée en dur :
+     - priorité de pick/ban par numéro de game du BO (identité vs adaptation) ;
+     - synergie ADC ↔ Support (winrate de la paire quand les deux sont pickés) ;
+     - contre au même poste (winrate d'un champion face à un adversaire donné). */
+const DL_META_LEAGUES = ['LCK', 'LPL', 'LEC'];
+
+// "Team1PicksByRoleOrder" : champions séparés par une virgule, dans l'ordre
+// Top/Jungle/Mid/Bot/Support publié par Leaguepedia — donc le VRAI rôle joué
+// cette game-là (un Viktor ADC cette semaine compte comme ADC, pas comme Mid).
+function dlMetaParseSide(picksStr) {
+  var parts = String(picksStr || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  return parts.length === 5 ? parts : null;
+}
+
+async function dlMetaBuild() {
+  var priority = {}, pairStats = {}, counter = {};
+  SS_ROLES.forEach(function (r) { priority[r] = {}; counter[r] = {}; });
+
+  var loadLeague = async function (league) {
+    var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=PicksAndBansS7'
+      + '&fields=Team1PicksByRoleOrder,Team2PicksByRoleOrder,Winner,N_GameInMatch,OverviewPage'
+      + '&where=OverviewPage%20LIKE%20%22' + encodeURIComponent(league + '/2026%') + '%22'
+      + '&order_by=OverviewPage%20DESC&limit=300&format=json&origin=*';
+    var rows = await pmCargo(url);
+    return rows || [];
+  };
+
+  var rowsByLeague = await Promise.all(DL_META_LEAGUES.map(loadLeague));
+  var rows = [].concat.apply([], rowsByLeague);
+  if (!rows.length) return null;
+
+  rows.forEach(function (x) {
+    var t = x.title || {};
+    var side1 = dlMetaParseSide(t.Team1PicksByRoleOrder);
+    var side2 = dlMetaParseSide(t.Team2PicksByRoleOrder);
+    if (!side1 || !side2) return;   // format inattendu pour cette ligne : on l'ignore, jamais d'invention
+    var winner = parseInt(t.Winner, 10);
+    var gameNum = Math.min(3, parseInt(t.N_GameInMatch, 10) || 1);
+
+    SS_ROLES.forEach(function (role, i) {
+      var c1 = dlNorm(side1[i]), c2 = dlNorm(side2[i]);
+      if (c1) {
+        priority[role][c1] = priority[role][c1] || { 1: 0, 2: 0, 3: 0 };
+        priority[role][c1][gameNum]++;
+        if (c2) {
+          counter[role][c1] = counter[role][c1] || {};
+          counter[role][c1][c2] = counter[role][c1][c2] || { games: 0, wins: 0 };
+          counter[role][c1][c2].games++;
+          if (winner === 1) counter[role][c1][c2].wins++;
+        }
+      }
+      if (c2) {
+        priority[role][c2] = priority[role][c2] || { 1: 0, 2: 0, 3: 0 };
+        priority[role][c2][gameNum]++;
+        if (c1) {
+          counter[role][c2] = counter[role][c2] || {};
+          counter[role][c2][c1] = counter[role][c2][c1] || { games: 0, wins: 0 };
+          counter[role][c2][c1].games++;
+          if (winner === 2) counter[role][c2][c1].wins++;
+        }
+      }
+    });
+
+    // Synergie ADC ↔ Support : indices 3 (ADC) et 4 (Sup) dans SS_ROLES.
+    [[side1, winner === 1], [side2, winner === 2]].forEach(function (pair) {
+      var side = pair[0], won = pair[1];
+      var adc = dlNorm(side[3]), sup = dlNorm(side[4]);
+      if (!adc || !sup) return;
+      var key = adc + '|' + sup;
+      pairStats[key] = pairStats[key] || { adc: adc, sup: sup, games: 0, wins: 0 };
+      pairStats[key].games++;
+      if (won) pairStats[key].wins++;
+    });
+  });
+
+  return { priority: priority, pairStats: pairStats, counter: counter, builtAt: Date.now() };
+}
+
+// Une seule construction par session (le cache 6h de /api/lp couvre le reste) :
+// on stocke la PROMESSE puis son résultat dans la même variable, pour qu'un appel
+// concurrent pendant le chargement ne relance pas 900 requêtes en double.
+async function dlMetaFetch() {
+  if (window._dlMeta) return window._dlMeta;
+  window._dlMeta = dlMetaBuild().then(function (m) {
+    window._dlMeta = m;
+    if (m && document.getElementById('dl-grid')) dlRenderGrid();
+    return m;
+  }).catch(function () { window._dlMeta = null; return null; });
+  return window._dlMeta;
+}
+
+// Meilleurs partenaires ADC↔Support pour un champion donné, triés par winrate réel
+// sur un minimum de games (voir seuil dans dlRenderGrid).
+function dlMetaBestPartners(meta, champNorm, wantRole) {
+  var out = [];
+  Object.keys(meta.pairStats).forEach(function (k) {
+    var p = meta.pairStats[k];
+    if (p.games < 3) return;
+    if (wantRole === 'ADC' && p.sup === champNorm) out.push({ champ: p.adc, games: p.games, wr: Math.round(p.wins / p.games * 100) });
+    if (wantRole === 'Sup' && p.adc === champNorm) out.push({ champ: p.sup, games: p.games, wr: Math.round(p.wins / p.games * 100) });
+  });
+  return out.sort(function (a, b) { return b.wr - a.wr || b.games - a.games; });
+}
+
+// Ce qu'ont déjà piké chaque camp cette game, classé par rôle STATIQUE du champion
+// (le même que celui qui organise déjà la grille) — un flex pick est donc rattaché
+// à son rôle dominant habituel, pas à l'intention du coach : limite connue et
+// assumée, pas une donnée inventée.
+function dlMetaContext() {
+  var s = _dlState, g = s.games[s.gameIndex];
+  var meRole = dlRoleOf('blue');
+  var mine = {}, theirs = {};
+  g.actions.forEach(function (a) {
+    if (a.type !== 'pick' || !a.champion) return;
+    var champ = (window._ssChamps || []).find(function (c) { return c.key === a.champion; });
+    var role = champ && champ.role; if (!role) return;
+    (a.by === meRole ? mine : theirs)[role] = dlNorm(champ.name);
+  });
+  return { mine: mine, theirs: theirs };
+}
+
 /* ── Scouting pendant la draft : c'est ce qui distingue l'outil d'un simulateur
    générique. Les pools adverses viennent des stats compétitives déjà chargées par
    l'onglet Avant-match ; rien n'est inventé, un pool absent reste absent. ── */
@@ -7541,9 +7673,27 @@ async function dlRenderGrid() {
   var q = (_dlQ || '').toLowerCase();
   var f = list.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
 
+  // Méta pro : lancé en tâche de fond au premier rendu, ne bloque jamais la grille —
+  // dlMetaFetch() se rappelle elle-même dlRenderGrid() une fois le calcul terminé.
+  if (!window._dlMeta) dlMetaFetch();
+  var meta = (window._dlMeta && window._dlMeta.priority) ? window._dlMeta : null;
+  var ctx = meta ? dlMetaContext() : null;
+  var gameNum = Math.min(3, s.gameIndex + 1);
+  // Les clés méta sont normalisées (dlNorm) pour matcher Leaguepedia ↔ Data Dragon —
+  // ce lookup sert juste à réafficher un vrai nom ("Nautilus") dans les infobulles.
+  var normToName = {}; list.forEach(function (c) { normToName[dlNorm(c.name)] = c.name; });
+
   var totalGames = function (c) {
     var mz = menaces[dlNorm(c.name)];
     return mz ? mz.reduce(function (t, x) { return t + x.games; }, 0) : -1;
+  };
+  // Priorité pro (nombre de fois pické/banné à ce poste, pour ce numéro de game du
+  // BO) — sert uniquement à trier, pas à afficher un badge de plus sur un bouton
+  // déjà minuscule (52px).
+  var metaPriority = function (c) {
+    if (!meta || !c.role) return -1;
+    var p = meta.priority[c.role] && meta.priority[c.role][dlNorm(c.name)];
+    return p ? p[gameNum] : -1;
   };
 
   var bouton = function (c) {
@@ -7551,10 +7701,38 @@ async function dlRenderGrid() {
     var mz = menaces[dlNorm(c.name)];
     var titre = anEsc(c.name) + (off ? ' — indisponible' : '');
     if (mz) titre += ' — joué par ' + mz.map(function (x) { return x.joueur + ' (' + x.games + 'g, ' + x.wr + '%)'; }).join(', ');
-    return '<button class="ss-champ' + (off ? ' dl-off' : '') + (mz ? ' dl-menace' : '') + '"' + (off || !step ? ' disabled' : '')
+
+    // Contre / synergie pro (LCK/LPL/LEC) : au même poste que l'ennemi déjà pické
+    // → winrate réel face à lui ; en ADC/Support avec un allié déjà pické → winrate
+    // réel de la paire. Minimum 3 games pour éviter d'afficher un chiffre sur un
+    // échantillon trop petit pour être fiable.
+    var metaCls = '', metaBadge = '';
+    var cNorm = dlNorm(c.name);
+    if (meta && c.role) {
+      var vsChamp = ctx.theirs[c.role];
+      var vs = vsChamp && meta.counter[c.role] && meta.counter[c.role][cNorm] && meta.counter[c.role][cNorm][vsChamp];
+      if (vs && vs.games >= 3) {
+        var wr = Math.round(vs.wins / vs.games * 100);
+        if (wr < 45) {
+          metaCls = ' dl-counter'; metaBadge = '<span class="dl-counter-badge">' + wr + '%</span>';
+          titre += ' — ' + wr + '% de victoires face à ' + anEsc(normToName[vsChamp] || vsChamp) + ' en LCK/LPL/LEC (' + vs.games + ' games)';
+        }
+      }
+      if (!metaBadge && (c.role === 'ADC' || c.role === 'Sup')) {
+        var allyRole = c.role === 'ADC' ? 'Sup' : 'ADC', ally = ctx.mine[allyRole];
+        var partners = ally ? dlMetaBestPartners(meta, ally, c.role) : [];
+        var top = partners[0];
+        if (top && top.champ === cNorm && top.wr >= 55) {
+          metaCls = ' dl-synergy'; metaBadge = '<span class="dl-synergy-badge">' + top.wr + '%</span>';
+          titre += ' — ' + top.wr + '% de victoires avec ' + anEsc(normToName[ally] || ally) + ' en LCK/LPL/LEC (' + top.games + ' games)';
+        }
+      }
+    }
+
+    return '<button class="ss-champ' + (off ? ' dl-off' : '') + (mz ? ' dl-menace' : '') + metaCls + '"' + (off || !step ? ' disabled' : '')
       + ' onclick="dlSelect(\'' + c.key + '\')" title="' + titre + '">'
       + '<img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span>'
-      + (mz ? '<span class="dl-mz">' + totalGames(c) + '</span>' : '')
+      + (mz ? '<span class="dl-mz">' + totalGames(c) + '</span>' : '') + metaBadge
       + '</button>';
   };
 
@@ -7566,8 +7744,9 @@ async function dlRenderGrid() {
 
   grid.innerHTML = SS_ROLES.concat(['']).map(function (r) {
     var champs = groupes[r] || []; if (!champs.length) return '';
-    // À l'intérieur d'un rôle, les champions joués par l'adversaire passent devant.
-    champs.sort(function (a, b) { return totalGames(b) - totalGames(a) || a.name.localeCompare(b.name); });
+    // À l'intérieur d'un rôle : d'abord les champions joués par l'adversaire (menace
+    // directe), puis la priorité pro pour cette game du BO, puis l'ordre alphabétique.
+    champs.sort(function (a, b) { return totalGames(b) - totalGames(a) || metaPriority(b) - metaPriority(a) || a.name.localeCompare(b.name); });
     // Le repère de menace reste porté par la bordure + le badge du champion lui-même
     // (`.dl-menace` / `.dl-mz`) : un coach pro connaît la méta, inutile de le lui redire
     // en toutes lettres à côté du nom du rôle.
