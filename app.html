@@ -4150,7 +4150,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       <!-- Style de jeu automatique -->
       <div id="playstyle-card" class="card" style="margin-bottom:16px;display:none">
-        <div class="card-title">🎮 Style de jeu détecté</div>
+        <div class="card-title">Profil de jeu</div>
         <div id="playstyle-content" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:4px 0"></div>
       </div>
 
@@ -14073,58 +14073,114 @@ function setGraphTab(tab, btn) {
 // ════════════════════════════════════════════════════════════
 // ④ DÉTECTION AUTOMATIQUE DU STYLE DE JEU
 // ════════════════════════════════════════════════════════════
+/* ── Profils de joueur, par rôle et sur données mesurées ──
+   Chaque profil est un faisceau de métriques Riot « challenges ». Son score est
+   la moyenne des notes DÉJÀ CALIBRÉES par scoreStatCalibrated() : les profils
+   héritent donc automatiquement des seuils propres à chaque poste, sans qu'on
+   réintroduise un barème parallèle (c'est exactement ce qui faisait diverger
+   l'affichage avancé du moteur de score avant correction).
+   Une métrique sans seuil pour le poste renvoie null et est simplement ignorée
+   dans la moyenne — jamais comptée comme un zéro. */
+const PLAYSTYLES = {
+  Top: [
+    { lbl:'Split pusher', color:'#FBBF24', keys:['soloTurretsLate','turretPlates','turretTakedowns'], desc:'Pression latérale, prend les tours seul' },
+    { lbl:'Lane bully',   color:'#F87171', keys:['maxLevelLead','laneMinions10','soloKills'],         desc:'Écrase sa lane et prend l\'avantage tôt' },
+    { lbl:'Teamfighter',  color:'#818CF8', keys:['teamDmgPct','takedownsFirst14','dpm'],              desc:'Impact dans les combats groupés' },
+    { lbl:'Contrôle',     color:'#34D399', keys:['stealthWards','controlWards','wardsKilled'],        desc:'Investit dans la vision' },
+  ],
+  Jgl: [
+    { lbl:'Farmeur',      color:'#2DD4BF', keys:['jungleCsBefore10','dpm','teamDmgPct'],              desc:'Priorité aux camps et au scaling' },
+    { lbl:'Gank / tempo', color:'#F87171', keys:['takedownsFirst14','firstBloodRate','soloKills'],    desc:'Cherche les duels tôt' },
+    { lbl:'Envahisseur',  color:'#FBBF24', keys:['jungleInvasion','wardsKilled','visionAdv'],         desc:'Prend la jungle adverse' },
+    { lbl:'Objectifs',    color:'#818CF8', keys:['epicSteals','turretTakedowns','turretPlates'],      desc:'Joue autour des objectifs' },
+  ],
+  Mid: [
+    { lbl:'Laneur',       color:'#FBBF24', keys:['laneMinions10','maxLevelLead','soloKills'],         desc:'Domine sa lane' },
+    { lbl:'Roameur',      color:'#F87171', keys:['takedownsFirst14','firstBloodRate','wardsKilled'],  desc:'Quitte sa lane pour créer' },
+    { lbl:'Carry',        color:'#818CF8', keys:['teamDmgPct','dpm','turretPlates'],                  desc:'Porte les dégâts de l\'équipe' },
+    { lbl:'Mécanique',    color:'#34D399', keys:['skillshotsHit','skillshotsDodged','survivedLowHp'], desc:'Précision et survie' },
+  ],
+  ADC: [
+    { lbl:'Carry',        color:'#818CF8', keys:['teamDmgPct','dpm','turretTakedowns'],               desc:'Porte les dégâts de l\'équipe' },
+    { lbl:'Laneur',       color:'#FBBF24', keys:['laneMinions10','maxLevelLead','turretPlates'],      desc:'Prend l\'avantage en lane' },
+    { lbl:'Positionnement',color:'#34D399',keys:['skillshotsDodged','perfectGame','survivedLowHp'],   desc:'Sûr, meurt peu' },
+    { lbl:'Agressif',     color:'#F87171', keys:['firstBloodRate','takedownsFirst14','soloKills'],    desc:'Cherche le combat tôt' },
+  ],
+  Sup: [
+    { lbl:'Initiateur',   color:'#F87171', keys:['takedownsFirst14','firstBloodRate','skillshotsHit'],desc:'Engage et ouvre les combats' },
+    { lbl:'Protecteur',   color:'#818CF8', keys:['saveAlly','survivedLowHp','perfectGame'],           desc:'Sauve ses alliés, sécurise' },
+    { lbl:'Contrôle',     color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'], desc:'Contrôle la carte' },
+    { lbl:'Roameur',      color:'#FBBF24', keys:['takedownsFirst14','wardsKilled','epicSteals'],      desc:'Se déplace pour créer' },
+  ],
+};
+
+// Note d'un profil = moyenne des notes calibrées de ses métriques.
+// Renvoie null si AUCUNE de ses métriques n'est notable pour ce poste.
+function playstyleScore(prof, ch) {
+  const notes = prof.keys.map(function (k) {
+    const def = ADV_METRICS[k];
+    if (!def || !def.id) return null;
+    return scoreStatCalibrated(def.id, ch[k]);
+  }).filter(function (s) { return s !== null && s !== undefined && !isNaN(s); });
+  if (!notes.length) return null;
+  return notes.reduce(function (a, b) { return a + b; }, 0) / notes.length;
+}
+
 function detectPlaystyle() {
   const card = document.getElementById('playstyle-card');
   const content = document.getElementById('playstyle-content');
   if (!content) return;
 
-  const kda     = parseFloat(rawData.kda)       || 0;
-  const kp      = parseFloat(rawData.kill_part)  || 0;
-  const dmg     = parseFloat(rawData.dmg_share)  || 0;
-  const vision  = parseFloat(rawData.vision)     || 0;
-  const cs      = parseFloat(rawData.cs_min)     || 0;
-  const wr      = parseFloat(rawData.winrate)    || 0;
+  const role = currentRole || 'Mid';
+  const ch = window._lastChallenges;
 
-  if (!kda && !kp && !dmg) {
-    if (card) card.style.display = 'none';
-    return;
-  }
+  // Sans données avancées (avant tout import), on n'affiche rien plutôt qu'un
+  // profil déduit de deux moyennes — un profil faux est pire qu'aucun profil.
+  if (!ch) { if (card) card.style.display = 'none'; return; }
+
+  const notes = (PLAYSTYLES[role] || PLAYSTYLES.Mid)
+    .map(function (p) { return { p: p, sc: playstyleScore(p, ch) }; })
+    .filter(function (x) { return x.sc !== null; })
+    .sort(function (a, b) { return b.sc - a.sc; });
+
+  if (!notes.length) { if (card) card.style.display = 'none'; return; }
   if (card) card.style.display = 'block';
 
-  const styles = [];
+  // On retient les profils nettement au-dessus de la moyenne (>= 6/10), au plus
+  // deux : un joueur défini par quatre profils à la fois n'est pas caractérisé.
+  let retenus = notes.filter(function (x) { return x.sc >= 6; }).slice(0, 2);
+  const equilibre = !retenus.length;
+  // Aucun profil marqué : on montre quand même le plus fort, en le qualifiant
+  // d'équilibré — c'est une information, pas un échec de détection.
+  if (equilibre) retenus = notes.slice(0, 1);
 
-  // Carry: high dmg share + high KDA
-  if (dmg >= 30 && kda >= 3.5) styles.push({ lbl:'Carry', color:'#FF5A4A', desc:'Fort impact offensif' });
+  const carte = function (x, attenue) {
+    const sc = x.sc.toFixed(1);
+    const col = attenue ? 'var(--sub2)' : x.p.color;
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:120px">'
+      + '<div style="display:flex;align-items:baseline;gap:6px">'
+      + '<span style="font-size:14px;font-weight:700;color:' + col + '">' + anEsc(x.p.lbl) + '</span>'
+      + '<span style="font-family:monospace;font-size:11px;font-weight:700;color:' + col + '">' + sc + '</span>'
+      + '</div>'
+      + '<span style="font-family:monospace;font-size:10px;color:var(--sub);text-align:center">' + anEsc(x.p.desc) + '</span>'
+      + '</div>';
+  };
 
-  // Teamplay: high KP + lower dmg
-  if (kp >= 68 && dmg < 28) styles.push({ lbl:'Teamplay', color:'#4A9EFF', desc:'Très impliqué en équipe' });
+  content.innerHTML = (equilibre
+      ? '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:120px">'
+        + '<span style="font-size:14px;font-weight:700;color:var(--sub2)">Équilibré</span>'
+        + '<span style="font-family:monospace;font-size:10px;color:var(--sub)">Aucun profil marqué</span></div>'
+      : '')
+    + retenus.map(function (x) { return carte(x, equilibre); }).join('')
+    + '<div class="faint" style="font-size:10.5px;align-self:center;max-width:210px;line-height:1.45">'
+    + 'Profils calculés sur les métriques Riot du poste ' + anEsc(SS_ROLE_LABEL[role] || role) + '.</div>';
 
-  // Consistant: high WR + decent KDA
-  if (wr >= 54 && kda >= 3.0) styles.push({ lbl:'Consistant', color:'#2DD4A7', desc:'Résultats stables' });
-
-  // Agressif: very high KP + decent KDA
-  if (kp >= 72 && kda >= 3.0) styles.push({ lbl:'Agressif', color:'#F5A623', desc:'Cherche le fight' });
-
-  // Passif / Farm: very high CS + low KP
-  if (cs >= 8.5 && kp < 55) styles.push({ lbl:'Farmer', color:'#2DD4BF', desc:'Priorité CS & scaling' });
-
-  // Vision focused (support)
-  if (vision >= 55) styles.push({ lbl:'Vision', color:'#C084FC', desc:'Contrôle de la vision' });
-
-  // Fallback
-  if (!styles.length) styles.push({ lbl:'Équilibré', color:'var(--sub2)', desc:'Profil polyvalent' });
-
-  content.innerHTML = styles.map(s => `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surf2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;min-width:100px">
-      <span style="font-size:14px;font-weight:700;color:${s.color}">${s.lbl}</span>
-      <span style="font-family:monospace;font-size:10px;color:var(--sub)">${s.desc}</span>
-    </div>`).join('');
-
-  // Also update presentation mode style
+  // Mode présentation coach
   const presStyle = document.getElementById('pres-style-content');
-  if (presStyle) presStyle.innerHTML = styles.map(s =>
-    `<div style="font-size:13px;font-weight:700;color:${s.color};margin-bottom:4px">${s.lbl} <span style="font-size:11px;color:var(--sub);font-weight:400">— ${s.desc}</span></div>`
-  ).join('');
+  if (presStyle) presStyle.innerHTML = retenus.map(function (x) {
+    return '<div style="font-size:13px;font-weight:700;color:' + (equilibre ? 'var(--sub2)' : x.p.color) + ';margin-bottom:4px">'
+      + anEsc(x.p.lbl) + ' <span style="font-size:11px;color:var(--sub);font-weight:400">— ' + anEsc(x.p.desc) + ' (' + x.sc.toFixed(1) + '/10)</span></div>';
+  }).join('');
 }
 
 // ════════════════════════════════════════════════════════════
