@@ -102,6 +102,27 @@ test('le domaine kpis est accepte et partage par structure', async () => {
   assert.deepEqual(res._json.kpis, prefs, 'le reglage doit suivre la structure');
 });
 
+// Le domaine 'refbase' porte l'echantillon de joueurs servant a calibrer les
+// metriques en centiles. Il doit etre partage par la structure : sinon chaque coach
+// noterait sur sa propre reference et deux fiches du meme staff ne seraient pas
+// comparables. Sans l'ajout a la liste blanche de store.js, le PUT partirait en 400
+// et la base ne grossirait jamais au-dela du navigateur courant.
+test('le domaine refbase est accepte et partage par structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'enzo', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+  const base = { Mid: { keys: ['soloKills'], ids: ['p1'], rows: [[1.2]] } };
+
+  const put = mockRes();
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + tEnzo }, body: { domain: 'refbase', data: base } }, put);
+  assert.equal(put._status, 200, 'le domaine refbase doit etre accepte');
+
+  const res = mockRes();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { domains: 'refbase' } }, res);
+  assert.deepEqual(res._json.refbase, base, 'la base de reference doit suivre la structure');
+});
+
 test('deux structures differentes restent isolees', async () => {
   const store = {};
   mockUpstash(store);

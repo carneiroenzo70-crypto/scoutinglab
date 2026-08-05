@@ -54,6 +54,7 @@ const VS_STORE_DOMAINS = {
   structures: ['spes_crm_structures'],
   seasons:    ['vs_seasons'],
   kpis:       ['vs_kpi_prefs'],
+  refbase:    ['vs_refbase'],
 };
 const vsStore = (function () {
   const timers = {};
@@ -14381,8 +14382,10 @@ const ADV_METRICS = {
   outnumberedKills:  { id:null, grp:'Combat', roles:['Top','Mid'],       lbl:'Kills en infériorité', tip:'Kills obtenus en étant en sous-nombre — prise de risque payante' },
   killsNearEnemyTurret: { id:null, grp:'Combat', roles:['Top','Mid','ADC'], lbl:'Kills sous tour ennemie', tip:'Kills dive sous la tour adverse — agressivité assumée' },
   enemyChampionImmobilizations: { id:null, grp:'Combat', roles:['Sup','Jgl','Top'], lbl:'Immobilisations infligées', tip:'Nombre de CC posés sur les ennemis' },
-  deathsByEnemyChamps: { id:null, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Morts (champions)', tip:'Morts causées par un champion ennemi — à lire avec le rôle' },
-  maxKillDeficit:    { id:null, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Déficit de kills max', tip:'Plus gros retard au score encaissé — capacité à jouer derrière' },
+  // `inv` : ici le BAS est bon. Sans ce drapeau, le centile classerait dernier le
+  // joueur qui meurt le moins.
+  deathsByEnemyChamps: { id:null, inv:true, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Morts (champions)', tip:'Morts causées par un champion ennemi — moins il y en a, mieux c\'est' },
+  maxKillDeficit:    { id:null, inv:true, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Déficit de kills max', tip:'Plus gros retard au score encaissé — moins il y en a, mieux c\'est' },
   pickKillWithAlly:  { id:null, grp:'Combat', roles:['Sup','Jgl'],       lbl:'Picks avec un allié', tip:'Kills isolés réalisés en duo — jeu de pick' },
   killAfterHiddenWithAlly: { id:null, grp:'Combat', roles:['Sup','Jgl'], lbl:'Kills après embuscade', tip:'Kills après être resté caché avec un allié' },
   knockEnemyIntoTeamAndKill: { id:null, grp:'Combat', roles:['Sup','Jgl','Top'], lbl:'Engages vers son équipe', tip:'Ennemi projeté dans son équipe puis tué' },
@@ -14451,6 +14454,112 @@ const ADV_GRP_HISTO = {
 function advGrp(key) {
   const d = ADV_METRICS[key] || {};
   return d.grp || ADV_GRP_HISTO[key] || 'Autres';
+}
+
+/* ── Base de référence : noter une métrique par comparaison, pas par barème ──
+   Les 49 métriques ajoutées au catalogue n'ont aucun seuil par poste, et en inventer
+   un reproduirait le défaut corrigé en fe42edf. On note donc en CENTILE face aux
+   joueurs déjà importés au même poste : ce sont les stats des joueurs qui fixent la
+   barre, pas nous.
+
+   Format, orienté colonnes pour tenir dans la limite de 1 Mo par domaine de
+   api/store.js : les noms de métriques sont stockés UNE fois par poste, pas répétés
+   sur chaque joueur. 5 postes × 120 joueurs × 74 valeurs ≈ 265 Ko, contre ~900 Ko
+   si chaque joueur portait ses propres clés.
+     vs_refbase = { Mid: { keys:[...], ids:[cléJoueur...], rows:[[valeurs...]] } }
+
+   Plafond par RÉCENCE et non échantillon aléatoire : la méta bouge, une valeur d'il
+   y a deux saisons décrit un jeu qui n'existe plus. */
+const REF_CAP = 120;   // joueurs de référence conservés par poste
+const REF_MIN = 15;    // en dessous, AUCUNE note : un centile sur 5 joueurs ne veut rien dire
+
+function refBase() {
+  try { return JSON.parse(localStorage.getItem('vs_refbase') || '{}') || {}; }
+  catch (_) { return {}; }
+}
+function refSaveBase(b) {
+  localStorage.setItem('vs_refbase', JSON.stringify(b));
+  // Sans ce save, la référence resterait sur ce seul navigateur et deux coachs de la
+  // même structure ne noteraient pas sur la même base.
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('refbase');
+}
+
+/* Enregistre (ou met à jour) un joueur dans la référence de son poste.
+   La clé joueur évite qu'un même joueur réimporté dix fois compte dix fois et tire
+   toute la distribution vers lui. */
+function refRecord(role, playerKey, ch) {
+  if (!role || !playerKey || !ch) return;
+  const noms = Object.keys(ADV_METRICS).sort();
+  const b = refBase();
+  let t = b[role];
+  // Réalignement si le catalogue a changé depuis le dernier enregistrement : on
+  // remappe par NOM, jamais par position — sinon les colonnes se décalent en silence.
+  if (t && t.keys && t.keys.join('\x01') !== noms.join('\x01')) {
+    const idx = {};
+    t.keys.forEach(function (k, i) { idx[k] = i; });
+    t.rows = t.rows.map(function (r) {
+      return noms.map(function (n) { return idx[n] === undefined ? null : r[idx[n]]; });
+    });
+    t.keys = noms;
+  }
+  if (!t) t = { keys: noms, ids: [], rows: [] };
+
+  /* Arrondi à 2 décimales avant stockage. Sans lui, une valeur du type
+     43.218473628391 pèse 15 caractères et le blob complet approchait 690 Ko, trop
+     près de la limite de 1 Mo par domaine de api/store.js. Aucune perte utile : on
+     s'en sert pour classer des joueurs entre eux, pas pour de la comptabilité. */
+  const row = noms.map(function (n) {
+    const v = ch[n];
+    return (typeof v === 'number' && isFinite(v)) ? Math.round(v * 100) / 100 : null;
+  });
+  const pos = t.ids.indexOf(playerKey);
+  if (pos >= 0) { t.ids.splice(pos, 1); t.rows.splice(pos, 1); }  // remonte en tête de récence
+  t.ids.push(playerKey);
+  t.rows.push(row);
+  while (t.ids.length > REF_CAP) { t.ids.shift(); t.rows.shift(); }
+
+  b[role] = t;
+  refSaveBase(b);
+}
+
+// Valeurs connues pour une métrique à un poste (les null sont écartés : « non mesuré »
+// n'est pas « zéro », le compter comme zéro écraserait la distribution vers le bas).
+function refSample(role, key) {
+  const t = refBase()[role];
+  if (!t || !t.keys) return [];
+  const i = t.keys.indexOf(key);
+  if (i < 0) return [];
+  return t.rows.map(function (r) { return r[i]; })
+               .filter(function (v) { return typeof v === 'number' && isFinite(v); });
+}
+function refCount(role, key) { return refSample(role, key).length; }
+
+/* Note 0-10 = centile de `val` dans l'échantillon du poste.
+   Renvoie null sous REF_MIN : mieux vaut afficher une valeur brute sans note que
+   d'habiller un manque de données d'une précision inventée. */
+function refScore(role, key, val) {
+  if (typeof val !== 'number' || !isFinite(val)) return null;
+  const s = refSample(role, key);
+  if (s.length < REF_MIN) return null;
+  let below = 0, equal = 0;
+  s.forEach(function (v) { if (v < val) below++; else if (v === val) equal++; });
+  let pct = (below + equal / 2) / s.length;
+  // Métriques où le BAS est bon (morts, déficit de kills) : le centile s'inverse,
+  // sinon le joueur le plus solide sortirait dernier.
+  if ((ADV_METRICS[key] || {}).inv) pct = 1 - pct;
+  return Math.min(10, Math.max(0.1, pct * 10));
+}
+
+/* Note d'une métrique du catalogue, source unique pour l'affichage ET le scoring :
+   seuil calibré s'il existe, sinon centile de la base, sinon rien. */
+function advScore(key, val, role) {
+  const def = ADV_METRICS[key];
+  if (!def) return null;
+  if (def.id) {
+    const sc = scoreStatCalibrated(def.id, val);
+    if (sc !== null && sc !== undefined && !isNaN(sc)) return sc;
+  }
+  return refScore(role || currentRole || 'Mid', key, val);
 }
 
 /* ── Archétypes de joueur, par poste ──────────────────────────────────────────
@@ -14529,7 +14638,9 @@ function arcSet(key) {
   else { rawData.archetype = key; }
   arcRenderPills();
   advRerender();
-  if (typeof saveToHistory === 'function' && rawData.pseudo) { try { saveToHistory(); } catch (_) {} }
+  // Pas de sauvegarde automatique ici : saveToHistory() exige un pseudo et affiche un
+  // toast, ce qui interdirait de choisir un profil avant l'import et spammerait à
+  // chaque clic. L'archétype vit dans rawData, il partira avec la prochaine sauvegarde.
 }
 /* Pastilles d'archétype sous le sélecteur de rôle, donc disponibles AVANT l'import :
    le coach déclare le style qu'il vient scouter, puis importe. */
@@ -14656,8 +14767,9 @@ function buildAdvancedSection(ch, role) {
     const rows = block.keys.map(function (key) {
       const def = ADV_METRICS[key]; if (!def) return '';
       const val = ch[key];
-      // La note vient du moteur SPES lui-même — jamais d'un barème parallèle.
-      const sc = def.id ? scoreStatCalibrated(def.id, val) : null;
+      // Source unique : seuil calibré s'il existe, sinon centile de la base de
+      // référence du poste. Jamais un barème parallèle.
+      const sc = advScore(key, val, role);
       const noted = (sc !== null && sc !== undefined && !isNaN(sc));
       if (noted) notes.push(sc);
       const col = !noted ? 'var(--sub)'
@@ -14668,9 +14780,18 @@ function buildAdvancedSection(ch, role) {
         : '<div style="height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">'
           + '<div style="height:100%;width:' + Math.round(sc * 10) + '%;background:' + col
           + ';border-radius:2px;transition:width .4s ease"></div></div>';
-      return '<div style="margin-bottom:8px" title="' + anEsc(def.tip) + '">'
+      /* Provenance de la note affichée en clair. Une note issue d'un centile sur 18
+         joueurs n'a pas le même poids qu'un seuil calibré, et le coach doit pouvoir
+         le voir sans nous croire sur parole. */
+      const n = def.id ? 0 : refCount(role, key);
+      const prov = !noted
+        ? (def.id ? '' : (n ? ' · réf. ' + n + '/' + REF_MIN : ''))
+        : (def.id ? '' : ' · centile sur ' + n);
+      return '<div style="margin-bottom:8px" title="' + anEsc(def.tip + (prov ? ' —' + prov.replace(' ·','') : '')) + '">'
         + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
-        + '<span style="font-size:11px;color:var(--fg)">' + anEsc(def.lbl) + '</span>'
+        + '<span style="font-size:11px;color:var(--fg)">' + anEsc(def.lbl)
+        + (prov ? '<span class="faint" style="font-size:9px;margin-left:5px">' + anEsc(prov.replace(' · ','')) + '</span>' : '')
+        + '</span>'
         + '<span style="font-size:12px;font-weight:700;font-family:monospace;color:' + col + '">' + fmt(val) + '</span>'
         + '</div>' + barHtml + '</div>';
     }).join('');
@@ -15292,6 +15413,16 @@ async function fetchRiotData() {
     buildChampTable(stats.champDetails, count);
     if (stats.challenges) {
       window._lastChallenges = stats.challenges;
+      /* Le joueur rejoint la base de référence de son poste AVANT l'affichage : il
+         participe donc à la distribution qui le note, comme tous les autres. La clé
+         est son Riot ID (à défaut son pseudo) pour qu'un réimport le mette à jour au
+         lieu de l'ajouter une deuxième fois et de tirer la distribution vers lui. */
+      try {
+        const pseudo = (document.getElementById('d-pseudo')?.value || '').trim();
+        const tag    = (document.getElementById('d-tag')?.value || '').trim();
+        const cle = pseudo ? (pseudo + '#' + tag).toLowerCase() : '';
+        if (cle) refRecord(currentRole, cle, stats.challenges);
+      } catch (_) { /* la référence est un bonus : son échec ne doit pas casser l'import */ }
       buildAdvancedSection(stats.challenges, currentRole);
       // ── Injection dans rawData pour le moteur de scoring ──
       const ch = stats.challenges;
