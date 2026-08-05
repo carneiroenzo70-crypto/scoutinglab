@@ -14349,7 +14349,100 @@ const ADV_METRICS = {
   perfectGame:      { id:'chal_perfect_game',      lbl:'Parties sans mort',     tip:'% de parties terminées sans mourir — régularité' },
   immobilizeKill:   { id:null,                     lbl:'Engages convertis',     tip:"Immobilisations suivies d'un kill — qualité d'engage" },
   damageTakenPct:   { id:null,                     lbl:'Part des dégâts subis', tip:"% des dégâts encaissés par l'équipe — rôle de front" },
+
+  /* ── Métriques collectées mais non calibrées ────────────────────────────────
+     Elles viennent du balayage générique de l'objet `challenges` : le nom de clé
+     est celui de Riot. `id: null` parce qu'aucun seuil par poste n'existe pour
+     elles — elles s'affichent en valeur brute, SANS note. Inventer un barème ici
+     reproduirait exactement le bug corrigé plus tôt (un affichage qui contredit
+     le moteur de score). La note viendra quand on aura de quoi calibrer.
+     `roles` = postes où la métrique est proposée en priorité dans la boîte à outils. */
+
+  // Laning
+  maxCsAdvantageOnLaneOpponent: { id:null, grp:'Laning', roles:['Top','Mid','ADC'], lbl:'Avance CS max sur l\'adversaire', tip:'Plus gros écart de CS atteint sur son vis-à-vis de lane' },
+  takedownsAfterGainingLevelAdvantage: { id:null, grp:'Laning', roles:['Top','Mid'], lbl:'Takedowns après avance de niveau', tip:'Convertit-il une avance de niveau en kill ?' },
+  takedownsBeforeJungleMinionSpawn: { id:null, grp:'Laning', roles:['Jgl','Sup'], lbl:'Takedowns avant spawn des camps', tip:'Implication dans les invades de début de partie' },
+
+  // Économie
+  goldPerMinute:    { id:null, grp:'Économie', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Or / minute', tip:'Revenu par minute — efficacité économique globale' },
+  bountyGold:       { id:null, grp:'Économie', roles:['Mid','ADC'],  lbl:'Or de prime', tip:'Or récupéré sur les primes ennemies' },
+
+  // Combat
+  killParticipation: { id:null, grp:'Combat', roles:['Jgl','Sup','Mid'], lbl:'Participation aux kills', tip:'Part des kills de l\'équipe où le joueur est impliqué (0 à 1)' },
+  outnumberedKills:  { id:null, grp:'Combat', roles:['Top','Mid'],       lbl:'Kills en infériorité', tip:'Kills obtenus en étant en sous-nombre — prise de risque payante' },
+  killsNearEnemyTurret: { id:null, grp:'Combat', roles:['Top','Mid','ADC'], lbl:'Kills sous tour ennemie', tip:'Kills dive sous la tour adverse — agressivité assumée' },
+  enemyChampionImmobilizations: { id:null, grp:'Combat', roles:['Sup','Jgl','Top'], lbl:'Immobilisations infligées', tip:'Nombre de CC posés sur les ennemis' },
+  deathsByEnemyChamps: { id:null, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Morts (champions)', tip:'Morts causées par un champion ennemi — à lire avec le rôle' },
+  maxKillDeficit:    { id:null, grp:'Combat', roles:['Top','Jgl','Mid','ADC','Sup'], lbl:'Déficit de kills max', tip:'Plus gros retard au score encaissé — capacité à jouer derrière' },
+  pickKillWithAlly:  { id:null, grp:'Combat', roles:['Sup','Jgl'],       lbl:'Picks avec un allié', tip:'Kills isolés réalisés en duo — jeu de pick' },
+  killAfterHiddenWithAlly: { id:null, grp:'Combat', roles:['Sup','Jgl'], lbl:'Kills après embuscade', tip:'Kills après être resté caché avec un allié' },
+  knockEnemyIntoTeamAndKill: { id:null, grp:'Combat', roles:['Sup','Jgl','Top'], lbl:'Engages vers son équipe', tip:'Ennemi projeté dans son équipe puis tué' },
+  multikills:        { id:null, grp:'Combat', roles:['Mid','ADC','Jgl'], lbl:'Multi-kills', tip:'Doubles et plus — capacité à punir un mauvais combat' },
+  soloBaronKills:    { id:null, grp:'Combat', roles:['Top','Jgl'],       lbl:'Barons solo', tip:'Barons tués seul — pression de fin de partie' },
+
+  // Mécanique
+  dodgeSkillShotsSmallWindow: { id:null, grp:'Mécanique', roles:['Mid','ADC'], lbl:'Esquives serrées', tip:'Skillshots esquivés dans une fenêtre très courte' },
+  landSkillShotsEarlyGame: { id:null, grp:'Mécanique', roles:['Mid','Sup'],    lbl:'Skillshots touchés (early)', tip:'Précision dans les premières minutes' },
+  abilityUses:       { id:null, grp:'Mécanique', roles:['Mid','Sup'],   lbl:'Sorts utilisés', tip:'Volume de sorts lancés — activité mécanique' },
+  unseenRecalls:     { id:null, grp:'Mécanique', roles:['Top','Mid'],   lbl:'Retours non vus', tip:'Recalls hors de la vision ennemie — gestion du tempo' },
+  quickCleanse:      { id:null, grp:'Mécanique', roles:['ADC','Mid'],   lbl:'Cleanse rapides', tip:'Nettoyage de CC réagi rapidement' },
+
+  // Vision
+  visionScorePerMinute: { id:null, grp:'Vision', roles:['Sup','Jgl'],   lbl:'Score de vision / min', tip:'Score de vision normalisé par la durée — comparable entre parties' },
+  wardTakedownsBefore20M: { id:null, grp:'Vision', roles:['Sup','Jgl'], lbl:'Wards détruits avant 20 min', tip:'Déni de vision en phase de lane et de mid game' },
+  wardsGuarded:      { id:null, grp:'Vision', roles:['Sup'],            lbl:'Wards protégés', tip:'Wards défendus contre un sweeper adverse' },
+  controlWardTimeCoverageInRiverOrEnemyHalf: { id:null, grp:'Vision', roles:['Sup','Jgl'], lbl:'Couverture wards rose (zone adverse)', tip:'Temps de couverture des wards de contrôle en rivière ou moitié ennemie' },
+  twoWardsOneSweeperCount: { id:null, grp:'Vision', roles:['Sup','Jgl'], lbl:'2 wards en un sweep', tip:'Sweeps qui retirent au moins deux wards — efficacité du déni' },
+
+  // Jungle & objectifs
+  alliedJungleMonsterKills: { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Camps alliés', tip:'Camps farmés dans sa propre jungle' },
+  moreEnemyJungleThanOpponent: { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Jungle adverse > adversaire', tip:'A-t-il farmé plus de jungle ennemie que son vis-à-vis ?' },
+  buffsStolen:       { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Buffs volés', tip:'Buffs pris dans la jungle adverse' },
+  scuttleCrabKills:  { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Crabes', tip:'Crabes des sables tués — contrôle de rivière' },
+  initialCrabCount:  { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Crabes de départ', tip:'Crabes pris au tout début — priorité de rivière' },
+  initialBuffCount:  { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Buffs de départ', tip:'Buffs obtenus au premier clear' },
+  dragonTakedowns:   { id:null, grp:'Jungle & objectifs', roles:['Jgl','Sup'], lbl:'Dragons', tip:'Dragons pris avec participation' },
+  baronTakedowns:    { id:null, grp:'Jungle & objectifs', roles:['Jgl','Top'], lbl:'Barons', tip:'Barons pris avec participation' },
+  riftHeraldTakedowns: { id:null, grp:'Jungle & objectifs', roles:['Jgl','Top'], lbl:'Hérauts', tip:'Hérauts pris avec participation' },
+  epicMonsterKillsNearEnemyJungler: { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Objectifs sous pression', tip:'Objectifs pris alors que le jungler adverse était à proximité' },
+  epicMonsterStolenWithoutSmite: { id:null, grp:'Jungle & objectifs', roles:['Jgl','Sup'], lbl:'Objectifs volés sans smite', tip:'Vol d\'objectif sans smite — lecture des dégâts' },
+  junglerTakedownsNearDamagedEpicMonster: { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Duels sur objectif entamé', tip:'Takedowns du jungler près d\'un objectif déjà entamé' },
+  perfectDragonSoulsTaken: { id:null, grp:'Jungle & objectifs', roles:['Jgl'], lbl:'Âmes de dragon parfaites', tip:'Âmes obtenues sans concéder un seul dragon' },
+
+  // Structures
+  takedownOnFirstTurret: { id:null, grp:'Structures', roles:['Top','Mid','ADC'], lbl:'Takedown sur la 1re tour', tip:'Implication dans la première tour de la partie' },
+  turretsTakenWithRiftHerald: { id:null, grp:'Structures', roles:['Top','Jgl'], lbl:'Tours prises au Héraut', tip:'Conversion du Héraut en structures' },
+  multiTurretRiftHeraldCount: { id:null, grp:'Structures', roles:['Top','Jgl'], lbl:'Hérauts à plusieurs tours', tip:'Hérauts ayant fait tomber plus d\'une tour' },
+  kTurretsDestroyedBeforePlatesFall: { id:null, grp:'Structures', roles:['Top','Mid','ADC'], lbl:'Tours avant chute des plaques', tip:'Tours détruites avant la fin des plaques — tempo de lane' },
+
+  // Soutien
+  effectiveHealAndShielding: { id:null, grp:'Soutien', roles:['Sup','Top'], lbl:'Soins + boucliers efficaces', tip:'Soins et boucliers réellement utiles (hors surplus)' },
+  completeSupportQuestInTime: { id:null, grp:'Soutien', roles:['Sup'], lbl:'Quête support dans les temps', tip:'Quête de l\'objet support terminée dans le délai attendu' },
+  highestCrowdControlScore: { id:null, grp:'Soutien', roles:['Sup','Jgl'], lbl:'Meilleur score de CC', tip:'Score de contrôle de foule le plus élevé de la partie' },
+
+  // Régularité
+  survivedThreeImmobilizesInFight: { id:null, grp:'Régularité', roles:['Top','ADC'], lbl:'Survies à 3 CC', tip:'Combats survécus après trois immobilisations — résilience' },
+  flawlessAces:      { id:null, grp:'Régularité', roles:['Mid','ADC'],  lbl:'Aces sans perte', tip:'Aces réalisés sans perdre un allié' },
+  twelveAssistStreakCount: { id:null, grp:'Régularité', roles:['Sup'],  lbl:'Séries de 12 assists', tip:'Séries longues d\'assists — constance du soutien' },
 };
+
+/* Thème d'affichage pour les 25 métriques historiques (les nouvelles portent
+   déjà leur `grp`). Séparé du catalogue pour ne pas réécrire les 25 lignes. */
+const ADV_GRP_HISTO = {
+  soloKills:'Combat', skillshotsDodged:'Mécanique', skillshotsHit:'Mécanique',
+  killsUnderTurret:'Combat', turretPlates:'Structures', turretTakedowns:'Structures',
+  soloTurretsLate:'Structures', visionAdv:'Vision', stealthWards:'Vision',
+  controlWards:'Vision', wardsKilled:'Vision', jungleInvasion:'Jungle & objectifs',
+  jungleCsBefore10:'Jungle & objectifs', firstBloodRate:'Combat',
+  survivedLowHp:'Régularité', takedownsFirst14:'Combat', epicSteals:'Jungle & objectifs',
+  saveAlly:'Soutien', teamDmgPct:'Combat', dpm:'Combat', laneMinions10:'Laning',
+  maxLevelLead:'Laning', perfectGame:'Régularité', immobilizeKill:'Soutien',
+  damageTakenPct:'Soutien',
+};
+function advGrp(key) {
+  const d = ADV_METRICS[key] || {};
+  return d.grp || ADV_GRP_HISTO[key] || 'Autres';
+}
 
 /* Composition des blocs PAR RÔLE : un Support n'est plus jugé sur les plaques de
    tourelle ni les tours prises en solo, un Jungler a ses camps et son tempo. */
@@ -14488,33 +14581,78 @@ function advOpenConfig() {
   const enabled = advEnabledKeys(role);
   const defauts = advDefaultKeys(role);
 
+  // Clés réellement présentes dans le dernier import : sert à signaler une métrique
+  // du catalogue que Riot ne renvoie pas (nom de champ obsolète, ou absente de ce
+  // type de partie). Sans ce repère, on cocherait un indicateur qui resterait à « — »
+  // sans jamais savoir pourquoi.
+  const dispo = window._advLastCh || null;
+  const present = function (k) { return !dispo || (dispo[k] !== undefined && dispo[k] !== null); };
+
   const ligne = function (key) {
     const d = ADV_METRICS[key];
     const on = enabled.indexOf(key) >= 0;
     const parDefaut = defauts.indexOf(key) >= 0;
     // Prévient AVANT de cocher : ce KPI n'a pas de barème pour ce poste, il
     // s'affichera en valeur brute sans note.
-    const note = d.id ? (scoreStatCalibrated(d.id, 1) === null ? ' · non noté à ce poste' : '') : ' · non noté';
-    return '<label class="advcfg-row">'
+    const note = d.id ? (scoreStatCalibrated(d.id, 1) === null ? ' · non noté à ce poste' : '') : ' · valeur brute, non notée';
+    const absent = !present(key);
+    return '<label class="advcfg-row" data-q="' + anEsc((d.lbl + ' ' + d.tip + ' ' + advGrp(key)).toLowerCase()) + '"'
+      + (absent ? ' style="opacity:.55"' : '') + '>'
       + '<input type="checkbox" data-k="' + key + '"' + (on ? ' checked' : '') + '>'
       + '<span class="advcfg-lbl">' + anEsc(d.lbl)
       + (parDefaut ? '' : '<span class="advcfg-tag">hors poste</span>')
+      + (absent ? '<span class="advcfg-tag">absent des données</span>' : '')
       + '</span>'
       + '<span class="advcfg-tip">' + anEsc(d.tip) + anEsc(note) + '</span>'
       + '</label>';
   };
 
-  // Les métriques du poste d'abord, le reste du catalogue ensuite.
-  const duRole = defauts.slice();
-  const autres = Object.keys(ADV_METRICS).filter(function (k) { return duRole.indexOf(k) < 0; });
+  const duRole  = defauts.slice();
+  // Proposés pour ce poste : le catalogue déclare les postes où la métrique est
+  // pertinente. C'est ce qui évite de noyer un coach de Support sous les métriques
+  // de jungle.
+  const proposes = Object.keys(ADV_METRICS).filter(function (k) {
+    const r = ADV_METRICS[k].roles;
+    return duRole.indexOf(k) < 0 && Array.isArray(r) && r.indexOf(role) >= 0;
+  });
+  const restants = Object.keys(ADV_METRICS).filter(function (k) {
+    return duRole.indexOf(k) < 0 && proposes.indexOf(k) < 0;
+  });
+  // Regroupement thématique du reste : une liste plate de 70 lignes est illisible.
+  const parGrp = {};
+  restants.forEach(function (k) { (parGrp[advGrp(k)] = parGrp[advGrp(k)] || []).push(k); });
+  const grpHtml = Object.keys(parGrp).sort().map(function (g) {
+    return '<div class="advcfg-sec">' + anEsc(g) + '</div>' + parGrp[g].map(ligne).join('');
+  }).join('');
+
+  // Métriques que Riot a renvoyées et que le catalogue ne libelle pas encore.
+  // C'est la contrepartie de la collecte générique : au lieu de deviner les noms de
+  // champs, on montre ceux qui existent vraiment dans les données du joueur.
+  const inconnues = dispo
+    ? Object.keys(dispo).filter(function (k) { return !ADV_METRICS[k]; }).sort()
+    : [];
+  const inconnuesHtml = inconnues.length
+    ? '<div class="advcfg-sec">Détectés dans les données, pas encore libellés (' + inconnues.length + ')</div>'
+      + '<div class="advcfg-tip" style="padding:2px 0 8px">Riot renvoie ces mesures pour ce joueur mais elles n\'ont pas encore de libellé français ni de barème. Dis-moi lesquelles t\'intéressent et je les ajoute au catalogue.</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:4px;padding-bottom:6px">'
+      + inconnues.map(function (k) {
+          return '<span class="advcfg-tag" style="font-family:monospace">' + anEsc(k) + ' = ' + anEsc(String(dispo[k])) + '</span>';
+        }).join('') + '</div>'
+    : '';
+
+  const total = Object.keys(ADV_METRICS).length;
 
   const ov = document.createElement('div');
   ov.className = 'rs-modal-ov';
   ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(680px,95vw);max-height:88vh;overflow:auto">'
     + '<div class="rs-modal-h">Indicateurs suivis · poste ' + anEsc(SS_ROLE_LABEL[role] || role) + '</div>'
-    + '<div class="rs-modal-note" style="margin-bottom:10px">Ce réglage vaut pour ce poste et pour toute la structure. Les autres postes gardent le leur.</div>'
-    + '<div class="advcfg-sec">Indicateurs du poste</div>' + duRole.map(ligne).join('')
-    + '<div class="advcfg-sec">Autres indicateurs disponibles</div>' + autres.map(ligne).join('')
+    + '<div class="rs-modal-note" style="margin-bottom:8px">' + total + ' indicateurs au catalogue. Ce réglage vaut pour ce poste et pour toute la structure — les autres postes gardent le leur.</div>'
+    + '<input type="text" placeholder="Filtrer les indicateurs…" oninput="advcfgFilter(this)" '
+    + 'style="width:100%;margin-bottom:10px;padding:7px 10px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
+    + '<div class="advcfg-sec">Affichés pour ce poste</div>' + duRole.map(ligne).join('')
+    + (proposes.length ? '<div class="advcfg-sec">Proposés pour ce poste</div>' + proposes.map(ligne).join('') : '')
+    + grpHtml
+    + inconnuesHtml
     + '<div class="rs-modal-a">'
     + '<button class="btn btn-ghost btn-sm" onclick="advResetRole(\'' + role + '\');this.closest(\'.rs-modal-ov\').remove();advRerender()">Rétablir par défaut</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
@@ -14522,6 +14660,25 @@ function advOpenConfig() {
     + '</div></div>';
   ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
   document.body.appendChild(ov);
+}
+
+/* Filtre texte de la boîte à outils. Masque aussi les titres de section devenus
+   vides, sinon on se retrouve avec « Vision » suivi de rien. */
+function advcfgFilter(input) {
+  const modal = input.closest('.rs-modal');
+  if (!modal) return;
+  const q = input.value.trim().toLowerCase();
+  modal.querySelectorAll('.advcfg-row').forEach(function (row) {
+    const match = !q || (row.getAttribute('data-q') || '').indexOf(q) >= 0;
+    row.style.display = match ? '' : 'none';
+  });
+  modal.querySelectorAll('.advcfg-sec').forEach(function (sec) {
+    let n = 0;
+    for (let el = sec.nextElementSibling; el && !el.classList.contains('advcfg-sec'); el = el.nextElementSibling) {
+      if (el.classList.contains('advcfg-row') && el.style.display !== 'none') n++;
+    }
+    sec.style.display = n ? '' : 'none';
+  });
 }
 
 function advApplyConfig(role, btn) {
@@ -14754,7 +14911,17 @@ function calculateStats(matches, puuid) {
   let gameCount = 0;
   const champMap = {};
   const sessionDays = new Set();
-  // Accumulateurs challenges
+  /* Accumulateur GÉNÉRIQUE des « challenges » Riot.
+     Avant, seuls les 25 champs listés ci-dessous étaient collectés : tout le reste
+     de l'objet `challenges` (Riot en expose une centaine, et la liste s'enrichit à
+     chaque patch) était jeté à l'import et donc définitivement perdu. On somme
+     maintenant toute clé numérique, sans la connaître à l'avance ; c'est le
+     catalogue ADV_METRICS qui décide ensuite de ce qui est libellé et noté. */
+  const chalAll  = {};   // somme par clé
+  const chalHits = {};   // nb de parties où la clé était présente
+
+  // Accumulateurs challenges (métriques historiques : nom court + mise à l'échelle
+  // attendus par SEUILS_ABSOLUS — on les garde tels quels pour ne rien casser)
   const chal = {
     soloKills:0, skillshotsDodged:0, skillshotsHit:0, killsUnderOwnTurret:0,
     turretPlatesTaken:0, turretTakedowns:0, visionScoreAdv:0, stealthWardsPlaced:0,
@@ -14793,6 +14960,15 @@ function calculateStats(matches, puuid) {
 
     // ── Challenges (métriques avancées Riot) ──────────────────
     const ch = p.challenges || {};
+    // Balayage générique : on ne présume aucun nom de champ. Les valeurs non
+    // numériques (Riot renvoie aussi des objets, ex. les paliers de challenges)
+    // sont ignorées — elles ne se moyennent pas.
+    Object.keys(ch).forEach(function (k) {
+      const v = ch[k];
+      if (typeof v !== 'number' || !isFinite(v)) return;
+      chalAll[k]  = (chalAll[k]  || 0) + v;
+      chalHits[k] = (chalHits[k] || 0) + 1;
+    });
     chal.soloKills            += ch.soloKills             || 0;
     chal.skillshotsDodged     += ch.skillshotsDodged      || 0;
     chal.skillshotsHit        += ch.skillshotsHit         || 0;
@@ -14842,7 +15018,19 @@ function calculateStats(matches, puuid) {
 
   // Normaliser challenges par partie
   const gc = gameCount;
-  const chalAvg = {
+  /* 1) Moyenne par partie de TOUTE clé renvoyée par Riot. Le diviseur est le nombre
+        de parties (gc), pas le nombre de parties où la clé apparaît : une métrique
+        absente d'une partie vaut bien zéro pour cette partie (le joueur n'a pas volé
+        d'objectif), pas « non mesurée ».
+     2) Puis les métriques historiques PAR-DESSUS : elles portent un nom court et une
+        mise à l'échelle (pourcentages ×100) attendus par SEUILS_ABSOLUS et par le
+        moteur de score. En cas d'homonymie (perfectGame), c'est la version calibrée
+        qui doit gagner. */
+  const chalAvg = {};
+  Object.keys(chalAll).forEach(function (k) {
+    chalAvg[k] = parseFloat((chalAll[k] / gc).toFixed(2));
+  });
+  Object.assign(chalAvg, {
     soloKills:          parseFloat((chal.soloKills/gc).toFixed(2)),
     skillshotsDodged:   parseFloat((chal.skillshotsDodged/gc).toFixed(1)),
     skillshotsHit:      parseFloat((chal.skillshotsHit/gc).toFixed(1)),
@@ -14868,7 +15056,7 @@ function calculateStats(matches, puuid) {
     immobilizeKill:     parseFloat((chal.immobilizeAndKill/gc).toFixed(2)),
     perfectGame:        parseFloat((chal.perfectGame/gc*100).toFixed(1)),
     damageTakenPct:     parseFloat((chal.damageTakenOnTeamPct/gc*100).toFixed(1)),
-  };
+  });
 
   return {
     totalGames: gameCount, wins,
