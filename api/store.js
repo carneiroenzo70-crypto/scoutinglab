@@ -5,7 +5,7 @@
 // client) : tous les comptes coach d'une même structure partagent ces données.
 const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
-const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons'];
+const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons', 'kpis'];
 const MAX_BYTES = 1024 * 1024; // 1 Mo / domaine
 
 module.exports = async function handler(req, res) {

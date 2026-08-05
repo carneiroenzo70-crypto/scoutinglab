@@ -53,6 +53,7 @@ const VS_STORE_DOMAINS = {
   crm:        ['spes_crm_pipeline'],
   structures: ['spes_crm_structures'],
   seasons:    ['vs_seasons'],
+  kpis:       ['vs_kpi_prefs'],
 };
 const vsStore = (function () {
   const timers = {};
@@ -621,6 +622,13 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .an-dimbar .fl{ height:100%; border-radius:99px; width:0; transition:width .7s var(--ease-out); }
 .an-dimbar .v{ width:30px; flex:none; text-align:right; font-family:var(--font-mono); font-size:11px; font-weight:700; }
 /* Cartes candidature */
+/* Réglage des indicateurs suivis (Analyse avancée) */
+.advcfg-sec{ font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); margin:14px 0 6px; }
+.advcfg-row{ display:grid; grid-template-columns:18px 1fr; gap:4px 10px; align-items:center; padding:7px 9px; border-radius:8px; cursor:pointer; }
+.advcfg-row:hover{ background:rgba(45,212,167,.06); }
+.advcfg-lbl{ font-size:12.5px; font-weight:700; color:var(--vs-fg-1); display:flex; align-items:center; gap:7px; }
+.advcfg-tip{ grid-column:2; font-size:10.5px; color:var(--vs-fg-3); line-height:1.4; }
+.advcfg-tag{ font-size:9px; font-weight:700; letter-spacing:.03em; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:1px 7px; }
 .cand-card{ padding:14px 18px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
 .cand-card.cand-elite{ border-left:3px solid #E6B23E; }
 .cand-elite-badge{ display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:800; letter-spacing:.03em; color:#E6B23E; border:1px solid rgba(230,178,62,.4); border-radius:999px; padding:2px 8px; }
@@ -4167,6 +4175,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="card-title" style="display:flex;align-items:center;gap:8px">
           <span>Analyse Avancée SPES</span>
           <span style="font-size:9px;background:linear-gradient(90deg,rgba(138,127,245,.25),rgba(21,168,120,.2));color:var(--text);padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(138,127,245,.25)">EXCLUSIF VS</span>
+          <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="advOpenConfig()" title="Choisir les indicateurs suivis pour ce poste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Choisir les indicateurs</button>
         </div>
         <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
       </div>
@@ -14316,13 +14325,60 @@ const ADV_BLOCKS = {
   ],
 };
 
+/* ── Boîte à outils : chaque structure choisit les KPIs qu'elle suit ──
+   Préférences stockées PAR RÔLE : un staff peut vouloir suivre les engages d'un
+   Top (bruiser initiateur) sans pour autant les afficher sur ses ADC.
+   Rôle absent des préférences = composition par défaut d'ADV_BLOCKS, pour qu'un
+   compte qui n'a jamais rien réglé garde exactement l'écran actuel. */
+function advPrefs() {
+  try { return JSON.parse(localStorage.getItem('vs_kpi_prefs') || '{}') || {}; }
+  catch (_) { return {}; }
+}
+function advDefaultKeys(role) {
+  return (ADV_BLOCKS[role] || ADV_BLOCKS.Mid).reduce(function (acc, b) { return acc.concat(b.keys); }, []);
+}
+function advEnabledKeys(role) {
+  const p = advPrefs();
+  return Array.isArray(p[role]) ? p[role] : advDefaultKeys(role);
+}
+function advSaveKeys(role, keys) {
+  const p = advPrefs();
+  p[role] = keys;
+  localStorage.setItem('vs_kpi_prefs', JSON.stringify(p));
+  // Sans ce save, la préférence resterait sur ce seul navigateur.
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('kpis');
+}
+function advResetRole(role) {
+  const p = advPrefs();
+  delete p[role];
+  localStorage.setItem('vs_kpi_prefs', JSON.stringify(p));
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('kpis');
+}
+
 function buildAdvancedSection(ch, role) {
   const card = document.getElementById('advanced-card');
   const body = document.getElementById('advanced-body');
   if (!card || !body || !ch) return;
   card.style.display = 'block';
+  window._advLastCh = ch;   // permet de re-render après un réglage sans réimporter
 
-  const blocks = ADV_BLOCKS[role] || ADV_BLOCKS.Mid;
+  const enabled = advEnabledKeys(role);
+  const base = ADV_BLOCKS[role] || ADV_BLOCKS.Mid;
+  // Un KPI activé qui n'appartient à aucun bloc de ce rôle atterrit dans un bloc
+  // « Suivi personnalisé » — sinon l'activer n'aurait aucun effet visible.
+  const dansBase = {};
+  base.forEach(function (b) { b.keys.forEach(function (k) { dansBase[k] = true; }); });
+  const extras = enabled.filter(function (k) { return !dansBase[k] && ADV_METRICS[k]; });
+  const blocks = base
+    .map(function (b) { return { title: b.title, color: b.color, keys: b.keys.filter(function (k) { return enabled.indexOf(k) >= 0; }) }; })
+    .filter(function (b) { return b.keys.length; })
+    .concat(extras.length ? [{ title: 'Suivi personnalisé', color: '#2DD4A7', keys: extras }] : []);
+
+  if (!blocks.length) {
+    body.innerHTML = '<div class="faint" style="grid-column:1/-1;padding:14px;font-size:12px">'
+      + 'Aucun indicateur sélectionné pour ce poste — ouvre « Choisir les indicateurs » pour en activer.</div>';
+    return;
+  }
   const fmt = (v) => (v === null || v === undefined || isNaN(v)) ? '—'
     : (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(1) : v.toFixed(2));
 
@@ -14360,6 +14416,66 @@ function buildAdvancedSection(ch, role) {
       + '<span style="font-size:14px;font-weight:800;color:' + blockCol + ';font-family:monospace">' + blockScore + '</span>'
       + '</div>' + rows + '</div>';
   }).join('');
+}
+
+/* ── Réglage des indicateurs suivis ──
+   Le catalogue complet est proposé, pas seulement les métriques du rôle courant :
+   c'est ce qui permet à un staff de suivre un profil atypique (un Top initiateur,
+   un Support qui farm) sans être enfermé dans la composition par défaut. */
+function advOpenConfig() {
+  const role = currentRole || 'Mid';
+  const enabled = advEnabledKeys(role);
+  const defauts = advDefaultKeys(role);
+
+  const ligne = function (key) {
+    const d = ADV_METRICS[key];
+    const on = enabled.indexOf(key) >= 0;
+    const parDefaut = defauts.indexOf(key) >= 0;
+    // Prévient AVANT de cocher : ce KPI n'a pas de barème pour ce poste, il
+    // s'affichera en valeur brute sans note.
+    const note = d.id ? (scoreStatCalibrated(d.id, 1) === null ? ' · non noté à ce poste' : '') : ' · non noté';
+    return '<label class="advcfg-row">'
+      + '<input type="checkbox" data-k="' + key + '"' + (on ? ' checked' : '') + '>'
+      + '<span class="advcfg-lbl">' + anEsc(d.lbl)
+      + (parDefaut ? '' : '<span class="advcfg-tag">hors poste</span>')
+      + '</span>'
+      + '<span class="advcfg-tip">' + anEsc(d.tip) + anEsc(note) + '</span>'
+      + '</label>';
+  };
+
+  // Les métriques du poste d'abord, le reste du catalogue ensuite.
+  const duRole = defauts.slice();
+  const autres = Object.keys(ADV_METRICS).filter(function (k) { return duRole.indexOf(k) < 0; });
+
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(680px,95vw);max-height:88vh;overflow:auto">'
+    + '<div class="rs-modal-h">Indicateurs suivis · poste ' + anEsc(SS_ROLE_LABEL[role] || role) + '</div>'
+    + '<div class="rs-modal-note" style="margin-bottom:10px">Ce réglage vaut pour ce poste et pour toute la structure. Les autres postes gardent le leur.</div>'
+    + '<div class="advcfg-sec">Indicateurs du poste</div>' + duRole.map(ligne).join('')
+    + '<div class="advcfg-sec">Autres indicateurs disponibles</div>' + autres.map(ligne).join('')
+    + '<div class="rs-modal-a">'
+    + '<button class="btn btn-ghost btn-sm" onclick="advResetRole(\'' + role + '\');this.closest(\'.rs-modal-ov\').remove();advRerender()">Rétablir par défaut</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
+    + '<button class="btn btn-cta btn-sm" onclick="advApplyConfig(\'' + role + '\',this)">Appliquer</button>'
+    + '</div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function advApplyConfig(role, btn) {
+  const ov = btn.closest('.rs-modal-ov');
+  const keys = Array.from(ov.querySelectorAll('input[data-k]'))
+    .filter(function (i) { return i.checked; })
+    .map(function (i) { return i.getAttribute('data-k'); });
+  advSaveKeys(role, keys);
+  ov.remove();
+  advRerender();
+}
+
+// Re-rend sans réimporter : les données de la dernière analyse sont conservées.
+function advRerender() {
+  if (window._advLastCh) buildAdvancedSection(window._advLastCh, currentRole || 'Mid');
 }
 
 // Convertit un nom de champion en clé Data Dragon (ex: "Lee Sin" → "LeeSin", "Vel'Koz" → "VelKoz")

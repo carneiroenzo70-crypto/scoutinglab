@@ -82,6 +82,26 @@ test('deux comptes de la MÊME structure partagent les données', async () => {
   assert.deepEqual(res._json.seasons, ['draft'], 'Alan doit voir les donnees de sa structure');
 });
 
+// Le domaine 'kpis' porte le choix des indicateurs suivis (boite a outils de
+// l'analyse avancee). Sans son ajout a la liste blanche de store.js, le reglage
+// serait accepte en local mais rejete en 400 par le serveur : il ne suivrait pas
+// le coach d'un appareil a l'autre, en silence.
+test('le domaine kpis est accepte et partage par structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'enzo', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+  const prefs = { Mid: ['soloKills', 'laneMinions10'] };
+
+  const put = mockRes();
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + tEnzo }, body: { domain: 'kpis', data: prefs } }, put);
+  assert.equal(put._status, 200, 'le domaine kpis doit etre accepte');
+
+  const res = mockRes();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { domains: 'kpis' } }, res);
+  assert.deepEqual(res._json.kpis, prefs, 'le reglage doit suivre la structure');
+});
+
 test('deux structures differentes restent isolees', async () => {
   const store = {};
   mockUpstash(store);
