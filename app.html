@@ -1298,9 +1298,14 @@ body:not(.theme-dark) .logo-bg-icon.echo{ opacity:.10; }
 body:has(#panel-scout.active) .logo-bg,
 body.map-fullscreen .logo-bg{ display:none; }
 
-/* Sections mises en pause (retour utilisateur) : style de jeu détecté + analyses
-   avancées (badges talent/potentiel). Masquées en CSS = réversible facilement. */
-#playstyle-card, #badge-souscote, #badge-pepite, #score-potentiel-card, #advanced-card,
+/* Sections mises en pause (retour utilisateur) : badges talent/potentiel.
+   Masquées en CSS = réversible facilement.
+   ⚠️ #advanced-card et #playstyle-card ont été RETIRÉS de cette liste : ils étaient
+   masqués par un `!important` qui écrasait le `style.display='block'` posé par le JS
+   — le code s'exécutait, la carte restait invisible. Ils portent l'analyse avancée
+   par poste, la boîte à outils KPI et les profils de jeu. Ne pas les y remettre sans
+   vérifier dans le navigateur que le contenu n'apparaît plus nulle part. */
+#badge-souscote, #badge-pepite, #score-potentiel-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
 /* ════ Largeur unifiée : toutes les pages = 1264px de contenu centré (comme les panels vsd-wrap 1280 − 16 de padding) ════ */
