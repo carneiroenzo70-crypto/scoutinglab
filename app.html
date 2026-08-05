@@ -3892,6 +3892,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <button type="button" class="chip" data-role="Sup" onclick="vsdScoutRole(this,'Sup')">Support</button>
           </div>
 
+          <!-- Archétype du joueur : rempli par arcRenderPills(), dépend du rôle choisi -->
+          <div class="rolepills rolepills-anim" id="arc-pills" style="margin-top:10px"></div>
+
           <div style="height:1px;background:var(--vs-forest-600);margin:18px 0"></div>
 
           <div class="between" style="flex-wrap:wrap;gap:14px">
@@ -3945,6 +3948,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           btn.classList.add('pop');
         }
         vsdSetRoleBg(role);
+        // Un archétype appartient à un poste : « Assassin » (Mid) n'a aucun sens sur
+        // un Support. On le remet à zéro ici, sur le changement de poste DÉCIDÉ par
+        // l'utilisateur — pas dans setRole(), qui est aussi appelé au rechargement
+        // d'une fiche et effacerait alors l'archétype qu'on vient de restaurer.
+        if (typeof rawData === 'object' && rawData.archetype) delete rawData.archetype;
         // setRole() met à jour la vraie variable currentRole + recalcule les dimensions
         if (typeof setRole === 'function') setRole(role);
         if (typeof onIdentityChange === 'function') onIdentityChange();
@@ -10216,6 +10224,7 @@ function setRole(role, btn) {
   // [data-role] : ne toucher que les pilules de rôle — pas les barres d'onglets (CRM…)
   document.querySelectorAll('.vsd .rolepills .chip[data-role]').forEach(c => c.classList.toggle('on', c.dataset.role === role));
   if (typeof vsdSetRoleBg === 'function') vsdSetRoleBg(role);
+  if (typeof arcRenderPills === 'function') arcRenderPills();
   buildAllDims();
   buildStatsGrid();
   updateGlobal();
@@ -14444,6 +14453,103 @@ function advGrp(key) {
   return d.grp || ADV_GRP_HISTO[key] || 'Autres';
 }
 
+/* ── Archétypes de joueur, par poste ──────────────────────────────────────────
+   Un mage de contrôle et un assassin au mid ne doivent pas être jugés sur les
+   mêmes mesures : le premier se lit sur son farm, sa part de dégâts et sa
+   précision, le second sur ses solo kills, ses dives et sa capacité à punir.
+   L'archétype est choisi PAR JOUEUR (stocké dans rawData, donc persisté avec la
+   fiche), là où la boîte à outils ADV_BLOCKS est un réglage de structure par poste.
+   Les deux cohabitent : la structure fixe son socle, l'archétype ajoute la lecture
+   propre au style du joueur.
+   `keys` renvoie au catalogue ADV_METRICS. Ce sont les métriques qui caractérisent
+   le style — pas un barème : la notation vient de la calibration (chantier B3). */
+const ARCHETYPES = {
+  Top: [
+    { key:'split',   lbl:'Split pusher',      desc:'Pression latérale, prend les tours seul',
+      keys:['soloTurretsLate','turretPlates','turretTakedowns','maxCsAdvantageOnLaneOpponent','soloKills','kTurretsDestroyedBeforePlatesFall'] },
+    { key:'tank',    lbl:'Tank / Initiateur', desc:'Encaisse et ouvre les combats',
+      keys:['damageTakenPct','enemyChampionImmobilizations','immobilizeKill','knockEnemyIntoTeamAndKill','survivedThreeImmobilizesInFight','saveAlly'] },
+    { key:'bruiser', lbl:'Bruiser / Duelliste', desc:'Gagne ses duels et porte des dégâts',
+      keys:['soloKills','killsNearEnemyTurret','outnumberedKills','teamDmgPct','dpm','maxLevelLead'] },
+    { key:'weak',    lbl:'Weakside',          desc:'Tient sa lane sans ressources',
+      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','perfectGame','deathsByEnemyChamps','maxKillDeficit','visionAdv'] },
+  ],
+  Jgl: [
+    { key:'farm',    lbl:'Farmeur / Scaling', desc:'Priorité aux camps et au scaling',
+      keys:['jungleCsBefore10','alliedJungleMonsterKills','goldPerMinute','dpm','teamDmgPct'] },
+    { key:'tempo',   lbl:'Tempo / Ganker',    desc:'Cherche les duels et les ganks tôt',
+      keys:['takedownsFirst14','firstBloodRate','killParticipation','pickKillWithAlly','takedownsBeforeJungleMinionSpawn'] },
+    { key:'invade',  lbl:'Envahisseur',       desc:'Vit dans la jungle adverse',
+      keys:['jungleInvasion','moreEnemyJungleThanOpponent','buffsStolen','scuttleCrabKills','wardsKilled','initialCrabCount'] },
+    { key:'obj',     lbl:'Contrôle objectifs',desc:'Joue la carte autour des objectifs',
+      keys:['dragonTakedowns','baronTakedowns','riftHeraldTakedowns','epicSteals','epicMonsterStolenWithoutSmite','epicMonsterKillsNearEnemyJungler','perfectDragonSoulsTaken'] },
+  ],
+  Mid: [
+    { key:'mage',    lbl:'Mage de contrôle',  desc:'Farm, portée et dégâts constants',
+      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','teamDmgPct','dpm','skillshotsHit','landSkillShotsEarlyGame','goldPerMinute'] },
+    { key:'assassin',lbl:'Assassin',          desc:'Cherche les picks et snowball',
+      keys:['soloKills','killsNearEnemyTurret','outnumberedKills','takedownsFirst14','multikills','bountyGold','maxLevelLead'] },
+    { key:'roam',    lbl:'Roameur',           desc:'Quitte sa lane pour créer ailleurs',
+      keys:['killParticipation','takedownsFirst14','wardsKilled','unseenRecalls','pickKillWithAlly','enemyChampionImmobilizations'] },
+    { key:'carry',   lbl:'Carry scaling',     desc:'Monte en puissance et porte le late',
+      keys:['teamDmgPct','dpm','goldPerMinute','flawlessAces','perfectGame','maxCsAdvantageOnLaneOpponent'] },
+  ],
+  ADC: [
+    { key:'hyper',   lbl:'Hypercarry',        desc:'Scaling et dégâts de fin de partie',
+      keys:['teamDmgPct','dpm','goldPerMinute','laneMinions10','perfectGame'] },
+    { key:'lane',    lbl:'Laneur agressif',   desc:'Prend l\'avantage et les plaques tôt',
+      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','turretPlates','firstBloodRate','takedownOnFirstTurret','kTurretsDestroyedBeforePlatesFall'] },
+    { key:'safe',    lbl:'Positionnement',    desc:'Sûr, survit et ne se fait pas attraper',
+      keys:['skillshotsDodged','dodgeSkillShotsSmallWindow','perfectGame','survivedLowHp','deathsByEnemyChamps','survivedThreeImmobilizesInFight'] },
+    { key:'poke',    lbl:'Poke / Siège',      desc:'Use les tours et les PV à distance',
+      keys:['dpm','turretTakedowns','turretPlates','skillshotsHit','teamDmgPct'] },
+  ],
+  Sup: [
+    { key:'engage',  lbl:'Engage',            desc:'Ouvre les combats et pose le CC',
+      keys:['takedownsFirst14','firstBloodRate','enemyChampionImmobilizations','immobilizeKill','knockEnemyIntoTeamAndKill','highestCrowdControlScore'] },
+    { key:'enchant', lbl:'Enchanteur',        desc:'Soigne, protège, tient ses carrys en vie',
+      keys:['effectiveHealAndShielding','saveAlly','survivedLowHp','perfectGame','twelveAssistStreakCount'] },
+    { key:'vision',  lbl:'Contrôle de vision',desc:'Voit tout et prive l\'adversaire de vision',
+      keys:['stealthWards','controlWards','wardsKilled','wardTakedownsBefore20M','wardsGuarded','controlWardTimeCoverageInRiverOrEnemyHalf','visionScorePerMinute','twoWardsOneSweeperCount'] },
+    { key:'playmk',  lbl:'Roameur / Playmaker',desc:'Crée les occasions sur toute la carte',
+      keys:['killParticipation','pickKillWithAlly','killAfterHiddenWithAlly','takedownsFirst14','takedownsBeforeJungleMinionSpawn'] },
+  ],
+};
+
+function arcList(role) { return ARCHETYPES[role] || ARCHETYPES.Mid; }
+function arcCurrent(role) {
+  const r = role || currentRole || 'Mid';
+  const k = rawData.archetype;
+  return arcList(r).find(function (a) { return a.key === k; }) || null;
+}
+/* Le choix vit dans rawData : il est donc sauvegardé et rechargé avec la fiche du
+   joueur, sans nouveau mécanisme de persistance. */
+function arcSet(key) {
+  if (rawData.archetype === key) { delete rawData.archetype; }  // reclic = désélection
+  else { rawData.archetype = key; }
+  arcRenderPills();
+  advRerender();
+  if (typeof saveToHistory === 'function' && rawData.pseudo) { try { saveToHistory(); } catch (_) {} }
+}
+/* Pastilles d'archétype sous le sélecteur de rôle, donc disponibles AVANT l'import :
+   le coach déclare le style qu'il vient scouter, puis importe. */
+function arcRenderPills() {
+  const host = document.getElementById('arc-pills');
+  if (!host) return;
+  const role = currentRole || 'Mid';
+  const cur = rawData.archetype;
+  host.innerHTML = '<span class="label" style="align-self:center;margin-right:4px">Profil</span>'
+    + arcList(role).map(function (a) {
+        return '<button type="button" class="chip' + (a.key === cur ? ' on' : '') + '"'
+          + ' title="' + anEsc(a.desc) + '" onclick="arcSet(\'' + a.key + '\')">' + anEsc(a.lbl) + '</button>';
+      }).join('')
+    + '<span class="faint" style="font-size:10.5px;margin-left:6px">Optionnel — ajuste les indicateurs lus sur ce joueur</span>';
+}
+// Premier rendu. Le garde couvre les deux cas : script exécuté pendant l'analyse du
+// document (l'écouteur se déclenchera), ou après (on rend tout de suite).
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arcRenderPills);
+else arcRenderPills();
+
 /* Composition des blocs PAR RÔLE : un Support n'est plus jugé sur les plaques de
    tourelle ni les tours prises en solo, un Jungler a ses camps et son tempo. */
 const ADV_BLOCKS = {
@@ -14522,10 +14628,19 @@ function buildAdvancedSection(ch, role) {
   // « Suivi personnalisé » — sinon l'activer n'aurait aucun effet visible.
   const dansBase = {};
   base.forEach(function (b) { b.keys.forEach(function (k) { dansBase[k] = true; }); });
-  const extras = enabled.filter(function (k) { return !dansBase[k] && ADV_METRICS[k]; });
-  const blocks = base
-    .map(function (b) { return { title: b.title, color: b.color, keys: b.keys.filter(function (k) { return enabled.indexOf(k) >= 0; }) }; })
-    .filter(function (b) { return b.keys.length; })
+  /* Bloc de l'archétype, en tête : c'est la lecture propre au style du joueur, et
+     c'est elle qui distingue un mage d'un assassin au même poste. Placé avant le
+     socle de la structure parce que c'est l'information la plus spécifique. */
+  const arc = arcCurrent(role);
+  const arcKeys = arc ? arc.keys.filter(function (k) { return ADV_METRICS[k]; }) : [];
+  const dansArc = {};
+  arcKeys.forEach(function (k) { dansArc[k] = true; });
+
+  const extras = enabled.filter(function (k) { return !dansBase[k] && !dansArc[k] && ADV_METRICS[k]; });
+  const blocks = (arcKeys.length ? [{ title: 'Profil ' + arc.lbl, color: '#8A7FF5', keys: arcKeys }] : [])
+    .concat(base
+      .map(function (b) { return { title: b.title, color: b.color, keys: b.keys.filter(function (k) { return enabled.indexOf(k) >= 0; }) }; })
+      .filter(function (b) { return b.keys.length; }))
     .concat(extras.length ? [{ title: 'Suivi personnalisé', color: '#2DD4A7', keys: extras }] : []);
 
   if (!blocks.length) {
