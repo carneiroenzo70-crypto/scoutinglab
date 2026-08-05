@@ -14591,16 +14591,17 @@ function advOpenConfig() {
   const ligne = function (key) {
     const d = ADV_METRICS[key];
     const on = enabled.indexOf(key) >= 0;
-    const parDefaut = defauts.indexOf(key) >= 0;
     // Prévient AVANT de cocher : ce KPI n'a pas de barème pour ce poste, il
     // s'affichera en valeur brute sans note.
     const note = d.id ? (scoreStatCalibrated(d.id, 1) === null ? ' · non noté à ce poste' : '') : ' · valeur brute, non notée';
     const absent = !present(key);
+    // Pas de badge « hors poste » : il contredisait le titre de sa propre section
+    // (« Proposés pour ce poste » suivi de « hors poste » sur chaque ligne). Le
+    // regroupement en sections porte déjà cette information, sans ambiguïté.
     return '<label class="advcfg-row" data-q="' + anEsc((d.lbl + ' ' + d.tip + ' ' + advGrp(key)).toLowerCase()) + '"'
       + (absent ? ' style="opacity:.55"' : '') + '>'
       + '<input type="checkbox" data-k="' + key + '"' + (on ? ' checked' : '') + '>'
       + '<span class="advcfg-lbl">' + anEsc(d.lbl)
-      + (parDefaut ? '' : '<span class="advcfg-tag">hors poste</span>')
       + (absent ? '<span class="advcfg-tag">absent des données</span>' : '')
       + '</span>'
       + '<span class="advcfg-tip">' + anEsc(d.tip) + anEsc(note) + '</span>'
