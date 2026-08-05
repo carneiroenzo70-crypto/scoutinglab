@@ -9285,13 +9285,26 @@ const ROLE_WEIGHTS = {
 
 // Helper: get all fields for current role
 function getRoleFields() {
-  return {
+  const f = {
     d1: D1_FIELDS[currentRole] || [],
     d2: D2_FIELDS[currentRole] || [],
     d3: D3_FIELDS[currentRole] || [],
     d4: D4_FIELDS_BASE,
     d5: D5_FIELDS[currentRole] || [],
   };
+  /* Champ de synthèse de l'archétype, s'il y en a un. `concat` et non `push` : les
+     D*_FIELDS sont des constantes partagées, y pousser les accumulerait à chaque
+     appel. D4 n'en reçoit jamais (cf. ARC_DIM). */
+  ['d1', 'd2', 'd3', 'd5'].forEach(function (d) {
+    const v = rawData['arc_' + d];
+    if (typeof v === 'number' && isFinite(v)) {
+      f[d] = f[d].concat([{
+        id: 'arc_' + d, type: 'note', badge: 'api',
+        lbl: (window._arcDimLbl || {})[d] || 'Profil du joueur',
+      }]);
+    }
+  });
+  return f;
 }
 
 // Legacy ROLE_THRESHOLDS for stats grid compatibility
@@ -9431,6 +9444,13 @@ function computeStatScore(id) {
 }
 
 function computeFieldScore(field) {
+  /* type 'note' : la valeur dans rawData EST déjà une note sur 10 (synthèse de
+     l'archétype, calculée par arcApplyToDims). On ne la repasse pas dans un barème,
+     ce serait noter une note. */
+  if (field.type === 'note') {
+    const v = parseFloat(rawData[field.id]);
+    return isNaN(v) ? null : Math.min(10, Math.max(0, v));
+  }
   if (field.type === 'auto') {
     if (field.id === 'rank_abs')  return scoreRankAbs(parseInt(document.getElementById('d-rank')?.value || 6));
     if (field.id === 'rank_age')  return scoreRankAge(parseInt(document.getElementById('d-rank')?.value || 6), document.getElementById('d-age')?.value);
@@ -9668,6 +9688,10 @@ function updateDimScore(dimId, fields) {
   if (wEl && W[dimId]) wEl.textContent = '(' + Math.round(W[dimId]*100) + '%)';
 }
 function buildAllDims() {
+  // Recalculé ici plutôt qu'à chaque appelant : buildAllDims() est le passage obligé
+  // avant tout réaffichage des dimensions, donc la synthèse d'archétype ne peut pas
+  // se désynchroniser des données ou du poste courant.
+  if (typeof arcApplyToDims === 'function') arcApplyToDims();
   const f = getRoleFields();
   buildDimBody('d1', f.d1 || []);
   buildDimBody('d2', f.d2 || []);
@@ -14638,6 +14662,9 @@ function arcSet(key) {
   else { rawData.archetype = key; }
   arcRenderPills();
   advRerender();
+  // Le profil pèse sur D1-D5 : la note globale, le verdict et le pentagone doivent
+  // suivre immédiatement, sinon le coach voit un profil actif et une note inchangée.
+  if (typeof buildAllDims === 'function') { buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); }
   // Pas de sauvegarde automatique ici : saveToHistory() exige un pseudo et affiche un
   // toast, ce qui interdirait de choisir un profil avant l'import et spammerait à
   // chaque clic. L'archétype vit dans rawData, il partira avec la prochaine sauvegarde.
@@ -14656,6 +14683,45 @@ function arcRenderPills() {
       }).join('')
     + '<span class="faint" style="font-size:10.5px;margin-left:6px">Optionnel — ajuste les indicateurs lus sur ce joueur</span>';
 }
+/* ── L'archétype pèse sur les dimensions D1-D5 ────────────────────────────────
+   Chaque thème de métrique alimente la dimension qui lui correspond. D4 (rang &
+   progression) est volontairement exclue : c'est l'ancre objective du score, elle ne
+   doit pas bouger selon le style de jeu déclaré. */
+const ARC_DIM = {
+  'Laning': 'd1', 'Économie': 'd1',
+  'Jungle & objectifs': 'd2', 'Structures': 'd2',
+  'Combat': 'd3', 'Vision': 'd3', 'Soutien': 'd3',
+  'Mécanique': 'd5', 'Régularité': 'd5',
+};
+
+/* Écrit UN champ de synthèse par dimension (arc_d1…arc_d5), et non un champ par
+   métrique : sept indicateurs d'archétype ajoutés à une dimension qui en compte
+   trois écraseraient le socle et déformeraient la note bien au-delà de ce qui est
+   voulu. Un profil = une note par dimension, moyenne de ses métriques notables.
+   Les métriques sans note (base de référence trop petite) sont simplement absentes
+   de la moyenne — jamais comptées comme zéro. */
+function arcApplyToDims() {
+  ['d1', 'd2', 'd3', 'd5'].forEach(function (d) { delete rawData['arc_' + d]; });
+  window._arcDimLbl = {};
+  const arc = arcCurrent();
+  const ch = window._advLastCh || window._lastChallenges;
+  if (!arc || !ch) return;
+  const role = currentRole || 'Mid';
+  const acc = {};
+  arc.keys.forEach(function (k) {
+    if (!ADV_METRICS[k]) return;
+    const sc = advScore(k, ch[k], role);
+    if (sc === null || sc === undefined || isNaN(sc)) return;
+    const d = ARC_DIM[advGrp(k)];
+    if (!d) return;
+    (acc[d] = acc[d] || []).push(sc);
+  });
+  Object.keys(acc).forEach(function (d) {
+    rawData['arc_' + d] = acc[d].reduce(function (a, b) { return a + b; }, 0) / acc[d].length;
+    window._arcDimLbl[d] = 'Profil ' + arc.lbl + ' (' + acc[d].length + ' ind.)';
+  });
+}
+
 // Premier rendu. Le garde couvre les deux cas : script exécuté pendant l'analyse du
 // document (l'écouteur se déclenchera), ou après (on rend tout de suite).
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', arcRenderPills);
