@@ -9910,8 +9910,8 @@ function updateVerdict() {
     else if (g >= 8) { reco = 'Profil recommandé sans réserve pour un tryout.'; }
     else if (g >= 7) { reco = 'Bon profil — tryout recommandé avec suivi ciblé.'; }
     else if (g >= 6) { reco = 'Potentiel identifié — travail sur axes faibles nécessaire avant structure.'; }
-    else if (g >= 5) { reco = 'Profil en développement — semi-pro prématuré à ce stade.'; }
-    else           { reco = 'Niveau insuffisant pour le circuit semi-pro actuellement.'; }
+    else if (g >= 5) { reco = 'Profil en développement — passage en structure prématuré à ce stade.'; }
+    else           { reco = 'Niveau insuffisant pour le circuit compétitif actuellement.'; }
 
     const topStat = Object.entries(thr).map(([id,t]) => {
       const v = parseFloat(rawData[id]);
@@ -10056,7 +10056,7 @@ function buildResults() {
       : g >= 7 ? 'Tryout fortement recommandé'
       : g >= 6 ? 'Potentiel identifié · à suivre'
       : g >= 5 ? 'Profil en développement'
-      : 'Niveau insuffisant pour le semi-pro';
+      : 'Niveau insuffisant pour le circuit compétitif';
   }
 
   // Grille stats SoloQ
@@ -10126,7 +10126,7 @@ function buildResults() {
       { min:7.0, cls:'dec-a',  badge:'dec-badge-a',  lbl:'Tryout recommandé',       txt:`Bon profil — présente des qualités au-dessus de la norme. Suivi coaching ciblé conseillé.` },
       { min:6.0, cls:'dec-bp', badge:'dec-badge-bp', lbl:'À suivre 30 jours',       txt:`Potentiel identifié mais irrégulier. Re-évaluer après montée de rang ou coaching.` },
       { min:5.0, cls:'dec-b',  badge:'dec-badge-b',  lbl:'Pas encore prêt',         txt:`Profil en construction. Axes prioritaires à travailler avant envisager un tryout.` },
-      { min:0,   cls:'dec-c',  badge:'dec-badge-c',  lbl:'Niveau insuffisant',      txt:`Trop tôt pour le semi-pro. Retour dans 1-2 saisons avec progression visible.` },
+      { min:0,   cls:'dec-c',  badge:'dec-badge-c',  lbl:'Niveau insuffisant',      txt:`Trop tôt pour le circuit compétitif. Retour dans 1-2 saisons avec progression visible.` },
     ];
     const dec = decisions.find(d => g >= d.min);
 
@@ -11040,7 +11040,7 @@ function buildRecruitVerdict(cols) {
   }
   // Style
   const ps = detectPlaystyleFromSnap(best);
-  if (ps.main.lbl !== 'Équilibré') reasons.push('style ' + ps.main.lbl.toLowerCase() + ' adapté au semi-pro');
+  if (ps.main.lbl !== 'Équilibré') reasons.push('style ' + ps.main.lbl.toLowerCase() + ' adapté au niveau compétitif');
 
   const reasonStr = reasons.length ? ' — ' + reasons.join(', ') : '';
   const scoreGap = sorted.length > 1 ? (parseFloat(sorted[0].global||0) - parseFloat(sorted[1].global||0)).toFixed(1) : null;
@@ -11236,9 +11236,9 @@ function buildRosterView(container) {
   if (missing.length) {
     recoPoste = `<strong>Postes manquants :</strong> ${missing.join(', ')} — roster incomplet, recrutement prioritaire.`;
   } else if (weakPlayer.global < 5.5) {
-    recoPoste = `<strong>Poste à renforcer :</strong> ${weakPlayer.role} (${weakPlayer.pseudo} · ${weakPlayer.global?.toFixed(2)}) — profil en-dessous du seuil semi-pro.`;
+    recoPoste = `<strong>Poste à renforcer :</strong> ${weakPlayer.role} (${weakPlayer.pseudo} · ${weakPlayer.global?.toFixed(2)}) — profil en-dessous du seuil compétitif.`;
   } else {
-    recoPoste = `Roster équilibré — tous les joueurs sont au-dessus du seuil semi-pro.`;
+    recoPoste = `Roster équilibré — tous les joueurs sont au-dessus du seuil compétitif.`;
   }
 
   // Score d'équipe pondéré — ADC/Mid/Jgl comptent plus
@@ -11249,7 +11249,7 @@ function buildRosterView(container) {
         return acc + (s.global||0) * w;
       }, 0) / slots.reduce((acc,s) => acc + (ROLE_WEIGHT_TEAM[s.role] || 0.2), 0)
     : null;
-  const teamGrade = weightedScore >= 8 ? 'Équipe Elite' : weightedScore >= 7 ? 'Niveau LFL2+' : weightedScore >= 6 ? 'Semi-pro solide' : weightedScore >= 5 ? 'Amateur compétitif' : 'En développement';
+  const teamGrade = weightedScore >= 8 ? 'Équipe Elite' : weightedScore >= 7 ? 'Niveau LFL2+' : weightedScore >= 6 ? 'Compétitif confirmé' : weightedScore >= 5 ? 'Amateur compétitif' : 'En développement';
 
   let collective = '<div style="font-size:.85rem;line-height:2;color:var(--fg)">' +
     '<div style="display:flex;align-items:baseline;gap:.5rem;margin-bottom:.5rem">' +
@@ -11753,10 +11753,10 @@ async function exportPDF() {
     v === null   ? 'Données insuffisantes'
     : v >= 9.0  ? 'Recruter maintenant — Talent d\'exception'
     : v >= 8.0  ? 'Tryout prioritaire — Profil très solide'
-    : v >= 7.0  ? 'Tryout recommandé — Bon profil semi-pro'
+    : v >= 7.0  ? 'Tryout recommandé — Bon profil compétitif'
     : v >= 6.0  ? 'À suivre 30 jours — Potentiel identifié'
     : v >= 5.0  ? 'Pas encore prêt — Profil en construction'
-    : 'Niveau insuffisant — Trop tôt pour le semi-pro';
+    : 'Niveau insuffisant — Trop tôt pour le circuit compétitif';
 
   const DIM_COLORS = [C.blue,[245,166,35],[45,212,191],[192,132,252],[255,122,90]];
   const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Discipline'];
@@ -12702,8 +12702,8 @@ async function generateOfficialReport() {
     // Bilan — template "Lorem ipsum" pdfplumber top=746.8-789 → PDF-lib y≈53-83
     const VERDICTS = [
       [9.5,"Profil elite. Recrutement immediat : niveau pro confirme, impact direct sur le circuit."],
-      [8.5,"Profil d'exception. Recrutement prioritaire : potentiel semi-pro immediat, tryout urgent."],
-      [7.5,"Profil tres solide. Tryout prioritaire : architecture de jeu adaptee au circuit semi-pro."],
+      [8.5,"Profil d'exception. Recrutement prioritaire : potentiel competitif immediat, tryout urgent."],
+      [7.5,"Profil tres solide. Tryout prioritaire : architecture de jeu adaptee au circuit competitif."],
       [6.5,"Bon profil competitif. Tryout recommande : base technique suffisante, progression visible."],
       [5.5,"Profil en developpement. Potentiel identifie : a monitorer 30 jours avant decision."],
       [4.5,"Profil limite. Travail specifique requis sur les dimensions cles avant tout tryout."],
