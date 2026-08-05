@@ -14392,6 +14392,17 @@ const ADV_METRICS = {
      le moteur de score). La note viendra quand on aura de quoi calibrer.
      `roles` = postes où la métrique est proposée en priorité dans la boîte à outils. */
 
+  /* Écarts face à l'ADVERSAIRE DIRECT, extraits de la timeline (cf. tlLaneDelta).
+     C'est la vraie lecture du laning : 78 CS à 10 min ne dit rien si le vis-à-vis en
+     a 84. Un écart négatif est une info, pas une absence de donnée — d'où des
+     valeurs qui peuvent être en dessous de zéro, contrairement au reste du catalogue. */
+  laneCsDiff10:     { id:null, grp:'Laning', roles:['Top','Mid','ADC','Jgl'], lbl:'Écart CS à 10 min', tip:'CS de plus (ou de moins) que son vis-à-vis direct à 10 min' },
+  laneCsDiff15:     { id:null, grp:'Laning', roles:['Top','Mid','ADC'], lbl:'Écart CS à 15 min', tip:'CS de plus (ou de moins) que son vis-à-vis direct à 15 min' },
+  laneGoldDiff10:   { id:null, grp:'Laning', roles:['Top','Mid','ADC','Jgl','Sup'], lbl:'Écart d\'or à 10 min', tip:'Or d\'avance (ou de retard) sur son vis-à-vis direct à 10 min' },
+  laneGoldDiff15:   { id:null, grp:'Laning', roles:['Top','Mid','ADC','Jgl','Sup'], lbl:'Écart d\'or à 15 min', tip:'Or d\'avance (ou de retard) sur son vis-à-vis direct à 15 min' },
+  laneXpDiff10:     { id:null, grp:'Laning', roles:['Top','Mid','ADC'], lbl:'Écart d\'XP à 10 min', tip:'XP d\'avance (ou de retard) sur son vis-à-vis direct à 10 min' },
+  laneXpDiff15:     { id:null, grp:'Laning', roles:['Top','Mid','ADC'], lbl:'Écart d\'XP à 15 min', tip:'XP d\'avance (ou de retard) sur son vis-à-vis direct à 15 min' },
+
   // Laning
   maxCsAdvantageOnLaneOpponent: { id:null, grp:'Laning', roles:['Top','Mid','ADC'], lbl:'Avance CS max sur l\'adversaire', tip:'Plus gros écart de CS atteint sur son vis-à-vis de lane' },
   takedownsAfterGainingLevelAdvantage: { id:null, grp:'Laning', roles:['Top','Mid'], lbl:'Takedowns après avance de niveau', tip:'Convertit-il une avance de niveau en kill ?' },
@@ -14605,7 +14616,7 @@ const ARCHETYPES = {
     { key:'bruiser', lbl:'Bruiser / Duelliste', desc:'Gagne ses duels et porte des dégâts',
       keys:['soloKills','killsNearEnemyTurret','outnumberedKills','teamDmgPct','dpm','maxLevelLead'] },
     { key:'weak',    lbl:'Weakside',          desc:'Tient sa lane sans ressources',
-      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','perfectGame','deathsByEnemyChamps','maxKillDeficit','visionAdv'] },
+      keys:['laneCsDiff10','laneXpDiff10','perfectGame','deathsByEnemyChamps','maxKillDeficit','visionAdv'] },
   ],
   Jgl: [
     { key:'farm',    lbl:'Farmeur / Scaling', desc:'Priorité aux camps et au scaling',
@@ -14619,7 +14630,7 @@ const ARCHETYPES = {
   ],
   Mid: [
     { key:'mage',    lbl:'Mage de contrôle',  desc:'Farm, portée et dégâts constants',
-      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','teamDmgPct','dpm','skillshotsHit','landSkillShotsEarlyGame','goldPerMinute'] },
+      keys:['laneCsDiff10','laneCsDiff15','laneGoldDiff15','teamDmgPct','dpm','skillshotsHit','landSkillShotsEarlyGame'] },
     { key:'assassin',lbl:'Assassin',          desc:'Cherche les picks et snowball',
       keys:['soloKills','killsNearEnemyTurret','outnumberedKills','takedownsFirst14','multikills','bountyGold','maxLevelLead'] },
     { key:'roam',    lbl:'Roameur',           desc:'Quitte sa lane pour créer ailleurs',
@@ -14631,7 +14642,7 @@ const ARCHETYPES = {
     { key:'hyper',   lbl:'Hypercarry',        desc:'Scaling et dégâts de fin de partie',
       keys:['teamDmgPct','dpm','goldPerMinute','laneMinions10','perfectGame'] },
     { key:'lane',    lbl:'Laneur agressif',   desc:'Prend l\'avantage et les plaques tôt',
-      keys:['laneMinions10','maxCsAdvantageOnLaneOpponent','turretPlates','firstBloodRate','takedownOnFirstTurret','kTurretsDestroyedBeforePlatesFall'] },
+      keys:['laneCsDiff10','laneGoldDiff10','turretPlates','firstBloodRate','takedownOnFirstTurret','kTurretsDestroyedBeforePlatesFall'] },
     { key:'safe',    lbl:'Positionnement',    desc:'Sûr, survit et ne se fait pas attraper',
       keys:['skillshotsDodged','dodgeSkillShotsSmallWindow','perfectGame','survivedLowHp','deathsByEnemyChamps','survivedThreeImmobilizesInFight'] },
     { key:'poke',    lbl:'Poke / Siège',      desc:'Use les tours et les PV à distance',
@@ -15187,6 +15198,102 @@ async function riotFetch(url, apiKey) {
   }
 }
 
+/* ── Écarts de lane, depuis la timeline ───────────────────────────────────────
+   L'objet `challenges` de Riot ne donne le laning qu'en agrégé (avance de niveau
+   max, CS à 10 min dans l'absolu). Ce qu'un coach veut savoir, c'est l'écart face à
+   L'ADVERSAIRE DIRECT : 78 CS à 10 min ne veut rien dire si le vis-à-vis en a 84.
+   Seule la timeline le permet, minute par minute.
+
+   L'adversaire direct est identifié par `teamPosition` dans l'équipe opposée — pas
+   par la lane du champion joué, qui se trompe dès qu'un joueur sort de son rôle
+   habituel (les mages mid joués ADC en ce moment, par exemple). */
+function tlLaneDelta(timeline, match, puuid) {
+  const parts = match?.info?.participants;
+  const frames = timeline?.info?.frames;
+  if (!parts || !frames) return null;
+
+  const moi = parts.find(function (p) { return p.puuid === puuid; });
+  if (!moi || !moi.teamPosition) return null;
+  const adv = parts.find(function (p) {
+    return p.teamId !== moi.teamId && p.teamPosition === moi.teamPosition;
+  });
+  if (!adv) return null;   // partie sans vis-à-vis identifiable (remake, rôles vides)
+
+  const tlp = timeline.info.participants || [];
+  const pid = function (pu) {
+    const e = tlp.find(function (x) { return x.puuid === pu; });
+    return e ? e.participantId : null;
+  };
+  const idMoi = pid(puuid), idAdv = pid(adv.puuid);
+  if (!idMoi || !idAdv) return null;
+
+  // Frame la plus proche de la minute demandée : les frames sont espacées d'environ
+  // 60 s mais pas exactement, et une partie courte peut ne pas atteindre la minute.
+  const frameAt = function (min) {
+    const cible = min * 60000;
+    let best = null, bestEcart = Infinity;
+    frames.forEach(function (f) {
+      const e = Math.abs((f.timestamp || 0) - cible);
+      if (e < bestEcart) { bestEcart = e; best = f; }
+    });
+    // Plus de 30 s d'écart : la partie s'est arrêtée avant, on ne mesure pas.
+    return (best && bestEcart <= 30000) ? best : null;
+  };
+  const cs = function (pf) { return (pf.minionsKilled || 0) + (pf.jungleMinionsKilled || 0); };
+
+  const out = {};
+  [10, 15].forEach(function (min) {
+    const f = frameAt(min);
+    if (!f || !f.participantFrames) return;
+    const a = f.participantFrames[idMoi], b = f.participantFrames[idAdv];
+    if (!a || !b) return;
+    out['laneGoldDiff' + min] = (a.totalGold || 0) - (b.totalGold || 0);
+    out['laneXpDiff' + min]   = (a.xp || 0) - (b.xp || 0);
+    out['laneCsDiff' + min]   = cs(a) - cs(b);
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+/* Moyenne des écarts de lane sur un sous-ensemble de parties.
+   Plafonné (TL_CAP) parce qu'une timeline = une requête Riot : avec la clé
+   Personnelle (100 req / 2 min), en charger une par partie doublerait le coût d'un
+   import de 100 parties. Le cache serveur de 30 jours les rend gratuites au
+   réimport. On prend les plus RÉCENTES : c'est le niveau actuel qui intéresse. */
+const TL_CAP = 20;
+async function fetchLaneDeltas(regional, matches, puuid, apiKey, onProgress) {
+  const recents = matches.slice(0, TL_CAP);
+  const somme = {}, compte = {};
+  const BATCH = 5;
+  for (let i = 0; i < recents.length; i += BATCH) {
+    const lot = recents.slice(i, i + BATCH);
+    const avantCache = _vsCacheHits;
+    const res = await Promise.allSettled(lot.map(function (m) {
+      return riotFetch('https://' + regional + '.api.riotgames.com/lol/match/v5/matches/'
+        + m.metadata.matchId + '/timeline', apiKey);
+    }));
+    res.forEach(function (r, j) {
+      if (r.status !== 'fulfilled' || !r.value) return;
+      const d = tlLaneDelta(r.value, lot[j], puuid);
+      if (!d) return;
+      Object.keys(d).forEach(function (k) {
+        somme[k] = (somme[k] || 0) + d[k];
+        compte[k] = (compte[k] || 0) + 1;
+      });
+    });
+    const depuisCache = _vsCacheHits - avantCache;
+    if (onProgress) onProgress(Math.min(89, 85 + Math.round((i + BATCH) / recents.length * 4)),
+      'Écarts de lane ' + Math.min(i + BATCH, recents.length) + '/' + recents.length + '…'
+      + (depuisCache ? ' (en cache)' : ''));
+    if (i + BATCH < recents.length && depuisCache < lot.length) await sleep(1400);
+  }
+  const moy = {};
+  Object.keys(somme).forEach(function (k) {
+    moy[k] = Math.round(somme[k] / compte[k] * 100) / 100;
+  });
+  moy._games = Object.keys(compte).length ? Math.max.apply(null, Object.values(compte)) : 0;
+  return moy;
+}
+
 async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
   const matches = [];
   const BATCH = 5;
@@ -15461,8 +15568,23 @@ async function fetchRiotData() {
     setProgress(35, `Analyse de ${ids.length} parties…`);
     const matches = await fetchMatchesInBatches(regional, ids, apiKey, (p,l) => setProgress(p,l));
 
+    /* Écarts face à l'adversaire direct de lane : fusionnés dans `challenges` pour
+       qu'ils suivent exactement le même chemin que le reste (catalogue, base de
+       référence, archétypes, dimensions). Un échec ici ne doit pas faire échouer
+       l'import : ce sont des métriques en plus, pas le socle. */
+    let laneDeltas = {};
+    try {
+      laneDeltas = await fetchLaneDeltas(regional, matches, acc.puuid, apiKey, (p, l) => setProgress(p, l));
+    } catch (e) { dbgLog('⚠ écarts de lane indisponibles : ' + e.message); }
+
     setProgress(90, 'Calcul des scores SPES…');
     const stats = calculateStats(matches, acc.puuid);
+    if (stats.challenges && laneDeltas) {
+      const nb = laneDeltas._games || 0;
+      delete laneDeltas._games;
+      Object.assign(stats.challenges, laneDeltas);
+      if (nb) dbgLog('Écarts de lane calculés sur ' + nb + ' partie(s)');
+    }
 
     rawData._puuid = acc.puuid;
     // Apply rank
