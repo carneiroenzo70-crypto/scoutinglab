@@ -14245,96 +14245,120 @@ if (_origUpdateVerdict) {
 
 
 
+/* ── Analyse avancée : catalogue des métriques Riot « challenges » ──
+   `id` = clé dans SEUILS_ABSOLUS. La note vient de scoreStatCalibrated(), la MÊME
+   fonction que le moteur SPES : l'affichage et la note ne peuvent plus diverger.
+   Avant, cette section avait ses propres seuils codés en dur et identiques pour
+   tous les rôles — un Support à 13 % des dégâts d'équipe s'affichait en rouge à
+   2,6/10 alors que le moteur, lui, le notait 7,5/10.
+   `id: null` = aucun seuil calibré : on affiche la valeur SANS note plutôt que
+   d'inventer un barème. */
+const ADV_METRICS = {
+  soloKills:        { id:'chal_solo_kills',        lbl:'Solo kills',            tip:'Kills en 1v1 sans aide — confiance mécanique' },
+  skillshotsDodged: { id:'chal_skillshots_dodged', lbl:'Skillshots évités',     tip:'Compétences ennemies esquivées — positionnement' },
+  skillshotsHit:    { id:'chal_skillshots_hit',    lbl:'Skillshots touchés',    tip:'Compétences placées — précision mécanique' },
+  killsUnderTurret: { id:'chal_kills_turret',      lbl:'Kills sous tour',       tip:'Kills défensifs sous sa propre tour — lecture de jeu' },
+  turretPlates:     { id:'chal_turret_plates',     lbl:'Plaques',               tip:'Plaques de tourelle prises — pression de lane' },
+  turretTakedowns:  { id:'chal_turret_takedowns',  lbl:'Tours',                 tip:'Tours détruites — conversion des avantages' },
+  soloTurretsLate:  { id:'chal_solo_turrets',      lbl:'Tours solo (late)',     tip:'Tours prises seul en fin de partie — menace de split push' },
+  visionAdv:        { id:'chal_vision_adv',        lbl:'Avantage vision',       tip:"Score de vision face à l'adversaire direct de lane" },
+  stealthWards:     { id:'chal_stealth_wards',     lbl:'Wards posés',           tip:'Wards furtifs placés — vision proactive' },
+  controlWards:     { id:'chal_control_wards',     lbl:'Wards de contrôle',     tip:'Wards roses achetés — investissement en vision' },
+  wardsKilled:      { id:'chal_wards_killed',      lbl:'Wards détruits',        tip:'Vision ennemie retirée — contrôle de carte' },
+  jungleInvasion:   { id:'chal_jungle_inv',        lbl:'Invasion jungle',       tip:"Camps volés chez l'adversaire — agressivité" },
+  jungleCsBefore10: { id:'chal_jgl_cs10',          lbl:'CS jungle 10 min',      tip:'Camps farmés avant 10 min — efficacité de clear' },
+  firstBloodRate:   { id:'chal_first_blood',       lbl:'First blood %',         tip:'Implication dans le premier sang' },
+  survivedLowHp:    { id:'chal_survive_hp',        lbl:'Survies <10 % PV',      tip:'Sorties de justesse — réflexes et gestion des PV' },
+  takedownsFirst14: { id:'chal_takedowns_14',      lbl:'Takedowns <14 min',     tip:'Impact early game — présence dans les premiers duels' },
+  epicSteals:       { id:'chal_epic_steals',       lbl:'Objectifs volés',       tip:'Dragon / Baron / Herald volés — lucidité sur objectif' },
+  saveAlly:         { id:'chal_save_ally',         lbl:'Alliés sauvés',         tip:"Alliés sauvés d'une mort certaine — protection" },
+  teamDmgPct:       { id:'chal_team_dmg_pct',      lbl:'Part des dégâts',       tip:"% des dégâts de l'équipe produits par le joueur" },
+  dpm:              { id:'dpm',                    lbl:'Dégâts / min',          tip:'Dégâts aux champions par minute' },
+  laneMinions10:    { id:'chal_cs10',              lbl:'CS 10 min',             tip:'CS dans les 10 premières minutes — farm early' },
+  maxLevelLead:     { id:'chal_max_lvl_lead',      lbl:'Avance de niveau',      tip:"Avance de niveau maximale sur l'adversaire direct" },
+  perfectGame:      { id:'chal_perfect_game',      lbl:'Parties sans mort',     tip:'% de parties terminées sans mourir — régularité' },
+  immobilizeKill:   { id:null,                     lbl:'Engages convertis',     tip:"Immobilisations suivies d'un kill — qualité d'engage" },
+  damageTakenPct:   { id:null,                     lbl:'Part des dégâts subis', tip:"% des dégâts encaissés par l'équipe — rôle de front" },
+};
+
+/* Composition des blocs PAR RÔLE : un Support n'est plus jugé sur les plaques de
+   tourelle ni les tours prises en solo, un Jungler a ses camps et son tempo. */
+const ADV_BLOCKS = {
+  Top: [
+    { title:'Duel & mécanique',    color:'#F87171', keys:['soloKills','skillshotsDodged','killsUnderTurret','survivedLowHp'] },
+    { title:'Pression de carte',   color:'#FBBF24', keys:['turretPlates','turretTakedowns','soloTurretsLate','maxLevelLead'] },
+    { title:'Laning & impact',     color:'#818CF8', keys:['laneMinions10','firstBloodRate','teamDmgPct','dpm'] },
+    { title:'Vision',              color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'] },
+  ],
+  Jgl: [
+    { title:'Jungle & tempo',      color:'#FBBF24', keys:['jungleCsBefore10','jungleInvasion','takedownsFirst14','epicSteals'] },
+    { title:'Duel & mécanique',    color:'#F87171', keys:['soloKills','skillshotsDodged','killsUnderTurret','survivedLowHp'] },
+    { title:'Objectifs & impact',  color:'#818CF8', keys:['turretPlates','turretTakedowns','teamDmgPct','dpm'] },
+    { title:'Vision',              color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'] },
+  ],
+  Mid: [
+    { title:'Laning',              color:'#FBBF24', keys:['laneMinions10','maxLevelLead','firstBloodRate','soloKills'] },
+    { title:'Mécanique',           color:'#F87171', keys:['skillshotsHit','skillshotsDodged','killsUnderTurret','survivedLowHp'] },
+    { title:'Impact',              color:'#818CF8', keys:['teamDmgPct','dpm','takedownsFirst14','turretPlates'] },
+    { title:'Vision',              color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'] },
+  ],
+  ADC: [
+    { title:'Laning',              color:'#FBBF24', keys:['laneMinions10','maxLevelLead','firstBloodRate','turretPlates'] },
+    { title:'Dégâts',              color:'#F87171', keys:['teamDmgPct','dpm','skillshotsHit','turretTakedowns'] },
+    { title:'Survie & régularité', color:'#818CF8', keys:['skillshotsDodged','survivedLowHp','killsUnderTurret','perfectGame'] },
+    { title:'Vision',              color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'] },
+  ],
+  Sup: [
+    { title:'Protection',          color:'#818CF8', keys:['saveAlly','survivedLowHp','perfectGame','damageTakenPct'] },
+    { title:'Engage',              color:'#F87171', keys:['immobilizeKill','takedownsFirst14','firstBloodRate','skillshotsHit'] },
+    { title:'Vision',              color:'#34D399', keys:['stealthWards','controlWards','wardsKilled','visionAdv'] },
+    { title:'Impact',              color:'#FBBF24', keys:['teamDmgPct','epicSteals','killsUnderTurret','dpm'] },
+  ],
+};
+
 function buildAdvancedSection(ch, role) {
   const card = document.getElementById('advanced-card');
   const body = document.getElementById('advanced-body');
-  if (!card || !body) return;
+  if (!card || !body || !ch) return;
   card.style.display = 'block';
 
-  // Définition des blocs par catégorie avec seuils d'évaluation
-  const blocks = [
-    {
-      title: 'Mécaniques offensives',
-      color: '#F87171',
-      metrics: [
-        { lbl:'Solo Kills/game',    val:ch.soloKills,       bad:0.1, avg:0.4, good:0.8, elite:1.5, tip:'Kills 1v1 sans aide — indicateur clé de confiance mécanique' },
-        { lbl:'Skillshots évités',  val:ch.skillshotsDodged,bad:2,   avg:5,   good:9,   elite:14,  tip:'Capacité à esquiver les compétences ennemies (kiting, positionnement)' },
-        { lbl:'Takedowns <14min',   val:ch.takedownsFirst14,bad:0.2, avg:0.8, good:1.5, elite:2.5, tip:'Impact early game — présence dans les duels et skirmishes précoces' },
-        { lbl:'First Blood %',      val:ch.firstBloodRate,  bad:5,   avg:10,  good:18,  elite:28,  tip:`Taux d'implication dans le 1er sang` },
-      ]
-    },
-    {
-      title: '🏰 Pression de carte',
-      color: '#FBBF24',
-      metrics: [
-        { lbl:'Plates/game',        val:ch.turretPlates,    bad:0.1, avg:0.4, good:0.9, elite:1.5, tip:'Plaques de tourelle prises — pression de lane et split push' },
-        { lbl:'Tours/game',         val:ch.turretTakedowns, bad:0.2, avg:0.6, good:1.1, elite:1.8, tip:'Tours détruites par partie — conversion avantage → objectifs' },
-        { lbl:'Tours solo (late)',  val:ch.soloTurretsLate, bad:0,   avg:0.1, good:0.3, elite:0.6, tip:'Tours détruites seul en phase tardive — menace split push' },
-        { lbl:'Invasion jungle',    val:ch.jungleInvasion,  bad:0,   avg:0.3, good:0.8, elite:1.5, tip:'Monstres volés dans la jungle ennemie — agressivité et prise de risque' },
-      ]
-    },
-    {
-      title: 'Vision & contrôle',
-      color: '#34D399',
-      metrics: [
-        { lbl:'Wards furtifs/game', val:ch.stealthWards,    bad:1,   avg:3,   good:5,   elite:8,   tip:'Wards invisibles placés — habitude vision proactive' },
-        { lbl:'Control wards/game', val:ch.controlWards,    bad:0.3, avg:0.8, good:1.5, elite:2.5, tip:'Wards de contrôle achetés — investissement en vision' },
-        { lbl:'Avantage vision',    val:ch.visionAdv,       bad:-2,  avg:0,   good:3,   elite:7,   tip:'Avantage vision score vs adversaire direct de lane' },
-        { lbl:'Steals objectifs',   val:ch.epicSteals,      bad:0,   avg:0.02,good:0.06,elite:0.12,tip:'Dragon/Baron/Herald volés — lucidité et audace sur objectifs' },
-      ]
-    },
-    {
-      title: '🧠 QI de jeu & régularité',
-      color: '#818CF8',
-      metrics: [
-        { lbl:'CS 10min',           val:ch.laneMinions10,   bad:12,  avg:20,  good:26,  elite:32,  tip:'CS dans les 10 premières minutes — niveau de farm early game' },
-        { lbl:'Niveau lead max',    val:ch.maxLevelLead,    bad:0,   avg:0.3, good:0.8, elite:1.5, tip:`Avantage de niveau max sur l'adversaire direct — domination de lane` },
-        { lbl:'Survie HP critique', val:ch.survivedLowHp,   bad:0,   avg:0.1, good:0.3, elite:0.6, tip:'Survies avec moins de 10% HP — réflexes et gestion de la vie' },
-        { lbl:'Part degats equipe', val:ch.teamDmgPct,      bad:15,  avg:22,  good:28,  elite:35,  tip:`% des degats produits pour l'equipe` },
-      ]
-    },
-  ];
+  const blocks = ADV_BLOCKS[role] || ADV_BLOCKS.Mid;
+  const fmt = (v) => (v === null || v === undefined || isNaN(v)) ? '—'
+    : (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 1 ? v.toFixed(1) : v.toFixed(2));
 
-  function scoreAdv(val, bad, avg, good, elite) {
-    if (val === null || isNaN(val)) return null;
-    if (val >= elite) return 10;
-    if (val >= good)  return 7 + 3*(val-good)/(elite-good);
-    if (val >= avg)   return 5 + 2*(val-avg)/(good-avg);
-    if (val >= bad)   return 3 + 2*(val-bad)/(avg-bad);
-    return Math.max(0, 3*(val/Math.max(bad,0.001)));
-  }
-
-  body.innerHTML = blocks.map(block => {
-    const rows = block.metrics.map(m => {
-      const sc = scoreAdv(m.val, m.bad, m.avg, m.good, m.elite);
-      const col = sc === null ? 'var(--sub)' : sc >= 8 ? '#2DD4A7' : sc >= 6 ? '#FBBF24' : sc >= 4 ? '#F87171' : '#EF4444';
-      const bar = sc !== null ? Math.round(sc*10) : 0;
-      const display = m.val !== null && !isNaN(m.val) ? 
-        (m.val >= 10 ? m.val.toFixed(0) : m.val >= 1 ? m.val.toFixed(1) : m.val.toFixed(2)) : '—';
-      return `
-        <div style="margin-bottom:8px" title="${m.tip}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
-            <span style="font-size:11px;color:var(--fg)">${m.lbl}</span>
-            <span style="font-size:12px;font-weight:700;font-family:monospace;color:${col}">${display}</span>
-          </div>
-          <div style="height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">
-            <div style="height:100%;width:${bar}%;background:${col};border-radius:2px;transition:width .4s ease"></div>
-          </div>
-        </div>`;
+  body.innerHTML = blocks.map(function (block) {
+    const notes = [];
+    const rows = block.keys.map(function (key) {
+      const def = ADV_METRICS[key]; if (!def) return '';
+      const val = ch[key];
+      // La note vient du moteur SPES lui-même — jamais d'un barème parallèle.
+      const sc = def.id ? scoreStatCalibrated(def.id, val) : null;
+      const noted = (sc !== null && sc !== undefined && !isNaN(sc));
+      if (noted) notes.push(sc);
+      const col = !noted ? 'var(--sub)'
+        : sc >= 8 ? '#2DD4A7' : sc >= 6 ? '#FBBF24' : sc >= 4 ? '#F87171' : '#EF4444';
+      // Sans seuil calibré pour ce rôle : la valeur reste affichée, la barre
+      // disparaît — le coach voit la donnée sans qu'on lui invente une note.
+      const barHtml = !noted ? '<div style="height:4px"></div>'
+        : '<div style="height:4px;background:var(--surf3);border-radius:2px;overflow:hidden">'
+          + '<div style="height:100%;width:' + Math.round(sc * 10) + '%;background:' + col
+          + ';border-radius:2px;transition:width .4s ease"></div></div>';
+      return '<div style="margin-bottom:8px" title="' + anEsc(def.tip) + '">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">'
+        + '<span style="font-size:11px;color:var(--fg)">' + anEsc(def.lbl) + '</span>'
+        + '<span style="font-size:12px;font-weight:700;font-family:monospace;color:' + col + '">' + fmt(val) + '</span>'
+        + '</div>' + barHtml + '</div>';
     }).join('');
 
-    const avgScore = block.metrics.map(m => scoreAdv(m.val, m.bad, m.avg, m.good, m.elite)).filter(s=>s!==null);
-    const blockScore = avgScore.length ? (avgScore.reduce((a,b)=>a+b,0)/avgScore.length).toFixed(1) : '—';
-    const blockCol = parseFloat(blockScore) >= 8 ? '#2DD4A7' : parseFloat(blockScore) >= 6 ? '#FBBF24' : '#F87171';
+    const blockScore = notes.length ? (notes.reduce(function (a, b) { return a + b; }, 0) / notes.length).toFixed(1) : '—';
+    const bs = parseFloat(blockScore);
+    const blockCol = isNaN(bs) ? 'var(--sub)' : bs >= 8 ? '#2DD4A7' : bs >= 6 ? '#FBBF24' : '#F87171';
 
-    return `
-      <div style="background:var(--surf2);border-radius:10px;padding:14px;border:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-          <span style="font-size:12px;font-weight:700;color:${block.color}">${block.title}</span>
-          <span style="font-size:14px;font-weight:800;color:${blockCol};font-family:monospace">${blockScore}</span>
-        </div>
-        ${rows}
-      </div>`;
+    return '<div style="background:var(--surf2);border-radius:10px;padding:14px;border:1px solid var(--border)">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+      + '<span style="font-size:12px;font-weight:700;color:' + block.color + '">' + anEsc(block.title) + '</span>'
+      + '<span style="font-size:14px;font-weight:800;color:' + blockCol + ';font-family:monospace">' + blockScore + '</span>'
+      + '</div>' + rows + '</div>';
   }).join('');
 }
 
