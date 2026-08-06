@@ -4184,6 +4184,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </table>
       </div>
 
+      <!-- ── Carte « joueur du circuit pro » : remplie par proRenderCard() ── -->
+      <div class="card" id="pro-card" style="display:none;margin-bottom:16px"></div>
+
       <!-- ── ANALYSE AVANCÉE SPES (challenges Riot) ── -->
       <div class="card" id="advanced-card" style="display:none;margin-bottom:16px">
         <div class="card-title" style="display:flex;align-items:center;gap:8px">
@@ -14491,6 +14494,122 @@ function advGrp(key) {
   return d.grp || ADV_GRP_HISTO[key] || 'Autres';
 }
 
+/* ── Reconnaissance d'un joueur du circuit pro (Leaguepedia) ──────────────────
+   Deux façons d'apparier un compte SoloQ à un joueur pro :
+     1. le pseudo EST le nom de scène (fréquent) → ID = "<pseudo>" ;
+     2. le pseudo est un compte déclaré sur la page du joueur → SoloqueueIds LIKE.
+   La seconde est celle qui apporte vraiment quelque chose : un coach tape un compte
+   SoloQ quelconque et l'outil reconnaît le pro derrière.
+   Passe par pmCargo (proxy /api/lp, cache Redis 6 h et gestion du rate-limit), pas
+   par un fetch direct : Leaguepedia limite fortement les appels anonymes.
+   Photos : Special:FilePath, exactement le mécanisme déjà utilisé pour les logos
+   d'équipe. Contenu Leaguepedia sous licence CC BY-SA 3.0, d'où le crédit affiché. */
+const _proCache = {};
+
+async function lpProLookup(gameName) {
+  const q = String(gameName || '').trim();
+  if (q.length < 2) return null;
+  const cle = q.toLowerCase();
+  if (_proCache[cle] !== undefined) return _proCache[cle];
+
+  /* Deux jeux de champs. Chez Cargo, UN SEUL nom de colonne inexistant fait échouer
+     la requête entière — on perdrait la carte au lieu de perdre une information.
+     Le jeu « sûr » ne contient que des colonnes déjà utilisées ailleurs dans le
+     produit et donc vérifiées en production ; le jeu complet y ajoute la photo et
+     les comptes SoloQ, que je n'ai pas pu confirmer (Leaguepedia rate-limite les
+     appels anonymes). Si le complet échoue, on retombe sur le sûr. */
+  const CHAMPS_COMPLET = 'ID,Name,Image,Country,Team,Role,Birthdate,SoloqueueIds';
+  const CHAMPS_SUR     = 'ID,Name,Country,Team,Role,Birthdate';
+  const esc = q.replace(/"/g, '').replace(/%/g, '');
+  const urlPour = function (champs, limite, where) {
+    return 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields='
+      + encodeURIComponent(champs) + '&format=json&origin=*&limit=' + limite
+      + '&where=' + encodeURIComponent(where);
+  };
+
+  let rows = await pmCargo(urlPour(CHAMPS_COMPLET, 1, 'ID="' + esc + '"'));
+  let complet = true;
+  if (rows === null) {                    // requête refusée : colonne inconnue probable
+    complet = false;
+    rows = await pmCargo(urlPour(CHAMPS_SUR, 1, 'ID="' + esc + '"'));
+  }
+  // Rien sur le nom de scène : on cherche dans les comptes SoloQ déclarés. Ce chemin
+  // n'existe que si la colonne SoloqueueIds est disponible.
+  if (complet && (!rows || !rows.length)) {
+    rows = await pmCargo(urlPour(CHAMPS_COMPLET, 5, 'SoloqueueIds LIKE "%' + esc + '%"'));
+  }
+  if (!rows || !rows.length) { _proCache[cle] = null; return null; }
+
+  const p = rows[0].title || {};
+  const out = {
+    id: p.ID || q,
+    nom: p.Name || '',
+    image: p.Image || '',
+    pays: p.Country || '',
+    equipe: p.Team || '',
+    poste: p.Role || '',
+    comptes: p.SoloqueueIds || '',
+    naissance: (p.Birthdate && p.Birthdate !== '0000-00-00') ? p.Birthdate : '',
+  };
+  _proCache[cle] = out;
+  return out;
+}
+
+function proPhotoUrl(image) {
+  return image ? 'https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(image) : '';
+}
+
+/* Affiche la carte si — et seulement si — le joueur est reconnu. Une structure qui
+   scoute un joueur inconnu du circuit ne doit pas voir un encart vide. */
+async function proRenderCard(gameName) {
+  const card = document.getElementById('pro-card');
+  if (!card) return;
+  card.style.display = 'none';
+  let p = null;
+  try { p = await lpProLookup(gameName); } catch (_) { return; }
+  if (!p) return;
+
+  const photo = proPhotoUrl(p.image);
+  let age = '';
+  if (p.naissance) {
+    const a = Math.floor((Date.now() - new Date(p.naissance)) / (365.25 * 24 * 3600 * 1000));
+    if (a > 10 && a < 45) age = a + ' ans';
+  }
+  const infos = [
+    p.equipe && { l: 'Équipe', v: p.equipe },
+    p.poste && { l: 'Poste', v: p.poste },
+    age && { l: 'Âge', v: age },
+    p.pays && { l: 'Pays', v: p.pays },
+  ].filter(Boolean);
+
+  card.innerHTML = '<div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">'
+    + (photo
+        // onerror : une page Leaguepedia peut référencer une image supprimée. Sans ce
+        // repli, on afficherait un cadre d'image cassée sur la fiche.
+        ? '<img src="' + anEsc(photo) + '" alt="' + anEsc(p.id) + '" loading="lazy" '
+          + 'onerror="this.style.display=\'none\'" '
+          + 'style="width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid var(--border);background:var(--surf2)">'
+        : '')
+    + '<div style="flex:1;min-width:220px">'
+    + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px">'
+    + '<span style="font-size:16px;font-weight:800;color:var(--fg)">' + anEsc(p.id) + '</span>'
+    + '<span class="advcfg-tag" style="font-size:10px">Circuit professionnel</span>'
+    + '</div>'
+    + (p.nom ? '<div class="faint" style="font-size:11.5px;margin-bottom:8px">' + anEsc(p.nom) + '</div>' : '')
+    + '<div style="display:flex;gap:18px;flex-wrap:wrap">'
+    + infos.map(function (i) {
+        return '<div><div class="faint" style="font-size:9.5px;text-transform:uppercase;letter-spacing:.06em">'
+          + anEsc(i.l) + '</div><div style="font-size:12.5px;font-weight:600;color:var(--fg)">'
+          + anEsc(i.v) + '</div></div>';
+      }).join('')
+    + '</div>'
+    + (p.comptes ? '<div class="faint" style="font-size:10.5px;margin-top:8px">Comptes SoloQ connus : '
+        + anEsc(p.comptes) + '</div>' : '')
+    + '<div class="faint" style="font-size:9.5px;margin-top:8px">Source Leaguepedia · CC BY-SA 3.0</div>'
+    + '</div></div>';
+  card.style.display = 'block';
+}
+
 /* ── Base de référence : noter une métrique par comparaison, pas par barème ──
    Les 49 métriques ajoutées au catalogue n'ont aucun seuil par poste, et en inventer
    un reproduirait le défaut corrigé en fe42edf. On note donc en CENTILE face aux
@@ -15857,6 +15976,11 @@ async function fetchRiotData() {
       );
       buildAllDims(); updateGlobal(); updateVerdict(); updateRadar();
     }
+
+    // Reconnaissance d'un joueur du circuit pro : non bloquant, la fiche s'affiche
+    // sans attendre Leaguepedia (qui peut être lent ou rate-limité).
+    const _ps = document.getElementById('d-pseudo')?.value.trim();
+    if (_ps) proRenderCard(_ps).catch(function () {});
 
     // Update player card display
     const pseudo2 = document.getElementById('d-pseudo')?.value.trim();
