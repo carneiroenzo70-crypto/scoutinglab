@@ -53,7 +53,7 @@ const VS_STORE_DOMAINS = {
   crm:        ['spes_crm_pipeline'],
   structures: ['spes_crm_structures'],
   seasons:    ['vs_seasons'],
-  kpis:       ['vs_kpi_prefs'],
+  kpis:       ['vs_kpi_prefs', 'vs_arc_prefs'],
   refbase:    ['vs_refbase'],
 };
 const vsStore = (function () {
@@ -14712,10 +14712,50 @@ const ARCHETYPES = {
 };
 
 function arcList(role) { return ARCHETYPES[role] || ARCHETYPES.Mid; }
+
+/* Composition modifiable par la structure. ARCHETYPES n'est qu'un point de départ :
+   un staff a sa propre définition de ce qu'est un assassin mid, et doit pouvoir la
+   régler. Stocké dans le domaine 'kpis' (même liste blanche serveur), donc partagé
+   par la structure comme le reste des réglages. */
+function arcPrefs() {
+  try { return JSON.parse(localStorage.getItem('vs_arc_prefs') || '{}') || {}; }
+  catch (_) { return {}; }
+}
+function arcKeysOf(role, key) {
+  const p = arcPrefs();
+  const o = p[role] && p[role][key];
+  // Filtré sur le catalogue : une métrique retirée d'ADV_METRICS ne doit pas rester
+  // dans un réglage enregistré et produire une ligne vide.
+  if (Array.isArray(o)) return o.filter(function (k) { return ADV_METRICS[k]; });
+  const d = arcList(role).find(function (a) { return a.key === key; });
+  return d ? d.keys.slice() : [];
+}
+function arcSaveKeysFor(role, key, keys) {
+  const p = arcPrefs();
+  p[role] = p[role] || {};
+  p[role][key] = keys;
+  localStorage.setItem('vs_arc_prefs', JSON.stringify(p));
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('kpis');
+}
+function arcResetOne(role, key) {
+  const p = arcPrefs();
+  if (p[role]) { delete p[role][key]; if (!Object.keys(p[role]).length) delete p[role]; }
+  localStorage.setItem('vs_arc_prefs', JSON.stringify(p));
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('kpis');
+}
+function arcEstModifie(role, key) {
+  const p = arcPrefs();
+  return !!(p[role] && Array.isArray(p[role][key]));
+}
+
+/* Renvoie une COPIE avec la composition effective : tout le reste du code lit
+   arc.keys, les réglages du staff se propagent donc partout (affichage, synthèse
+   dans D1-D5) sans autre modification. */
 function arcCurrent(role) {
   const r = role || currentRole || 'Mid';
-  const k = rawData.archetype;
-  return arcList(r).find(function (a) { return a.key === k; }) || null;
+  const d = arcList(r).find(function (a) { return a.key === rawData.archetype; });
+  if (!d) return null;
+  return { key: d.key, lbl: d.lbl, desc: d.desc, keys: arcKeysOf(r, d.key) };
 }
 /* Le choix vit dans rawData : il est donc sauvegardé et rechargé avec la fiche du
    joueur, sans nouveau mécanisme de persistance. */
@@ -14738,12 +14778,108 @@ function arcRenderPills() {
   if (!host) return;
   const role = currentRole || 'Mid';
   const cur = rawData.archetype;
-  host.innerHTML = '<span class="label" style="align-self:center;margin-right:4px">Profil</span>'
+  const pills = '<span class="label" style="align-self:center;margin-right:4px">Profil</span>'
     + arcList(role).map(function (a) {
         return '<button type="button" class="chip' + (a.key === cur ? ' on' : '') + '"'
           + ' title="' + anEsc(a.desc) + '" onclick="arcSet(\'' + a.key + '\')">' + anEsc(a.lbl) + '</button>';
       }).join('')
     + '<span class="faint" style="font-size:10.5px;margin-left:6px">Optionnel — ajuste les indicateurs lus sur ce joueur</span>';
+
+  /* Composition affichée en clair sous les pastilles : sans elle, choisir un profil
+     revenait à cocher une case sans savoir ce qu'elle mesure. */
+  let detail = '';
+  const arc = arcCurrent(role);
+  if (arc) {
+    const libelles = arc.keys.map(function (k) {
+      return ADV_METRICS[k] ? ADV_METRICS[k].lbl : k;
+    });
+    detail = '<div style="flex-basis:100%;margin-top:8px;display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap">'
+      + '<span class="faint" style="font-size:10.5px;padding-top:3px">Mesuré sur :</span>'
+      + '<span style="display:flex;gap:4px;flex-wrap:wrap;flex:1;min-width:200px">'
+      + (libelles.length
+          ? libelles.map(function (l) {
+              return '<span class="advcfg-tag" style="font-size:10px">' + anEsc(l) + '</span>';
+            }).join('')
+          : '<span class="faint" style="font-size:10.5px">aucun indicateur — le profil n\'aura aucun effet</span>')
+      + '</span>'
+      + '<button type="button" class="btn btn-ghost btn-xs" onclick="arcOpenConfig(\'' + arc.key + '\')">Modifier</button>'
+      + (arcEstModifie(role, arc.key)
+          ? '<span class="advcfg-tag" style="font-size:10px">modifié</span>' : '')
+      + '</div>';
+  }
+  host.innerHTML = pills + detail;
+}
+
+/* Édition de la composition d'un archétype. Même rendu groupé que la boîte à outils
+   pour ne pas inventer une deuxième façon de choisir des métriques. */
+function arcOpenConfig(arcKey) {
+  const role = currentRole || 'Mid';
+  const def = arcList(role).find(function (a) { return a.key === arcKey; });
+  if (!def) return;
+  const actives = arcKeysOf(role, arcKey);
+  const dispo = window._advLastCh || null;
+  const present = function (k) { return !dispo || (dispo[k] !== undefined && dispo[k] !== null); };
+
+  const ligne = function (key) {
+    const d = ADV_METRICS[key];
+    const on = actives.indexOf(key) >= 0;
+    const absent = !present(key);
+    const note = d.id ? '' : ' · noté par comparaison aux joueurs importés';
+    return '<label class="advcfg-row" data-q="' + anEsc((d.lbl + ' ' + d.tip + ' ' + advGrp(key)).toLowerCase()) + '"'
+      + (absent ? ' style="opacity:.55"' : '') + '>'
+      + '<input type="checkbox" data-k="' + key + '"' + (on ? ' checked' : '') + '>'
+      + '<span class="advcfg-lbl">' + anEsc(d.lbl)
+      + (absent ? '<span class="advcfg-tag">absent des données</span>' : '') + '</span>'
+      + '<span class="advcfg-tip">' + anEsc(d.tip + note) + '</span>'
+      + '</label>';
+  };
+
+  // Les métriques déjà retenues d'abord, puis celles proposées pour le poste, puis
+  // le reste par thème : on retrouve la composition avant de l'élargir.
+  const proposes = Object.keys(ADV_METRICS).filter(function (k) {
+    const r = ADV_METRICS[k].roles;
+    return actives.indexOf(k) < 0 && Array.isArray(r) && r.indexOf(role) >= 0;
+  });
+  const restants = Object.keys(ADV_METRICS).filter(function (k) {
+    return actives.indexOf(k) < 0 && proposes.indexOf(k) < 0;
+  });
+  const parGrp = {};
+  restants.forEach(function (k) { (parGrp[advGrp(k)] = parGrp[advGrp(k)] || []).push(k); });
+  const grpHtml = Object.keys(parGrp).sort().map(function (g) {
+    return '<div class="advcfg-sec">' + anEsc(g) + '</div>' + parGrp[g].map(ligne).join('');
+  }).join('');
+
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(680px,95vw);max-height:88vh;overflow:auto">'
+    + '<div class="rs-modal-h">Profil ' + anEsc(def.lbl) + ' · poste ' + anEsc(SS_ROLE_LABEL[role] || role) + '</div>'
+    + '<div class="rs-modal-note" style="margin-bottom:8px">' + anEsc(def.desc)
+    + '. Ces indicateurs sont ceux lus sur un joueur de ce profil, et ils pèsent sur les dimensions D1 à D5. Le réglage vaut pour toute la structure.</div>'
+    + '<input type="text" placeholder="Filtrer les indicateurs…" oninput="advcfgFilter(this)" '
+    + 'style="width:100%;margin-bottom:10px;padding:7px 10px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
+    + '<div class="advcfg-sec">Retenus pour ce profil</div>' + actives.map(ligne).join('')
+    + (proposes.length ? '<div class="advcfg-sec">Proposés pour ce poste</div>' + proposes.map(ligne).join('') : '')
+    + grpHtml
+    + '<div class="rs-modal-a">'
+    + '<button class="btn btn-ghost btn-sm" onclick="arcResetOne(\'' + role + '\',\'' + arcKey + '\');this.closest(\'.rs-modal-ov\').remove();arcRenderPills();advRerender();buildAllDims();updateGlobal();updateVerdict();updateRadar()">Rétablir par défaut</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
+    + '<button class="btn btn-cta btn-sm" onclick="arcApplyConfig(\'' + role + '\',\'' + arcKey + '\',this)">Appliquer</button>'
+    + '</div></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function arcApplyConfig(role, arcKey, btn) {
+  const ov = btn.closest('.rs-modal-ov');
+  const keys = Array.from(ov.querySelectorAll('input[data-k]'))
+    .filter(function (i) { return i.checked; })
+    .map(function (i) { return i.getAttribute('data-k'); });
+  arcSaveKeysFor(role, arcKey, keys);
+  ov.remove();
+  arcRenderPills();
+  advRerender();
+  // La composition change la synthèse envoyée dans D1-D5 : la note doit suivre.
+  if (typeof buildAllDims === 'function') { buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); }
 }
 /* ── L'archétype pèse sur les dimensions D1-D5 ────────────────────────────────
    Chaque thème de métrique alimente la dimension qui lui correspond. D4 (rang &
