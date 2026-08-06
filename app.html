@@ -14522,10 +14522,12 @@ function refSaveBase(b) {
 /* Enregistre (ou met à jour) un joueur dans la référence de son poste.
    La clé joueur évite qu'un même joueur réimporté dix fois compte dix fois et tire
    toute la distribution vers lui. */
-function refRecord(role, playerKey, ch) {
+function refRecord(role, playerKey, ch, base) {
   if (!role || !playerKey || !ch) return;
   const noms = Object.keys(ADV_METRICS).sort();
-  const b = refBase();
+  // `base` fourni = enregistrement en lot : on mute l'objet et l'appelant sauvegarde
+  // UNE fois. Sans ça, moissonner 300 joueurs déclencherait 300 écritures serveur.
+  const b = base || refBase();
   let t = b[role];
   // Réalignement si le catalogue a changé depuis le dernier enregistrement : on
   // remappe par NOM, jamais par position — sinon les colonnes se décalent en silence.
@@ -14554,7 +14556,56 @@ function refRecord(role, playerKey, ch) {
   while (t.ids.length > REF_CAP) { t.ids.shift(); t.rows.shift(); }
 
   b[role] = t;
+  if (!base) refSaveBase(b);
+}
+
+/* ── Démarrage à froid : la référence se construit avec les parties importées ──
+   Défaut constaté en usage réel : une structure qui importe sa première fiche a UN
+   joueur de référence pour un seuil de 15. Aucune métrique n'est donc notable, donc
+   rien n'entre dans le score — la fonctionnalité paraît morte le jour de la démo.
+
+   Or chaque partie importée contient NEUF autres joueurs, avec leur objet `challenges`
+   complet, que l'on jetait. On les enregistre : une centaine de parties fournit
+   plusieurs centaines de joueurs de référence, sans une seule requête Riot de plus.
+
+   Limite à connaître : ces joueurs n'ont souvent qu'UNE partie dans le lot, alors que
+   le joueur scouté est une moyenne sur cent. Une valeur sur une partie varie beaucoup
+   plus qu'une moyenne, donc la distribution de référence est plus large que la
+   réalité : les centiles sont tassés vers le milieu et les profils extrêmes
+   ressortent moins tranchés qu'ils ne le sont. C'est directionnellement juste et ça
+   débloque le premier jour ; la référence se resserre à mesure que de vrais joueurs
+   suivis sur cent parties entrent dans la base. */
+const REF_HARVEST_GAMES = 40;   // parties balayées pour la moisson (les plus récentes)
+const REF_POS = { TOP:'Top', JUNGLE:'Jgl', MIDDLE:'Mid', BOTTOM:'ADC', UTILITY:'Sup' };
+
+function refHarvest(matches) {
+  if (!Array.isArray(matches) || !matches.length) return 0;
+  const lot = matches.slice(0, REF_HARVEST_GAMES);
+  // Poste retenu = celui le plus souvent joué par ce puuid dans le lot.
+  const vus = {};
+  lot.forEach(function (m) {
+    (m?.info?.participants || []).forEach(function (p) {
+      const role = REF_POS[p.teamPosition];
+      if (!role || !p.puuid) return;
+      const e = vus[p.puuid] = vus[p.puuid] || {};
+      e[role] = (e[role] || 0) + 1;
+    });
+  });
+  let n = 0;
+  const b = refBase();   // une seule lecture, une seule écriture pour toute la moisson
+  Object.keys(vus).forEach(function (puuid) {
+    const roles = vus[puuid];
+    const role = Object.keys(roles).sort(function (a, b) { return roles[b] - roles[a]; })[0];
+    // On repasse par calculateStats plutôt que de recopier les formules : c'est la
+    // seule façon de garantir que la référence est calculée EXACTEMENT comme le
+    // joueur qu'elle sert à noter. Deux chemins parallèles divergeraient.
+    try {
+      const st = calculateStats(lot, puuid);
+      if (st && st.challenges) { refRecord(role, puuid, st.challenges, b); n++; }
+    } catch (_) { /* un joueur illisible ne doit pas interrompre la moisson */ }
+  });
   refSaveBase(b);
+  return n;
 }
 
 // Valeurs connues pour une métrique à un poste (les null sont écartés : « non mesuré »
@@ -14714,12 +14765,28 @@ const ARC_DIM = {
 function arcApplyToDims() {
   ['d1', 'd2', 'd3', 'd5'].forEach(function (d) { delete rawData['arc_' + d]; });
   window._arcDimLbl = {};
-  const arc = arcCurrent();
   const ch = window._advLastCh || window._lastChallenges;
-  if (!arc || !ch) return;
+  if (!ch) return;
   const role = currentRole || 'Mid';
+  const arc = arcCurrent();
+
+  /* Deux sources alimentent la synthèse :
+       - les métriques de l'archétype (le style du joueur) ;
+       - les indicateurs que le staff a ACTIVÉS et qui ne font pas déjà partie des
+         blocs par défaut du poste.
+     Le second point corrige un défaut signalé en usage : cocher un indicateur dans
+     la boîte à outils ne changeait que l'affichage, jamais la note. Une « boîte à
+     outils » dont les outils ne comptent pas n'en est pas une. */
+  const dansBase = {};
+  (ADV_BLOCKS[role] || ADV_BLOCKS.Mid).forEach(function (b) {
+    b.keys.forEach(function (k) { dansBase[k] = true; });
+  });
+  const choisis = advEnabledKeys(role).filter(function (k) { return !dansBase[k] && ADV_METRICS[k]; });
+  const source = (arc ? arc.keys : []).concat(choisis).filter(function (k, i, a) { return a.indexOf(k) === i; });
+  if (!source.length) return;
+
   const acc = {};
-  arc.keys.forEach(function (k) {
+  source.forEach(function (k) {
     if (!ADV_METRICS[k]) return;
     const sc = advScore(k, ch[k], role);
     if (sc === null || sc === undefined || isNaN(sc)) return;
@@ -14729,7 +14796,8 @@ function arcApplyToDims() {
   });
   Object.keys(acc).forEach(function (d) {
     rawData['arc_' + d] = acc[d].reduce(function (a, b) { return a + b; }, 0) / acc[d].length;
-    window._arcDimLbl[d] = 'Profil ' + arc.lbl + ' (' + acc[d].length + ' ind.)';
+    window._arcDimLbl[d] = (arc ? 'Profil ' + arc.lbl : 'Indicateurs suivis')
+      + ' (' + acc[d].length + ' ind.)';
   });
 }
 
@@ -15606,11 +15674,12 @@ async function fetchRiotData() {
          est son Riot ID (à défaut son pseudo) pour qu'un réimport le mette à jour au
          lieu de l'ajouter une deuxième fois et de tirer la distribution vers lui. */
       try {
-        const pseudo = (document.getElementById('d-pseudo')?.value || '').trim();
-        const tag    = (document.getElementById('d-tag')?.value || '').trim();
-        const cle = pseudo ? (pseudo + '#' + tag).toLowerCase() : '';
-        if (cle) refRecord(currentRole, cle, stats.challenges);
-      } catch (_) { /* la référence est un bonus : son échec ne doit pas casser l'import */ }
+        // Moissonne TOUS les joueurs des parties importées, pas seulement le joueur
+        // scouté : c'est ce qui donne une base utilisable dès la première fiche.
+        // Le joueur scouté en fait partie, il est donc enregistré au passage.
+        const n = refHarvest(matches);
+        if (n) dbgLog('Base de référence : ' + n + ' joueur(s) enregistré(s)');
+      } catch (e) { dbgLog('⚠ moisson de référence ignorée : ' + e.message); }
       buildAdvancedSection(stats.challenges, currentRole);
       // ── Injection dans rawData pour le moteur de scoring ──
       const ch = stats.challenges;
