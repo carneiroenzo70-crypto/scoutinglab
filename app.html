@@ -1310,6 +1310,13 @@ body.map-fullscreen .logo-bg{ display:none; }
 #badge-souscote, #badge-pepite, #score-potentiel-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
+/* L'analyse avancée n'est plus affichée : le coach n'a pas à lire 70 barres pour se
+   faire un avis. Les indicateurs qu'il active alimentent directement la note SPES.
+   La carte reste dans le DOM parce que buildAdvancedSection() y calcule les notes
+   reprises par la synthèse D1-D5 — la masquer, et non la supprimer, garde ce calcul
+   intact tout en libérant l'écran. */
+#advanced-card{ display:none !important; }
+
 /* ════ Largeur unifiée : toutes les pages = 1264px de contenu centré (comme les panels vsd-wrap 1280 − 16 de padding) ════ */
 #panel-scout, #panel-results{ max-width:1264px; margin-left:auto; margin-right:auto; }
 
@@ -4194,7 +4201,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <span>Analyse Avancée SPES</span>
           <span style="font-size:9px;background:linear-gradient(90deg,rgba(138,127,245,.25),rgba(21,168,120,.2));color:var(--text);padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(138,127,245,.25)">EXCLUSIF VS</span>
           <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="advOpenConfig()" title="Choisir les indicateurs suivis pour ce poste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Choisir les indicateurs</button>
-          <button class="btn btn-ghost btn-xs" onclick="eliteOpenModal()" title="Recalculer les seuils de notation sur des joueurs de très haut niveau">Calibrage</button>
         </div>
         <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
       </div>
@@ -14522,6 +14528,14 @@ const ELITE_PCT = [10, 35, 70, 95];
    progression) : les recalibrer n'aurait aucun sens. */
 const ELITE_EXCLUS = { rank_abs: 1, rank_age: 1, rank_prog: 1 };
 
+/* Métriques qu'on refuse de calibrer sur un échantillon court, quelle que soit sa
+   taille — leur définition même suppose un historique :
+     champ_pool  exige 5 parties par champion : structurellement 0 sous 5 parties ;
+     regularite  compte des sessions sur 90 jours : vide pour un joueur vu une fois ;
+     winrate     vaut 0 ou 100 sur une partie, et son échelle est déjà bien établie.
+   Elles conservent leur barème d'origine. */
+const ELITE_EXCLUS_CALIB = { champ_pool: 1, regularite: 1, winrate: 1 };
+
 function eliteSeuils() {
   try { return JSON.parse(localStorage.getItem('vs_elite_seuils') || 'null'); }
   catch (_) { return null; }
@@ -14675,43 +14689,104 @@ async function eliteBuild(opts, onProgress) {
     let st = null;
     try { st = calculateStats(pool, puuid); } catch (_) { return; }
     if (!st || !st.challenges) return;
+    const n = st.totalGames || 1;
     const dest = echantillons[role] = echantillons[role] || {};
+    // On garde le NOMBRE DE PARTIES avec chaque valeur : sans lui, impossible de
+    // distinguer une moyenne solide d'une performance isolée (cf. lissage plus bas).
+    const noter = function (nom, v) {
+      if (typeof v !== 'number' || !isFinite(v)) return;
+      if (ELITE_EXCLUS_CALIB[nom]) return;
+      (dest[nom] = dest[nom] || []).push({ v: v, n: n });
+    };
     Object.keys(sources).forEach(function (id) {
       const s = sources[id];
-      const v = s.top ? st[s.top] : st.challenges[s.chal];
-      if (typeof v !== 'number' || !isFinite(v)) return;
-      (dest[id] = dest[id] || []).push(v);
+      noter(id, s.top ? st[s.top] : st.challenges[s.chal]);
     });
+    // Toutes les métriques du catalogue, y compris celles sans barème historique :
+    // c'est ce qui permet de noter les 49 indicateurs ajoutés sur la même référence
+    // que le reste, au lieu de les laisser en valeur brute.
+    Object.keys(ADV_METRICS).forEach(function (k) { noter(k, st.challenges[k]); });
   });
 
-  // Dérive les bornes. Un échantillon trop mince donnerait des bornes instables :
-  // on préfère garder le seuil historique plutôt qu'un seuil mesuré sur 8 joueurs.
-  const MIN_ECH = 30;
-  const seuils = {}; let nbSeuils = 0, nbJoueurs = 0;
+  /* ── Dérivation des bornes ───────────────────────────────────────────────────
+     Deux corrections issues d'un calibrage réel sur 898 joueurs, dont les seuils
+     étaient inutilisables :
+
+     1. LISSAGE. 888 de ces joueurs n'avaient qu'UNE partie dans le lot. Or on note
+        des joueurs sur des moyennes de 100 parties. Une partie isolée a une bien
+        plus grande dispersion qu'une moyenne : le 95e centile de parties uniques
+        donnait 21 plaques de tourelle, valeur qu'aucune MOYENNE n'atteint jamais.
+        Chaque joueur est donc ramené vers la moyenne de population d'autant plus
+        fort qu'il a été vu sur peu de parties — facteur √(n/(n+K)), soit 0,30 pour
+        une partie et 0,82 pour vingt. On reconstitue ainsi une distribution de
+        moyennes de joueurs, et non de coups d'éclat.
+
+     2. REJET DES DISTRIBUTIONS DÉGÉNÉRÉES. Sur une seule partie, le winrate vaut 0
+        ou 100 et le pool de champions qualifiés vaut toujours 0 : les bornes
+        sortaient en [0, 0.01, 0.02, 0.03], ce qui donnait 10/10 à n'importe quelle
+        valeur. On exige des valeurs réellement étalées avant d'émettre un seuil. */
+  const K_LISSAGE = 10;
+  const MIN_ECH = 30;       // joueurs minimum par poste et par métrique
+  const MIN_DISTINCTES = 8; // valeurs distinctes minimum : garde-fou anti-dégénérescence
+
+  const seuils = {}; let nbSeuils = 0, nbJoueurs = 0, nbRejets = 0;
   Object.keys(echantillons).forEach(function (role) {
     const parId = {};
-    Object.keys(echantillons[role]).forEach(function (id) {
-      const vals = echantillons[role][id].slice().sort(function (a, b) { return a - b; });
-      if (vals.length < MIN_ECH) return;
-      const bornes = ELITE_PCT.map(function (p) {
-        return Math.round(elitePercentile(vals, p) * 100) / 100;
-      });
+    Object.keys(echantillons[role]).forEach(function (nom) {
+      const ech = echantillons[role][nom];
+      if (ech.length < MIN_ECH) return;
+
+      let sn = 0, sv = 0;
+      ech.forEach(function (e) { sv += e.v * e.n; sn += e.n; });
+      const mu = sn ? sv / sn : 0;
+
+      const lissees = ech.map(function (e) {
+        return mu + (e.v - mu) * Math.sqrt(e.n / (e.n + K_LISSAGE));
+      }).sort(function (a, b) { return a - b; });
+
+      const distinctes = {};
+      lissees.forEach(function (v) { distinctes[Math.round(v * 1000)] = 1; });
+      if (Object.keys(distinctes).length < MIN_DISTINCTES) { nbRejets++; return; }
+
+      const brut = ELITE_PCT.map(function (p) { return elitePercentile(lissees, p); });
+      if (!(brut[3] > brut[0])) { nbRejets++; return; }
+
+      const bornes = brut.map(function (v) { return Math.round(v * 100) / 100; });
       // Bornes strictement croissantes : scoreAbsolu divise par (elite - good) et
       // produirait une division par zéro sur une métrique quasi constante.
       for (let k = 1; k < 4; k++) if (bornes[k] <= bornes[k - 1]) bornes[k] = bornes[k - 1] + 0.01;
-      parId[id] = bornes; nbSeuils++;
+      parId[nom] = bornes; nbSeuils++;
     });
     if (Object.keys(parId).length) seuils[role] = parId;
     nbJoueurs += (echantillons[role].kda || []).length;
   });
+  dbgLog('Calibrage : ' + nbSeuils + ' seuils retenus, ' + nbRejets + ' rejetés (distribution trop plate)');
 
   const out = { date: new Date().toISOString().slice(0, 10), comptes: comptesOk,
-                parties: pool.length, joueurs: nbJoueurs, nbSeuils: nbSeuils, seuils: seuils };
+                parties: pool.length, joueurs: nbJoueurs, nbSeuils: nbSeuils,
+                rejets: nbRejets, seuils: seuils };
   localStorage.setItem('vs_elite_seuils', JSON.stringify(out));
   if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('elite');
   prog(100, 'Calibrage terminé');
   return out;
 }
+
+/* Le calibrage n'a plus de bouton : c'est une opération d'atelier, faite une fois et
+   dont le résultat est ensuite figé dans le code pour toutes les structures. Il reste
+   accessible depuis la console par vsCalibrer(), sans encombrer l'écran du coach.
+     vsCalibrer()            → ouvre la fenêtre de calibrage
+     vsCalibrer('copier')    → copie les seuils mesurés
+     vsCalibrer('effacer')   → revient aux barèmes d'origine */
+window.vsCalibrer = function (action) {
+  if (action === 'copier') {
+    const e = eliteSeuils();
+    if (!e) return 'Aucun calibrage enregistré.';
+    return JSON.stringify(e);
+  }
+  if (action === 'effacer') { eliteReset(); return 'Seuils d\'origine rétablis.'; }
+  eliteOpenModal();
+  return 'Fenêtre de calibrage ouverte.';
+};
 
 function eliteOpenModal() {
   const e = eliteSeuils();
@@ -15191,11 +15266,23 @@ function refScore(role, key, val) {
 function advScore(key, val, role) {
   const def = ADV_METRICS[key];
   if (!def) return null;
+  const r = role || currentRole || 'Mid';
+  /* Ordre de préférence, du plus fondé au moins fondé :
+       1. seuil mesuré sur les meilleurs joueurs, pour cette métrique et ce poste ;
+       2. barème historique, quand il existe ;
+       3. centile face aux joueurs importés par la structure.
+     Le calibrage couvre désormais TOUT le catalogue, y compris les métriques sans
+     barème historique — c'est ce qui les fait sortir de la valeur brute. */
+  const se = eliteSeuilPour(key, r) || (def.id ? eliteSeuilPour(def.id, r) : null);
+  if (se) {
+    if (typeof val !== 'number' || !isFinite(val)) return null;
+    return scoreAbsolu(val, se[0], se[1], se[2], se[3]);
+  }
   if (def.id) {
     const sc = scoreStatCalibrated(def.id, val);
     if (sc !== null && sc !== undefined && !isNaN(sc)) return sc;
   }
-  return refScore(role || currentRole || 'Mid', key, val);
+  return refScore(r, key, val);
 }
 
 /* ── Archétypes de joueur, par poste ──────────────────────────────────────────
@@ -15333,7 +15420,9 @@ function arcRenderPills() {
         return '<button type="button" class="chip' + (a.key === cur ? ' on' : '') + '"'
           + ' title="' + anEsc(a.desc) + '" onclick="arcSet(\'' + a.key + '\')">' + anEsc(a.lbl) + '</button>';
       }).join('')
-    + '<span class="faint" style="font-size:10.5px;margin-left:6px">Optionnel — ajuste les indicateurs lus sur ce joueur</span>';
+    + '<button type="button" class="btn btn-ghost btn-xs" style="margin-left:6px" onclick="advOpenConfig()"'
+    + ' title="Choisir les indicateurs qui comptent dans la note de ce poste">Indicateurs suivis</button>'
+    + '<span class="faint" style="font-size:10.5px;margin-left:6px">Ces indicateurs pèsent sur la note SPES</span>';
 
   /* Composition affichée en clair sous les pastilles : sans elle, choisir un profil
      revenait à cocher une case sans savoir ce qu'elle mesure. */
