@@ -14785,8 +14785,17 @@ async function eliteBuild(opts, onProgress) {
    rendu plutôt que mémorisé : un coach à qui on prêterait le lien ne se retrouve pas
    avec le bouton collé à son navigateur pour toujours. */
 function vsCalibrageVisible() {
-  try { return new URLSearchParams(location.search).get('calibrage') === '1'; }
-  catch (_) { return false; }
+  /* ?calibrage=1 seul ne suffit pas : le garde d'authentification en tête de fichier
+     fait location.replace('/') au moindre token expiré, ce qui efface la query string
+     avant même que la page ne s'affiche — le lien semblait alors ne "jamais marcher".
+     On mémorise donc le passage une fois pour toutes dans ce navigateur. */
+  try {
+    if (new URLSearchParams(location.search).get('calibrage') === '1') {
+      localStorage.setItem('vs_calibrage', '1');
+      return true;
+    }
+    return localStorage.getItem('vs_calibrage') === '1';
+  } catch (_) { return false; }
 }
 
 window.vsCalibrer = function (action) {
