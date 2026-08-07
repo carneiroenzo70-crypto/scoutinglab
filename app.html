@@ -14559,15 +14559,103 @@ function proPhotoUrl(image) {
   return image ? 'https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(image) : '';
 }
 
-/* Affiche la carte si — et seulement si — le joueur est reconnu. Une structure qui
-   scoute un joueur inconnu du circuit ne doit pas voir un encart vide. */
+/* Recherche par nom de scène, pour la liaison manuelle. */
+async function lpProSearch(q) {
+  const esc = String(q || '').trim().replace(/"/g, '').replace(/%/g, '');
+  if (esc.length < 2) return [];
+  const url = function (champs) {
+    return 'https://lol.fandom.com/api.php?action=cargoquery&tables=Players&fields='
+      + encodeURIComponent(champs) + '&format=json&origin=*&limit=8&where='
+      + encodeURIComponent('ID LIKE "%' + esc + '%"');
+  };
+  let rows = await pmCargo(url('ID,Name,Image,Country,Team,Role'));
+  if (rows === null) rows = await pmCargo(url('ID,Name,Country,Team,Role'));
+  return (rows || []).map(function (r) { return r.title || {}; });
+}
+
+/* Liaison manuelle, mémorisée sur la fiche (rawData, donc sauvegardée avec elle).
+   Nécessaire parce que l'appariement automatique ne peut pas fonctionner dans le cas
+   courant : un compte SoloQ nommé « KC Next Adking » n'a aucun rapport textuel avec
+   le nom de scène « Caliste », et Leaguepedia ne liste pas tous les comptes. Le coach,
+   lui, sait qui il scoute. */
+function proLink(id) {
+  rawData.proPlayerId = id;
+  const ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+  proRenderCard(document.getElementById('d-pseudo')?.value || '').catch(function () {});
+}
+function proUnlink() {
+  delete rawData.proPlayerId;
+  proRenderCard(document.getElementById('d-pseudo')?.value || '').catch(function () {});
+}
+
+async function proOpenSearch() {
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(560px,95vw)">'
+    + '<div class="rs-modal-h">Lier à un joueur du circuit</div>'
+    + '<div class="rs-modal-note" style="margin-bottom:10px">Cherche par nom de scène (ex. Caliste). '
+    + 'Le compte SoloQ ne porte presque jamais le nom du joueur — c\'est pour ça que la liaison est manuelle.</div>'
+    + '<input id="pro-q" type="text" placeholder="Nom du joueur…" '
+    + 'style="width:100%;padding:8px 10px;font-size:13px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
+    + '<div id="pro-res" class="faint" style="font-size:12px;margin-top:12px">Saisis au moins 2 caractères.</div>'
+    + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Fermer</button></div>'
+    + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+
+  const inp = ov.querySelector('#pro-q');
+  const res = ov.querySelector('#pro-res');
+  let t = null, seq = 0;
+  inp.addEventListener('input', function () {
+    clearTimeout(t);
+    const q = inp.value.trim();
+    if (q.length < 2) { res.textContent = 'Saisis au moins 2 caractères.'; return; }
+    res.textContent = 'Recherche…';
+    // Débounce : Leaguepedia limite fortement les appels, une requête par frappe
+    // ferait tomber la recherche en rate-limit au bout de trois lettres.
+    t = setTimeout(async function () {
+      const moi = ++seq;
+      let rows = [];
+      try { rows = await lpProSearch(q); } catch (_) {}
+      if (moi !== seq) return;   // une frappe plus récente a pris la main
+      if (!rows.length) { res.textContent = 'Aucun joueur trouvé pour « ' + q +' ».'; return; }
+      res.innerHTML = rows.map(function (p) {
+        const ph = proPhotoUrl(p.Image);
+        return '<div class="advcfg-row" style="cursor:pointer;align-items:center" onclick="proLink(\''
+          + anEsc(String(p.ID).replace(/'/g, "\\'")) + '\')">'
+          + (ph ? '<img src="' + anEsc(ph) + '" onerror="this.style.display=\'none\'" '
+                + 'style="width:34px;height:34px;object-fit:cover;border-radius:6px;margin-right:8px">' : '')
+          + '<span class="advcfg-lbl">' + anEsc(p.ID || '')
+          + '<span class="advcfg-tip" style="display:block">' + anEsc([p.Team, p.Role, p.Country].filter(Boolean).join(' · ')) + '</span></span>'
+          + '</div>';
+      }).join('');
+    }, 450);
+  });
+  inp.focus();
+}
+
+/* Affiche la carte. Si le joueur n'est pas reconnu, on n'efface pas tout : on laisse
+   une ligne discrète avec la recherche manuelle. Ne rien afficher laissait croire que
+   la fonctionnalité était cassée — c'est exactement ce qui s'est produit en usage. */
 async function proRenderCard(gameName) {
   const card = document.getElementById('pro-card');
   if (!card) return;
-  card.style.display = 'none';
   let p = null;
-  try { p = await lpProLookup(gameName); } catch (_) { return; }
-  if (!p) return;
+  try {
+    // Liaison manuelle prioritaire : le choix du coach prime sur la devinette.
+    p = rawData.proPlayerId ? await lpProLookup(rawData.proPlayerId)
+                            : await lpProLookup(gameName);
+  } catch (_) { p = null; }
+
+  if (!p) {
+    card.style.display = 'block';
+    card.innerHTML = '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+      + '<span class="faint" style="font-size:12px">Joueur non reconnu sur le circuit professionnel — '
+      + 'un compte SoloQ ne porte presque jamais le nom du joueur.</span>'
+      + '<button class="btn btn-ghost btn-xs" onclick="proOpenSearch()">Lier à un joueur pro</button>'
+      + '</div>';
+    return;
+  }
 
   const photo = proPhotoUrl(p.image);
   let age = '';
@@ -14594,6 +14682,10 @@ async function proRenderCard(gameName) {
     + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:2px">'
     + '<span style="font-size:16px;font-weight:800;color:var(--fg)">' + anEsc(p.id) + '</span>'
     + '<span class="advcfg-tag" style="font-size:10px">Circuit professionnel</span>'
+    + (rawData.proPlayerId
+        ? '<span class="advcfg-tag" style="font-size:10px">lié manuellement</span>'
+          + '<button class="btn btn-ghost btn-xs" onclick="proUnlink()">Délier</button>'
+        : '<button class="btn btn-ghost btn-xs" onclick="proOpenSearch()">Ce n\'est pas lui</button>')
     + '</div>'
     + (p.nom ? '<div class="faint" style="font-size:11.5px;margin-bottom:8px">' + anEsc(p.nom) + '</div>' : '')
     + '<div style="display:flex;gap:18px;flex-wrap:wrap">'
