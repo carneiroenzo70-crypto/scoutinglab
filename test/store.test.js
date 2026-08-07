@@ -123,6 +123,25 @@ test('le domaine refbase est accepte et partage par structure', async () => {
   assert.deepEqual(res._json.refbase, base, 'la base de reference doit suivre la structure');
 });
 
+// Le domaine 'elite' porte les seuils de notation recalcules sur des joueurs de tres
+// haut niveau. Il doit etre partage par la structure : deux coachs qui noteraient sur
+// des bornes differentes produiraient des fiches incomparables.
+test('le domaine elite est accepte et partage par structure', async () => {
+  const store = {};
+  mockUpstash(store);
+  const tEnzo = signToken({ u: 'enzo', org: 'galions' }, 3600);
+  const tAlan = signToken({ u: 'alan', org: 'galions' }, 3600);
+  const seuils = { date: '2026-08-07', joueurs: 240, seuils: { ADC: { chal_team_dmg_pct: [18, 24, 28, 33] } } };
+
+  const put = mockRes();
+  await handler({ method: 'PUT', headers: { authorization: 'Bearer ' + tEnzo }, body: { domain: 'elite', data: seuils } }, put);
+  assert.equal(put._status, 200, 'le domaine elite doit etre accepte');
+
+  const res = mockRes();
+  await handler({ method: 'GET', headers: { authorization: 'Bearer ' + tAlan }, query: { domains: 'elite' } }, res);
+  assert.deepEqual(res._json.elite, seuils, 'les seuils doivent suivre la structure');
+});
+
 test('deux structures differentes restent isolees', async () => {
   const store = {};
   mockUpstash(store);

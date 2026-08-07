@@ -55,6 +55,7 @@ const VS_STORE_DOMAINS = {
   seasons:    ['vs_seasons'],
   kpis:       ['vs_kpi_prefs', 'vs_arc_prefs'],
   refbase:    ['vs_refbase'],
+  elite:      ['vs_elite_seuils'],
 };
 const vsStore = (function () {
   const timers = {};
@@ -4193,6 +4194,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <span>Analyse Avancée SPES</span>
           <span style="font-size:9px;background:linear-gradient(90deg,rgba(138,127,245,.25),rgba(21,168,120,.2));color:var(--text);padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(138,127,245,.25)">EXCLUSIF VS</span>
           <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="advOpenConfig()" title="Choisir les indicateurs suivis pour ce poste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Choisir les indicateurs</button>
+          <button class="btn btn-ghost btn-xs" onclick="eliteOpenModal()" title="Recalculer les seuils de notation sur des joueurs de très haut niveau">Calibrage</button>
         </div>
         <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
       </div>
@@ -8980,6 +8982,13 @@ function scoreStatCalibrated(id, val) {
   const v = parseFloat(val);
   if (isNaN(v)) return null;
   const role = currentRole || 'Mid';
+
+  /* Seuils mesurés sur une population de très haut niveau : ils remplacent le barème
+     historique dès qu'ils existent pour ce couple (métrique, poste). Placé AVANT le
+     switch pour couvrir toutes les métriques d'un coup — un point d'entrée unique,
+     donc aucun risque que l'affichage et le moteur divergent. */
+  const sElite = eliteSeuilPour(id, role);
+  if (sElite) return scoreAbsolu(v, sElite[0], sElite[1], sElite[2], sElite[3]);
 
   switch(id) {
     case 'cs_min': {
@@ -14492,6 +14501,220 @@ const ADV_GRP_HISTO = {
 function advGrp(key) {
   const d = ADV_METRICS[key] || {};
   return d.grp || ADV_GRP_HISTO[key] || 'Autres';
+}
+
+/* ── Calibrage sur les meilleurs joueurs du monde ─────────────────────────────
+   Les seuils de SEUILS_ABSOLUS n'ont jamais été établis sur des données mesurées.
+   Défaut constaté : un ADC Challenger tombe SOUS le seuil bas de « part des dégâts
+   d'équipe » (fixé à 30 %, alors qu'un ADC de très haut niveau tourne autour de
+   27-30 %), et sort donc à 2,8/10 sur une métrique où il est excellent.
+
+   Principe retenu : on mesure une population de très haut niveau, et on place le 10
+   au sommet de CETTE population. Un joueur au niveau des meilleurs mondiaux obtient
+   10 ; personne n'est noté contre un barème sorti de nulle part.
+
+   Bornes : [p10, p35, p70, p95] de la population élite. Le 10 est donc atteint au
+   95e centile des meilleurs — pas à leur médiane, sinon la moitié d'entre eux
+   plafonnerait et l'échelle ne distinguerait plus rien dans le haut. */
+const ELITE_PCT = [10, 35, 70, 95];
+
+/* Ces identifiants ne décrivent pas une distribution de performance (rang, âge,
+   progression) : les recalibrer n'aurait aucun sens. */
+const ELITE_EXCLUS = { rank_abs: 1, rank_age: 1, rank_prog: 1 };
+
+function eliteSeuils() {
+  try { return JSON.parse(localStorage.getItem('vs_elite_seuils') || 'null'); }
+  catch (_) { return null; }
+}
+/* Seuils effectifs : ceux mesurés sur l'élite s'ils existent, sinon les historiques.
+   Un seul point d'entrée, pour que l'affichage et le moteur ne puissent pas diverger. */
+function eliteSeuilPour(id, role) {
+  if (ELITE_EXCLUS[id]) return null;
+  const e = eliteSeuils();
+  const s = e && e.seuils && (e.seuils[role] || {})[id];
+  return (Array.isArray(s) && s.length === 4) ? s : null;
+}
+
+// Où lire la valeur d'un identifiant de notation dans un résultat de calculateStats.
+function eliteSources() {
+  const m = {};
+  ['cs_min', 'kda', 'winrate', 'vision', 'vision_min', 'kill_part', 'dmg_share',
+   'dmg_tower', 'obj_score', 'champ_pool', 'regularite'].forEach(function (id) { m[id] = { top: id }; });
+  // Les métriques « challenges » : le catalogue porte déjà la correspondance clé → id.
+  Object.keys(ADV_METRICS).forEach(function (k) {
+    const id = ADV_METRICS[k].id;
+    if (id && !m[id]) m[id] = { chal: k };
+  });
+  return m;
+}
+
+function elitePercentile(triees, p) {
+  if (!triees.length) return null;
+  const i = (p / 100) * (triees.length - 1);
+  const bas = Math.floor(i), haut = Math.ceil(i);
+  if (bas === haut) return triees[bas];
+  return triees[bas] + (triees[haut] - triees[bas]) * (i - bas);
+}
+
+/* Construit les seuils à partir des parties de joueurs de très haut niveau.
+   On moissonne TOUS les participants de ces parties : à ce niveau, les dix joueurs
+   d'une partie sont du même monde, ce qui multiplie l'échantillon par dix sans une
+   requête de plus. */
+async function eliteBuild(riotIds, parPartie, onProgress) {
+  const prog = onProgress || function () {};
+  const echantillons = {};   // role → id → [valeurs]
+  const sources = eliteSources();
+  const vusMatch = {};
+  const pool = [];
+  let comptesOk = 0;
+
+  for (let i = 0; i < riotIds.length; i++) {
+    const brut = String(riotIds[i]).trim();
+    if (!brut) continue;
+    const m = brut.match(/^(.+?)\s*#\s*(.+)$/);
+    if (!m) { dbgLog('⚠ calibrage : « ' + brut + ' » ignoré (format attendu Nom#TAG)'); continue; }
+    prog(Math.round(i / riotIds.length * 60), 'Comptes ' + (i + 1) + '/' + riotIds.length + '…');
+    try {
+      const acc = await riotFetch('https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/'
+        + encodeURIComponent(m[1].trim()) + '/' + encodeURIComponent(m[2].trim()));
+      if (!acc || !acc.puuid) { dbgLog('⚠ calibrage : compte introuvable « ' + brut + ' »'); continue; }
+      const ids = await riotFetch('https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/'
+        + acc.puuid + '/ids?queue=420&count=' + parPartie + '&type=ranked');
+      if (!ids || !ids.length) continue;
+      const neufs = ids.filter(function (id) { return !vusMatch[id]; });
+      neufs.forEach(function (id) { vusMatch[id] = 1; });
+      const ms = await fetchMatchesInBatches('europe', neufs, null, function (p, l) { prog(60, l); });
+      ms.forEach(function (x) { pool.push(x); });
+      comptesOk++;
+    } catch (e) { dbgLog('⚠ calibrage : ' + brut + ' — ' + e.message); }
+  }
+  if (!pool.length) return { erreur: 'Aucune partie récupérée.' };
+
+  // Recense les joueurs et leur poste principal dans le lot.
+  prog(70, 'Analyse des joueurs…');
+  const vus = {};
+  pool.forEach(function (mt) {
+    (mt?.info?.participants || []).forEach(function (p) {
+      const role = REF_POS[p.teamPosition];
+      if (!role || !p.puuid) return;
+      const e = vus[p.puuid] = vus[p.puuid] || {};
+      e[role] = (e[role] || 0) + 1;
+    });
+  });
+
+  const puuids = Object.keys(vus);
+  puuids.forEach(function (puuid, i) {
+    if (i % 50 === 0) prog(70 + Math.round(i / puuids.length * 25), 'Joueurs ' + i + '/' + puuids.length + '…');
+    const roles = vus[puuid];
+    const role = Object.keys(roles).sort(function (a, b) { return roles[b] - roles[a]; })[0];
+    let st = null;
+    try { st = calculateStats(pool, puuid); } catch (_) { return; }
+    if (!st || !st.challenges) return;
+    const dest = echantillons[role] = echantillons[role] || {};
+    Object.keys(sources).forEach(function (id) {
+      const s = sources[id];
+      const v = s.top ? st[s.top] : st.challenges[s.chal];
+      if (typeof v !== 'number' || !isFinite(v)) return;
+      (dest[id] = dest[id] || []).push(v);
+    });
+  });
+
+  // Dérive les bornes. Un échantillon trop mince donnerait des bornes instables :
+  // on préfère garder le seuil historique plutôt qu'un seuil mesuré sur 8 joueurs.
+  const MIN_ECH = 30;
+  const seuils = {}; let nbSeuils = 0, nbJoueurs = 0;
+  Object.keys(echantillons).forEach(function (role) {
+    const parId = {};
+    Object.keys(echantillons[role]).forEach(function (id) {
+      const vals = echantillons[role][id].slice().sort(function (a, b) { return a - b; });
+      if (vals.length < MIN_ECH) return;
+      const bornes = ELITE_PCT.map(function (p) {
+        return Math.round(elitePercentile(vals, p) * 100) / 100;
+      });
+      // Bornes strictement croissantes : scoreAbsolu divise par (elite - good) et
+      // produirait une division par zéro sur une métrique quasi constante.
+      for (let k = 1; k < 4; k++) if (bornes[k] <= bornes[k - 1]) bornes[k] = bornes[k - 1] + 0.01;
+      parId[id] = bornes; nbSeuils++;
+    });
+    if (Object.keys(parId).length) seuils[role] = parId;
+    nbJoueurs += (echantillons[role].kda || []).length;
+  });
+
+  const out = { date: new Date().toISOString().slice(0, 10), comptes: comptesOk,
+                parties: pool.length, joueurs: nbJoueurs, nbSeuils: nbSeuils, seuils: seuils };
+  localStorage.setItem('vs_elite_seuils', JSON.stringify(out));
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('elite');
+  prog(100, 'Calibrage terminé');
+  return out;
+}
+
+function eliteOpenModal() {
+  const e = eliteSeuils();
+  const etat = e
+    ? '<span class="advcfg-tag">Calibré le ' + anEsc(e.date) + ' · ' + e.joueurs
+      + ' joueurs · ' + e.nbSeuils + ' seuils</span>'
+    : '<span class="faint" style="font-size:11.5px">Aucun calibrage — les seuils d\'origine sont utilisés.</span>';
+
+  const ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(620px,95vw)">'
+    + '<div class="rs-modal-h">Calibrer la notation sur le très haut niveau</div>'
+    + '<div class="rs-modal-note" style="margin-bottom:10px">'
+    + 'Colle des comptes Riot de joueurs de très haut niveau, un par ligne, au format <strong>Nom#TAG</strong>. '
+    + 'Leurs parties servent à mesurer la distribution réelle de chaque indicateur : le 10/10 est ensuite placé au '
+    + 'sommet de cette population. Tous les joueurs de ces parties sont analysés, pas seulement les comptes saisis.'
+    + '</div>'
+    + '<div style="margin-bottom:10px">' + etat + '</div>'
+    + '<textarea id="elite-ids" rows="6" placeholder="Caps#EUW&#10;Hans Sama#EUW&#10;…" '
+    + 'style="width:100%;padding:8px 10px;font-size:12.5px;font-family:monospace;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)"></textarea>'
+    + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">'
+    + '<span class="faint" style="font-size:11.5px">Parties par compte</span>'
+    + '<select id="elite-n" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
+    + '<option value="10">10</option><option value="20" selected>20</option><option value="30">30</option></select>'
+    + '<span class="faint" style="font-size:11px">Chaque partie inédite consomme du quota Riot. Les parties déjà en cache sont gratuites.</span>'
+    + '</div>'
+    + '<div id="elite-prog" class="faint" style="font-size:11.5px;margin-top:10px"></div>'
+    + '<div class="rs-modal-a">'
+    + (e ? '<button class="btn btn-ghost btn-sm" onclick="eliteReset();this.closest(\'.rs-modal-ov\').remove()">Revenir aux seuils d\'origine</button>' : '')
+    + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Fermer</button>'
+    + '<button class="btn btn-cta btn-sm" id="elite-go" onclick="eliteRun(this)">Lancer le calibrage</button>'
+    + '</div></div>';
+  ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+}
+
+function eliteReset() {
+  localStorage.removeItem('vs_elite_seuils');
+  if (typeof vsStore !== 'undefined' && vsStore.save) vsStore.save('elite');
+  if (typeof buildAllDims === 'function') { buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); }
+  advRerender();
+}
+
+async function eliteRun(btn) {
+  const ov = btn.closest('.rs-modal-ov');
+  const ids = (ov.querySelector('#elite-ids').value || '').split('\n')
+    .map(function (s) { return s.trim(); }).filter(Boolean);
+  const n = parseInt(ov.querySelector('#elite-n').value, 10) || 20;
+  const prog = ov.querySelector('#elite-prog');
+  if (!ids.length) { prog.textContent = 'Ajoute au moins un compte, au format Nom#TAG.'; return; }
+  btn.disabled = true; btn.textContent = 'Calibrage…';
+  let r = null;
+  try {
+    r = await eliteBuild(ids, n, function (p, l) { prog.textContent = p + '% — ' + l; });
+  } catch (err) {
+    prog.textContent = 'Échec : ' + err.message;
+    btn.disabled = false; btn.textContent = 'Lancer le calibrage'; return;
+  }
+  if (!r || r.erreur) {
+    prog.textContent = 'Échec : ' + ((r && r.erreur) || 'aucune donnée');
+    btn.disabled = false; btn.textContent = 'Lancer le calibrage'; return;
+  }
+  prog.innerHTML = '<span style="color:#2DD4A7">' + r.joueurs + ' joueurs analysés sur '
+    + r.parties + ' parties · ' + r.nbSeuils + ' seuils recalculés.</span>';
+  btn.textContent = 'Terminé';
+  // La notation change : tout ce qui l'affiche doit être reconstruit.
+  if (typeof buildAllDims === 'function') { buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); }
+  advRerender();
 }
 
 /* ── Reconnaissance d'un joueur du circuit pro (Leaguepedia) ──────────────────
