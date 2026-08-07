@@ -4353,7 +4353,11 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           </div>
 
           <!-- Actions secondaires (discrètes) -->
+          <!-- Le réglage des indicateurs vit ici ET dans le formulaire : il change la
+               note SPES, il doit donc être à portée de main là où cette note se lit.
+               Placé ailleurs, il devenait introuvable depuis le dossier. -->
           <div class="res-actions" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-top:-6px">
+            <div id="dossier-reglages" style="margin-right:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
             <button class="btn btn-ghost btn-sm" onclick="shareByURL()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg> Partager</button>
             <button class="btn btn-ghost btn-sm" onclick="analyseAddCurrent()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg> Analyse</button>
             <button class="btn btn-ghost btn-sm" onclick="saveToHistory()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> Sauvegarder</button>
@@ -15420,7 +15424,8 @@ function arcSet(key) {
    le coach déclare le style qu'il vient scouter, puis importe. */
 function arcRenderPills() {
   const host = document.getElementById('arc-pills');
-  if (!host) return;
+  const hostDossier = document.getElementById('dossier-reglages');
+  if (!host && !hostDossier) return;
   const role = currentRole || 'Mid';
   const cur = rawData.archetype;
   const pills = '<span class="label" style="align-self:center;margin-right:4px">Profil</span>'
@@ -15461,7 +15466,24 @@ function arcRenderPills() {
           ? '<span class="advcfg-tag" style="font-size:10px">modifié</span>' : '')
       + '</div>';
   }
-  host.innerHTML = pills + detail;
+  if (host) host.innerHTML = pills + detail;
+
+  /* Version compacte dans le dossier : les mêmes profils et le même réglage, sans la
+     liste des indicateurs — le coach y lit une note, il n'a pas besoin du détail
+     sous les yeux, seulement de pouvoir l'ouvrir. */
+  if (hostDossier) {
+    hostDossier.innerHTML = '<span class="label" style="align-self:center;margin-right:2px">Profil</span>'
+      + arcList(role).map(function (a) {
+          return '<button type="button" class="chip' + (a.key === cur ? ' on' : '') + '"'
+            + ' style="padding:5px 10px;font-size:11px" title="' + anEsc(a.desc)
+            + '" onclick="arcSet(\'' + a.key + '\')">' + anEsc(a.lbl) + '</button>';
+        }).join('')
+      + '<button type="button" class="btn btn-ghost btn-sm" onclick="advOpenConfig()"'
+      + ' title="Choisir les indicateurs qui comptent dans la note de ce poste">Indicateurs suivis</button>'
+      + (vsCalibrageVisible()
+          ? '<button type="button" class="btn btn-ghost btn-sm" onclick="eliteOpenModal()">Calibrage</button>'
+          : '');
+  }
 }
 
 /* Édition de la composition d'un archétype. Même rendu groupé que la boîte à outils
