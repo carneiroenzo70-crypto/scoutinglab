@@ -14777,6 +14777,14 @@ async function eliteBuild(opts, onProgress) {
      vsCalibrer()            → ouvre la fenêtre de calibrage
      vsCalibrer('copier')    → copie les seuils mesurés
      vsCalibrer('effacer')   → revient aux barèmes d'origine */
+/* Le bouton de calibrage n'apparaît qu'avec ?calibrage=1 dans l'adresse. Lu à chaque
+   rendu plutôt que mémorisé : un coach à qui on prêterait le lien ne se retrouve pas
+   avec le bouton collé à son navigateur pour toujours. */
+function vsCalibrageVisible() {
+  try { return new URLSearchParams(location.search).get('calibrage') === '1'; }
+  catch (_) { return false; }
+}
+
 window.vsCalibrer = function (action) {
   if (action === 'copier') {
     const e = eliteSeuils();
@@ -15422,6 +15430,13 @@ function arcRenderPills() {
       }).join('')
     + '<button type="button" class="btn btn-ghost btn-xs" style="margin-left:6px" onclick="advOpenConfig()"'
     + ' title="Choisir les indicateurs qui comptent dans la note de ce poste">Indicateurs suivis</button>'
+    /* Le calibrage est une opération d'atelier : invisible pour un coach, mais il
+       faut pouvoir le lancer sans passer par la console. Il n'apparaît qu'avec
+       ?calibrage=1 dans l'adresse — l'écran du coach reste donc épuré. */
+    + (vsCalibrageVisible()
+        ? '<button type="button" class="btn btn-ghost btn-xs" style="margin-left:6px" onclick="eliteOpenModal()"'
+          + ' title="Recalculer les seuils sur les meilleurs joueurs (réservé à l\'administration)">Calibrage</button>'
+        : '')
     + '<span class="faint" style="font-size:10.5px;margin-left:6px">Ces indicateurs pèsent sur la note SPES</span>';
 
   /* Composition affichée en clair sous les pastilles : sans elle, choisir un profil
