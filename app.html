@@ -14556,37 +14556,102 @@ function elitePercentile(triees, p) {
   return triees[bas] + (triees[haut] - triees[bas]) * (i - bas);
 }
 
+/* Régions de calibrage. Le classement se lit sur l'hôte de PLATEFORME (euw1, kr),
+   les parties sur l'hôte RÉGIONAL (europe, asia) — deux routages différents chez Riot,
+   les confondre renvoie un 404 silencieux. */
+const ELITE_REGIONS = {
+  euw1: { regional: 'europe', lbl: 'EUW' },
+  kr:   { regional: 'asia',   lbl: 'Corée' },
+};
+
+/* Meilleurs joueurs SoloQ d'une région, lus dans le classement Challenger de Riot.
+   Préféré à une liste de noms saisie à la main : les comptes SoloQ des joueurs
+   connus changent souvent et une liste vieillit en silence, alors que le classement
+   est la définition même de « les meilleurs », à l'instant où on le lit. */
+async function eliteLadder(platform, topN) {
+  const url = 'https://' + platform + '.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5';
+  let data = null;
+  try { data = await riotFetch(url); } catch (e) { dbgLog('⚠ classement ' + platform + ' : ' + e.message); return []; }
+  const entries = (data && data.entries) || [];
+  if (!entries.length) { dbgLog('⚠ classement ' + platform + ' vide'); return []; }
+  entries.sort(function (a, b) { return (b.leaguePoints || 0) - (a.leaguePoints || 0); });
+  const tete = entries.slice(0, topN);
+
+  const puuids = [];
+  for (let i = 0; i < tete.length; i++) {
+    const e = tete[i];
+    if (e.puuid) { puuids.push(e.puuid); continue; }
+    // Repli pour les réponses qui ne portent que summonerId.
+    if (!e.summonerId) continue;
+    try {
+      const s = await riotFetch('https://' + platform + '.api.riotgames.com/lol/summoner/v4/summoners/'
+        + encodeURIComponent(e.summonerId));
+      if (s && s.puuid) puuids.push(s.puuid);
+    } catch (_) { /* un compte illisible ne doit pas arrêter le classement */ }
+  }
+  return puuids;
+}
+
 /* Construit les seuils à partir des parties de joueurs de très haut niveau.
    On moissonne TOUS les participants de ces parties : à ce niveau, les dix joueurs
    d'une partie sont du même monde, ce qui multiplie l'échantillon par dix sans une
    requête de plus. */
-async function eliteBuild(riotIds, parPartie, onProgress) {
+async function eliteBuild(opts, onProgress) {
   const prog = onProgress || function () {};
+  const regions = (opts && opts.regions) || ['euw1'];
+  const topN = (opts && opts.topN) || 0;
+  const parPartie = (opts && opts.parPartie) || 20;
+  const riotIds = (opts && opts.ids) || [];
+
   const echantillons = {};   // role → id → [valeurs]
   const sources = eliteSources();
   const vusMatch = {};
   const pool = [];
   let comptesOk = 0;
+  const joueurs = [];        // { puuid, regional }
 
+  // 1) Classement Challenger des régions retenues
+  for (let i = 0; i < regions.length && topN > 0; i++) {
+    const pf = regions[i], cfg = ELITE_REGIONS[pf];
+    if (!cfg) continue;
+    prog(5, 'Classement Challenger ' + cfg.lbl + '…');
+    const pu = await eliteLadder(pf, topN);
+    pu.forEach(function (p) { joueurs.push({ puuid: p, regional: cfg.regional }); });
+    dbgLog('Calibrage : ' + pu.length + ' joueurs Challenger ' + cfg.lbl);
+  }
+
+  // 2) Comptes saisis à la main, s'il y en a
   for (let i = 0; i < riotIds.length; i++) {
     const brut = String(riotIds[i]).trim();
     if (!brut) continue;
     const m = brut.match(/^(.+?)\s*#\s*(.+)$/);
     if (!m) { dbgLog('⚠ calibrage : « ' + brut + ' » ignoré (format attendu Nom#TAG)'); continue; }
-    prog(Math.round(i / riotIds.length * 60), 'Comptes ' + (i + 1) + '/' + riotIds.length + '…');
+    const reg = ELITE_REGIONS[(regions[0] || 'euw1')].regional;
     try {
-      const acc = await riotFetch('https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/'
+      const acc = await riotFetch('https://' + reg + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/'
         + encodeURIComponent(m[1].trim()) + '/' + encodeURIComponent(m[2].trim()));
-      if (!acc || !acc.puuid) { dbgLog('⚠ calibrage : compte introuvable « ' + brut + ' »'); continue; }
-      const ids = await riotFetch('https://europe.api.riotgames.com/lol/match/v5/matches/by-puuid/'
-        + acc.puuid + '/ids?queue=420&count=' + parPartie + '&type=ranked');
+      if (acc && acc.puuid) joueurs.push({ puuid: acc.puuid, regional: reg });
+      else dbgLog('⚠ calibrage : compte introuvable « ' + brut + ' »');
+    } catch (e) { dbgLog('⚠ calibrage : ' + brut + ' — ' + e.message); }
+  }
+
+  if (!joueurs.length) return { erreur: 'Aucun joueur de référence trouvé.' };
+
+  // 3) Parties de chacun
+  for (let i = 0; i < joueurs.length; i++) {
+    const j = joueurs[i];
+    prog(10 + Math.round(i / joueurs.length * 55), 'Parties ' + (i + 1) + '/' + joueurs.length + '…');
+    try {
+      const ids = await riotFetch('https://' + j.regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/'
+        + j.puuid + '/ids?queue=420&count=' + parPartie + '&type=ranked');
       if (!ids || !ids.length) continue;
       const neufs = ids.filter(function (id) { return !vusMatch[id]; });
       neufs.forEach(function (id) { vusMatch[id] = 1; });
-      const ms = await fetchMatchesInBatches('europe', neufs, null, function (p, l) { prog(60, l); });
+      if (!neufs.length) { comptesOk++; continue; }
+      const ms = await fetchMatchesInBatches(j.regional, neufs, null, function (p, l) { prog(10 + Math.round(i / joueurs.length * 55), l); });
       ms.forEach(function (x) { pool.push(x); });
       comptesOk++;
-    } catch (e) { dbgLog('⚠ calibrage : ' + brut + ' — ' + e.message); }
+    } catch (e) { dbgLog('⚠ calibrage : ' + e.message); }
   }
   if (!pool.length) return { erreur: 'Aucune partie récupérée.' };
 
@@ -14660,19 +14725,31 @@ function eliteOpenModal() {
   ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(620px,95vw)">'
     + '<div class="rs-modal-h">Calibrer la notation sur le très haut niveau</div>'
     + '<div class="rs-modal-note" style="margin-bottom:10px">'
-    + 'Colle des comptes Riot de joueurs de très haut niveau, un par ligne, au format <strong>Nom#TAG</strong>. '
-    + 'Leurs parties servent à mesurer la distribution réelle de chaque indicateur : le 10/10 est ensuite placé au '
-    + 'sommet de cette population. Tous les joueurs de ces parties sont analysés, pas seulement les comptes saisis.'
+    + 'Les seuils sont mesurés sur le <strong>classement Challenger</strong> de Riot, lu en direct : '
+    + 'c\'est la définition même des meilleurs joueurs en SoloQ, sans qu\'un nom de compte ait à être deviné. '
+    + 'Tous les joueurs de leurs parties sont analysés, pas seulement les têtes de classement. '
+    + 'Le 10/10 est placé au sommet de cette population.'
     + '</div>'
-    + '<div style="margin-bottom:10px">' + etat + '</div>'
-    + '<textarea id="elite-ids" rows="6" placeholder="Caps#EUW&#10;Hans Sama#EUW&#10;…" '
-    + 'style="width:100%;padding:8px 10px;font-size:12.5px;font-family:monospace;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)"></textarea>'
-    + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap">'
-    + '<span class="faint" style="font-size:11.5px">Parties par compte</span>'
+    + '<div style="margin-bottom:12px">' + etat + '</div>'
+    + '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">'
+    + '<span class="faint" style="font-size:11.5px">Régions</span>'
+    + '<label class="advcfg-row" style="display:inline-flex;width:auto;padding:0;gap:6px"><input type="checkbox" id="elite-euw1" checked><span class="advcfg-lbl">EUW</span></label>'
+    + '<label class="advcfg-row" style="display:inline-flex;width:auto;padding:0;gap:6px"><input type="checkbox" id="elite-kr" checked><span class="advcfg-lbl">Corée</span></label>'
+    + '<span class="faint" style="font-size:11.5px;margin-left:8px">Joueurs par région</span>'
+    + '<select id="elite-top" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
+    + '<option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="20">20</option></select>'
+    + '<span class="faint" style="font-size:11.5px">Parties par joueur</span>'
     + '<select id="elite-n" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
     + '<option value="10">10</option><option value="20" selected>20</option><option value="30">30</option></select>'
-    + '<span class="faint" style="font-size:11px">Chaque partie inédite consomme du quota Riot. Les parties déjà en cache sont gratuites.</span>'
     + '</div>'
+    + '<div class="faint" style="font-size:11px;margin-bottom:10px">'
+    + 'Chaque partie inédite consomme du quota Riot (clé Personnelle : 100 requêtes / 2 min). '
+    + '5 joueurs × 2 régions × 20 parties ≈ 200 parties, soit quelques minutes. Les parties déjà en cache sont gratuites.'
+    + '</div>'
+    + '<details style="margin-bottom:6px"><summary class="faint" style="font-size:11.5px;cursor:pointer">Ajouter des comptes précis (optionnel)</summary>'
+    + '<textarea id="elite-ids" rows="4" placeholder="Nom#TAG, un par ligne" '
+    + 'style="width:100%;margin-top:6px;padding:8px 10px;font-size:12.5px;font-family:monospace;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)"></textarea>'
+    + '<div class="faint" style="font-size:10.5px;margin-top:4px">Résolus sur la première région cochée.</div></details>'
     + '<div id="elite-prog" class="faint" style="font-size:11.5px;margin-top:10px"></div>'
     + '<div class="rs-modal-a">'
     + (e ? '<button class="btn btn-ghost btn-sm" onclick="eliteReset();this.closest(\'.rs-modal-ov\').remove()">Revenir aux seuils d\'origine</button>' : '')
@@ -14695,12 +14772,18 @@ async function eliteRun(btn) {
   const ids = (ov.querySelector('#elite-ids').value || '').split('\n')
     .map(function (s) { return s.trim(); }).filter(Boolean);
   const n = parseInt(ov.querySelector('#elite-n').value, 10) || 20;
+  const topN = parseInt(ov.querySelector('#elite-top').value, 10) || 5;
+  const regions = [];
+  if (ov.querySelector('#elite-euw1').checked) regions.push('euw1');
+  if (ov.querySelector('#elite-kr').checked) regions.push('kr');
   const prog = ov.querySelector('#elite-prog');
-  if (!ids.length) { prog.textContent = 'Ajoute au moins un compte, au format Nom#TAG.'; return; }
+  if (!regions.length && !ids.length) { prog.textContent = 'Coche au moins une région, ou saisis des comptes.'; return; }
   btn.disabled = true; btn.textContent = 'Calibrage…';
   let r = null;
   try {
-    r = await eliteBuild(ids, n, function (p, l) { prog.textContent = p + '% — ' + l; });
+    r = await eliteBuild({ regions: regions.length ? regions : ['euw1'], topN: regions.length ? topN : 0,
+                           parPartie: n, ids: ids },
+      function (p, l) { prog.textContent = p + '% — ' + l; });
   } catch (err) {
     prog.textContent = 'Échec : ' + err.message;
     btn.disabled = false; btn.textContent = 'Lancer le calibrage'; return;
