@@ -18,6 +18,9 @@ if (!champ) {
   process.exit(1);
 }
 const niveau = Number(nivArg) || 18;
+/* Fenêtre de combat. 10 s : assez long pour qu'une recharge courte se rejoue et que
+   l'accélération pèse, assez court pour rester un échange et non une partie. */
+const FENETRE = 10;
 const lire = s => (s || '').split(',').map(x => Number(x.trim())).filter(Boolean);
 
 const cible = M.cibleChampion(cibleArg || 'Rumble', Number(nivCibleArg) || niveau, []);
@@ -119,11 +122,25 @@ function afficher(nom, ids) {
   console.log('║  combo + 3 s d\'attaques : ' + Math.round(c.subis + dps * 3) + ' subis');
   if (oh.refus.length) console.log('║  passif refusé : ' + oh.refus.join(' | '));
   aa.dps = dps;                       // le comparateur travaille sur le coup complet
+
+  /* Fenêtre de combat : la seule mesure où l'ACCÉLÉRATION DE COMPÉTENCE existe. Elle
+     ne change pas un combo, elle change le nombre de combos — invisible partout
+     ailleurs, et c'est pourtant la stat de 65 objets. */
+  const parTouche = {};
+  c.lignes.forEach(l => { parTouche[l.touche] = l.subis; });
+  const fen = M.degatsSurFenetre(champ, p, cible, FENETRE,
+                                 t => parTouche[t] != null ? parTouche[t] : null,
+                                 parCoupTotal);
+  console.log('║');
+  console.log('║  sur ' + FENETRE + ' s de combat  (' + p.accel + ' accél. → ' +
+    fen.reduction + ' % de réduction) : ' + fen.total + ' subis');
+  console.log('║    ' + fen.lignes.map(l => l.touche + '×' + l.lancers +
+    (l.recharge ? ' (' + l.recharge + ' s)' : '')).join('  '));
   if (c.refus.length) {
     console.log('║  non chiffré : ' + c.refus.length + ' calcul(s)');
     c.refus.slice(0, 4).forEach(r => console.log('║    · ' + r));
   }
-  return { p, c, aa };
+  return { p, c, aa, fen };
 }
 
 console.log('═'.repeat(74));
@@ -142,7 +159,9 @@ if (B) {
   const mesures = [
     ['combo seul', A.c.subis, B.c.subis],
     ['combo + 3 s d\'attaques', A.c.subis + A.aa.dps * 3, B.c.subis + B.aa.dps * 3],
-    ['dégâts/s soutenus', A.aa.dps, B.aa.dps]
+    ['dégâts/s soutenus', A.aa.dps, B.aa.dps],
+    // seule mesure où l'accélération de compétence existe
+    [FENETRE + ' s de combat', A.fen.total, B.fen.total]
   ];
   console.log('\n── Verdict');
   console.log('   ' + ' '.repeat(24) + 'Build A'.padStart(10) + 'Build B'.padStart(10) +

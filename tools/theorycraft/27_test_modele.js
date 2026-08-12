@@ -159,6 +159,67 @@ verifie('DPS = coup subi × vitesse d\'attaque', aa.dps, aa.parCoup * aa.vitesse
 vrai('l\'armure réduit bien le coup', aa.parCoup < aa.parCoupBrut,
      aa.parCoupBrut + ' → ' + aa.parCoup);
 
+console.log('\n── Accélération de compétence : recharge = base × 100/(100 + A)');
+verifie('sans accélération, la recharge ne bouge pas', M.rechargeReelle(10, 0), 10);
+/* Piège classique : « 40 d'accélération » ne fait PAS 40 % de réduction, mais 28,6 %.
+   Confondre les deux surestime tous les builds à accélération. */
+verifie('40 d\'accélération → 7,14 s (et non 6 s)', M.rechargeReelle(10, 40), 7.142857);
+vrai('  40 d\'accélération ≠ 40 % de réduction',
+     Math.abs(M.rechargeReelle(10, 40) - 6) > 1,
+     'réduction réelle : ' + Math.round(40 / 140 * 1000) / 10 + ' %');
+verifie('100 d\'accélération → recharge de moitié', M.rechargeReelle(10, 100), 5);
+verifie('plafond à 500 : au-delà, rien ne change',
+        M.rechargeReelle(10, 900), M.rechargeReelle(10, 500));
+// La réduction ne peut jamais atteindre 100 %
+vrai('la recharge reste strictement positive, quelle que soit l\'accélération',
+     M.rechargeReelle(10, 500) > 0);
+
+console.log('\n── Dégâts sur une fenêtre de temps (là où l\'accélération compte)');
+const sansAccel = M.profil('Rumble', 18, []);
+const avecAccel = M.profil('Rumble', 18, [], { accel: 100 });
+const f1 = M.degatsSurFenetre('Rumble', sansAccel, cible, 10, () => 100, 0);
+const f2 = M.degatsSurFenetre('Rumble', avecAccel, cible, 10, () => 100, 0);
+vrai('plus d\'accélération = plus de lancers sur 10 s', f2.total > f1.total,
+     f1.total + ' → ' + f2.total);
+verifie('  la réduction annoncée est correcte', f2.reduction, 50);
+// Un sort à 10 s de recharge sur une fenêtre de 10 s : 2 lancers (t=0 et t=10)
+const unSort = M.degatsSurFenetre('Rumble', sansAccel, cible, 10, t => t === 'Q' ? 100 : null, 0);
+const ligneQ = unSort.lignes.find(l => l.touche === 'Q');
+vrai('le nombre de lancers suit la recharge réelle',
+     ligneQ && ligneQ.lancers === 1 + Math.floor(10 / ligneQ.recharge),
+     ligneQ ? ligneQ.lancers + ' lancers pour ' + ligneQ.recharge + ' s de recharge' : '');
+
+console.log('\n── Compétences à charges (le piège des 21 lancers)');
+/* Le E de Rumble affiche 0,5 s de recharge : c'est le délai entre ses DEUX tirs, pas
+   sa recharge. Le prendre pour une recharge donnait 21 lancers en 10 s au lieu de 3,
+   et gonflait la fenêtre de combat de 9522 à… tout ce qu'on voulait. */
+const rumbleE = M.champions.Rumble.sorts.E;
+verifie('le fichier de jeu donne bien 2 charges', rumbleE.maxCharges, 2);
+verifie('  et 6 s de recharge par charge', rumbleE.rechargeCharge, 6);
+vrai('  alors que le « cooldown » affiché vaut 0,5 s',
+     rumbleE.cooldown[rumbleE.nbRangs] === 0.5);
+const fR = M.degatsSurFenetre('Rumble', sansAccel, cible, 10, t => t === 'E' ? 100 : null, 0);
+const lE = fR.lignes.find(l => l.touche === 'E');
+verifie('2 charges + 1 rechargée en 10 s = 3 lancers', lE.lancers, 3);
+vrai('  et non 21, comme le donnait la lecture naïve', lE.lancers < 5);
+/* Le R d'Ashe a lui aussi 2 charges, mais 5 s entre deux lancers et 50 s de recharge :
+   on ne peut pas vider ses charges d'un coup. C'est le verrou le plus contraignant qui
+   gouverne — ne regarder que la recharge de charge surestimerait. */
+if (M.champions.Ashe) {
+  const pA = M.profil('Ashe', 18, []);
+  const lA = M.degatsSurFenetre('Ashe', pA, cible, 10, t => t === 'E' ? 100 : null, 0)
+    .lignes.find(l => l.touche === 'E');
+  verifie('Ashe E : un seul lancer en 10 s (50 s de recharge)', lA.lancers, 1);
+}
+// Une recharge sous la seconde SANS charges déclarées doit être refusée, pas comptée
+const jinxQ = M.champions.Jinx.sorts.Q;
+if (jinxQ.cooldown[jinxQ.nbRangs] < 1 && !jinxQ.maxCharges) {
+  const fJ = M.degatsSurFenetre('Jinx', M.profil('Jinx', 18, []), cible, 10,
+                                t => t === 'Q' ? 100 : null, 0);
+  vrai('recharge < 1 s sans charges : refusée avec un motif, pas comptée',
+       fJ.refus.some(r => /^Q/.test(r)), fJ.refus.join(' | '));
+}
+
 console.log('\n── Dégâts bruts : aucune résistance ne s\'applique');
 const m = M.mitiger(500, 'brut', { armure: 300, rm: 300 }, {});
 verifie('500 de dégâts bruts contre 300 d\'armure', m.subis, 500);

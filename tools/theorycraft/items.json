@@ -1080,8 +1080,7 @@
   },
   "alertes": [
    "DataValue absent: {d4217cda}",
-   "DataValue absent: {9f631779}",
-   "type inconnu: {f3cbe7b2}"
+   "DataValue absent: {9f631779}"
   ]
  },
  {
@@ -7154,10 +7153,23 @@
    "LethalityAmount": 18,
    "ResetWindow": 3
   },
-  "calculs": {},
-  "alertes": [
-   "mStat non identifié : 29"
-  ]
+  "calculs": {
+   "UltimateRefund": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 10
+     },
+     {
+      "stat": "Letalite",
+      "mode": "base",
+      "valeur": 0.25
+     }
+    ]
+   }
+  },
+  "alertes": []
  },
  {
   "id": 2502,
@@ -7213,11 +7225,18 @@
       "valeur": 0.029999999329447746
      }
     ]
+   },
+   "HealCalc": {
+    "termes": [
+     {
+      "stat": "PV",
+      "mode": "total",
+      "valeur": 0.029999999329447746
+     }
+    ]
    }
   },
-  "alertes": [
-   "type inconnu: {f3cbe7b2}"
-  ]
+  "alertes": []
  },
  {
   "id": 2503,
@@ -7749,6 +7768,20 @@
      }
     ]
    },
+   "ProcDamage": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 50
+     },
+     {
+      "stat": "Letalite",
+      "mode": "base",
+      "valeur": 1.5
+     }
+    ]
+   },
    "TotalWardDamage": {
     "termes": [
      {
@@ -7760,9 +7793,7 @@
     ]
    }
   },
-  "alertes": [
-   "mStat non identifié : 29"
-  ]
+  "alertes": []
  },
  {
   "id": 4401,
@@ -8913,10 +8944,38 @@
    "DoTDuration": 3,
    "AbilityDamageRangeMod": 0.5
   },
-  "calculs": {},
+  "calculs": {
+   "DamageCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 300
+     },
+     {
+      "stat": "Letalite",
+      "mode": "base",
+      "valeur": 25
+     }
+    ]
+   },
+   "AbilityDamageCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 50
+     },
+     {
+      "stat": "Letalite",
+      "mode": "base",
+      "valeur": 1.5
+     }
+    ]
+   }
+  },
   "alertes": [
    "DataValue absent: {a99340ef}",
-   "mStat non identifié : 29",
    "DataValue absent: {d62bdfef}"
   ]
  },
@@ -9791,6 +9850,25 @@
      }
     ]
    },
+   "{592c02e8}": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 30
+     },
+     {
+      "stat": "AD",
+      "mode": "total",
+      "valeur": 0.10000000149011612
+     },
+     {
+      "stat": "AP",
+      "mode": "base",
+      "valeur": 0.10000000149011612
+     }
+    ]
+   },
    "OnHitDamage": {
     "termes": [
      {
@@ -9811,9 +9889,7 @@
     ]
    }
   },
-  "alertes": [
-   "type inconnu: {f3cbe7b2}"
-  ]
+  "alertes": []
  },
  {
   "id": 3814,
@@ -10245,10 +10321,23 @@
    "LethalityAmount": 15,
    "SlowThreshold": 0.5
   },
-  "calculs": {},
-  "alertes": [
-   "mStat non identifié : 29"
-  ]
+  "calculs": {
+   "PenCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0
+     },
+     {
+      "stat": "Letalite",
+      "mode": "base",
+      "valeur": 0
+     }
+    ]
+   }
+  },
+  "alertes": []
  },
  {
   "id": 6699,
@@ -11110,6 +11199,15 @@
      }
     ]
    },
+   "ChampRange": {
+    "termes": [
+     {
+      "stat": "Portee",
+      "mode": "bonus",
+      "valeur": 0.009999999776482582
+     }
+    ]
+   },
    "RangedItemCalcValue": {
     "termes": [
      {
@@ -11139,7 +11237,7 @@
    }
   },
   "alertes": [
-   "mStat non identifié : 31"
+   "valeur bornée (min/max non appliqué)"
   ]
  },
  {

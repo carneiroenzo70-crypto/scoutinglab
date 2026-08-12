@@ -135,6 +135,14 @@ cibles.forEach(cible => {
       nbRangs,
       typeDegats: typeDeDegats(ddSpell),
       cooldown: spell.cooldownTime || spell.Cooldown || null,
+      /* Compétences à charges. Sans ces deux champs, le E de Rumble passe pour une
+         compétence à 0,5 s de recharge — ces 0,5 s sont en réalité le délai entre deux
+         tirs, et la vraie cadence est une charge toutes les 6 s. Sur une fenêtre de
+         10 s, l'ignorer donnait 21 lancers au lieu de 3.
+         ⚠ Data Dragon connaît `maxammo` mais PAS le temps de recharge : seul le
+         fichier de jeu porte `mAmmoRechargeTime`. */
+      maxCharges: Array.isArray(spell.mMaxAmmo) ? spell.mMaxAmmo[nbRangs] : null,
+      rechargeCharge: Array.isArray(spell.mAmmoRechargeTime) ? spell.mAmmoRechargeTime[nbRangs] : null,
       cout: spell.mana || spell.manaValues || null,
       portee: spell.castRangeValues || spell.castRange || null,
       calculs,

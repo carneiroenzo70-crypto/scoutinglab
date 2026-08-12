@@ -38,10 +38,19 @@ const STATS = {
   12: 'PV',                  // BonusHealthRatio, ShieldHealthRatio, MaxStackDamageHPRatio
   13: 'PVactuelsCible',      // Lame du roi déchu : % des PV ACTUELS de la cible (wiki : « current health »)
   18: 'VolVie',              // Omnivamp_LifeStealScaling
+  /* Létalité. N'apparaît que sur des objets à létalité (Arc axiomatique, Glaive
+     d'ombre, Briseur de bastion, Rancune de Serylda) et toujours dans un passif que
+     la boutique dit dépendre d'elle. Preuve décisive : le wiki décrit le passif RETIRÉ
+     de Serylda comme « 25 % + 0,11 % PAR POINT DE LÉTALITÉ » — exactement la forme de
+     `PenCalc`, encore présent dans le fichier. */
+  29: 'Letalite',
+  /* Portée d'attaque. Sert à distinguer mêlée et distance : le Gage de Sterak borne
+     0,01 × portée entre 2 et 3 (125 → 2 en mêlée, 550 → 3 à distance). */
+  31: 'Portee',
   34: 'Accel'                // ASPerHS (vitesse d'attaque par point d'accélération)
   /* Non mappés, faute de preuve — chacun n'apparaît qu'une ou deux fois, sans nom de
      DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14, 15, 16 (Olaf), 19, 20,
-     21, 29, 30, 31. Le résolveur les signale plutôt que de les supposer. */
+     21, 30. Le résolveur les signale plutôt que de les supposer. */
 };
 const MODES = { 0: 'base', 1: 'bonus', 2: 'total' };
 
@@ -195,6 +204,24 @@ function evalPart(p, ctx, rang, prof, alertes) {
       return { termes: [{ stat: 'NbObjets', mode: 'total',
                           valeur: p.Coefficient != null ? p.Coefficient : 1,
                           rarete: p.epicness != null ? p.epicness : 5 }] };
+
+    /* Renvoi vers un AUTRE calcul du même objet, désigné par son nom. Riot s'en sert
+       pour ne pas dupliquer une formule (Terminus réutilise son `OnHitDamage`).
+       Le nom du type est haché ; c'est son unique champ, `mSpellCalculationKey`, qui
+       l'identifie sans ambiguïté. */
+    case '{f3cbe7b2}': {
+      const vise = ctx.calc[p.mSpellCalculationKey];
+      if (!vise) { alertes.add('renvoi vers un calcul absent : ' + p.mSpellCalculationKey); return null; }
+      const termes = [];
+      let ok = true;
+      (vise.mFormulaParts || []).forEach(sp => {
+        const v = evalPart(sp, ctx, rang, prof + 1, alertes);
+        if (!v) { ok = false; return; }
+        if (v.n != null) termes.push({ stat: 'flat', mode: 'flat', valeur: v.n });
+        else termes.push(...v.termes);
+      });
+      return ok ? { termes } : null;
+    }
 
     default:
       alertes.add('type inconnu: ' + t);

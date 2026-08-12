@@ -240,6 +240,89 @@ function degatsAttaque(p, cible) {
   };
 }
 
+/* ── 7. Accélération de compétence ──────────────────────────────────────────────
+   Stat extraite sur 65 objets et longtemps inutilisée — or c'est elle qui décide un
+   build sur la durée : elle ne change pas un combo, elle change le NOMBRE de combos.
+
+   Réduction = accélération / (100 + accélération), donc recharge = base × 100/(100+A).
+   Elle se cumule de façon additive et plafonne à 500 (soit 83,3 % de réduction).
+   Attention au raccourci tentant « 40 d'accélération = 40 % de réduction » : c'est
+   28,6 %, pas 40 %. */
+const PLAFOND_ACCEL = 500;
+function rechargeReelle(base, accel) {
+  const a = Math.max(0, Math.min(PLAFOND_ACCEL, accel || 0));
+  return base * 100 / (100 + a);
+}
+
+/* Dégâts cumulés sur une fenêtre de temps. C'est la seule mesure où l'accélération
+   compte, et la plus proche d'un vrai combat : on relance une compétence dès qu'elle
+   est disponible, et on attaque entre-temps.
+
+   Hypothèses assumées, à ne pas prendre pour la réalité : cible immobile à portée,
+   aucun coût en mana, aucun sort manqué, aucun temps d'incantation. Le chiffre sert à
+   COMPARER deux builds, pas à prédire un combat. */
+function degatsSurFenetre(champId, p, cible, secondes, evaluerSort, coupBonus = 0) {
+  const c = champions[champId];
+  if (!c) return null;
+  let total = 0;
+  const lignes = [];
+
+  const refus = [];
+  ['Q', 'W', 'E', 'R'].forEach(touche => {
+    const s = c.sorts[touche];
+    if (!s || !Array.isArray(s.cooldown)) return;
+    const degats = evaluerSort(touche);
+    if (degats == null) return;
+
+    /* Compétences à charges : le « cooldown » n'est alors que le délai entre deux
+       tirs (0,5 s pour le E de Rumble). Ce qui limite vraiment, c'est la recharge
+       d'une charge. Sans ce cas, on comptait 21 lancers en 10 s au lieu de 3. */
+    let cdBase, lancers, note = null;
+    if (s.maxCharges > 0 && s.rechargeCharge > 0) {
+      const entreLancers = s.cooldown[s.nbRangs] || 0;
+      /* Deux verrous, et c'est le plus contraignant qui gouverne : il faut une charge
+         disponible ET la recharge écoulée. Ne regarder que la recharge de charge
+         surestimerait le R de LeBlanc (5 s de charge, mais 25 s de recharge). */
+      cdBase = Math.max(entreLancers, s.rechargeCharge);
+      const cd = rechargeReelle(cdBase, p.accel);
+      /* Réserve de départ : on ne peut vider ses charges d'un coup que si le délai
+         entre deux lancers est court. Le E de Rumble enchaîne ses 2 tirs en 0,5 s ;
+         le R d'Ashe, lui, attend 5 s entre deux. */
+      const reserve = entreLancers <= 2 ? s.maxCharges : 1;
+      lancers = reserve + Math.floor(secondes / cd);
+      note = s.maxCharges + ' charges, ' + Math.round(cd * 10) / 10 + ' s chacune';
+      lignes.push({ touche, lancers, recharge: Math.round(cd * 10) / 10,
+                    rechargeBase: cdBase, parLancer: Math.round(degats), note });
+      total += degats * lancers;
+      return;
+    }
+
+    cdBase = s.cooldown[s.nbRangs] != null ? s.cooldown[s.nbRangs]
+           : s.cooldown[s.cooldown.length - 1];
+    if (!cdBase) return;
+    /* Garde-fou : une recharge sous la seconde sans charges déclarées n'est pas une
+       vraie recharge (délai d'enchaînement, sort à bascule). La compter donnerait des
+       dizaines de lancers. On refuse et on le dit, plutôt que de gonfler le chiffre. */
+    if (cdBase < 1) {
+      refus.push(touche + ' : recharge annoncée de ' + cdBase + ' s, sans charges déclarées');
+      return;
+    }
+    const cd = rechargeReelle(cdBase, p.accel);
+    // premier lancer à t = 0, puis un par recharge écoulée
+    lancers = 1 + Math.floor(secondes / cd);
+    total += degats * lancers;
+    lignes.push({ touche, lancers, recharge: Math.round(cd * 10) / 10,
+                  rechargeBase: cdBase, parLancer: Math.round(degats) });
+  });
+
+  const coups = Math.floor(secondes * p.vitesseAttaque);
+  total += coups * coupBonus;
+  lignes.push({ touche: 'AA', lancers: coups, parLancer: Math.round(coupBonus) });
+
+  return { total: Math.round(total), lignes, refus, accel: p.accel,
+           reduction: Math.round((p.accel / (100 + p.accel)) * 1000) / 10 };
+}
+
 /* Cible « mannequin » : un champion nu au même niveau. Sert de référence neutre pour
    comparer deux builds sans supposer l'équipement de l'adversaire. */
 function cibleChampion(id, niveau, objets) {
@@ -250,4 +333,5 @@ function cibleChampion(id, niveau, objets) {
 
 module.exports = { croissance, vitesseAttaque, statsChampion, statsObjets, profil,
                    resistEffective, multiplicateur, mitiger, evaluerCalcul,
-                   degatsAttaque, cibleChampion, itemParId, champions };
+                   degatsAttaque, degatsSurFenetre, rechargeReelle, cibleChampion,
+                   itemParId, champions };
