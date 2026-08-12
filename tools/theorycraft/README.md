@@ -88,10 +88,49 @@ client en `fr_fr` (libellés et arbres).
   déchaîné, Remise immédiate, Manteau nuageux — mais **toutes utilitaires** : aucune
   valeur de dégâts n'est perdue.
 
-⚠️ **Les chiffres ne suffisent pas.** Il reste à encoder le *déclenchement* de chaque
-rune (Électrocution : 3 frappes distinctes en 3 s ; Conquérant : 12 cumuls ; Poigne :
-une fois toutes les 4 s). C'est le travail manuel restant, borné aux ~17 pierres de
-fondation et à la dizaine de mineures qui pèsent sur les dégâts.
+### Moteur d'évaluation (`14_moteur_runes.js` + `runes_modeles.js`)
+
+Les **69 runes jouables sont modélisées**, y compris les utilitaires :
+
+| | |
+|---|---|
+| évaluées avec une valeur | **62** |
+| modélisées sans valeur chiffrable | 5 |
+| refusées explicitement | 2 |
+| **sans modèle** | **0** |
+
+Séparation volontaire : `runes_modeles.js` ne décrit que le **comportement**
+(déclencheur, forme du calcul) ; les **nombres** restent lus dans `runes.json`. Un
+patch qui fait passer Électrocution de 70 à 65 se propage donc sans toucher au code —
+seuls les remaniements de mécanique demandent une reprise.
+
+```bash
+node 15_test_runes.js        # 55 vérifications contre les valeurs annoncées
+node 16_couverture_runes.js  # état de la modélisation, rune par rune
+```
+
+Les tests confrontent le moteur aux fourchettes officielles : au niveau 1 une rune doit
+rendre sa borne basse, au niveau 18 sa borne haute. Simple, et difficile à truquer.
+
+#### Pièges des runes (coûteux, tous vérifiés par un test)
+
+- **Échelle des pourcentages incohérente.** Coup de grâce stocke `0.08` pour « 8 % »,
+  mais le fragment de vitesse d'attaque stocke `10` pour « 10 % » — et Transcendance
+  `0.05` pour « +5 accélération ». Confondre les deux fait une erreur d'un **facteur
+  100** sur la moitié des runes. La liste des runes en fraction est centralisée dans
+  `ECHELLE_FRACTION` (moteur), vérifiée description par description.
+- **Ratios « pour 100 points ».** Optimisation glaciale gagne « +6 % tous les 100 pts
+  de puissance » : le coefficient porte sur `AP/100`, pas sur `AP`.
+- **Zéro trompeur.** Fontaine de vie ne porte **aucun** montant de soin dans le fichier
+  de jeu. Sans garde-fou elle ressortait à 0 — ce qui se lit « soigne zéro » au lieu de
+  « on ne sait pas ». Une rune sans `montant` renvoie `null`.
+- **Force adaptative** = X en puissance **ou 0,6 X** en dégâts d'attaque. Le fragment
+  5008 le prouve (`StatGain2` = 9 puissance, `StatGain1` = 5,4).
+- **Le texte peut mentir.** Livraison de biscuits annonce « 2 % des PV max » en
+  français, le fichier de jeu dit 1,5 %. On retient le fichier.
+- **Versions à distance** : parfois un simple facteur (Poigne × 0,4), parfois une
+  fourchette entièrement différente (Tempo mortel 9-30 en mêlée, 6-24 à distance),
+  parfois une valeur fixe distincte (Démolition 85 vs 50).
 
 ## À refaire à chaque patch
 
