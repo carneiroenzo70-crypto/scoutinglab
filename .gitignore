@@ -27,3 +27,9 @@ ws-server/.dev.vars
 
 # Cache brut des fichiers de jeu (re-telechargeable via tools/theorycraft/02_fetch.js)
 tools/theorycraft/bin/
+
+# Caches bruts des donnees de jeu (re-telechargeables via les scripts du dossier)
+tools/theorycraft/perks.bin.json
+tools/theorycraft/perks_fr.json
+tools/theorycraft/perkstyles_fr.json
+tools/theorycraft/champFull.json

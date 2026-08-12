@@ -22,12 +22,18 @@ Le `.bin.json` est le fichier de script du jeu : chaque sort y porte ses `DataVa
 ## Chaîne
 
 ```bash
+# Champions
 node 01_cibles.js     # top 20 pro play par rôle → identifiants Data Dragon
 node 02_fetch.js      # télécharge les .bin.json dans ./bin (cache, non versionné)
 node 04_extraire.js   # résout les formules → champions.json
 node 05_rapport.js Ahri Ryze   # rendu lisible, pour confronter au jeu
 node 06_diag.js       # pourquoi tel sort n'a pas de calcul de dégâts
 node 07_bilan.js      # couverture globale
+
+# Runes
+node 09_runes.js          # perks.bin.json + libellés fr → runes.json
+node 11_rapport_runes.js  # rendu lisible des pierres de fondation
+node 12_diag_hash.js      # part de clés non résolues par CommunityDragon
 ```
 
 `03_resolveur.js` est le cœur : il aplatit l'arbre de formule en une somme de termes
@@ -58,6 +64,34 @@ l'armure) — vérifié par `06_diag.js`.
   (`AbilityResourceByCoefficientCalculationPart`). Sans ce type il ressortait vide.
 - Senna n'a pas de croissance d'AD : **ce n'est pas une lacune**, elle n'en a pas en
   jeu (son AD vient de ses âmes).
+
+## Runes (`runes.json`)
+
+Bien plus simple que les sorts : le jeu stocke déjà des couples nom → nombre, il n'y a
+rien à résoudre.
+
+```
+Électrocution : DamageBase 70, DamageMax 240, BonusADRatio 10%, APRatio 5%, Cooldown 20
+```
+
+Source : `game/perks.cdtb.bin.json` (chiffres) + `perks.json` / `perkstyles.json` du
+client en `fr_fr` (libellés et arbres).
+
+- **69 runes jouables**, toutes chiffrées — 17 pierres de fondation, 45 mineures,
+  7 fragments.
+- Le fichier contient aussi **37 runes retirées du jeu** (Kleptomancie, Prédateur,
+  Corps céleste…). Seule l'appartenance à un arbre actuel fait foi : `active: false`
+  = ne jamais proposer.
+- Les valeurs **ARAM / URF / Nexus Blitz** sont écartées, on ne garde que la Faille.
+- **11 % des clés** ne sont pas résolues par CommunityDragon et restent des hash
+  (`{0bb7b933}`). Quatre runes en deviennent inexploitables — Polyvalence, Grimoire
+  déchaîné, Remise immédiate, Manteau nuageux — mais **toutes utilitaires** : aucune
+  valeur de dégâts n'est perdue.
+
+⚠️ **Les chiffres ne suffisent pas.** Il reste à encoder le *déclenchement* de chaque
+rune (Électrocution : 3 frappes distinctes en 3 s ; Conquérant : 12 cumuls ; Poigne :
+une fois toutes les 4 s). C'est le travail manuel restant, borné aux ~17 pierres de
+fondation et à la dizaine de mineures qui pèsent sur les dégâts.
 
 ## À refaire à chaque patch
 
