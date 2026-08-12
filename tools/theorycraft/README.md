@@ -360,6 +360,15 @@ suivent. `statsAccordees` est appliqué par `profil()` avant tout autre calcul.
 | Gage de Sterak | +50 % de l'AD **de base** en AD bonus | wiki |
 | Manamune | +2 % du **mana maximum** en AD bonus | wiki |
 | Armure sanguine | +2,5 % des **PV bonus** en AD bonus | description en jeu |
+| Bâton de l'archange | +1 % du **mana bonus** en puissance | description en jeu |
+| Approche de l'hiver | +15 % du **mana maximum** en PV bonus | fichier de jeu |
+
+⚠ **Les chaînes de dépendance existent**, contrairement à ce que je croyais d'abord :
+l'Approche de l'hiver convertit le mana en PV, l'Armure sanguine convertit ensuite les
+PV bonus en dégâts d'attaque. Sur un profil figé, la seconde ne verrait jamais les
+267 PV de la première — 6,7 dégâts d'attaque perdus. Les stats accordées sont donc
+appliquées **incrémentalement** sur une copie du profil, dans l'ordre déclaré par le
+champ `ordre` : chaque passif voit le résultat de ceux qui le précèdent.
 
 L'Armure sanguine est le premier cas où le fichier ne porte **qu'un pourcentage nu**,
 sans `mItemCalculations` : la base est alors déclarée explicitement dans le modèle
@@ -404,6 +413,25 @@ Les clés sont hachées dans `primaryAbilityResource` ; elles ont été identifi
 **79 champions, 0 écart** entre le fichier de jeu et Data Dragon. Les 11 sans mana sont
 exactement les champions à énergie, fureur ou chaleur : `arType` les distingue, et leur
 attribuer du mana fausserait tout ce qui scale dessus.
+
+### Cinq cadences, et pourquoi elles ne se mélangent pas
+
+Un passif de dégâts ne vaut quelque chose que rapporté à SA cadence. Les confondre est
+le plus court chemin vers un chiffre faux d'un ordre de grandeur.
+
+| Déclencheur | Sens | Exemples |
+|---|---|---|
+| `coupAImpact` | à chaque attaque de base | Dent de Nashor, Lame du roi déchu |
+| `toutesNAttaques` | un coup sur *n*, **amorti** sur la durée | Tueur de krakens (1/3) |
+| `apresCompetence` | lame enchantée, avec sa propre recharge | Force de la trinité |
+| `periodique` | un débit par seconde | Égide solaire (20 + 1,5 % PV bonus) |
+| `intervalle` | une fois par recharge | Désespoir infini (4 s), Cœuracier (30 s) |
+| `actif` | lancé par le joueur, longue recharge | Ceinture-roquette, Pistolame |
+
+Seules les deux premières entrent dans les dégâts **par attaque** ; un test le vérifie
+explicitement. Verser l'Égide solaire dans le coup à l'impact la multiplierait par la
+vitesse d'attaque — sur un tank à 1 attaque/s, l'erreur passerait inaperçue ; sur une
+ADC à 2,5, elle serait de 150 %.
 
 ### Cadence : amortir plutôt qu'exclure
 

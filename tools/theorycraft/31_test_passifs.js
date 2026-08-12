@@ -152,6 +152,29 @@ vrai('  et le Q de Ryze se calcule enfin', q.ok && q.brut > 0, q.ok ? q.brut + '
    croire que le Manamune ne donne rien, au lieu de dire qu'il est inapplicable. */
 vrai('un champion à énergie n\'a pas de mana', M.profil('Rumble', 18, []).mana === null);
 
+/* Bâton de l'archange : « 1 % de votre mana BONUS ». La distinction est tout sauf
+   théorique — au niveau 18 le mana total de Ryze dépasse le bonus de plus de 1000. */
+const arch = M.profil('Ryze', 18, [3003]);
+const apArch = items.find(x => x.id === 3003).stats.ap.valeur;
+verifie('Bâton de l\'archange : 1 % du mana BONUS en puissance',
+        arch.ap, apArch + arch.manaBonus * 0.01, 0.01);
+vrai('  et non 1 % du mana total', arch.mana > arch.manaBonus + 900,
+     Math.round(arch.mana) + ' total contre ' + Math.round(arch.manaBonus) + ' bonus');
+
+/* La chaîne mana → PV → AD, et la seule chose qui puisse la prouver : l'Approche de
+   l'hiver donne 15 % du mana en PV, l'Armure sanguine convertit ensuite 2,5 % des PV
+   bonus en AD. Sur un profil figé, la seconde ne verrait jamais les PV de la première. */
+const chaine = M.profil('Sion', 18, [3119, 2501], { fenetre: 10 });
+const pvChaine = items.find(x => x.id === 3119).stats.pv.valeur
+               + items.find(x => x.id === 2501).stats.pv.valeur;
+verifie('Approche de l\'hiver : 15 % du mana max en PV bonus',
+        chaine.pvBonus, pvChaine + chaine.mana * 0.15, 0.5);
+verifie('  et l\'Armure sanguine convertit CES PV-là aussi',
+        chaine.adBonus, items.find(x => x.id === 2501).stats.ad.valeur + chaine.pvBonus * 0.025, 0.05);
+vrai('  sans la chaîne, 6,7 dégâts d\'attaque seraient perdus',
+     chaine.adBonus > 30 + pvChaine * 0.025 + 1,
+     'écart de ' + Math.round((chaine.adBonus - 30 - pvChaine * 0.025) * 10) / 10 + ' AD');
+
 console.log('\n── Passifs qui MULTIPLIENT une stat (l\'ordre décide du résultat)');
 /* Coiffe de Rabadon : « Vous augmentez votre puissance totale de 30 % ». Objet présent
    dans les builds de référence et jusque-là non appliqué — la puissance de ces builds
@@ -194,6 +217,34 @@ vrai('  sous 5 s de combat, le passif est refusé avec son motif',
      /5 s de combat/.test((M.profil('Sion', 18, [6665], { fenetre: 3 }).statsRefusees || []).join(' ')));
 vrai('  sans durée de combat fournie, il est refusé plutôt que supposé',
      /non fournie/.test((M.profil('Sion', 18, [6665]).statsRefusees || []).join(' ')));
+
+console.log('\n── Passifs à intervalle et actifs : comptés à part, jamais par attaque');
+/* Ils ne doivent SURTOUT pas se retrouver dans les dégâts par attaque : l'Égide
+   solaire brûle une fois par seconde, le Cœuracier une fois par cible toutes les
+   30 s. Les fondre dans le coup à l'impact multiplierait leur valeur par la vitesse
+   d'attaque. */
+const tank = M.profil('Sion', 18, [3068, 2502, 3084], { fenetre: 10 });
+const solaire = I.evaluerPassif(3068, tank, cible, { fenetre: 10 });
+verifie('Égide solaire : 20 + 1,5 % des PV bonus, par seconde',
+        solaire.brut, 20 + tank.pvBonus * 0.015, 0.05);
+vrai('  et c\'est bien un débit, pas un montant', solaire.parSeconde === true);
+verifie('Désespoir infini : 3 % des PV bonus toutes les 4 s',
+        I.evaluerPassif(2502, tank, cible).brut, tank.pvBonus * 0.03, 0.05);
+verifie('Cœuracier : 70 + 6 % des PV MAX (et non bonus)',
+        I.evaluerPassif(3084, tank, cible).brut, 70 + tank.pvMax * 0.06, 0.05);
+const ohTank = I.coupsAImpact(tank, cible, { mitiger: M.mitiger });
+vrai('  aucun des trois n\'entre dans les dégâts par attaque',
+     ohTank.lignes.length === 0, ohTank.lignes.map(l => l.objet).join(', '));
+
+/* Actifs : longue recharge, déclenchés par le joueur. Leurs chiffres sont vérifiables
+   au sou près, c'est ce qui les rend modélisables malgré une boutique muette. */
+const mage = M.profil('Ryze', 18, [3152, 3146, 3089]);
+verifie('Ceinture-roquette : 100 + 10 % de la puissance',
+        I.evaluerPassif(3152, mage, cible).brut, 100 + mage.ap * 0.1, 0.05);
+verifie('Pistolame : 253 au niveau 18 + 30 % de la puissance',
+        I.evaluerPassif(3146, mage, cible).brut, 253 + mage.ap * 0.3, 0.05);
+vrai('  la puissance servie inclut bien la Coiffe de Rabadon', mage.ap > 300,
+     Math.round(mage.ap) + ' de puissance');
 
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,

@@ -104,6 +104,10 @@ function profil(id, niveau, idsObjets, extras = {}) {
        lui ferait rendre plus qu'elle ne rend. */
     pvObjets: it.pv || 0,
     mana: nu.mana == null ? null : nu.mana + g('mana'),
+    /* Mana BONUS, distinct du total : le Bâton de l'archange convertit 1 % du mana
+       bonus en puissance, pas 1 % du mana total. Sur Ryze niveau 18 l'écart dépasse
+       1000 de mana, soit 10 points de puissance attribués à tort. */
+    manaBonus: g('mana'),
     armure: nu.armure + g('armure'),
     rm: nu.rm + g('rm'),
     /* Part BONUS des résistances, isolée de la base du champion : c'est elle seule
@@ -138,14 +142,9 @@ function profil(id, niveau, idsObjets, extras = {}) {
          3. multiplicateurs de phase « après » — leur base est la stat TOTALE, donc
             après tout le reste (la Coiffe de Rabadon amplifie la puissance finale).
        Inverser 2 et 3 ferait perdre à Rabadon la puissance accordée par les passifs. */
-    const appliquer = gains => Object.entries(gains).forEach(([stat, v]) => {
-      if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
-      else if (stat === 'ap') p.ap += v;
-      else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
-      else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }
-      else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }
-      else if (p[stat] != null) p[stat] += v;
-    });
+    const { appliquerGain } = require('./30_moteur_items');
+    const appliquer = gains =>
+      Object.entries(gains).forEach(([stat, v]) => appliquerGain(p, stat, v));
 
     const opts = { fenetre: extras.fenetre };
     const avant = multiplicateursStat(p, 'avant', opts);

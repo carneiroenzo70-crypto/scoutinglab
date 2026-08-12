@@ -186,6 +186,55 @@ module.exports = {
     note: 'Feu noir (+4 % de puissance par champion brûlé) n\'est pas modélisé'
   },
 
+  3068: { // Égide solaire — Immolation
+    /* 20 + 1,5 % des PV bonus, une fois par seconde. Le fichier porte trois calculs
+       identiques (`DamagePerTick`, `DPS`, un hachage) et deux clés explicitement
+       marquées TOOLTIPONLY qui donnent les mêmes 20 et 1,5 : concordance interne
+       complète, on prend le calcul et non l'infobulle. */
+    nom: 'Immolation', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'periodique', duree: 'AuraDuration' },
+    calcul: 'DamagePerTick', parSeconde: true,
+    note: 'aura de zone : contre plusieurs ennemis, le total réel est un multiple ' +
+          'de ce chiffre ; les modificateurs sbires (×0,5) et monstres (×0,8) ne ' +
+          's\'appliquent pas à un champion'
+  },
+
+  2502: { // Désespoir infini — Affliction
+    /* « Toutes les 4 sec de combat » : ce n'est ni un coup à l'impact ni du continu,
+       d'où un déclencheur à intervalle propre. 3 % des PV bonus, ce que confirme
+       `BonusHealthDrainPercentage` = 0,03. */
+    nom: 'Affliction', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'intervalle', recharge: 'Cooldown' },
+    calcul: 'DrainCalc',
+    note: 'le soin associé (250 % des dégâts) n\'est pas compté dans les dégâts'
+  },
+
+  3084: { // Cœuracier — Consommation colossale
+    /* 70 + 6 % des PV MAX — la description l'écrit noir sur blanc, et le calcul le
+       confirme au chiffre près. Une fois par cible toutes les 30 s : hors de question
+       de l'ajouter à chaque attaque. */
+    nom: 'Consommation colossale', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'intervalle', recharge: 'PerTargetCooldown' },
+    calcul: 'DamageProcCalc',
+    note: 'les PV max gagnés au passage (10 % des dégâts) ne sont pas modélisés ; ' +
+          'la proximité requise (6 relevés, 700 unités) est supposée acquise'
+  },
+
+  /* ── Actifs ─────────────────────────────────────────────────────────────────
+     Ils ne se déclenchent pas seuls : c'est le joueur qui les lance, avec une longue
+     recharge. Comptés à part des dégâts automatiques, jamais fondus dedans. */
+
+  3152: { // Ceinture-roquette Hextech — Supersonique
+    nom: 'Supersonique', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'FireboltDamage'
+  },
+
+  3146: { // Pistolame Hextech — Orbe de foudre
+    nom: 'Orbe de foudre', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'ActiveDamage',
+    note: 'le ralentissement (25 % pendant 1,5 s) n\'est pas modélisé'
+  },
+
   /* ── Dégâts liés aux compétences ────────────────────────────────────────────── */
 
   6655: { // Écho de Luden — Écho
@@ -223,7 +272,30 @@ module.exports = {
     note: 'le bouclier Lien vital (60 % des PV bonus) n\'est pas compté dans les dégâts'
   },
 
+  3003: { // Bâton de l'archange — Effroi
+    /* « Vous gagnez de la puissance équivalente à 1 % de votre mana BONUS » : le
+       fichier ne porte que le pourcentage, la base vient de la description. Compter
+       le mana total au lieu du mana bonus donnerait +10 de puissance imaginaires
+       à Ryze au niveau 18. */
+    nom: 'Effroi', effet: 'stat',
+    statsAccordees: [{ stat: 'ap', valeur: 'APFromMana', base: 'manaBonus' }],
+    note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis Sablier de Seraph) ' +
+          'n\'est pas modélisé — valeur de départ uniquement'
+  },
+
+  3119: { // Approche de l'hiver — Effroi
+    /* La boutique n'imprime pas la valeur (gabarit non résolu). Le fichier, lui, est
+       sans ambiguïté : `BonusHPFromMana` = 15 % du mana TOTAL en PV bonus. */
+    nom: 'Effroi', effet: 'stat', ordre: -1,
+    statsAccordees: [{ stat: 'pv', calcul: 'BonusHPFromMana' }],
+    note: 'Flux de mana (jusqu\'à +360 de mana, puis Fimbulvetr) n\'est pas modélisé'
+  },
+
   2501: { // Armure sanguine — Tyrannie
+    /* `ordre: 1` — ce passif LIT les PV bonus, il doit donc passer après ceux qui en
+       accordent (l'Approche de l'hiver en donne 15 % du mana). Sans cet ordre, les
+       PV gagnés par un autre objet ne se convertiraient jamais en dégâts. */
+    ordre: 1,
     /* Pas de `mItemCalculations` pour ce passif : le fichier ne porte que le
        pourcentage brut. On déclare donc explicitement la BASE sur laquelle il
        s'applique — « 2,5 % de vos PV bonus », d'après la description en jeu. */

@@ -202,14 +202,30 @@ function coupsAImpact(p, cible, options = {}) {
    de sorts et toutes les attaques qui suivent. Les ignorer, c'est perdre plus de 30
    dégâts d'attaque sur un Ryze au Manamune, silencieusement.
 
-   ⚠ Une seule passe, volontairement : les stats accordées sont calculées sur le profil
-   AVANT passifs. Aucun objet actuel n'accorde une stat que lit un autre passif (le
-   Manamune lit le mana, Sterak lit l'AD de base, ni l'un ni l'autre ne lit l'AD bonus),
-   donc l'ordre n'a pas d'incidence. Si un objet le faisait un jour, il faudrait itérer
-   — la note est ici pour qu'on s'en souvienne. */
-function statsAccordees(p) {
+   ⚠ Les CHAÎNES de dépendance existent bel et bien, contrairement à ce que je croyais
+   au départ : l'Approche de l'hiver convertit le mana en PV, l'Armure sanguine convertit
+   les PV bonus en dégâts d'attaque. Additionner les deux sur un même profil figé ferait
+   perdre à la seconde tout ce que la première a accordé.
+
+   D'où l'application INCRÉMENTALE sur une copie du profil, dans l'ordre déclaré par le
+   champ `ordre` : chaque passif voit le résultat de ceux qui le précèdent. Les gains
+   totaux sont renvoyés à l'appelant, qui les applique une seule fois au vrai profil —
+   une seule voie d'application, donc un seul endroit où se tromper. */
+function appliquerGain(p, stat, v) {
+  if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
+  else if (stat === 'ap') p.ap += v;
+  else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
+  else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }
+  else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }
+  else if (p[stat] != null) p[stat] += v;
+}
+
+function statsAccordees(profilInitial) {
   const gains = {}; const detail = []; const refus = [];
-  (p.objets || []).forEach(id => {
+  const p = { ...profilInitial };            // copie de travail, l'original est intact
+  const ordonnes = (p.objets || []).slice().sort(
+    (a, b) => ((MODELES[a] || {}).ordre || 0) - ((MODELES[b] || {}).ordre || 0));
+  ordonnes.forEach(id => {
     const m = MODELES[id];
     if (!m || !m.statsAccordees) return;
     const o = parId[id];
@@ -235,6 +251,7 @@ function statsAccordees(p) {
         v = pct * p[base];
       }
       gains[stat] = (gains[stat] || 0) + v;
+      appliquerGain(p, stat, v);            // le passif suivant verra ce gain
       detail.push({ objet: o.nom, nom: m.nom, stat, valeur: Math.round(v * 100) / 100 });
     });
   });
@@ -306,4 +323,4 @@ function couverture() {
 }
 
 module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
-                   couverture, MODELES, parId };
+                   appliquerGain, couverture, MODELES, parId };
