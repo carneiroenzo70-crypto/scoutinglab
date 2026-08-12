@@ -94,10 +94,13 @@ Les **69 runes jouables sont modélisées**, y compris les utilitaires :
 
 | | |
 |---|---|
-| évaluées avec une valeur | **62** |
-| modélisées sans valeur chiffrable | 5 |
-| refusées explicitement | 2 |
+| évaluées avec une valeur | **65** |
+| modélisées sans valeur chiffrable | 4 |
+| refusées | **0** |
 | **sans modèle** | **0** |
+
+Les 4 sans valeur n'ont rien à calculer (détection de balises, durée de balises,
+Saut Hextech, trois élixirs).
 
 Séparation volontaire : `runes_modeles.js` ne décrit que le **comportement**
 (déclencheur, forme du calcul) ; les **nombres** restent lus dans `runes.json`. Un
@@ -131,6 +134,29 @@ rendre sa borne basse, au niveau 18 sa borne haute. Simple, et difficile à truq
 - **Versions à distance** : parfois un simple facteur (Poigne × 0,4), parfois une
   fourchette entièrement différente (Tempo mortel 9-30 en mêlée, 6-24 à distance),
   parfois une valeur fixe distincte (Démolition 85 vs 50).
+
+#### Clés hachées levées par recoupement externe
+
+Trois runes bloquaient. Elles ont été résolues en confrontant les valeurs du fichier
+de jeu au wiki officiel — la concordance numérique sert de preuve d'identification :
+
+| Rune | Blocage | Résolution |
+|---|---|---|
+| **Polyvalence** (*Jack of All Trades*) | paliers adaptatifs hachés | `{1b48f5ea}=8` = bonus à 5 cumuls, `{55d14eea}=20` = total à 10 — le wiki donne 8/20 en puissance et 4,8/12 en AD, soit le rapport 0,6 attendu |
+| **Grimoire déchaîné** (*Unsealed Spellbook*) | 7 clés sur 11 hachées | l'essentiel était lisible : `ShardRechargeMinutes` 4,5 min = les **270 s** du wiki |
+| **Fontaine de vie** (*Font of Life*) | aucun montant de soin dans le fichier | valeurs du wiki (10 → 54,71) ; le rapport mêlée/distance 0,7 retombe **exactement** sur le `RangedMod` du fichier |
+
+⚠️ **Le wiki n'est pas toujours à jour.** Sur le Toucher de feu mortel il annonce
+« 4–12, +8 % AD bonus, +3 % AP » alors que le fichier de jeu **et** la description
+française en jeu disent tous deux « 3–12, +7 %, +2,5 % ». Les deux sources internes
+concordent contre lui : **le fichier de jeu fait foi**, le wiki ne sert qu'à lever une
+ambiguïté, jamais à contredire une valeur mesurée.
+
+Une seule valeur de tout le jeu de runes provient d'une saisie externe (les deux bornes
+de Fontaine de vie). Elle est déclarée via `valeursExternes` avec sa source et sa date,
+et `evaluerRune()` renvoie systématiquement le champ `source` — on ne mélange jamais
+silencieusement une mesure et une saisie. **Cette valeur ne se mettra pas à jour toute
+seule au prochain patch, contrairement à toutes les autres.**
 
 ## À refaire à chaque patch
 

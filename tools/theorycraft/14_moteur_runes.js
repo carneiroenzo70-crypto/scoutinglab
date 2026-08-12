@@ -146,12 +146,22 @@ function valeurDe(m, r, ctx) {
 }
 
 function evaluerRune(id, ctx = {}) {
-  const r = parId[id];
-  if (!r) return { ok: false, raison: 'rune inconnue' };
-  if (!r.active) return { ok: false, raison: 'rune retirée du jeu' };
+  const r0 = parId[id];
+  if (!r0) return { ok: false, raison: 'rune inconnue' };
+  if (!r0.active) return { ok: false, raison: 'rune retirée du jeu' };
   const m = MODELES[id];
-  if (!m) return { ok: false, raison: 'non modélisée', nom: r.nom };
-  if (m.nonModelise) return { ok: false, raison: m.nonModelise, nom: r.nom };
+  if (!m) return { ok: false, raison: 'non modélisée', nom: r0.nom };
+  if (m.nonModelise) return { ok: false, raison: m.nonModelise, nom: r0.nom };
+
+  /* Quelques valeurs manquent au fichier de jeu (Fontaine de vie n'y porte aucun
+     montant de soin) ou n'y sont accessibles que sous une clé hachée. Le modèle peut
+     alors fournir des valeurs relevées sur une source externe — toujours nommées et
+     datées, et signalées dans le résultat : on ne mélange jamais silencieusement une
+     mesure et une saisie. */
+  let r = r0;
+  if (m.valeursExternes) {
+    r = Object.assign({}, r0, { valeurs: Object.assign({}, r0.valeurs, m.valeursExternes.valeurs) });
+  }
 
   ctx = Object.assign({ niveau: 1, adBase: 0, adBonus: 0, ap: 0, pvMax: 0, pvBonus: 0 }, ctx);
 
@@ -185,6 +195,7 @@ function evaluerRune(id, ctx = {}) {
     valeur: res.total == null ? null : Math.round(res.total * 100) / 100,
     unite: modele.unite || null,
     detail: res.detail,
+    source: m.valeursExternes ? m.valeursExternes.source : 'fichier de jeu',
     notes: modele.notes || m.notes || null
   };
 }

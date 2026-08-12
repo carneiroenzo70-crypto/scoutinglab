@@ -98,19 +98,49 @@ verifie('Goût du sang niv.1, 100 AD bonus', evaluerRune(8139, { niveau: 1, adBo
 verifie('Concentration absolue niv.18', evaluerRune(8233, { niveau: 18 }).valeur, 30);
 
 console.log('\n── Absence assumée plutôt que zéro trompeur');
-const fdv = evaluerRune(8463, { niveau: 18 });
-const bon = fdv.ok && fdv.valeur === null;
-console.log((bon ? '  OK   ' : '  ÉCHEC') + '  Fontaine de vie : valeur = ' + fdv.valeur +
-  ' (le fichier de jeu ne porte aucun montant de soin)');
+// Sixième sens détecte des balises : il n'y a rien à chiffrer, et 0 se lirait
+// « ne fait rien » au lieu de « sans effet chiffrable ».
+const ss = evaluerRune(8137, { niveau: 18 });
+const bon = ss.ok && ss.valeur === null;
+console.log((bon ? '  OK   ' : '  ÉCHEC') + '  Sixième sens : valeur = ' + ss.valeur +
+  ' (rune sans grandeur à calculer)');
 bon ? ok++ : ko++;
 
+console.log('\n── Runes débloquées par recoupement avec une source externe');
+// Polyvalence : clés hachées identifiées via le wiki (8 à 5 cumuls, 20 à 10 cumuls)
+verifie('Polyvalence : 1 accélération par cumul', evaluerRune(8316, {}).valeur, 1);
+// Grimoire déchaîné : 4,5 min = les 270 s annoncées par le wiki
+verifie('Grimoire déchaîné : délai initial en minutes', evaluerRune(8360, {}).valeur, 4.5);
+const gd = evaluerRune(8360, {});
+const coherent = Math.abs(gd.valeur * 60 - 270) < 0.01;
+console.log((coherent ? '  OK   ' : '  ÉCHEC') + '  ' +
+  'Grimoire : 4,5 min x 60 = 270 s (concorde avec le wiki)'.padEnd(52) +
+  'obtenu ' + gd.valeur * 60 + '   attendu 270');
+coherent ? ok++ : ko++;
+// Fontaine de vie : valeurs externes, mais le rapport mêlée/distance doit retomber
+// sur le RangedMod du fichier de jeu (0,7) — c'est ce qui valide la saisie.
+verifie('Fontaine de vie niv.1 mêlée', evaluerRune(8463, { niveau: 1 }).valeur, 10);
+verifie('Fontaine de vie niv.18 mêlée', evaluerRune(8463, { niveau: 18 }).valeur, 54.71);
+verifie('Fontaine de vie niv.18 distance (x0,7)',
+  evaluerRune(8463, { niveau: 18, distance: true }).valeur, 38.3, 0.02);
+
+console.log('\n── Traçabilité de la source');
+const fdv = evaluerRune(8463, { niveau: 18 });
+const trace = /wiki/i.test(fdv.source || '');
+console.log((trace ? '  OK   ' : '  ÉCHEC') + '  Fontaine de vie signale sa source : ' + fdv.source);
+trace ? ok++ : ko++;
+const elec = evaluerRune(8112, { niveau: 1 });
+const traceJeu = elec.source === 'fichier de jeu';
+console.log((traceJeu ? '  OK   ' : '  ÉCHEC') + '  Électrocution signale sa source : ' + elec.source);
+traceJeu ? ok++ : ko++;
+
 console.log('\n── Refus explicites (jamais de valeur inventée)');
-const g = evaluerRune(8360);
-console.log((g.ok === false ? '  OK   ' : '  ÉCHEC') + '  Grimoire déchaîné refusé : ' + g.raison);
-g.ok === false ? ok++ : ko++;
 const inconnue = evaluerRune(9999);
 console.log((inconnue.ok === false ? '  OK   ' : '  ÉCHEC') + '  rune inconnue refusée : ' + inconnue.raison);
 inconnue.ok === false ? ok++ : ko++;
+const retiree = evaluerRune(8359); // Kleptomancie, retirée du jeu
+console.log((retiree.ok === false ? '  OK   ' : '  ÉCHEC') + '  rune retirée refusée : ' + retiree.raison);
+retiree.ok === false ? ok++ : ko++;
 
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

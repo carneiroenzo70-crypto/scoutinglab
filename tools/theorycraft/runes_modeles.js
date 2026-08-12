@@ -61,9 +61,17 @@ module.exports = {
     notes: 'Réduit aussi les dégâts des ennemis touchés de 15% (DmgReduction).'
   },
 
-  8360: { // Grimoire déchaîné
-    nonModelise: 'échange de sorts d\'invocateur : aucun effet chiffrable sur les dégâts, '
-               + 'et 7 de ses 11 clés ne sont pas résolues par CommunityDragon'
+  /* Grimoire déchaîné — « Unsealed Spellbook ». Ses clés hachées portent des détails
+     secondaires (délais de 5 s et 10 s à la sélection et à l'usage) ; l'essentiel est
+     lisible et concorde avec le wiki : 270 s de délai initial = ShardRechargeMinutes
+     (4,5 min), −25 s par sort unique, premier échange à 6 minutes. */
+  8360: {
+    effet: 'utilitaire', unite: 's de délai entre deux échanges',
+    declencheur: { type: 'minuteDeJeu', note: 'premier échange à 6 min, hors combat' },
+    montant: { fixe: 'ShardRechargeMinutes' },
+    notes: 'Valeur en MINUTES (4,5 = 270 s). Chaque sort d\'invocateur inédit choisi '
+         + 'retire définitivement 25 s (ShardRechargeReductionSeconds). Il faut passer '
+         + 'par 3 sorts différents avant d\'en reprendre un. Aucun effet sur les dégâts.'
   },
 
   8369: { // Premier coup
@@ -256,8 +264,17 @@ module.exports = {
                + '(HealthHealPercent). On retient le fichier. Soins majorés selon les PV manquants.' },
   8352: { effet: 'utilitaire', unite: '% de la potion rendu aussitôt', cooldown: 'Cooldown',
           declencheur: { type: 'consommable' }, montant: { fixe: 'RestorationPercentage' } },
-  8316: { nonModelise: 'les paliers de force adaptative (5 et 10 cumuls) sont sous des clés '
-                     + 'non résolues par CommunityDragon ({1b48f5ea}, {55d14eea})' },
+  /* Polyvalence — « Jack of All Trades » en anglais. Ses deux clés hachées ont été
+     identifiées en confrontant leurs valeurs au wiki officiel : {1b48f5ea}=8 est le
+     bonus à 5 cumuls, {55d14eea}=20 le total à 10 cumuls. Le wiki donne aussi les
+     contreparties en AD (4,8 et 12), soit exactement 60% — la règle adaptative tient. */
+  8316: { effet: 'stat', unite: 'accélération de compétence',
+          declencheur: { type: 'statsObjets',
+                         note: '1 cumul par type de statistique distinct apporté par vos objets' },
+          montant: { fixe: 'HastePerStack' },
+          notes: 'Par cumul. Paliers adaptatifs : +8 puissance (4,8 AD) à 5 cumuls, '
+               + '+20 puissance (12 AD) au total à 10 cumuls — clés {1b48f5ea} et '
+               + '{55d14eea}, identifiées par recoupement avec le wiki officiel.' },
   8347: { effet: 'stat', unite: 'accélération de sort d\'invocateur',
           declencheur: { type: 'permanent' }, montant: { fixe: 'SummonerHaste' },
           notes: 'Et +10 accélération d\'objet (ItemHaste).' },
@@ -353,10 +370,22 @@ module.exports = {
                      pourcentStat: ['HPRatioMelee', 'PV', 'total'] },
           distance: { remplaceFixe: 'BaseDamageRanged', pourcentStatCle: 'HPRatioRanged' },
           notes: 'À distance : 50 + 20% des PV max (HPRatioRanged). Ne touche que les tourelles.' },
+  /* Fontaine de vie — seul cas de tout le jeu de runes où le montant n'existe dans
+     AUCUNE clé du fichier. Valeurs relevées sur le wiki officiel ; le rapport
+     7/10 = 38,29/54,71 = 0,7 tombe exactement sur le RangedMod du fichier de jeu, ce
+     qui fait concorder les deux sources et donne confiance dans la saisie. */
   8463: { effet: 'soin', cooldown: 'Cooldown',
-          declencheur: { type: 'cibleImmobilisee' },
-          notes: '⚠ le montant du soin n\'apparaît dans aucune clé du fichier de jeu : '
-               + 'non calculable. 70% d\'efficacité à distance (RangedMod).' },
+          declencheur: { type: 'cibleImmobilisee',
+                         note: 'soigne vous-même et l\'allié le plus blessé à moins de 1000 unités' },
+          valeursExternes: {
+            source: 'wiki officiel League of Legends, relevé le 12/08/2026',
+            valeurs: { SoinMin: 10, SoinMax: 54.71 }
+          },
+          montant: { niveau: ['SoinMin', 'SoinMax'] },
+          distance: { facteurCle: 'RangedMod' },
+          notes: 'Le fichier de jeu ne porte pas le montant du soin — seules ces deux '
+               + 'bornes viennent d\'une source externe. À revérifier à chaque patch : '
+               + 'elles ne se mettront pas à jour toutes seules, contrairement au reste.' },
   8429: { effet: 'stat', unite: 'armure et résistance magique',
           declencheur: { type: 'minuteDeJeu', note: 'à partir de 12 minutes' },
           montant: { fixe: 'ArmorBase' },
