@@ -114,6 +114,15 @@ function vitesseDeplacement(base, plat = 0, pourcent = 0) {
   return 110 + brut * 0.01;
 }
 
+/* Recalcule les stats qui ne s'additionnent pas mais se DÉRIVENT d'un bonus brut.
+   Appelée une seule fois, à la toute fin du profil : tout gain — objet, rune ou passif —
+   modifie le bonus, jamais la valeur dérivée. */
+function recalculerDerivees(p, base, niveau) {
+  if (base) p.vitesseAttaque = vitesseAttaque(base, niveau, p.bonusVitesseAttaque || 0);
+  p.ms = vitesseDeplacement(p.msBase, p.vdPlate || 0, p.vd || 0);
+  p.msBrute = p.msBase + (p.vdPlate || 0);
+}
+
 /* ── 3. Profil complet : champion + niveau + objets ─────────────────────────────── */
 function profil(id, niveau, idsObjets, extras = {}) {
   const nu = statsChampion(id, niveau);
@@ -154,6 +163,12 @@ function profil(id, niveau, idsObjets, extras = {}) {
     fenetre: extras.fenetre != null ? extras.fenetre : null,
     crit: Math.min(1, g('crit')),
     degatsCrit: g('degatsCrit'),
+    /* Le BONUS en pourcentage est conservé à part de la vitesse d'attaque calculée.
+       Sans cette séparation, un gain de rune (+10 %) s'ajouterait à un nombre
+       d'attaques par seconde (0,83) : on obtiendrait 10,83. La vitesse d'attaque et la
+       vitesse de déplacement sont des stats DÉRIVÉES — elles se recalculent, elles ne
+       s'incrémentent pas. */
+    bonusVitesseAttaque: g('vitesseAttaque'),
     vitesseAttaque: vitesseAttaque((champions[id] || {}).base, niveau, g('vitesseAttaque')),
     distance: nu.distance,
     or: (objets || []).reduce((s, i) => s + (itemParId[i] ? itemParId[i].prix : 0), 0)
@@ -182,7 +197,9 @@ function profil(id, niveau, idsObjets, extras = {}) {
 
   /* Vitesse de déplacement, avec son plafond progressif — une formule à part, comme la
      vitesse d'attaque. Sans elle, les 16 objets à vitesse de déplacement ne servaient
-     à rien dans le modèle. */
+     à rien dans le modèle. Valeur provisoire : `recalculerDerivees` la reprend en fin
+     de profil, une fois les runes et les passifs appliqués. */
+  p.msBase = nu.ms;
   p.ms = vitesseDeplacement(nu.ms, p.vdPlate || 0, p.vd || 0);
   p.msBrute = nu.ms + (p.vdPlate || 0);
 
@@ -205,6 +222,21 @@ function profil(id, niveau, idsObjets, extras = {}) {
     const appliquer = gains =>
       Object.entries(gains).forEach(([stat, v]) => appliquerGain(p, stat, v));
 
+    /* Les RUNES entrent avant tout le reste des passifs, et l'ordre se justifie :
+       la Coiffe de Rabadon amplifie la puissance TOTALE — force adaptative comprise ;
+       Jak'Sho amplifie les résistances BONUS — celles d'Inébranlable comprises ;
+       l'Armure sanguine convertit les PV bonus — ceux de Surcroissance compris.
+       Les placer après aurait fait perdre à chacun de ces passifs l'apport des runes. */
+    if (extras.runes && extras.runes.length) {
+      const { statsDeRunes } = require('./36_runes_profil');
+      const base = (champions[id] || {}).base || {};
+      const r = statsDeRunes(extras.runes, p, base.adaptatifAP, { minutes: extras.minutes });
+      appliquer(r.gains);
+      p.runes = extras.runes;
+      p.statsDeRunes = r.detail;
+      p.runesRefusees = r.refus;
+    }
+
     const opts = { fenetre: extras.fenetre };
     const avant = multiplicateursStat(p, 'avant', opts);
     appliquer(avant.gains);
@@ -217,6 +249,12 @@ function profil(id, niveau, idsObjets, extras = {}) {
     p.multiplicateurs = avant.detail.concat(apres.detail);
     p.statsRefusees = acc.refus.concat(avant.refus, apres.refus);
   }
+
+  /* Stats dérivées, recalculées EN DERNIER — après objets, runes et passifs. Les
+     recalculer ici plutôt que de les incrémenter est la seule façon de respecter leurs
+     formules propres : ratio de vitesse d'attaque du champion, plafond progressif de la
+     vitesse de déplacement. */
+  recalculerDerivees(p, (champions[id] || {}).base, niveau);
   return p;
 }
 

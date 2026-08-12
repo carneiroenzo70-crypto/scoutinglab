@@ -449,6 +449,49 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Les runes n'entraient pas dans les stats du build
+
+Le chaînon manquant, et il touchait l'objectif même du projet : le moteur de runes
+savait chiffrer les 69 runes modélisées, le modèle savait chiffrer un build d'objets,
+mais **rien ne faisait entrer les runes dans les statistiques du champion**. On comparait
+donc des builds sur un profil qui n'existe dans aucune partie.
+
+`36_runes_profil.js` fait ce pont, sous deux règles tenues strictement.
+
+**Liste blanche.** N'entre au profil qu'un gain **permanent et inconditionnel**. Le
+Manteau nuageux affiche 45 % de vitesse de déplacement : c'est une bouffée de quelques
+secondes après un sort d'invocateur. La verser au profil ferait passer un champion pour
+deux fois plus mobile qu'il n'est. Six runes sont écartées **avec leur motif** ; une rune
+de dégâts, elle, n'est ni appliquée ni signalée comme un défaut — elle agit ailleurs.
+
+**Unités.** Le moteur de runes rend les valeurs telles qu'affichées en jeu (`10` pour
+« 10 % de vitesse d'attaque ») ; le profil compte les pourcentages en fractions. Sans
+conversion, un fragment de vitesse d'attaque en aurait apporté mille pour cent.
+
+**Force adaptative** — 1 point donne 1 puissance ou 0,6 dégât d'attaque, selon la plus
+haute des deux stats bonus. À égalité — le cas de tout niveau 1 — c'est le type adaptatif
+du champion qui tranche. Il est **lu dans le fichier de jeu**
+(`mAdaptiveForceToAbilityPowerWeight`, qui vaut 1 sur 37 champions du panel et est absent
+sur les 53 autres) et non déduit de la couleur des sorts, qui se serait trompée sur Jinx
+comme sur Kayle.
+
+**Ordre** — les runes s'appliquent avant les passifs qui les lisent : Rabadon amplifie la
+force adaptative, Jak'Sho les résistances d'Inébranlable, l'Armure sanguine les PV de
+Surcroissance.
+
+Deux bugs trouvés en câblant :
+
+- **Les stats dérivées s'incrémentaient.** `+13 %` ajouté à une vitesse d'attaque de
+  1,106 aurait donné 14,1 attaques par seconde. La vitesse d'attaque et la vitesse de
+  déplacement ont leurs formules propres : elles sont désormais **recalculées** en fin de
+  profil à partir d'un bonus brut conservé à part. Contre-épreuve : Jhin a un ratio de
+  vitesse d'attaque **nul** (son passif la convertit en dégâts) — sa vitesse ne doit pas
+  bouger d'un iota, et un modèle qui additionne échoue sur lui.
+- **Un gain sur une stat absente du build était perdu.** `appliquerGain` n'incrémentait
+  que les stats déjà présentes : sur un build sans objet de ténacité, le fragment de
+  ténacité n'existait tout simplement pas. Exactement la même fuite que celle décrite
+  ci-dessous, à un autre étage.
+
 ### Le modèle ne parlait que de dégâts — par omission, pas par choix
 
 Reproche d'Enzo, et il était fondé : tout convergeait vers « combien ce build

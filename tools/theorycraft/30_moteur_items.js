@@ -233,12 +233,19 @@ function coupsAImpact(p, cible, options = {}) {
    totaux sont renvoyés à l'appelant, qui les applique une seule fois au vrai profil —
    une seule voie d'application, donc un seul endroit où se tromper. */
 function appliquerGain(p, stat, v) {
+  /* Stats DÉRIVÉES : on incrémente le bonus brut, pas la valeur calculée. Ajouter
+     « +10 % » à une vitesse d'attaque de 0,83 donnerait 10,83 attaques par seconde. */
+  if (stat === 'vitesseAttaque') { p.bonusVitesseAttaque = (p.bonusVitesseAttaque || 0) + v; return; }
   if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
   else if (stat === 'ap') p.ap += v;
   else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
   else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }
   else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }
-  else if (p[stat] != null) p[stat] += v;
+  /* `|| 0` et non `if (p[stat] != null)` : une rune peut apporter une stat qu'AUCUN
+     objet du build ne porte (vitesse de déplacement en %, ténacité, vol de vie). La
+     version prudente laissait alors tomber le gain sans un mot — c'est exactement la
+     fuite qu'on vient de boucher dans `profil()`. */
+  else p[stat] = (p[stat] || 0) + v;
 }
 
 function statsAccordees(profilInitial) {

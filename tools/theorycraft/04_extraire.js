@@ -56,7 +56,15 @@ function statsDeBase(rec) {
     /* Multiplicateur de coup critique. Il vaut 2 pour presque tout le monde, mais
        certains champions l'ont réduit en compensation d'un kit : le lire évite de
        coder en dur une valeur fausse sur ces cas-là. */
-    critMult:  g('critDamageMultiplier')
+    critMult:  g('critDamageMultiplier'),
+    /* Type ADAPTATIF du champion. La force adaptative des runes accorde 1 puissance OU
+       0,6 dégât d'attaque, selon la plus haute des deux stats bonus — et, à ÉGALITÉ,
+       selon ce type-ci. L'égalité n'est pas un cas d'école : elle vaut à chaque niveau 1,
+       où les deux stats bonus sont nulles.
+       Plutôt que de deviner par la couleur des sorts, on lit la clé du fichier :
+       `mAdaptiveForceToAbilityPowerWeight` vaut 1 sur 37 champions du panel, et est
+       absente (donc 0) sur les 53 autres. Aucune valeur intermédiaire. */
+    adaptatifAP: g('mAdaptiveForceToAbilityPowerWeight') === 1
   };
 }
 
