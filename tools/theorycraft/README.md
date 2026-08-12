@@ -449,6 +449,51 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Le modèle ne parlait que de dégâts — par omission, pas par choix
+
+Reproche d'Enzo, et il était fondé : tout convergeait vers « combien ce build
+inflige-t-il ? », alors que sur la plupart des postes ce n'est pas le critère principal.
+Un support choisit sur la ténacité, les soins et la vitesse de déplacement ; un tank sur
+les PV effectifs face au profil de dégâts d'en face.
+
+La cause était mécanique : **dix familles de statistiques étaient extraites des objets,
+vérifiées, testées… puis abandonnées** dans `profil()`, qui ne recopiait qu'une liste
+fixe de champs. Vitesse de déplacement, vol de vie, omnivampirisme, soins et boucliers,
+ténacité, résistance aux ralentissements, quatre régénérations. Un objet défensif
+n'avait aucun moyen de se distinguer d'un autre.
+
+`profil()` recopie désormais **toute** stat extraite qui n'a pas de champ dédié, et
+`34_modele_survie.js` apporte les axes manquants.
+
+**PV effectifs** — le seul terrain commun entre un objet de PV et un objet de
+résistance. Dérivés de `multiplicateur()` plutôt que réécrits : une formule utilisée
+deux fois ne peut pas diverger d'elle-même, et le cas des résistances négatives reste
+traité. ⚠ Le mixte est la moyenne **harmonique** des deux (c'est la moyenne des dégâts
+*reçus* qui compte) : la moyenne arithmétique donnerait 10 080 là où la survie réelle
+vaut 8 972, et l'écart grandit avec la différence armure/RM — donc précisément sur les
+tanks.
+
+**Ténacité** — j'ai d'abord additionné : Sandales de Mercure (30 %) + Gage de Sterak
+(20 %) donnaient 50 % au lieu de 44 %. Une réduction qui s'additionne finit par
+atteindre 100 %, ce qu'aucune réduction du jeu ne fait. Elles rejoignent les
+pénétrations dans `MULTIPLICATIVES`. ⚠ La ténacité ne touche **pas** les projections,
+la somnolence, la myopie, la stase ni la suppression : la fiche les nomme.
+
+**Vitesse de déplacement** — plafond progressif officiel, trois régimes dont les bornes
+se raccordent exactement (415 × 0,8 + 83 = 415 ; 490 × 0,8 + 83 = 490 × 0,5 + 230). Au
+delà de 490, un point brut n'en vaut plus qu'un demi : sans ce plafond, un quatrième
+objet de vitesse paraîtrait rapporter autant que le premier.
+
+**Soins et drain** — trois canaux qu'il ne faut pas confondre : le vol de vie ne porte
+que sur les attaques de base, l'omnivampirisme sur tout, l'efficacité des soins et
+boucliers amplifie ce que le champion *produit*. Les additionner donnerait 150/s là où
+le vrai chiffre est 90. Au passage, les calculs de genre « soin », extraits pour les
+90 champions depuis le début, servent enfin.
+
+`ficheBuild()` renvoie les cinq axes côte à côte — offensif, défensif, utilitaire,
+soutien, passifs — sans en privilégier un. Le meilleur build en dégâts n'est presque
+jamais le meilleur build.
+
 ### Réduire une résistance n'est pas la pénétrer
 
 Cinquième catégorie. Le Couperet noir était écarté au motif qu'il « agit sur la

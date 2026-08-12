@@ -58,16 +58,23 @@ function statsChampion(id, niveau) {
 const ADDITIVES = ['ad', 'ap', 'pv', 'mana', 'armure', 'rm', 'accel', 'letalite',
                    'penMagiquePlat', 'penArmurePlate', 'vdPlate', 'portee',
                    'crit', 'degatsCrit', 'vitesseAttaque', 'vd', 'volVie', 'omnivamp',
-                   'soinsEtBoucliers', 'regenPV', 'regenMana', 'tenacite', 'resistRalent'];
+                   'soinsEtBoucliers', 'regenPV', 'regenMana'];
 
 /* Les pénétrations en POURCENTAGE ne s'additionnent pas : elles se multiplient
    (deux fois 20 % laissent 0,8 × 0,8 = 64 % de la résistance, pas 60 %). Additionner
    surestimerait les builds à deux objets de pénétration — précisément ceux qu'on veut
    comparer. */
-const MULTIPLICATIVES = ['penArmure', 'penMagique'];
+/* La TÉNACITÉ et la résistance aux ralentissements suivent la même règle, et j'ai
+   d'abord fait l'erreur de les additionner : Sandales de Mercure (30 %) + Gage de
+   Sterak (20 %) donnaient 50 % de réduction là où le jeu en applique 44 %
+   (1 − 0,7 × 0,8). Une réduction qui s'additionne finirait par atteindre 100 %, ce
+   qu'aucune réduction du jeu ne fait. */
+const MULTIPLICATIVES = ['penArmure', 'penMagique', 'tenacite', 'resistRalent'];
 
 function statsObjets(ids) {
-  const total = {}; const restant = { penArmure: 1, penMagique: 1 };
+  const total = {};
+  // Un « restant » par stat multiplicative, sinon la composition part sur NaN
+  const restant = {}; MULTIPLICATIVES.forEach(k => { restant[k] = 1; });
   const vus = new Set();
   const refuses = [];
   (ids || []).forEach(id => {
@@ -83,6 +90,28 @@ function statsObjets(ids) {
   });
   MULTIPLICATIVES.forEach(k => { total[k] = Math.round((1 - restant[k]) * 100000) / 100000; });
   return { stats: total, refuses, objets: [...vus] };
+}
+
+/* Vitesse de déplacement. Comme la vitesse d'attaque, elle a sa formule propre, et
+   surtout un PLAFOND PROGRESSIF que rien d'autre dans le jeu ne possède :
+     brut ≤ 415       → brut
+     415 < brut ≤ 490 → brut × 0,8 + 83
+     brut > 490       → brut × 0,5 + 230
+     brut < 220       → 110 + brut × 0,5
+   Les bornes se raccordent exactement (415 × 0,8 + 83 = 415 ; 490 × 0,8 + 83 = 475 =
+   490 × 0,5 + 230), ce qui est le meilleur contrôle qu'on puisse en faire.
+
+   Ignorer ce plafond ferait croire qu'un quatrième objet de vitesse rapporte autant que
+   le premier : au-delà de 490, un point brut n'en vaut plus qu'un demi.
+
+   Ordre officiel : bonus plats d'abord, puis somme des pourcentages appliquée au total. */
+function vitesseDeplacement(base, plat = 0, pourcent = 0) {
+  const brut = (base + plat) * (1 + pourcent);
+  if (brut > 490) return brut * 0.5 + 230;
+  if (brut > 415) return brut * 0.8 + 83;
+  if (brut >= 220) return brut;
+  if (brut >= 0) return 110 + brut * 0.5;
+  return 110 + brut * 0.01;
 }
 
 /* ── 3. Profil complet : champion + niveau + objets ─────────────────────────────── */
@@ -130,6 +159,32 @@ function profil(id, niveau, idsObjets, extras = {}) {
     or: (objets || []).reduce((s, i) => s + (itemParId[i] ? itemParId[i].prix : 0), 0)
   };
   p.adTotal = p.adBase + p.adBonus;
+
+  /* TOUTE stat extraite qui n'a pas de champ dédié ci-dessus est reportée telle quelle.
+
+     Sans cette boucle, dix familles de statistiques étaient extraites des objets,
+     vérifiées, testées… puis abandonnées ici en silence : vitesse de déplacement, vol
+     de vie, omnivampirisme, soins et boucliers, ténacité, résistance aux ralentissements
+     et les quatre régénérations. Le modèle ne parlait que de dégâts non par choix, mais
+     par omission — un objet de soutien ou un objet défensif n'avait littéralement aucun
+     moyen de se distinguer d'un autre.
+
+     La liste explicite ci-dessus reste nécessaire (renommages, formules propres) ; cette
+     boucle garantit seulement qu'AUCUNE stat ne se perd sans qu'on l'ait décidé. */
+  const DEJA = new Set(['ad', 'pv', 'mana', 'armure', 'rm', 'accel', 'letalite', 'crit',
+                        'degatsCrit', 'vitesseAttaque', 'ap',
+                        'penArmure', 'penMagique', 'penMagiquePlat']);
+  Object.keys(it).forEach(k => { if (!DEJA.has(k)) p[k] = it[k] + (extras[k] || 0); });
+  Object.keys(extras).forEach(k => {
+    if (DEJA.has(k) || it[k] != null || typeof extras[k] !== 'number') return;
+    p[k] = extras[k];
+  });
+
+  /* Vitesse de déplacement, avec son plafond progressif — une formule à part, comme la
+     vitesse d'attaque. Sans elle, les 16 objets à vitesse de déplacement ne servaient
+     à rien dans le modèle. */
+  p.ms = vitesseDeplacement(nu.ms, p.vdPlate || 0, p.vd || 0);
+  p.msBrute = nu.ms + (p.vdPlate || 0);
 
   /* Stats accordées par les passifs d'objet (Manamune : 2 % du mana max en dégâts
      d'attaque ; Gage de Sterak : 50 % de l'AD de base). Elles modifient le profil
@@ -427,7 +482,8 @@ function cibleChampion(id, niveau, objets) {
            pvMax: p.pvMax, pvBonus: p.pvBonus, pvActuels: p.pvMax };
 }
 
-module.exports = { croissance, vitesseAttaque, statsChampion, statsObjets, profil,
+module.exports = { croissance, vitesseAttaque, vitesseDeplacement,
+                   statsChampion, statsObjets, profil,
                    resistEffective, multiplicateur, mitiger, evaluerCalcul,
                    degatsAttaque, degatsSurFenetre, rechargeReelle, cibleChampion,
                    itemParId, champions };
