@@ -42,10 +42,14 @@ node 23_rapport_items.js 3153 Liandry   # rendu lisible, pour confronter à la b
 node 24_test_items.js        # 30 vérifications contre deux sources indépendantes
 node 25_couverture_items.js  # ce qui manque encore, objet par objet
 
-# Modèle de dégâts et comparaison
-node 27_test_modele.js       # 45 vérifications, toutes calculables au crayon
+# Modèle de dégâts, passifs et comparaison
+node 27_test_modele.js       # 47 vérifications, toutes calculables au crayon
+node 31_test_passifs.js      # 24 vérifications des passifs d'objet
+node 29_sonde_statmap.js     # re-dérive la table mStat depuis les données
 node 28_comparer.js Jinx 18 "3031,3006,3094,3072" "3153,3006,3085,3036" Rumble
 ```
+
+**164 vérifications** en tout : 63 runes, 30 objets, 47 modèle, 24 passifs.
 
 `03_resolveur.js` est le cœur : il aplatit l'arbre de formule en une somme de termes
 `{ stat, mode, valeur }`. **Il ne devine jamais** — une part de type inconnu est
@@ -261,14 +265,56 @@ Quatre formules du jeu, **toutes vérifiées sur le wiki avant d'être codées**
   Jinx est **magique** malgré son ratio de dégâts d'attaque. 353 sorts sur 359 typés ;
   un sort à deux types est marqué « mixte » et sa mitigation n'est pas appliquée.
 
-### Limite connue, à traiter ensuite
+## Passifs d'objet (`items_modeles.js` + `30_moteur_items.js`)
 
-Les **passifs d'objet ne sont pas encore appliqués aux dégâts**. Leurs valeurs sont
-extraites et vérifiées (la Lame du roi déchu porte bien ses 9 % des PV max en mêlée,
-6 % à distance), mais leur *déclenchement* n'est pas modélisé : il reste à faire pour
-les objets ce que `runes_modeles.js` fait pour les runes. Le comparateur le dit
-explicitement et nomme les objets concernés — un build à coup-à-l'impact y est
-**sous-estimé**.
+Même séparation que pour les runes : le **comportement** est encodé à la main, les
+**nombres** restent lus dans `items.json`. Un patch qui fait passer la Dent de Nashor
+de 15 à 20 se propage tout seul.
+
+Ce que ça change : la Lame du roi déchu ajoute 83 dégâts subis par attaque sur une
+cible à pleine vie, ce qui **renverse un verdict** — le build à pénétration passe de
++1,9 % à +23,8 % sur une fenêtre de 3 secondes.
+
+| | |
+|---|---|
+| objets finis (≥ 1 800 po) | 105 |
+| dont portant un passif chiffré | 102 |
+| **appliqués aux dégâts** | **15** |
+| écartés avec un motif | 4 |
+| pas encore modélisés | 83 |
+
+Les 83 restants ne sont pas approximés : `evaluerPassif` renvoie « non modélisé », et
+le comparateur les nomme. **Un build est donc sous-estimé, jamais surestimé.**
+
+### Pièges des passifs
+
+- **Le pourcentage et sa base ne sont pas dans le même calcul.** La Lame du roi déchu
+  stocke « 0,09 » dans `MeleeItemCalcValue` et la multiplication par les PV de la cible
+  dans un calcul séparé. Lire le premier seul donnait **0,06 point de dégât au lieu de
+  145** — une erreur d'un facteur 2400, silencieuse et parfaitement plausible à l'œil.
+  D'où le champ `surCible`, déclaré objet par objet.
+- **PV actuels, pas PV max.** Le wiki dit « current health », et la description
+  française dit « PV **actuels** de l'ennemi ». Contre une cible à 30 % de vie l'effet
+  chute de 70 % : confondre les deux triple le résultat.
+- **Trois déclencheurs, trois traitements.** Seuls les passifs « à chaque attaque »
+  entrent dans les dégâts par seconde. Un passif énergisé se déclenche à intervalle,
+  une lame enchantée dépend d'un sort lancé — les additionner à chaque coup les
+  surestimerait. Le comparateur les range dans un bucket distinct.
+- **Un « écarté » n'est pas un zéro.** L'Ouragan de Runaan ne change rien en cible
+  unique, ce qui n'est pas la même chose que « ne fait rien » : le moteur renvoie
+  `applique: false` avec un motif.
+
+### Le garde-fou anti-fantôme
+
+`SiphonDamage` est une clé du fichier de jeu qui ressemble à un effet vivant (40 → 103
+selon le niveau) mais **n'existe dans aucun objet actuel** — je l'avais rapportée comme
+réelle. Le test exige désormais que **tout passif modélisé porte un nom qui apparaît
+dans la boutique**. `SiphonDamage` n'en a pas : il aurait été bloqué.
+
+⚠ Le contrôle par les chiffres, lui, ne peut que **confirmer, jamais réfuter** : les
+gabarits du client ne sont pas résolus et 9 passifs sur 15 n'impriment aucune valeur
+(« inflige des dégâts physiques bonus », sans nombre). Les compter comme réussis serait
+se mentir — ils sont donc comptés à part.
 
 ## À refaire à chaque patch
 

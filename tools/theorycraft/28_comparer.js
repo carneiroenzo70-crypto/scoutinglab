@@ -10,6 +10,7 @@
 
 const M = require('./26_modele_degats');
 const { evaluerRune, parId: runeParId } = require('./14_moteur_runes');
+const I = require('./30_moteur_items');
 
 const [champ, nivArg, buildA, buildB, cibleArg, nivCibleArg] = process.argv.slice(2);
 if (!champ) {
@@ -100,13 +101,24 @@ function afficher(nom, ids) {
   /* Les attaques de base comptent séparément : sur une ADC elles pèsent plus que le
      combo, et un comparateur qui les oublie désigne le mauvais gagnant. */
   const aa = M.degatsAttaque(p, cible);
+  const oh = I.coupsAImpact(p, cible, { mitiger: M.mitiger });
   console.log('║');
   console.log('║  attaque de base  ' + String(Math.round(aa.parCoupBrut)).padStart(6) +
     ' brut  →  ' + String(Math.round(aa.parCoup)).padStart(6) + ' subis   ' +
     '(' + Math.round(p.crit * 100) + ' % crit, x' + aa.multiplicateurCritique + ')');
+  oh.lignes.forEach(l => console.log('║    + ' + l.objet.padEnd(24) +
+    String(Math.round(l.brut)).padStart(6) + ' brut  →  ' +
+    String(Math.round(l.subis)).padStart(6) + ' subis   (' + l.type + ', à l\'impact)'));
+  const parCoupTotal = aa.parCoup + oh.subis;
+  const dps = parCoupTotal * p.vitesseAttaque;
+  if (oh.lignes.length)
+    console.log('║    = ' + 'coup complet'.padEnd(24) + ' '.repeat(6) +
+      '          ' + String(Math.round(parCoupTotal)).padStart(6) + ' subis');
   console.log('║  ' + aa.vitesseAttaque.toFixed(2) + ' attaque/s  →  ' +
-    Math.round(aa.dps) + ' dégâts/s soutenus');
-  console.log('║  combo + 3 s d\'attaques : ' + Math.round(c.subis + aa.dps * 3) + ' subis');
+    Math.round(dps) + ' dégâts/s soutenus');
+  console.log('║  combo + 3 s d\'attaques : ' + Math.round(c.subis + dps * 3) + ' subis');
+  if (oh.refus.length) console.log('║  passif refusé : ' + oh.refus.join(' | '));
+  aa.dps = dps;                       // le comparateur travaille sur le coup complet
   if (c.refus.length) {
     console.log('║  non chiffré : ' + c.refus.length + ' calcul(s)');
     c.refus.slice(0, 4).forEach(r => console.log('║    · ' + r));
@@ -150,14 +162,40 @@ if (B) {
      bien ses 9 % des PV max), mais leur déclenchement n'est pas modélisé — il reste à
      faire pour les objets ce que `runes_modeles.js` fait pour les runes. Un build à
      coup-à-l'impact est donc SOUS-ESTIMÉ ici. */
-  const aPassif = [...A.p.objets, ...B.p.objets]
-    .filter(i => Object.keys((M.itemParId[i] || { calculs: {} }).calculs).length)
+  const tous = [...new Set([...A.p.objets, ...B.p.objets])];
+  const sansModele = tous.filter(i =>
+    Object.keys((M.itemParId[i] || { calculs: {} }).calculs).length && !I.MODELES[i])
     .map(i => M.itemParId[i].nom);
-  if (aPassif.length) {
-    console.log('\n   ⚠ Passifs d\'objet NON appliqués aux dégâts ci-dessus : ' +
-                [...new Set(aPassif)].join(', ') + '.');
-    console.log('     Leurs valeurs sont extraites et vérifiées, mais leur déclenchement');
-    console.log('     n\'est pas encore modélisé — ces builds sont donc sous-estimés.');
+  const ecartes = tous.filter(i => I.MODELES[i] && I.MODELES[i].nonApplique)
+    .map(i => M.itemParId[i].nom + ' (' + I.MODELES[i].nonApplique + ')');
+  if (sansModele.length) {
+    console.log('\n   ⚠ Passifs NON appliqués, faute de modèle : ' + sansModele.join(', ') + '.');
+    console.log('     Leurs valeurs sont extraites, leur déclenchement ne l\'est pas —');
+    console.log('     ces builds sont donc sous-estimés, jamais surestimés.');
+  }
+  if (ecartes.length) console.log('\n   Écartés à dessein : ' + ecartes.join(' ; ') + '.');
+  /* Modélisés MAIS hors du calcul : seuls les passifs « à chaque attaque » entrent dans
+     les dégâts par seconde. Un passif énergisé se déclenche à intervalle, un passif de
+     compétence dépend du sort lancé — les additionner à chaque coup les surestimerait.
+     Les ranger avec les passifs appliqués serait trompeur. */
+  const horsCalcul = tous.filter(i => {
+    const m = I.MODELES[i];
+    return m && !m.nonApplique && m.declencheur && m.declencheur.type !== 'coupAImpact';
+  }).map(i => M.itemParId[i].nom + ' (' + I.MODELES[i].declencheur.type + ')');
+  if (horsCalcul.length) {
+    console.log('\n   Modélisés mais HORS du calcul par attaque (déclenchement à ' +
+                'intervalle ou lié à un sort) :');
+    console.log('     ' + horsCalcul.join(', ') + '.');
+  }
+  /* Ce que le modèle laisse de côté sur les passifs bel et bien appliqués : chaque
+     entrée porte sa propre limite, et la taire donnerait une fausse complétude. */
+  const limites = tous.filter(i => {
+    const m = I.MODELES[i];
+    return m && m.note && m.declencheur && m.declencheur.type === 'coupAImpact';
+  }).map(i => M.itemParId[i].nom + ' — ' + I.MODELES[i].note);
+  if (limites.length) {
+    console.log('\n   Limites des passifs réellement appliqués :');
+    limites.forEach(l => console.log('     · ' + l));
   }
 }
 

@@ -1,0 +1,160 @@
+/* Modèles de comportement des passifs d'objet.
+
+   Même séparation que `runes_modeles.js`, et pour la même raison : ici on décrit
+   UNIQUEMENT le comportement (quand ça se déclenche, sur quoi porte le pourcentage,
+   quel type de dégâts). Les NOMBRES restent lus dans `items.json`, extrait du fichier
+   de jeu. Un patch qui fait passer la Dent de Nashor de 15 à 20 se propage donc tout
+   seul ; seuls les remaniements de mécanique demandent une reprise.
+
+   Ce fichier n'invente RIEN : chaque entrée pointe une clé existante du fichier de
+   jeu. Un objet sans entrée ici n'est pas appliqué aux dégâts — il est compté comme
+   non modélisé, pas approximé. C'est la leçon de `SiphonDamage`, une clé résiduelle
+   du fichier que j'avais prise pour un effet vivant : ne servir que ce qu'on a
+   délibérément vérifié.
+
+   Champs :
+     nom          libellé du passif tel qu'il apparaît en jeu
+     effet        'degats' | 'soin' | 'bouclier'
+     typeDegats   'physique' | 'magique' | 'brut'
+     declencheur  { type: 'coupAImpact' }        à chaque attaque de base
+                  { type: 'apresCompetence', recharge: 'clé' }   lame enchantée
+                  { type: 'competence' }         à chaque compétence blessante
+                  { type: 'periodique', ... }    brûlure
+     calcul       nom du calcul résolu dans items.json (prioritaire)
+     valeur       à défaut, clé de `valeurs` (nombre simple)
+     surCible     true = le pourcentage porte sur la CIBLE, pas sur le porteur
+     distance     { facteur: 'clé' } ou { calcul: 'autreCalcul' } — version à distance
+     plafond      { cle: 'clé', contre: 'monstres' }
+     note         ce que le modèle NE couvre pas, dit explicitement                    */
+
+module.exports = {
+
+  /* ── Coups à l'impact : s'ajoutent à CHAQUE attaque de base ─────────────────── */
+
+  3153: { // Lame du roi déchu — Fil de brume
+    nom: 'Fil de brume', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'coupAImpact' },
+    calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
+    /* ⚠ Le pourcentage porte sur les PV ACTUELS de la CIBLE (wiki : « current
+       health »), pas sur les PV max du porteur. Le confondre change tout : contre
+       une cible à 30 % de vie, l'effet est trois fois plus faible. */
+    surCible: 'pvActuels',
+    plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },
+    note: 'le ralentissement cumulable (Ombres griffues) n\'est pas modélisé'
+  },
+
+  3115: { // Dent de Nashor — Morsure d'Icathia
+    nom: 'Morsure d\'Icathia', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'coupAImpact' }, calcul: 'TotalOnHitDamage'
+  },
+
+  3091: { // Au bout du rouleau — Conflit
+    nom: 'Conflit', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage'
+  },
+
+  3302: { // Terminus — Ombre
+    nom: 'Ombre', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage',
+    note: 'Juxtaposition (alternance lumière/ténèbres, résistances et pénétration ' +
+          'cumulables) n\'est pas modélisée'
+  },
+
+  3124: { // Lame enragée de Guinsoo — Courroux
+    nom: 'Courroux', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'coupAImpact' }, valeur: 'OnHitDamage',
+    note: 'Frappe furieuse (cumuls de vitesse d\'attaque, puis coups dédoublés) ' +
+          'n\'est pas modélisée — l\'objet est donc sous-estimé'
+  },
+
+  3748: { // Hydre titanesque — Fendoir
+    nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamageCalc',
+    /* Le facteur « à distance » est porté par le calcul lui-même (mRangedMultiplier),
+       déjà résolu à l'extraction : moitié de l'effet. Vérifié sur le wiki :
+       1 % en mêlée, 0,5 % à distance. */
+    note: 'les dégâts de cône (3 % des PV max) ne touchent que des cibles ' +
+          'supplémentaires : hors du calcul en cible unique'
+  },
+
+  6698: { // Hydre profane — Fendoir
+    nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'coupAImpact' }, calcul: 'CleaveDamage',
+    note: 'Balayage hérétique (l\'actif) n\'est pas modélisé'
+  },
+
+  3181: { // Brise-coques — Pilote
+    nom: 'Pilote', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'toutesNAttaques', n: 5 }, calcul: 'MaxStackDamage',
+    distance: { calculValeur: 'RangedSkipperADRatio' },
+    note: 'les dégâts contre les structures sont ignorés'
+  },
+
+  /* ── Lame enchantée : la prochaine attaque APRÈS une compétence ─────────────── */
+
+  3100: { // Fléau de liche — Lame enchantée
+    nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
+    calcul: 'SpellbladeDamage'
+  },
+
+  6662: { // Gantelet givrant — Lame enchantée
+    nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
+    calcul: 'SpellbladeDamage',
+    note: 'le champ de ralentissement n\'est pas modélisé'
+  },
+
+  /* ── Attaques énergisées : à intervalle, pas à chaque coup ──────────────────── */
+
+  3094: { // Canon ultrarapide — Sniper
+    nom: 'Sniper', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'energise' }, valeur: 'BonusDamage',
+    note: 'l\'énergie se charge en se déplaçant et en attaquant : le rythme réel ' +
+          'dépend du déplacement, non modélisé'
+  },
+
+  3087: { // Poignard de Statikk — Étincelle électrique
+    nom: 'Étincelle électrique', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'energise' }, valeur: 'ChainDamage',
+    note: 'la chaîne touche plusieurs cibles : ici seule la première est comptée'
+  },
+
+  /* ── Brûlures et effets périodiques ─────────────────────────────────────────── */
+
+  6653: { // Tourment de Liandry — Souffrance
+    nom: 'Souffrance', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'periodique', duree: 'BurnDuration' },
+    valeur: 'BurnPercentHealthDamage', surCible: 'pvMax',
+    parSeconde: true,
+    plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },
+    note: 'l\'amplification progressive (jusqu\'à +6 % en combat prolongé) n\'est ' +
+          'pas appliquée ici'
+  },
+
+  2503: { // Torche noire — Flamme funèbre
+    nom: 'Flamme funèbre', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'periodique', duree: 'BurnDuration' },
+    calcul: 'BurnDamagePerSecondCalc', parSeconde: true,
+    note: 'Feu noir (+4 % de puissance par champion brûlé) n\'est pas modélisé'
+  },
+
+  /* ── Dégâts liés aux compétences ────────────────────────────────────────────── */
+
+  6655: { // Écho de Luden — Écho
+    nom: 'Écho', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'competence', recharge: 'Cooldown' },
+    calcul: 'SingleTargetMax',
+    note: 'valeur en cible unique (les 6 échos concentrés) ; en combat groupé ' +
+          'ils se répartissent'
+  },
+
+  /* ── Objets à passif défensif ou utilitaire, sans dégâts à ajouter ──────────── */
+
+  3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
+  3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
+  3071: { nonApplique: 'réduction d\'armure cumulable — effet réel, mais qui agit ' +
+                       'sur la mitigation, pas comme dégâts ajoutés' },
+  3085: { nonApplique: 'les projectiles touchent des cibles SUPPLÉMENTAIRES : ' +
+                       'aucun gain en cible unique' }
+};
