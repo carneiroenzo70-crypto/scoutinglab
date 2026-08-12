@@ -293,11 +293,25 @@ function multiplicateur(resistEff) {
 
    L'amplification s'applique AVANT la mitigation, et se cumule additivement entre
    sources — l'inverse des pénétrations en pourcentage (cf. `amplification()`). */
-function amplifier(brut, type, cible, attaquant, source) {
-  if (!attaquant || !(attaquant.objets || []).length) return { brut, amp: null };
+function amplifier(brut, type, cible, attaquant, source, ctx = {}) {
+  if (!attaquant) return { brut, amp: null };
   const { amplification } = require('./30_moteur_items');
-  const a = amplification(attaquant, cible, type, source);
-  return { brut: brut * a.facteur, amp: a };
+  const { amplificationDeRunes } = require('./36_runes_profil');
+  const rien = { total: 0, detail: [], refus: [] };
+
+  const objets = (attaquant.objets || []).length
+    ? amplification(attaquant, cible, type, source, ctx) : rien;
+  /* Les amplifications de RUNES tombent dans le MÊME seau additif que celles des
+     objets : le wiki est explicite, et c'est l'inverse des pénétrations. Coup de grâce
+     (8 %) avec une Lance de Shojin à 4 cumuls (12 %) donnent +20 %, pas +21 %. */
+  const runes = (attaquant.runes || []).length
+    ? amplificationDeRunes(attaquant, cible, type, source, ctx) : rien;
+
+  const total = objets.total + runes.total;
+  const amp = { facteur: 1 + total, total,
+                detail: objets.detail.concat(runes.detail),
+                refus: objets.refus.concat(runes.refus) };
+  return { brut: brut * amp.facteur, amp };
 }
 
 const AUCUNE_REDUCTION = { armurePct: 0, rmPct: 0, armurePlate: 0, rmPlate: 0, detail: [], refus: [] };
@@ -307,8 +321,12 @@ function reductionsDeLAttaquant(attaquant) {
   return reductionResistances(attaquant, { ultimeLance: attaquant.ultimeLance });
 }
 
-function mitiger(brut, type, cible, attaquant, source) {
-  const { brut: ampli, amp } = amplifier(brut, type, cible, attaquant, source);
+/* `ctx` porte ce que ni le type ni la source ne disent : la TOUCHE lancée (l'Arcaniste
+   axiomatique n'amplifie que l'ultime), la part de PV du porteur (Baroud d'honneur) et
+   l'ouverture de combat (Premier coup). Ces trois-là sont indéterminables autrement, et
+   sans eux les runes concernées se refusent au lieu de se supposer actives. */
+function mitiger(brut, type, cible, attaquant, source, ctx = {}) {
+  const { brut: ampli, amp } = amplifier(brut, type, cible, attaquant, source, ctx);
   if (type === 'brut')
     return { subis: ampli, resistEff: 0, multiplicateur: 1, amplification: amp };
   const physique = type === 'physique';
@@ -356,7 +374,7 @@ function valeurTerme(t, p) {
 
 /* Évalue un calcul nommé d'un sort. Renvoie null plutôt qu'un chiffre approché dès
    qu'un terme n'est pas modélisable : un calculateur qui invente est pire qu'absent. */
-function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible) {
+function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible, ctx = {}) {
   const c = champions[champId];
   const sort = c && c.sorts[touche];
   const calc = sort && sort.calculs[nomCalcul];
@@ -380,13 +398,18 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible) {
              note: calc.genre !== 'degats' ? 'ce calcul n\'est pas des dégâts'
                    : 'type de dégâts non tranché (' + (type || 'absent') + ') : mitigation non appliquée' };
   }
-  const m = cible ? mitiger(brut, type, cible, p, 'competence') : null;
+  // La touche voyage jusqu'à l'amplification : l'Arcaniste axiomatique ne vaut que sur R
+  const m = cible ? mitiger(brut, type, cible, p, 'competence', { touche, ...ctx }) : null;
   return {
     ok: true, genre: 'degats', type,
     brut: Math.round(brut * 100) / 100,
     subis: m ? Math.round(m.subis * 100) / 100 : null,
     resistEff: m ? Math.round(m.resistEff * 100) / 100 : null,
-    amplification: m && m.amplification && m.amplification.total ? m.amplification : null,
+    /* On remonte l'amplification dès qu'elle a quelque chose à dire — un total NON NUL
+       ou un REFUS. Ne la remonter que sur un total non nul cachait précisément le cas
+       le plus utile : « Premier coup n'a pas été compté, et voici pourquoi ». */
+    amplification: m && m.amplification &&
+                   (m.amplification.total || m.amplification.refus.length) ? m.amplification : null,
     detail
   };
 }

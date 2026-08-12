@@ -475,6 +475,35 @@ du champion qui tranche. Il est **lu dans le fichier de jeu**
 sur les 53 autres) et non déduit de la couleur des sorts, qui se serait trompée sur Jinx
 comme sur Kayle.
 
+**Amplifications de runes** — elles tombent dans le **même seau additif** que celles des
+objets. Coup de grâce (8 %) avec une Lance de Shojin à 4 cumuls (6 % à distance) donnent
++14 %, pas +14,48 %.
+
+| Rune | Amplification | Condition |
+|---|---|---|
+| Coup de grâce | 8 % | cible **sous 40 %** de ses PV |
+| Abattage | 8 % | cible **au-dessus de 60 %** |
+| Baroud d'honneur | 5 % → 11 % | **porteur** sous 60 %, maximum à 30 % |
+| Premier coup | 7 % | ouverture de combat (0,25 s) |
+| Arcaniste axiomatique | 12 % | **dégâts d'ultime uniquement** |
+
+Aucune ne s'applique inconditionnellement, et chacune est traitée comme la Flamme-ombre
+côté objets : condition remplie → le pourcentage ; non remplie → **zéro** ; invérifiable
+→ **refus avec son motif**. Coup de grâce et Abattage sont exclusifs par construction —
+la meilleure preuve que la condition est réellement évaluée.
+
+Trois pièges méritent d'être notés :
+
+- **Arcaniste axiomatique n'amplifie que l'ultime.** L'étendre à tout aurait multiplié
+  par près de quatre le champ d'une rune qui ne touche qu'un sort. `mitiger()` reçoit
+  donc la **touche** lancée, en plus du type et de la source.
+- **Baroud d'honneur** : le moteur de runes affiche 11 %, une valeur d'étalage. La servir
+  telle quelle offrirait le maximum en permanence. La rampe est calculée depuis les PV du
+  porteur, et vaut **zéro** à pleine vie.
+- **Abattage porte des clés résiduelles** d'une version antérieure de la rune
+  (`MaxBonusDamagePercent` = 15 %, `MinHealthDifference`). Les servir aurait donné 15 %
+  au lieu de 8 % : la leçon de `SiphonDamage`, transposée aux runes.
+
 **Ordre** — les runes s'appliquent avant les passifs qui les lisent : Rabadon amplifie la
 force adaptative, Jak'Sho les résistances d'Inébranlable, l'Armure sanguine les PV de
 Surcroissance.

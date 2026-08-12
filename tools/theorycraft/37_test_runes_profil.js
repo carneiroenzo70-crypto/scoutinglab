@@ -122,5 +122,87 @@ const pvRune = R.evaluerRune(5011, {}).valeur;
 verifie('l\'Armure sanguine convertit AUSSI les PV venus des runes',
         avecR.adBonus - sansR.adBonus, pvRune * 0.025, 0.01);
 
+console.log('\n── Amplifications de runes : même seau additif que les objets');
+const val = (id, cle) => R.parId[id].valeurs[cle];
+/* `evaluerCalcul` ne remonte l'amplification que si elle a quelque chose à dire — un
+   total non nul ou un refus. Un « rien du tout » est donc un `null` légitime. */
+const amp = r => r.amplification || { total: 0, detail: [], refus: [] };
+const cible = M.cibleChampion('Sion', 18, [3068]);
+const cibleBasse = Object.assign({}, cible, { pvActuels: cible.pvMax * 0.3 });
+const ryze = M.profil('Ryze', 18, [], { fenetre: 10, runes: [8014, 8017] });
+const nomQ = Object.keys(M.champions.Ryze.sorts.Q.calculs)
+  .find(n => M.champions.Ryze.sorts.Q.calculs[n].genre === 'degats');
+
+/* Coup de grâce (sous 40 %) et Abattage (au-dessus de 60 %) sont exclusifs par
+   construction : aucune cible ne peut déclencher les deux. C'est la meilleure preuve
+   que la condition est réellement évaluée, et non contournée. */
+const hautePV = amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, ryze, cible));
+const bassePV = amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, ryze, cibleBasse));
+vrai('contre une cible à pleine vie, seul Abattage s\'applique',
+     hautePV.detail.length === 1 && /Abattage/.test(hautePV.detail[0].rune));
+vrai('  et sous 40 %, seul Coup de grâce',
+     bassePV.detail.length === 1 && /Coup de grâce/.test(bassePV.detail[0].rune));
+verifie('  chacun vaut bien 8 %', hautePV.total, val(8017, 'BonusPercentDamage'));
+
+/* LE point de composition : une rune et un objet s'additionnent, ils ne se multiplient
+   pas. La différence est petite et donc invisible — c'est précisément pour ça qu'elle
+   mérite un test. */
+const mixte = M.profil('Ryze', 18, [3161], { fenetre: 10, runes: [8017] });
+const ampMixte = amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, mixte, cible));
+const shojin = 0.03 * 4 * 0.5;                       // 3 % × 4 cumuls, moitié à distance
+verifie('rune + objet s\'ADDITIONNENT', ampMixte.total, 0.08 + shojin, 0.0001);
+vrai('  et ne se multiplient pas',
+     Math.abs(ampMixte.facteur - 1.08 * (1 + shojin)) > 0.004,
+     'additif ' + Math.round(ampMixte.facteur * 10000) / 10000 +
+     ' contre multiplicatif ' + Math.round(1.08 * (1 + shojin) * 10000) / 10000);
+
+/* Arcaniste axiomatique n'amplifie QUE l'ultime. L'étendre à tout multiplierait par
+   près de quatre le champ d'une rune qui ne touche qu'un sort. */
+const syndra = M.profil('Syndra', 18, [], { fenetre: 10, runes: [8224] });
+const calcDe = t => Object.keys(M.champions.Syndra.sorts[t].calculs)
+  .find(n => M.champions.Syndra.sorts[t].calculs[n].genre === 'degats');
+const ampR = amp(M.evaluerCalcul('Syndra', 'R', calcDe('R'), 3, syndra, cible));
+const ampQ = amp(M.evaluerCalcul('Syndra', 'Q', calcDe('Q'), 5, syndra, cible));
+verifie('l\'Arcaniste axiomatique amplifie l\'ultime', ampR.total, val(8224, 'DamageAmp'));
+verifie('  et rien d\'autre : le Q n\'est pas touché', ampQ.total, 0);
+verifie('  ni les attaques de base',
+        M.degatsAttaque(syndra, cible).parCoup,
+        M.degatsAttaque(M.profil('Syndra', 18, []), cible).parCoup, 0.01);
+
+/* Baroud d'honneur : de 5 % à 11 % selon les PV MANQUANTS du porteur. Le moteur de
+   runes affiche 11 % — une valeur d'étalage. La servir telle quelle offrirait le
+   maximum en permanence à qui prend la rune. */
+const baroud = M.profil('Ryze', 18, [], { fenetre: 10, runes: [8299] });
+const ampAt = f => amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, baroud, cible, { partPvPorteur: f })).total;
+verifie('à pleine vie, Baroud d\'honneur ne donne rien', ampAt(1), 0);
+/* La rampe est CONTINUE entre 60 % et 30 % : à 59 % de PV on obtient 5,2 %, pas 5 %.
+   C'est à la borne exacte que le minimum s'observe — et juste au-dessus, le saut à
+   zéro, qui est la façon dont la rune fonctionne. */
+verifie('à 60 % pile, Baroud d\'honneur donne son minimum', ampAt(0.6),
+        val(8299, 'MinBonusDamagePercent'), 0.0001);
+verifie('  et juste au-dessus, plus rien', ampAt(0.601), 0);
+verifie('  à 40 %, une valeur interpolée', ampAt(0.4), 0.05 + 0.06 * (0.6 - 0.4) / 0.3, 0.0001);
+verifie('  à 30 % et en dessous, son maximum', ampAt(0.2), val(8299, 'MaxBonusDamagePercent'));
+vrai('  sans PV du porteur, le porteur est supposé à pleine vie — donc zéro',
+     amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, baroud, cible)).total === 0);
+
+/* Premier coup dépend d'une fenêtre de 0,25 s au début du combat : invérifiable ici,
+   donc REFUSÉE avec son motif plutôt que servie. */
+const premier = M.profil('Ryze', 18, [], { fenetre: 10, runes: [8369] });
+const sansOuv = amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, premier, cible));
+verifie('sans ouverture déclarée, Premier coup n\'apporte rien', sansOuv.total, 0);
+vrai('  et le refus porte son motif', /Premier coup/.test(sansOuv.refus.join(' ')),
+     sansOuv.refus.join(' '));
+verifie('déclarée, elle vaut 7 %',
+        amp(M.evaluerCalcul('Ryze', 'Q', nomQ, 5, premier, cible, { ouvertureCombat: true })).total,
+        val(8369, 'DamageAmp'));
+
+/* Abattage : le fichier porte des clés RÉSIDUELLES d'une version antérieure
+   (Min/MaxBonusDamagePercent, MinHealthDifference). Les servir donnerait 15 % au lieu
+   de 8 % — la leçon de `SiphonDamage`, transposée aux runes. */
+vrai('les clés résiduelles d\'Abattage ne sont pas servies',
+     hautePV.total !== val(8017, 'MaxBonusDamagePercent'),
+     'servi ' + hautePV.total + ', la clé résiduelle vaudrait ' + val(8017, 'MaxBonusDamagePercent'));
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══\n');
 process.exit(ko ? 1 : 0);

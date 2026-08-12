@@ -120,4 +120,105 @@ function statsDeRunes(ids, profil, adaptatifAP, ctx = {}) {
   return { gains, detail, refus };
 }
 
-module.exports = { statsDeRunes, versAdaptatif, PERMANENTES, HORS_PROFIL };
+/* ── AMPLIFICATIONS DE RUNES ────────────────────────────────────────────────────
+   Elles rejoignent le MÊME seau additif que celles des objets — c'est la règle vérifiée
+   sur le wiki : « Modifiers to damage dealt now stack additively ». Coup de grâce (8 %)
+   et une Lance de Shojin à 4 cumuls (12 %) donnent +20 %, pas +21 %.
+
+   Cinq runes, et pas une seule qui s'applique inconditionnellement. Chacune est traitée
+   comme la Flamme-ombre l'a été côté objets : condition remplie → le pourcentage ;
+   condition non remplie → ZÉRO, dit comme tel ; condition invérifiable → REFUS avec son
+   motif. Jamais la valeur maximale « en attendant ».
+
+   `portee` reprend le vocabulaire des objets, avec une valeur de plus : 'ultime', qui
+   n'existe que pour les runes et impose de connaître la touche lancée. */
+const AMPLIS = {
+  8014: { // Coup de grâce
+    portee: 'tous', valeur: 'BonusPercentDamage',
+    seuilCible: { cle: 'EnemyHealthPercentageThreshold', sens: 'sous' },
+    quoi: 'cible sous 40 % de ses PV'
+  },
+  8017: { // Abattage
+    /* ⚠ Le fichier porte AUSSI `MinBonusDamagePercent`, `MaxBonusDamagePercent` et
+       `MinHealthDifference` : des résidus d'une version antérieure de la rune, qui
+       comparait les PV max des deux champions. La description actuelle ne parle que
+       d'un seuil de 60 % et de 8 %. On sert donc `BonusPercentDamage` — même leçon que
+       `SiphonDamage` : une clé présente dans le fichier n'est pas une clé vivante. */
+    portee: 'tous', valeur: 'BonusPercentDamage',
+    seuilCible: { cle: 'EnemyHealthPercentageThreshold', sens: 'au-dessus' },
+    quoi: 'cible au-dessus de 60 % de ses PV'
+  },
+  8299: { // Baroud d'honneur
+    /* De 5 % à 11 % selon les PV MANQUANTS DU PORTEUR : 5 % dès qu'on passe sous 60 %,
+       maximum à 30 %. Servir le maximum d'emblée — ce que fait le moteur de runes, qui
+       affiche une valeur d'étalage — offrirait 11 % permanents à qui la prend. */
+    portee: 'tous', interpolePorteur: {
+      min: 'MinBonusDamagePercent', max: 'MaxBonusDamagePercent',
+      debut: 'HealthThresholdStart', fin: 'HealthThresholdEnd'
+    },
+    quoi: 'porteur sous 60 % de ses PV'
+  },
+  8369: { // Premier coup
+    portee: 'tous', valeur: 'DamageAmp', exigeOuverture: true,
+    quoi: 'première frappe du combat, 3 s'
+  },
+  8224: { // Arcaniste axiomatique
+    portee: 'ultime', valeur: 'DamageAmp',
+    quoi: 'dégâts d\'ultime uniquement',
+    note: 'les dégâts de ZONE de l\'ultime ne sont amplifiés que de 8 % (AOEAmp) : ' +
+          'le modèle sert la valeur en cible unique'
+  }
+};
+
+const PORTEES_RUNES = {
+  tous: () => true,
+  /* 'ultime' n'a de sens que si l'on sait quelle touche a été lancée. Sans cette
+     information, la rune est refusée : l'appliquer à tout multiplierait par près de
+     deux le champ d'une rune qui ne touche qu'un sort sur quatre. */
+  ultime: (source, ctx) => source === 'competence' && ctx.touche === 'R'
+};
+
+function amplificationDeRunes(p, cible, type, source, ctx = {}) {
+  let total = 0; const detail = []; const refus = [];
+  (p.runes || []).forEach(id => {
+    const a = AMPLIS[id];
+    if (!a) return;
+    const r = R.parId[id];
+    const v = (r && r.valeurs) || {};
+
+    if (a.portee === 'ultime') {
+      if (!ctx.touche) { refus.push(r.nom + ' : n\'amplifie que l\'ultime, touche non fournie'); return; }
+      if (!PORTEES_RUNES.ultime(source, ctx)) return;      // hors champ, silencieux
+    }
+
+    let pct;
+    if (a.interpolePorteur) {
+      const f = ctx.partPvPorteur != null ? ctx.partPvPorteur : 1;   // pleine vie par défaut
+      const debut = v[a.interpolePorteur.debut], fin = v[a.interpolePorteur.fin];
+      const min = v[a.interpolePorteur.min], max = v[a.interpolePorteur.max];
+      if ([debut, fin, min, max].some(x => x == null)) { refus.push(r.nom + ' : clés absentes'); return; }
+      if (f > debut) return;                                // au-dessus du seuil : rien
+      pct = f <= fin ? max : min + (max - min) * (debut - f) / (debut - fin);
+    } else {
+      if (a.exigeOuverture && !ctx.ouvertureCombat) {
+        refus.push(r.nom + ' : ' + a.quoi + ' — non déclarée'); return;
+      }
+      if (a.seuilCible) {
+        if (!cible || cible.pvMax == null) { refus.push(r.nom + ' : PV de la cible inconnus'); return; }
+        const f = (cible.pvActuels != null ? cible.pvActuels : cible.pvMax) / cible.pvMax;
+        const seuil = v[a.seuilCible.cle];
+        const remplie = a.seuilCible.sens === 'sous' ? f < seuil : f > seuil;
+        if (!remplie) return;                               // condition non remplie : zéro
+      }
+      pct = v[a.valeur];
+      if (pct == null) { refus.push(r.nom + ' : valeur absente ' + a.valeur); return; }
+    }
+
+    total += pct;
+    detail.push({ rune: r.nom, pourcent: Math.round(pct * 10000) / 10000, condition: a.quoi });
+  });
+  return { total, detail, refus };
+}
+
+module.exports = { statsDeRunes, versAdaptatif, amplificationDeRunes,
+                   PERMANENTES, HORS_PROFIL, AMPLIS };
