@@ -327,6 +327,50 @@ vrai('l\'amplification atteint bien les dégâts d\'un sort', qAmp.subis > qNu.s
 vrai('  et elle est tracée dans le résultat', qAmp.amplification &&
      qAmp.amplification.detail.some(d => /failles/.test(d.objet)));
 
+console.log('\n── Réduction des résistances : ni pénétration, ni amplification');
+/* Cinquième catégorie. Le Couperet noir était jusqu'ici écarté au motif qu'il « agit
+   sur la mitigation, pas comme dégâts ajoutés » — c'était vrai, et c'était justement
+   une raison de le brancher, pas de l'ignorer : `resistEffective` sait traiter une
+   réduction depuis le début. */
+const tanky = M.cibleChampion('Sion', 18, [3068, 3143]);
+const cleaver = M.profil('Jhin', 18, [3071], { fenetre: 10 });
+const redC = I.reductionResistances(cleaver);
+verifie('Couperet noir : 6 % × 5 cumuls = 30 % d\'armure en moins', redC.armurePct, 0.3, 0.0001);
+/* Le fichier porte un `RangedMod: 0.5` qui NE concerne pas le découpage : il modifie la
+   vitesse de déplacement de Ferveur (`MSBonusSplit`, facteurDistance 0,5). Jhin est à
+   distance — si on l'avait appliqué au découpage, on lirait 15 %. */
+vrai('  et il n\'est PAS réduit de moitié à distance', cleaver.distance === true && redC.armurePct === 0.3);
+verifie('Malédiction du sanguinaire : 7,5 % × 4 cumuls de RM',
+        I.reductionResistances(M.profil('Ryze', 18, [8010], { fenetre: 10 })).rmPct, 0.3, 0.0001);
+
+/* Malfaisance réduit la RM d'un montant PLAT de 10 — pas de 10 %. Le wiki tranche
+   (« reduces their magic resistance by 10 ») et le calcul du fichier donne bien 10.
+   Sur une cible à 100 de RM, la lire en pourcentage la diviserait par dix. */
+const malf = M.profil('Ryze', 18, [3118], { fenetre: 10 });
+verifie('Malfaisance : réduction PLATE de 10 de résistance magique',
+        I.reductionResistances(malf, { ultimeLance: true }).rmPlate, 10, 0.0001);
+vrai('  et zéro tant que l\'ultime n\'est pas déclaré touché',
+     /ultime/.test(I.reductionResistances(malf).refus.join(' ')));
+
+/* LA raison pour laquelle réduction et pénétration ne sont pas interchangeables : la
+   séquence officielle place la réduction PLATE en premier et la pénétration plate en
+   DERNIER, plancher à zéro. Sur une cible peu résistante, l'écart est net. */
+verifie('la réduction plate s\'applique avant la pénétration en %',
+        M.resistEffective(30, { reducPlate: 10, penPct: 0.3 }), 14, 0.001);
+verifie('  la prendre pour de la pénétration plate donnerait autre chose',
+        M.resistEffective(30, { penPct: 0.3, penPlate: 10 }), 11, 0.001);
+
+/* Bout en bout : la réduction doit vraiment atteindre les dégâts, et se composer avec
+   la pénétration en pourcentage du même build. */
+const brut = 1000;
+const avecC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3071, 3036], { fenetre: 10 }), 'attaque');
+const sansC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3036], { fenetre: 10 }), 'attaque');
+vrai('le Couperet noir augmente les dégâts réellement subis',
+     avecC.subis > sansC.subis,
+     Math.round(sansC.subis) + ' → ' + Math.round(avecC.subis) + ' sur ' + brut + ' bruts');
+verifie('  et la résistance effective suit la séquence officielle',
+        avecC.resistEff, M.resistEffective(tanky.armure, { reducPct: 0.3, penPct: 0.35 }), 0.01);
+
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
    l'exclure l'effacerait : sur la durée, la seule valeur juste est le tiers. */

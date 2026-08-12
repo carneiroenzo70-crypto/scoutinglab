@@ -142,6 +142,14 @@ function evaluerPassif(id, p, cible, options = {}) {
     if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
     brut = r.total;
     r.detail.forEach(d => detail.push({ part: 'amplification', valeur: d.pourcent }));
+  } else if (m.reduction) {
+    /* Passif de réduction : il n'a pas de montant de dégâts, il abaisse une résistance.
+       On renvoie le montant retiré — un pourcentage ou des points selon le mode. */
+    const r = reductionResistances({ ...p, objets: [id] },
+                                   { ultimeLance: true });   // inspection : condition supposée
+    if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
+    brut = r.detail.reduce((s, d) => s + d.valeur, 0);
+    r.detail.forEach(d => detail.push({ part: d.resistance + ' (' + d.mode + ')', valeur: d.valeur }));
   } else {
     return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };
   }
@@ -419,6 +427,64 @@ function amplification(p, cible, type, source, options = {}) {
   return { facteur: 1 + total, total, detail, refus };
 }
 
+/* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ────────────────────────────────────
+   Cinquième et dernière catégorie. Elle n'ajoute rien et n'amplifie rien : elle abaisse
+   l'armure ou la résistance magique de l'adversaire.
+
+   ⚠ Réduction n'est PAS pénétration. La séquence officielle, déjà codée dans
+   `resistEffective`, est : réduction plate → réduction en % → pénétration en % →
+   pénétration plate. La réduction passe donc AVANT, et les confondre change le
+   résultat dès qu'un build porte les deux — le cas courant (Couperet noir +
+   Salutations de Dominik).
+
+   Les réductions en pourcentage se composent MULTIPLICATIVEMENT entre elles (deux fois
+   20 % laissent 0,8 × 0,8 = 64 % de la résistance), comme les pénétrations et à
+   l'inverse des amplifications de dégâts. */
+function reductionResistances(p, options = {}) {
+  const restant = { armure: 1, rm: 1 };
+  const plat = { armure: 0, rm: 0 };
+  const detail = []; const refus = [];
+
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || !m.reduction) return;
+    const r = m.reduction; const o = parId[id];
+
+    if (r.condition && r.condition.apresUltime && !options.ultimeLance) {
+      refus.push(o.nom + ' : ' + r.condition.libelle + ' — non déclaré'); return;
+    }
+
+    let v;
+    if (r.calcul) {
+      const c = o.calculs[r.calcul];
+      if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + r.calcul); return; }
+      v = 0; let ok = true;
+      c.termes.forEach(t => { const x = valeurTerme(t, p, null); if (x == null) ok = false; else v += x; });
+      if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
+    } else {
+      v = o.valeurs[r.valeur];
+      if (v == null) { refus.push(o.nom + ' : valeur absente ' + r.valeur); return; }
+      if (r.cumuls) {
+        const n = o.valeurs[r.cumuls];
+        if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }
+        v *= n;
+      }
+    }
+
+    if (r.mode === 'pourcent') restant[r.resistance] *= (1 - v);
+    else plat[r.resistance] += v;
+    detail.push({ objet: o.nom, nom: m.nom, resistance: r.resistance,
+                  mode: r.mode, valeur: Math.round(v * 10000) / 10000 });
+  });
+
+  return {
+    armurePct: Math.round((1 - restant.armure) * 100000) / 100000,
+    rmPct: Math.round((1 - restant.rm) * 100000) / 100000,
+    armurePlate: plat.armure, rmPlate: plat.rm,
+    detail, refus
+  };
+}
+
 /* État de la modélisation, sans arrondi flatteur : combien d'objets finis portent un
    passif chiffré, et combien sont réellement appliqués aux dégâts. */
 function couverture() {
@@ -431,4 +497,5 @@ function couverture() {
 }
 
 module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
-                   appliquerGain, amplification, couverture, MODELES, parId };
+                   appliquerGain, amplification, reductionResistances,
+                   couverture, MODELES, parId };

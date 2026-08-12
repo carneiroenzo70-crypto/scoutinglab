@@ -472,10 +472,49 @@ module.exports = {
   6697: { nonApplique: 'AD gagnés à l\'élimination d\'un champion : dépend du déroulé ' +
                        'de la partie (SpellMaxAmp vaut 0 dans le fichier)' },
 
+  /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ──────────────────────────────────
+     Cinquième catégorie. Elle n'ajoute aucun dégât et n'amplifie rien : elle abaisse
+     l'armure ou la résistance magique de l'adversaire, donc TOUT ce qui le frappe
+     ensuite — y compris les dégâts des alliés.
+
+     ⚠ Réduction ≠ pénétration, et l'ordre n'est pas commutatif : la réduction
+     s'applique AVANT la pénétration (cf. `resistEffective`). Confondre les deux
+     donnerait un chiffre faux dès qu'un build porte les deux, ce qui est le cas
+     courant (Couperet noir + Salutations de Dominik). */
+
+  3071: { // Couperet noir — Découpage
+    nom: 'Découpage', effet: 'reduction',
+    /* 6 % par cumul, 5 cumuls = 30 % d'armure en moins. Vérifié sur le wiki.
+       ⚠ Le `RangedMod: 0.5` du fichier ne porte PAS sur le découpage : il modifie la
+       vitesse de déplacement de Ferveur, comme le montre `MSBonusSplit` (20 avec un
+       facteurDistance de 0,5). Le lire comme un demi-découpage à distance aurait été
+       l'erreur symétrique de celle évitée sur la Lance de Shojin — où, elle, la
+       version à distance existe bel et bien sous forme de second calcul. */
+    reduction: { resistance: 'armure', mode: 'pourcent',
+                 valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'physique' },
+    note: 'cumuls supposés au maximum ; le wiki précise que la première instance de ' +
+          'dégâts n\'en profite pas encore, ce détail n\'est pas modélisé'
+  },
+
+  8010: { // Malédiction du sanguinaire — Vile décomposition
+    nom: 'Vile décomposition', effet: 'reduction',
+    reduction: { resistance: 'rm', mode: 'pourcent',
+                 valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'magique' },
+    note: 'cumuls supposés au maximum (4 × 7,5 % = 30 %)'
+  },
+
+  3118: { // Malfaisance — Brouillard de haine
+    nom: 'Brouillard de haine', effet: 'reduction',
+    /* Réduction PLATE de 10, et non un pourcentage : le calcul du fichier donne 10 sec
+       et le wiki confirme « reduces their magic resistance by 10 ». La lire en
+       pourcentage aurait donné 10 % — trois fois moins sur une cible à 100 de RM. */
+    reduction: { resistance: 'rm', mode: 'plat', calcul: 'MagicResistanceShred',
+                 condition: { apresUltime: true, libelle: 'après avoir touché avec l\'ultime' } },
+    note: 'les dégâts de zone du sol brûlé ne sont pas comptés en cible unique'
+  },
+
   3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
-  3071: { nonApplique: 'réduction d\'armure cumulable — effet réel, mais qui agit ' +
-                       'sur la mitigation, pas comme dégâts ajoutés' },
   3085: { nonApplique: 'les projectiles touchent des cibles SUPPLÉMENTAIRES : ' +
                        'aucun gain en cible unique' }
 };

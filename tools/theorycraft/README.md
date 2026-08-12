@@ -449,6 +449,36 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Réduire une résistance n'est pas la pénétrer
+
+Cinquième catégorie. Le Couperet noir était écarté au motif qu'il « agit sur la
+mitigation, pas comme des dégâts ajoutés » — c'était exact, et c'était précisément une
+raison de le **brancher**, pas de l'ignorer : `resistEffective` sait traiter une
+réduction depuis le premier jour, personne ne lui en fournissait.
+
+| Objet | Réduction | Sur |
+|---|---|---|
+| Couperet noir | 6 % × 5 cumuls = 30 % | armure |
+| Malédiction du sanguinaire | 7,5 % × 4 cumuls = 30 % | résistance magique |
+| Malfaisance | **10 points**, pas 10 % | résistance magique |
+
+La séquence officielle place la réduction **avant** la pénétration :
+réduction plate → réduction en % → pénétration en % → pénétration plate.
+Deux pourcentages consécutifs commutent, donc confondre réduction et pénétration *en
+pourcentage* ne se voit pas. Ce qui se voit, c'est le cas **plat** : sur une cible à
+30 de RM, une réduction plate de 10 suivie de 30 % de pénétration laisse **14** ;
+la même valeur prise pour de la pénétration plate laisse **11**.
+
+Deux pièges de lecture évités ici, symétriques l'un de l'autre :
+
+- Malfaisance retire **10 points** de RM, pas 10 % — le wiki tranche (« reduces their
+  magic resistance by 10 ») et le calcul du fichier donne bien 10.
+- Le `RangedMod: 0.5` du Couperet noir **ne concerne pas** le découpage : il modifie la
+  vitesse de déplacement de Ferveur, comme le montre `MSBonusSplit` (20, facteur
+  distance 0,5). L'appliquer aurait donné 15 % au lieu de 30 % sur un champion à
+  distance. C'est l'erreur inverse de celle évitée sur la Lance de Shojin, où la
+  version à distance existe bel et bien — sous forme d'un second calcul.
+
 ### Cinq cadences, et pourquoi elles ne se mélangent pas
 
 Un passif de dégâts ne vaut quelque chose que rapporté à SA cadence. Les confondre est

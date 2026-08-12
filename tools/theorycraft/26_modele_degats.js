@@ -207,14 +207,31 @@ function amplifier(brut, type, cible, attaquant, source) {
   return { brut: brut * a.facteur, amp: a };
 }
 
+const AUCUNE_REDUCTION = { armurePct: 0, rmPct: 0, armurePlate: 0, rmPlate: 0, detail: [], refus: [] };
+function reductionsDeLAttaquant(attaquant) {
+  if (!attaquant || !(attaquant.objets || []).length) return AUCUNE_REDUCTION;
+  const { reductionResistances } = require('./30_moteur_items');
+  return reductionResistances(attaquant, { ultimeLance: attaquant.ultimeLance });
+}
+
 function mitiger(brut, type, cible, attaquant, source) {
   const { brut: ampli, amp } = amplifier(brut, type, cible, attaquant, source);
   if (type === 'brut')
     return { subis: ampli, resistEff: 0, multiplicateur: 1, amplification: amp };
   const physique = type === 'physique';
+
+  /* Réductions de résistance apportées par les OBJETS de l'attaquant (Couperet noir,
+     Malédiction du sanguinaire). Elles abaissent la résistance de la cible avant toute
+     pénétration — d'où leur place dans `reducPct` / `reducPlate` et non dans `penPct`.
+     Elles se composent multiplicativement avec une réduction déjà portée par la cible. */
+  const red = reductionsDeLAttaquant(attaquant);
+  const cumulPct = (a, b) => 1 - (1 - a) * (1 - b);
+
   const eff = resistEffective(physique ? cible.armure : cible.rm, {
-    reducPlate: physique ? (cible.reducArmurePlate || 0) : (cible.reducRmPlate || 0),
-    reducPct:   physique ? (cible.reducArmurePct || 0)   : (cible.reducRmPct || 0),
+    reducPlate: (physique ? (cible.reducArmurePlate || 0) : (cible.reducRmPlate || 0))
+                + (physique ? red.armurePlate : red.rmPlate),
+    reducPct:   cumulPct(physique ? (cible.reducArmurePct || 0) : (cible.reducRmPct || 0),
+                         physique ? red.armurePct : red.rmPct),
     penPct:     physique ? (attaquant.penArmurePct || 0) : (attaquant.penMagiquePct || 0),
     penPlate:   physique ? (attaquant.letalite || 0)     : (attaquant.penMagiquePlate || 0)
   });
