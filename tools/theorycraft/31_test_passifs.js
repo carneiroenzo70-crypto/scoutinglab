@@ -246,6 +246,87 @@ verifie('Pistolame : 253 au niveau 18 + 30 % de la puissance',
 vrai('  la puissance servie inclut bien la Coiffe de Rabadon', mage.ap > 300,
      Math.round(mage.ap) + ' de puissance');
 
+console.log('\n── Amplifications : additives entre elles, et pas sur n\'importe quoi');
+/* Une cible bien équipée, seule façon d'éprouver le Tueur de géants — il dépend des
+   PV BONUS de l'adversaire, pas de ceux du porteur. */
+const gros = M.cibleChampion('Sion', 18, [3083, 3068]);
+const ampP = M.profil('Ryze', 18, [4633, 3161, 8020, 3036], { fenetre: 10 });
+
+/* LE point vérifié sur le wiki avant d'écrire une ligne : « Modifiers to damage dealt
+   now stack additively instead of multiplicatively ». Raisonner par symétrie avec les
+   pénétrations en pourcentage, qui se multiplient, aurait donné 1,08 × 1,06 × 1,12 ×
+   1,15 = +47,4 % au lieu de +41 % — un écart plausible, donc invisible. */
+const ampMag = I.amplification(ampP, gros, 'magique', 'competence');
+verifie('quatre amplifications se cumulent ADDITIVEMENT', ampMag.total, 0.08 + 0.06 + 0.12 + 0.15, 0.001);
+vrai('  et non multiplicativement',
+     Math.abs(ampMag.facteur - 1.08 * 1.06 * 1.12 * 1.15) > 0.05,
+     'additif ' + Math.round(ampMag.facteur * 1000) / 1000 +
+     ' contre multiplicatif ' + Math.round(1.08 * 1.06 * 1.12 * 1.15 * 1000) / 1000);
+
+/* Chaque amplification a son champ d'application. Les confondre reviendrait à offrir
+   à chaque objet une portée qu'il n'a pas. */
+verifie('le Masque abyssal ne touche que le magique',
+        I.amplification(ampP, gros, 'physique', 'competence').total, 0.08 + 0.06 + 0.15, 0.001);
+verifie('la Lance de Shojin ne touche pas les attaques de base',
+        I.amplification(ampP, gros, 'physique', 'attaque').total, 0.08 + 0.15, 0.001);
+vrai('  mais bien les passifs d\'objet (procs)',
+     I.amplification(ampP, gros, 'physique', 'objet').total > 0.22,
+     '+' + Math.round(I.amplification(ampP, gros, 'physique', 'objet').total * 1000) / 10 + ' %');
+
+/* Shojin : le fichier porte deux calculs vivants et concordants (3 en mêlée, 1,5 à
+   distance) là où le résumé du wiki n'en voit qu'un. Le fichier prime — et la moitié
+   se voit. */
+verifie('Lance de Shojin : 3 % × 4 cumuls en mêlée',
+        I.amplification(M.profil('Sion', 18, [3161], { fenetre: 10 }), gros, 'physique', 'competence').total,
+        0.12, 0.001);
+verifie('  et la moitié à distance', I.amplification(M.profil('Jhin', 18, [3161], { fenetre: 10 }),
+        gros, 'physique', 'competence').total, 0.06, 0.001);
+
+/* Tueur de géants : proportionnel aux PV bonus de la CIBLE, plafonné à 1500. Contre
+   une cible sans PV bonus, l'amplification doit être nulle — c'est ce qui distingue
+   une amplification conditionnelle d'un bonus permanent déguisé. */
+const maigre = M.cibleChampion('Ryze', 18, []);
+verifie('Tueur de géants : nul contre une cible sans PV bonus',
+        I.amplification(M.profil('Jhin', 18, [3036], { fenetre: 10 }), maigre, 'physique', 'attaque').total,
+        0, 0.001);
+vrai('  et au maximum au-delà de 1500 PV bonus', gros.pvBonus > 1500 &&
+     Math.abs(I.amplification(M.profil('Jhin', 18, [3036], { fenetre: 10 }), gros, 'physique', 'attaque').total - 0.15) < 0.001,
+     Math.round(gros.pvBonus) + ' PV bonus');
+
+/* Flamme-ombre : +20 % sous 40 % des PV de la cible. Par défaut la cible est à pleine
+   vie, donc zéro — un plancher assumé plutôt qu'une moyenne inventée. */
+const flamme = M.profil('Ryze', 18, [4645], { fenetre: 10 });
+verifie('Flamme-ombre : nulle contre une cible à pleine vie',
+        I.amplification(flamme, gros, 'magique', 'competence').total, 0, 0.001);
+verifie('  et +20 % sous le seuil de 40 %',
+        I.amplification(flamme, { ...gros, pvActuels: gros.pvMax * 0.3 }, 'magique', 'competence').total,
+        0.2, 0.001);
+verifie('  mais jamais sur des dégâts physiques',
+        I.amplification(flamme, { ...gros, pvActuels: gros.pvMax * 0.3 }, 'physique', 'competence').total,
+        0, 0.001);
+
+/* Créateur de failles : 2 % par seconde, plafond 8 %. Sans durée de combat, il doit se
+   REFUSER — le servir au plafond offrirait +8 % permanents à tout build qui le porte. */
+verifie('Créateur de failles : 2 %/s, plafonné à 8 %',
+        I.amplification(M.profil('Ryze', 18, [4633], { fenetre: 10 }), gros, 'magique', 'competence').total,
+        0.08, 0.001);
+verifie('  et seulement 4 % après 2 s de combat',
+        I.amplification(M.profil('Ryze', 18, [4633], { fenetre: 2 }), gros, 'magique', 'competence').total,
+        0.04, 0.001);
+vrai('  sans durée de combat, il est refusé plutôt que servi au plafond',
+     /durée non fournie/.test(I.amplification(M.profil('Ryze', 18, [4633]), gros, 'magique', 'competence').refus.join(' ')));
+
+/* Bout en bout : l'amplification doit vraiment atteindre les dégâts d'un sort, et
+   s'appliquer AVANT la mitigation. */
+const nomQR = Object.keys(M.champions.Ryze.sorts.Q.calculs)
+  .find(n => M.champions.Ryze.sorts.Q.calculs[n].genre === 'degats');
+const qAmp = M.evaluerCalcul('Ryze', 'Q', nomQR, 5, M.profil('Ryze', 18, [4633], { fenetre: 10 }), gros);
+const qNu = M.evaluerCalcul('Ryze', 'Q', nomQR, 5, M.profil('Ryze', 18, [4633], { fenetre: 10, sansPassifs: true }), gros);
+vrai('l\'amplification atteint bien les dégâts d\'un sort', qAmp.subis > qNu.subis,
+     qNu.subis + ' → ' + qAmp.subis + ' subis');
+vrai('  et elle est tracée dans le résultat', qAmp.amplification &&
+     qAmp.amplification.detail.some(d => /failles/.test(d.objet)));
+
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
    l'exclure l'effacerait : sur la durée, la seule valeur juste est le tiers. */

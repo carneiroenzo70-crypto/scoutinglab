@@ -365,16 +365,112 @@ module.exports = {
     calcul: 'ShieldAmount'
   },
 
-  /* ── Amplification : ne s'ajoute pas aux dégâts, elle les multiplie ──────────
-     Les ranger avec les passifs de dégâts serait une faute de raisonnement : on ne
-     peut pas additionner « +3 % de dégâts » à un montant. Ils sont donc déclarés
-     comme non appliqués, en attendant une passe dédiée à l'amplification. */
-  4633: { nonApplique: 'amplification des dégâts (jusqu\'à +8 % en combat prolongé) : ' +
-                       'multiplie les dégâts au lieu de s\'y ajouter — non appliquée' },
-  3161: { nonApplique: 'amplification des dégâts de compétence par cumuls : ' +
-                       'multiplie au lieu de s\'ajouter — non appliquée' },
-  8020: { nonApplique: 'amplification subie PAR LA CIBLE (+12 % de dégâts magiques) : ' +
-                       'appartient à la cible, pas au porteur' },
+  6664: { // Rayonnement du vide — Immolation
+    /* Même famille que l'Égide solaire, chiffres différents : 15 + 1 % des PV bonus.
+       Les deux clés TOOLTIPONLY (10 et 1,75) NE correspondent PAS au calcul (15 et 1) :
+       on sert le calcul, qui est ce que le jeu applique, et on le dit ici plutôt que
+       de choisir en silence le chiffre le plus flatteur. */
+    nom: 'Immolation', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'periodique', duree: 'AuraDuration' },
+    calcul: 'DamagePerTick', parSeconde: true,
+    note: 'aura de zone ; Désolation (dégâts à l\'élimination) n\'est pas modélisée. ' +
+          'Les clés TOOLTIPONLY du fichier (10 + 1,75 %) contredisent son propre ' +
+          'calcul (15 + 1 %) : c\'est le calcul qui est servi'
+  },
+
+  /* ── AMPLIFICATIONS : elles ne s'ajoutent pas aux dégâts, elles les multiplient ──
+
+     Longtemps écartées faute de savoir où les brancher. Deux points ont dû être
+     vérifiés sur le wiki officiel avant d'écrire une ligne, et aucun des deux n'était
+     devinable :
+
+     1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to
+        damage dealt now stack additively instead of multiplicatively ». C'est l'inverse
+        exact des pénétrations en pourcentage. Deux amplifications de 10 % donnent donc
+        +20 %, pas +21 %. Supposer la symétrie avec les pénétrations aurait été le
+        raisonnement naturel, et il aurait été faux.
+     2. Tueur de géants n'est PLUS limité aux dégâts physiques depuis la V13.10 :
+        « deal increased damage », tous types confondus.
+
+     Champs : `portee` (à quelle SOURCE de dégâts ça s'applique), `types` (à quels types
+     de dégâts), et la façon dont le pourcentage se constitue (`montee`, `cumuls`,
+     `selonPVbonusCible`, `seuilPVCible`). */
+
+  4633: { // Créateur de failles — Corruption du Néant + Infusion du Néant
+    nom: 'Corruption du Néant', effet: 'amplification',
+    /* « Pour chaque seconde passée en combat, vous infligez 2 % de dégâts bonus
+       (jusqu'à 8 %) » — tous types, toutes sources. Le plafond est atteint en 4 s
+       (`SecondsInCombat`), ce que confirme le rapport 0,08 / 0,02. */
+    amplification: {
+      portee: 'tous',
+      montee: { parSeconde: 'EternityDamageIncreasePerSecond',
+                plafond: 'EternityDamageIncreaseMax' }
+    },
+    /* Second passif, indépendant : « Vous gagnez de la puissance équivalente à 2 % de
+       vos PV bonus ». Sans plafond d'après le wiki — la clé `MaxAPMultiplier` (0,05)
+       du fichier n'est corroborée nulle part, elle n'est donc PAS appliquée. */
+    statsAccordees: [{ stat: 'ap', calcul: '{1247259a}' }],
+    note: 'l\'omnivampirisme au plafond n\'est pas modélisé ; la clé MaxAPMultiplier ' +
+          'du fichier n\'est expliquée ni par la boutique ni par le wiki : non appliquée'
+  },
+
+  3161: { // Lance de Shojin — Détermination inflexible
+    nom: 'Détermination inflexible', effet: 'amplification',
+    /* 3 % par cumul, 4 cumuls, sur les dégâts de COMPÉTENCE. Le wiki y ajoute les
+       dégâts de familier et de proc — d'où la portée `competences`, qui couvre aussi
+       les passifs d'objet.
+       ⚠ Désaccord assumé : le résumé du wiki dit « pas de distinction à distance »,
+       mais le fichier porte DEUX calculs vivants et cohérents entre eux
+       (MeleeItemCalcValue = 3, RangedItemCalcValue = 1,5) plus RangedMod = 0,5.
+       Le fichier de jeu prime ; la moitié est donc appliquée aux champions à distance. */
+    amplification: {
+      portee: 'competences', unite: 'pourcent', cumuls: 'StackCount',
+      calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }
+    },
+    note: 'cumuls supposés au maximum (4) : valeur de combat engagé, pas d\'ouverture'
+  },
+
+  8020: { // Masque abyssal — Anéantissement
+    nom: 'Anéantissement', effet: 'amplification',
+    amplification: { portee: 'tous', types: ['magique'], valeur: 'DamageAmp' },
+    note: 'c\'est un affaiblissement porté PAR LA CIBLE : il profite aussi aux alliés ' +
+          'proches, ce que ce calcul en cible unique ne compte pas'
+  },
+
+  3036: { // Salutations de Dominik — Tueur de géants
+    nom: 'Tueur de géants', effet: 'amplification',
+    /* « jusqu'à 15 % selon les PV BONUS de la cible, maximum à 1500 ». Dépend donc de
+       l'adversaire, pas du porteur : contre une cible sans PV bonus, l'effet est nul.
+       Tous types de dégâts depuis la V13.10 (vérifié) — le lire « physique » aurait
+       sous-estimé les builds hybrides. */
+    amplification: {
+      portee: 'tous',
+      selonPVbonusCible: { max: 'MaxBonusDamagePercent', plafondPV: 'MaxBonusHealth' }
+    }
+  },
+
+  4645: { // Flamme-ombre — Floraicendre
+    nom: 'Floraicendre', effet: 'amplification',
+    /* +20 % sur les dégâts magiques et bruts, uniquement sous 40 % des PV de la cible.
+       La cible étant supposée à pleine vie par défaut, l'amplification vaut alors
+       zéro et le dit : c'est un plancher assumé, jamais une moyenne inventée. */
+    amplification: {
+      portee: 'tous', types: ['magique', 'brut'],
+      valeur: 'SpellItemDamageAmp', seuilPVCible: 'HealthThreshold'
+    }
+  },
+
+  /* Amplifications réelles mais non déterminables ici : elles dépendent d'un état que
+     le modèle ne connaît pas (position, contrôle appliqué, élimination récente).
+     Les servir à leur valeur maximale gonflerait les builds qui les portent. */
+  2523: { nonApplique: 'jusqu\'à +10 % selon la DISTANCE à la cible : dépend du ' +
+                       'placement, que le modèle ne connaît pas' },
+  4628: { nonApplique: '+10 % après avoir touché à 600 unités au moins : dépend du ' +
+                       'placement et d\'une recharge de 30 s' },
+  4005: { nonApplique: '+7 % de vulnérabilité après avoir immobilisé la cible : ' +
+                       'dépend du kit du champion, hors du modèle d\'objets' },
+  6697: { nonApplique: 'AD gagnés à l\'élimination d\'un champion : dépend du déroulé ' +
+                       'de la partie (SpellMaxAmp vaut 0 dans le fichier)' },
 
   3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },

@@ -119,6 +119,10 @@ function profil(id, niveau, idsObjets, extras = {}) {
     penArmurePct: g('penArmure'),
     penMagiquePlate: g('penMagiquePlat'),
     penMagiquePct: g('penMagique'),
+    /* Durée de combat retenue, transportée par le profil : les amplifications qui
+       montent avec le temps (Créateur de failles) en dépendent, et elles sont évaluées
+       loin d'ici, au moment de mitiger. Absente = ces passifs se refusent. */
+    fenetre: extras.fenetre != null ? extras.fenetre : null,
     crit: Math.min(1, g('crit')),
     degatsCrit: g('degatsCrit'),
     vitesseAttaque: vitesseAttaque((champions[id] || {}).base, niveau, g('vitesseAttaque')),
@@ -187,9 +191,26 @@ function multiplicateur(resistEff) {
 }
 
 /* Dégâts réellement subis. `type` vaut 'physique', 'magique' ou 'brut' :
-   les dégâts bruts ignorent toute résistance, c'est le seul cas sans mitigation. */
-function mitiger(brut, type, cible, attaquant) {
-  if (type === 'brut') return { subis: brut, resistEff: 0, multiplicateur: 1 };
+   les dégâts bruts ignorent toute résistance, c'est le seul cas sans mitigation.
+
+   `source` — 'competence', 'attaque' ou 'objet' — sert aux AMPLIFICATIONS, qui ne
+   portent pas toutes sur les mêmes dégâts : la Lance de Shojin n'amplifie que les
+   compétences, les Lunettes Hextech que les attaques. L'omettre reviendrait à étendre
+   chaque amplification à tout, donc à gonfler les builds qui en portent une.
+
+   L'amplification s'applique AVANT la mitigation, et se cumule additivement entre
+   sources — l'inverse des pénétrations en pourcentage (cf. `amplification()`). */
+function amplifier(brut, type, cible, attaquant, source) {
+  if (!attaquant || !(attaquant.objets || []).length) return { brut, amp: null };
+  const { amplification } = require('./30_moteur_items');
+  const a = amplification(attaquant, cible, type, source);
+  return { brut: brut * a.facteur, amp: a };
+}
+
+function mitiger(brut, type, cible, attaquant, source) {
+  const { brut: ampli, amp } = amplifier(brut, type, cible, attaquant, source);
+  if (type === 'brut')
+    return { subis: ampli, resistEff: 0, multiplicateur: 1, amplification: amp };
   const physique = type === 'physique';
   const eff = resistEffective(physique ? cible.armure : cible.rm, {
     reducPlate: physique ? (cible.reducArmurePlate || 0) : (cible.reducRmPlate || 0),
@@ -198,7 +219,7 @@ function mitiger(brut, type, cible, attaquant) {
     penPlate:   physique ? (attaquant.letalite || 0)     : (attaquant.penMagiquePlate || 0)
   });
   const m = multiplicateur(eff);
-  return { subis: brut * m, resistEff: eff, multiplicateur: m };
+  return { subis: ampli * m, resistEff: eff, multiplicateur: m, amplification: amp };
 }
 
 /* ── 5. Évaluation d'un sort ────────────────────────────────────────────────────── */
@@ -249,12 +270,13 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible) {
              note: calc.genre !== 'degats' ? 'ce calcul n\'est pas des dégâts'
                    : 'type de dégâts non tranché (' + (type || 'absent') + ') : mitigation non appliquée' };
   }
-  const m = cible ? mitiger(brut, type, cible, p) : null;
+  const m = cible ? mitiger(brut, type, cible, p, 'competence') : null;
   return {
     ok: true, genre: 'degats', type,
     brut: Math.round(brut * 100) / 100,
     subis: m ? Math.round(m.subis * 100) / 100 : null,
     resistEff: m ? Math.round(m.resistEff * 100) / 100 : null,
+    amplification: m && m.amplification && m.amplification.total ? m.amplification : null,
     detail
   };
 }
@@ -281,7 +303,7 @@ function degatsAttaque(p, cible) {
   const mult = base.critMult != null ? base.critMult : 2;
   const gainCritique = mult <= 1 ? 0 : (mult - 1 + (p.degatsCrit || 0));
   const parCoupBrut = p.adTotal * (1 + p.crit * gainCritique);
-  const m = cible ? mitiger(parCoupBrut, 'physique', cible, p) : null;
+  const m = cible ? mitiger(parCoupBrut, 'physique', cible, p, 'attaque') : null;
   const parCoup = m ? m.subis : parCoupBrut;
   return {
     parCoupBrut: Math.round(parCoupBrut * 100) / 100,
@@ -378,9 +400,14 @@ function degatsSurFenetre(champId, p, cible, secondes, evaluerSort, coupBonus = 
 /* Cible « mannequin » : un champion nu au même niveau. Sert de référence neutre pour
    comparer deux builds sans supposer l'équipement de l'adversaire. */
 function cibleChampion(id, niveau, objets) {
-  const p = profil(id, niveau, objets || []);
+  const p = profil(id, niveau, objets || [], { fenetre: 10 });
   if (!p) return null;
-  return { nom: p.nom, niveau, armure: p.armure, rm: p.rm, pvMax: p.pvMax };
+  /* `pvBonus` est indispensable au Tueur de géants, qui amplifie selon les PV BONUS de
+     la cible : sans lui, l'objet serait refusé faute de savoir contre qui il frappe.
+     `pvActuels` reste à pleine vie par défaut — l'hypothèse la moins favorable aux
+     objets conditionnés par les PV manquants, donc la plus prudente. */
+  return { nom: p.nom, niveau, armure: p.armure, rm: p.rm,
+           pvMax: p.pvMax, pvBonus: p.pvBonus, pvActuels: p.pvMax };
 }
 
 module.exports = { croissance, vitesseAttaque, statsChampion, statsObjets, profil,

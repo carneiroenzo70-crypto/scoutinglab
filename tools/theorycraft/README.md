@@ -414,6 +414,41 @@ Les clés sont hachées dans `primaryAbilityResource` ; elles ont été identifi
 exactement les champions à énergie, fureur ou chaleur : `arType` les distingue, et leur
 attribuer du mana fausserait tout ce qui scale dessus.
 
+### Les amplifications se cumulent ADDITIVEMENT
+
+Quatrième et dernière catégorie de passifs : elles ne produisent ni dégâts ni stat,
+elles multiplient ce que les autres calculent. Deux points ont dû être vérifiés sur le
+wiki officiel avant d'écrire une ligne, et **aucun des deux n'était devinable**.
+
+**1. Elles s'additionnent entre elles.** « *Modifiers to damage dealt now stack
+additively instead of multiplicatively* » — l'inverse exact des pénétrations en
+pourcentage, qui se multiplient. Sur un build à quatre amplifications, raisonner par
+symétrie avec les pénétrations aurait donné **+47,4 % au lieu de +41 %** : un écart
+assez petit pour ne jamais se voir, assez grand pour désigner le mauvais build.
+
+**2. Tueur de géants n'est plus limité aux dégâts physiques** depuis la V13.10 :
+« *deal increased damage* », tous types. Le coder « physique » aurait sous-estimé tous
+les builds hybrides.
+
+| Objet | Amplification | Portée | Condition |
+|---|---|---|---|
+| Créateur de failles | 2 %/s, plafond 8 % | tous dégâts | durée de combat |
+| Lance de Shojin | 3 % × 4 cumuls (1,5 % à distance) | compétences et procs | — |
+| Masque abyssal | 12 % | dégâts **magiques** | — |
+| Salutations de Dominik | jusqu'à 15 % | tous dégâts | PV **bonus de la cible** |
+| Flamme-ombre | 20 % | magique et brut | cible sous 40 % PV |
+
+Une amplification ne porte pas sur n'importe quoi : `portee` filtre la **source** des
+dégâts (compétence, attaque de base, proc d'objet), `types` filtre le **type**. C'est
+pourquoi `mitiger()` reçoit désormais la source — sans elle, la Lance de Shojin
+amplifierait les attaques de base, qu'elle ne touche pas.
+
+⚠ **Une condition invérifiable est un refus, jamais une valeur maximale.** Sans durée
+de combat, le Créateur de failles se refuse au lieu d'offrir +8 % permanents ; contre
+une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réelles sont
+écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
+Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
+
 ### Cinq cadences, et pourquoi elles ne se mélangent pas
 
 Un passif de dégâts ne vaut quelque chose que rapporté à SA cadence. Les confondre est

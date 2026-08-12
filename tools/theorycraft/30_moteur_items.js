@@ -131,6 +131,17 @@ function evaluerPassif(id, p, cible, options = {}) {
     if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
     brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
     r.detail.forEach(d => detail.push({ part: d.stat + ' ×' + (1 + d.pourcent), valeur: d.valeur }));
+  } else if (m.amplification) {
+    /* Passif d'amplification : il n'a pas de montant propre, il multiplie ce que les
+       autres calculent. On renvoie ici le POURCENTAGE applicable dans le contexte
+       demandé — zéro quand la condition n'est pas remplie (la Flamme-ombre contre une
+       cible à pleine vie), ce qui est la réponse juste et non un refus. */
+    const r = amplification({ ...p, objets: [id] }, cible,
+                            (m.amplification.types || [])[0] || null, null,
+                            { fenetre: options.fenetre });
+    if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
+    brut = r.total;
+    r.detail.forEach(d => detail.push({ part: 'amplification', valeur: d.pourcent }));
   } else {
     return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };
   }
@@ -183,7 +194,9 @@ function coupsAImpact(p, cible, options = {}) {
 
     const e = evaluerPassif(id, p, cible, options);
     if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }
-    const mit = options.mitiger ? options.mitiger(e.brut, e.typeDegats, cible, p) : null;
+    /* Source « objet » : la Lance de Shojin amplifie les procs d'objet, les Lunettes
+       Hextech non. Passer la source évite d'appliquer l'une pour l'autre. */
+    const mit = options.mitiger ? options.mitiger(e.brut, e.typeDegats, cible, p, 'objet') : null;
     const subis = (mit ? mit.subis : e.brut) * part;
     subisTotal += subis;
     lignes.push({ objet: e.objet, nom: e.nom, type: e.typeDegats,
@@ -311,6 +324,101 @@ function multiplicateursStat(p, phase, options = {}) {
   return { gains, detail, refus };
 }
 
+/* ── AMPLIFICATION DES DÉGÂTS ──────────────────────────────────────────────────
+   Dernière des quatre catégories de passifs, et la seule qui ne produise ni dégâts ni
+   stat : elle multiplie ce que les autres ont calculé.
+
+   Deux règles vérifiées sur le wiki officiel avant d'écrire cette fonction, aucune des
+   deux devinable :
+
+   1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to
+      damage dealt now stack additively instead of multiplicatively ». C'est l'inverse
+      exact des pénétrations en pourcentage, qui se multiplient. Deux amplifications de
+      10 % donnent +20 %, pas +21 %. Raisonner par symétrie avec les pénétrations aurait
+      donné un chiffre faux, et plausible.
+   2. L'amplification porte sur les dégâts AVANT mitigation ; la réduction par les
+      résistances reste un facteur séparé.
+
+   Une amplification ne s'applique pas à n'importe quoi :
+     `portee` — la SOURCE des dégâts (compétence, attaque de base, passif d'objet) ;
+     `types`  — le TYPE des dégâts (la Flamme-ombre ne touche pas le physique).
+   Une amplification dont la condition n'est pas vérifiable est REFUSÉE avec son motif,
+   jamais servie à sa valeur maximale : ce serait offrir un bonus permanent à l'objet
+   qui le porte, précisément dans une comparaison de builds. */
+const PORTEES = {
+  /* `competences` couvre aussi les passifs d'objet : le wiki range explicitement les
+     « proc damage » avec les dégâts de compétence pour la Lance de Shojin. */
+  tous:        () => true,
+  competences: src => src === 'competence' || src === 'objet',
+  attaques:    src => src === 'attaque'
+};
+
+function amplification(p, cible, type, source, options = {}) {
+  let total = 0; const detail = []; const refus = [];
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || !m.amplification) return;
+    const a = m.amplification;
+    const o = parId[id];
+
+    const portee = PORTEES[a.portee];
+    if (!portee) { refus.push(o.nom + ' : portée non gérée ' + a.portee); return; }
+    if (source && !portee(source)) return;                 // hors champ : silencieux
+    if (a.types && type && !a.types.includes(type)) return;
+
+    let pct = null;
+    if (a.montee) {
+      /* Montée en combat (Créateur de failles : 2 % par seconde, plafond 8 %). Sans
+         durée de combat, on refuse — la servir au plafond offrirait +8 % permanents. */
+      const f = options.fenetre != null ? options.fenetre : p.fenetre;
+      if (f == null) { refus.push(o.nom + ' : montée en combat, durée non fournie'); return; }
+      const parSec = o.valeurs[a.montee.parSeconde], plafond = o.valeurs[a.montee.plafond];
+      if (parSec == null || plafond == null) { refus.push(o.nom + ' : clés de montée absentes'); return; }
+      pct = Math.min(plafond, parSec * f);
+    } else if (a.selonPVbonusCible) {
+      /* Tueur de géants : dépend des PV BONUS de la cible, pas du porteur. Contre une
+         cible sans PV bonus, l'amplification est nulle — et doit l'être. */
+      if (!cible || cible.pvBonus == null) { refus.push(o.nom + ' : PV bonus de la cible inconnus'); return; }
+      const max = o.valeurs[a.selonPVbonusCible.max], seuil = o.valeurs[a.selonPVbonusCible.plafondPV];
+      if (max == null || !seuil) { refus.push(o.nom + ' : clés absentes'); return; }
+      pct = max * Math.min(1, cible.pvBonus / seuil);
+    } else if (a.calcul) {
+      /* Cumuls (Lance de Shojin) : le fichier exprime le pas en POINTS de pourcentage
+         (3 = 3 %), d'où la division. Version à distance quand le fichier en porte une. */
+      const nom = (p.distance && a.distance && a.distance.calcul) ? a.distance.calcul : a.calcul;
+      const c = o.calculs[nom];
+      if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + nom); return; }
+      let v = 0; let ok = true;
+      c.termes.forEach(t => { const x = valeurTerme(t, p, cible); if (x == null) ok = false; else v += x; });
+      if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
+      if (a.unite === 'pourcent') v /= 100;
+      if (a.cumuls) {
+        const n = o.valeurs[a.cumuls];
+        if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }
+        v *= n;
+      }
+      pct = v;
+    } else if (a.valeur) {
+      pct = o.valeurs[a.valeur];
+      if (pct == null) { refus.push(o.nom + ' : valeur absente ' + a.valeur); return; }
+    } else { refus.push(o.nom + ' : amplification sans source de valeur'); return; }
+
+    /* Seuil de PV de la cible (Flamme-ombre : sous 40 %). La cible est supposée à
+       pleine vie par défaut : l'amplification vaut alors zéro, et c'est un plancher
+       assumé — le contraire d'une moyenne inventée. */
+    if (a.seuilPVCible) {
+      const seuil = o.valeurs[a.seuilPVCible];
+      if (!cible || cible.pvMax == null) { refus.push(o.nom + ' : PV de la cible inconnus'); return; }
+      const part = (cible.pvActuels != null ? cible.pvActuels : cible.pvMax) / cible.pvMax;
+      if (part >= seuil) return;                 // condition non remplie : aucun apport
+    }
+
+    total += pct;
+    detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000 });
+  });
+  return { facteur: 1 + total, total, detail, refus };
+}
+
 /* État de la modélisation, sans arrondi flatteur : combien d'objets finis portent un
    passif chiffré, et combien sont réellement appliqués aux dégâts. */
 function couverture() {
@@ -323,4 +431,4 @@ function couverture() {
 }
 
 module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
-                   appliquerGain, couverture, MODELES, parId };
+                   appliquerGain, amplification, couverture, MODELES, parId };
