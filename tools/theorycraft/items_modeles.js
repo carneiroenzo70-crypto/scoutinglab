@@ -14,7 +14,10 @@
 
    Champs :
      nom          libellé du passif tel qu'il apparaît en jeu
-     effet        'degats' | 'soin' | 'bouclier'
+     effet        'degats' | 'soin' | 'bouclier' | 'stat' | 'multiplicateur'
+     statsAccordees      [{ stat, calcul }] ou [{ stat, valeur, base }] — s'AJOUTE au profil
+     multiplicateursStat [{ stat, portee, valeur }] — MULTIPLIE une stat du profil
+     phase        'avant' | 'apres' — de part et d'autre des stats accordées
      typeDegats   'physique' | 'magique' | 'brut'
      declencheur  { type: 'coupAImpact' }        à chaque attaque de base
                   { type: 'apresCompetence', recharge: 'clé' }   lame enchantée
@@ -218,6 +221,62 @@ module.exports = {
     nom: 'Griffes qui happent', effet: 'stat',
     statsAccordees: [{ stat: 'ad', calcul: 'BonusAD' }],
     note: 'le bouclier Lien vital (60 % des PV bonus) n\'est pas compté dans les dégâts'
+  },
+
+  2501: { // Armure sanguine — Tyrannie
+    /* Pas de `mItemCalculations` pour ce passif : le fichier ne porte que le
+       pourcentage brut. On déclare donc explicitement la BASE sur laquelle il
+       s'applique — « 2,5 % de vos PV bonus », d'après la description en jeu. */
+    nom: 'Tyrannie', effet: 'stat',
+    statsAccordees: [{ stat: 'ad', valeur: 'HPToADPercentage', base: 'pvBonus' }],
+    note: 'Représailles (jusqu\'à +12 % de dégâts d\'attaque selon les PV manquants) ' +
+          'n\'est pas appliqué : cible et porteur sont supposés à pleine vie, donc 0'
+  },
+
+  /* ── Passifs qui MULTIPLIENT une stat ───────────────────────────────────────
+     Troisième catégorie, distincte des deux précédentes, et purement arithmétique :
+     ils ne s'ajoutent ni aux dégâts ni au profil sous forme de montant fixe — ils
+     appliquent un POURCENTAGE à une stat déjà constituée.
+
+     L'ordre est donc capital, et c'est ce qui justifie le champ `phase` :
+       'avant' — la base ne dépend que des objets (les PV d'objets de Warmog, les
+                 résistances bonus de Jak'Sho) : on multiplie AVANT les passifs qui
+                 accordent des stats, puisque ceux-ci lisent le résultat (l'Armure
+                 sanguine convertit les PV bonus — Warmog compris — en dégâts).
+       'apres' — la base est la stat TOTALE (la Coiffe de Rabadon) : elle doit
+                 englober tout ce que les autres passifs ont accordé, donc en dernier.
+     Se tromper de phase, c'est perdre ou compter deux fois un pourcentage entier. */
+
+  3089: { // Coiffe de Rabadon — Opus magique
+    nom: 'Opus magique', effet: 'multiplicateur', phase: 'apres',
+    /* « Vous augmentez votre puissance totale de 30 % » — totale, pas bonus : la
+       puissance de base des champions étant nulle, la distinction n'a d'effet que si
+       un autre passif en accorde, mais la coder juste coûte le même prix.
+       Objet PRÉSENT dans les builds de référence et jusqu'ici non appliqué : la
+       puissance de ces builds était sous-estimée de 30 %. */
+    multiplicateursStat: [{ stat: 'ap', portee: 'total', valeur: 'APAmp' }]
+  },
+
+  6665: { // Jak'Sho, le Protéiforme — Vigueur de Néantin
+    nom: 'Vigueur de Néantin', effet: 'multiplicateur', phase: 'avant',
+    /* « armure et résistance magique BONUS » : la base du champion n'est pas
+       multipliée. Le lire « total » gonflerait l'effet de moitié au niveau 18. */
+    multiplicateursStat: [
+      { stat: 'armure', portee: 'bonus', valeur: 'BonusResistPercentage' },
+      { stat: 'rm',     portee: 'bonus', valeur: 'BonusResistPercentage' }
+    ],
+    condition: { apresSecondes: 5, libelle: 'après 5 s de combat contre des champions' },
+    note: 'ne s\'applique qu\'après 5 s de combat : compté seulement sur les fenêtres ' +
+          'd\'au moins 5 s, et sans effet sur les dégâts infligés (stats défensives)'
+  },
+
+  3083: { // Armure de Warmog — Vitalité de Warmog
+    nom: 'Vitalité de Warmog', effet: 'multiplicateur', phase: 'avant',
+    /* « 12 % de vos PV d'OBJETS » — ni les PV de base, ni ceux des runes. D'où la
+       portée `objets`, distincte de `bonus` : sur un champion niveau 18 l'écart
+       entre les deux se compte en centaines de PV. */
+    multiplicateursStat: [{ stat: 'pv', portee: 'objets', valeur: 'HPAmp' }],
+    note: 'Cœur de Warmog (régénération hors combat) n\'entre pas dans un calcul de combat'
   },
 
   /* ── Boucliers ──────────────────────────────────────────────────────────────── */

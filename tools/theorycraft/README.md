@@ -359,9 +359,38 @@ suivent. `statsAccordees` est appliqué par `profil()` avant tout autre calcul.
 |---|---|---|
 | Gage de Sterak | +50 % de l'AD **de base** en AD bonus | wiki |
 | Manamune | +2 % du **mana maximum** en AD bonus | wiki |
+| Armure sanguine | +2,5 % des **PV bonus** en AD bonus | description en jeu |
 
-⚠ Une seule passe, volontairement : aucun objet actuel n'accorde une stat que lit un
-autre passif. Si cela changeait, il faudrait itérer.
+L'Armure sanguine est le premier cas où le fichier ne porte **qu'un pourcentage nu**,
+sans `mItemCalculations` : la base est alors déclarée explicitement dans le modèle
+(`base: 'pvBonus'`), d'après la description en jeu. Un pourcentage sans base déclarée
+est refusé — on ne devine pas sur quoi porte un pourcentage.
+
+### Les passifs qui MULTIPLIENT une stat
+
+Troisième catégorie, purement arithmétique, et longtemps manquante : ils appliquent un
+pourcentage à une stat **déjà constituée**. La Coiffe de Rabadon figurait dans les
+builds de référence sans être appliquée : la puissance de ces builds était sous-estimée
+de 30 % — 295 au lieu de 384 sur le Rumble d'exemple, soit 60 dégâts de moins par Q.
+
+| Objet | Effet | Portée |
+|---|---|---|
+| Coiffe de Rabadon | ×1,30 | puissance **totale** |
+| Jak'Sho | ×1,30 | armure et RM **bonus**, après 5 s de combat |
+| Armure de Warmog | ×1,12 | PV **d'objets** (ni base, ni runes) |
+
+**L'ordre des passes décide du résultat**, d'où le champ `phase` :
+
+1. multiplicateurs `avant` — leur base ne dépend que des objets ;
+2. stats accordées — additives, et certaines **lisent** le résultat de la passe 1 ;
+3. multiplicateurs `apres` — leur base est la stat **totale**, donc en dernier.
+
+Warmog + Armure sanguine le prouvent : les 186 PV de Warmog doivent entrer dans la
+conversion PV → AD (73,4 AD contre 68,7 dans l'ordre inverse). Inverser 2 et 3 ferait
+au contraire perdre à Rabadon toute puissance accordée par un autre passif.
+
+Jak'Sho est conditionné dans le temps : sans durée de combat fournie, il est **refusé
+avec son motif**, jamais supposé actif.
 
 ### Le mana manquait entièrement au modèle
 

@@ -118,18 +118,19 @@ function evaluerPassif(id, p, cible, options = {}) {
        `statsAccordees()` et intégré au profil. On renvoie ici le montant accordé, pour
        que l'objet ne passe pas pour « non évaluable » alors qu'il est parfaitement
        modélisé. */
-    brut = 0;
-    for (const { stat, calcul } of m.statsAccordees) {
-      const c = o.calculs[calcul];
-      if (!c || !c.termes) return { ok: false, nom: o.nom, raison: 'calcul absent : ' + calcul };
-      for (const t of c.termes) {
-        const v = valeurTerme(t, p, cible);
-        if (v == null) return { ok: false, nom: o.nom,
-                                raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
-        brut += v;
-        detail.push({ part: stat + ' ← ' + t.stat, valeur: Math.round(v * 100) / 100 });
-      }
-    }
+    const r = statsAccordees({ ...p, objets: [id] });
+    if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
+    brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
+    r.detail.forEach(d => detail.push({ part: d.stat, valeur: d.valeur }));
+  } else if (m.multiplicateursStat) {
+    /* Passif multiplicateur : traité par `multiplicateursStat()` et intégré au profil.
+       On renvoie ici le montant de stat gagné, pour que l'objet ne passe pas pour
+       « non évaluable » alors qu'il est modélisé. */
+    const r = multiplicateursStat({ ...p, objets: [id] }, m.phase || 'apres',
+                                  { fenetre: options.fenetre });
+    if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
+    brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
+    r.detail.forEach(d => detail.push({ part: d.stat + ' ×' + (1 + d.pourcent), valeur: d.valeur }));
   } else {
     return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };
   }
@@ -212,18 +213,82 @@ function statsAccordees(p) {
     const m = MODELES[id];
     if (!m || !m.statsAccordees) return;
     const o = parId[id];
-    m.statsAccordees.forEach(({ stat, calcul }) => {
-      const c = o.calculs[calcul];
-      if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + calcul); return; }
-      let v = 0; let ok = true;
-      c.termes.forEach(t => {
-        const x = valeurTerme(t, p, null);
-        if (x == null) { ok = false; return; }
-        v += x;
-      });
-      if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
+    m.statsAccordees.forEach(({ stat, calcul, valeur, base }) => {
+      let v = 0;
+      if (calcul) {
+        const c = o.calculs[calcul];
+        if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + calcul); return; }
+        let ok = true;
+        c.termes.forEach(t => {
+          const x = valeurTerme(t, p, null);
+          if (x == null) { ok = false; return; }
+          v += x;
+        });
+        if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
+      } else {
+        /* Second cas : le fichier ne porte qu'un pourcentage nu, sans formule. La base
+           est alors déclarée dans le modèle, d'après la description en jeu, et lue sur
+           le profil — jamais devinée. Un pourcentage sans base est refusé. */
+        const pct = o.valeurs[valeur];
+        if (pct == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
+        if (!base || p[base] == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
+        v = pct * p[base];
+      }
       gains[stat] = (gains[stat] || 0) + v;
       detail.push({ objet: o.nom, nom: m.nom, stat, valeur: Math.round(v * 100) / 100 });
+    });
+  });
+  return { gains, detail, refus };
+}
+
+/* Passifs qui MULTIPLIENT une stat (Coiffe de Rabadon : +30 % de puissance totale).
+
+   Ils ne s'ajoutent pas, ils amplifient — c'est pourquoi ils ne peuvent pas cohabiter
+   avec `statsAccordees` dans la même passe. Deux phases :
+     'avant' — base issue des seuls objets ; doit précéder les stats accordées, qui la
+               lisent (l'Armure sanguine convertit les PV bonus, Warmog compris) ;
+     'apres' — base = la stat TOTALE ; doit englober ce que les autres ont accordé.
+
+   `fenetre` (durée du combat, en secondes) sert aux passifs conditionnels : Jak'Sho ne
+   s'arme qu'après 5 s de combat. Fenêtre inconnue → le passif est refusé, pas supposé.
+
+   Renvoie des GAINS ABSOLUS (et non un facteur) pour que l'appelant les ajoute comme
+   ceux de `statsAccordees` : une seule voie d'application, donc un seul endroit où se
+   tromper. */
+const BASES = {
+  ap:     { total: p => p.ap },
+  ad:     { total: p => p.adTotal, bonus: p => p.adBonus, base: p => p.adBase },
+  pv:     { total: p => p.pvMax, bonus: p => p.pvBonus, objets: p => p.pvObjets },
+  armure: { total: p => p.armure, bonus: p => p.armureBonus },
+  rm:     { total: p => p.rm,     bonus: p => p.rmBonus }
+};
+
+function multiplicateursStat(p, phase, options = {}) {
+  const gains = {}; const detail = []; const refus = [];
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || !m.multiplicateursStat) return;
+    if ((m.phase || 'apres') !== phase) return;
+    const o = parId[id];
+
+    if (m.condition && m.condition.apresSecondes != null) {
+      const f = options.fenetre;
+      if (f == null) { refus.push(o.nom + ' : ' + m.condition.libelle + ', durée de combat non fournie'); return; }
+      if (f < m.condition.apresSecondes) { refus.push(o.nom + ' : ' + m.condition.libelle + ' (fenêtre de ' + f + ' s)'); return; }
+    }
+
+    m.multiplicateursStat.forEach(({ stat, portee, valeur }) => {
+      const pct = o.valeurs[valeur];
+      if (pct == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
+      const lire = (BASES[stat] || {})[portee];
+      if (!lire) { refus.push(o.nom + ' : portée non gérée ' + stat + '/' + portee); return; }
+      const socle = lire(p);
+      if (socle == null) { refus.push(o.nom + ' : base ' + stat + '/' + portee + ' indisponible'); return; }
+      const v = pct * socle;
+      gains[stat] = (gains[stat] || 0) + v;
+      detail.push({ objet: o.nom, nom: m.nom, stat,
+                    socle: Math.round(socle * 100) / 100,
+                    pourcent: pct, valeur: Math.round(v * 100) / 100 });
     });
   });
   return { gains, detail, refus };
@@ -240,4 +305,5 @@ function couverture() {
   return { finis, avecPassif, modelises, ecartes, sansModele };
 }
 
-module.exports = { evaluerPassif, coupsAImpact, statsAccordees, couverture, MODELES, parId };
+module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
+                   couverture, MODELES, parId };

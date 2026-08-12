@@ -152,6 +152,49 @@ vrai('  et le Q de Ryze se calcule enfin', q.ok && q.brut > 0, q.ok ? q.brut + '
    croire que le Manamune ne donne rien, au lieu de dire qu'il est inapplicable. */
 vrai('un champion à énergie n\'a pas de mana', M.profil('Rumble', 18, []).mana === null);
 
+console.log('\n── Passifs qui MULTIPLIENT une stat (l\'ordre décide du résultat)');
+/* Coiffe de Rabadon : « Vous augmentez votre puissance totale de 30 % ». Objet présent
+   dans les builds de référence et jusque-là non appliqué — la puissance de ces builds
+   était sous-estimée de 30 %, silencieusement. */
+const apRab = items.find(x => x.id === 3089).stats.ap.valeur;
+const rab = M.profil('Ryze', 18, [3089]);
+verifie('Coiffe de Rabadon : +30 % de la puissance totale', rab.ap, apRab * 1.3, 0.01);
+const apZho = items.find(x => x.id === 3157).stats.ap.valeur;
+verifie('  et elle amplifie AUSSI la puissance des autres objets',
+        M.profil('Ryze', 18, [3089, 3157]).ap, (apRab + apZho) * 1.3, 0.01);
+vrai('  le multiplicateur est tracé avec son socle',
+     (rab.multiplicateurs || []).some(x => x.socle === apRab && x.pourcent === 0.3));
+
+/* La preuve que l'ORDRE des trois passes est le bon, et le seul test qui puisse
+   l'établir : Warmog ajoute 12 % des PV d'objets, l'Armure sanguine convertit ensuite
+   2,5 % des PV bonus en dégâts d'attaque. Si le multiplicateur passait APRÈS la
+   conversion, les PV de Warmog n'entreraient jamais dans les dégâts. */
+const pvW = items.find(x => x.id === 3083).stats.pv.valeur;
+const bm = items.find(x => x.id === 2501);
+const duo = M.profil('Sion', 18, [3083, 2501], { fenetre: 10 });
+const pvObjets = pvW + bm.stats.pv.valeur;
+verifie('Armure de Warmog : +12 % des PV d\'objets', duo.pvBonus, pvObjets * 1.12, 0.5);
+verifie('Armure sanguine : 2,5 % des PV bonus en AD — Warmog compris',
+        duo.adBonus, bm.stats.ad.valeur + pvObjets * 1.12 * 0.025, 0.5);
+/* Contre-test : si l'ordre était inversé, l'AD ne compterait que 1550 PV et non 1736.
+   L'écart tient en 4,7 dégâts d'attaque — assez petit pour passer inaperçu à l'œil,
+   assez grand pour fausser une comparaison de builds. */
+vrai('  l\'ordre inverse donnerait un chiffre plus bas',
+     duo.adBonus > bm.stats.ad.valeur + pvObjets * 0.025 + 0.5,
+     'écart de ' + Math.round((duo.adBonus - bm.stats.ad.valeur - pvObjets * 0.025) * 10) / 10 + ' AD');
+
+/* Jak'Sho porte sur les résistances BONUS, pas totales, et ne s'arme qu'après 5 s de
+   combat. Une condition de temps non vérifiable doit se refuser, jamais se supposer. */
+const armJak = items.find(x => x.id === 6665).stats.armure.valeur;
+const jak = M.profil('Sion', 18, [6665], { fenetre: 10 });
+const jakNu = M.profil('Sion', 18, [], { sansPassifs: true });
+verifie('Jak\'Sho : +30 % des résistances BONUS après 5 s', jak.armureBonus, armJak * 1.3, 0.01);
+verifie('  la base du champion n\'est pas amplifiée', jak.armure - jak.armureBonus, jakNu.armure, 0.01);
+vrai('  sous 5 s de combat, le passif est refusé avec son motif',
+     /5 s de combat/.test((M.profil('Sion', 18, [6665], { fenetre: 3 }).statsRefusees || []).join(' ')));
+vrai('  sans durée de combat fournie, il est refusé plutôt que supposé',
+     /non fournie/.test((M.profil('Sion', 18, [6665]).statsRefusees || []).join(' ')));
+
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
    l'exclure l'effacerait : sur la durée, la seule valeur juste est le tiers. */
@@ -208,7 +251,10 @@ Object.keys(I.MODELES).map(Number).forEach(id => {
   const m = I.MODELES[id];
   if (m.nonApplique) return;
   const o = items.find(x => x.id === id);
-  const e = I.evaluerPassif(id, ref, cible);
+  /* Fenêtre de 10 s : sans elle, les passifs conditionnels dans le temps (Jak'Sho
+     s'arme après 5 s de combat) se refusent à juste titre, et ce contrôle-ci les
+     compterait comme des échecs de modélisation. */
+  const e = I.evaluerPassif(id, ref, cible, { fenetre: 10 });
   if (!e.ok) { echecs.push(o.nom + ' : ' + e.raison); return; }
 
   const phrase = phraseDuPassif(id, m.nom);

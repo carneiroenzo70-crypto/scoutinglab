@@ -99,9 +99,17 @@ function profil(id, niveau, idsObjets, extras = {}) {
     ap: g('ap'),
     pvBonus: g('pv'),
     pvMax: nu.pv + g('pv'),
+    /* PV provenant des SEULS objets — distincts des PV bonus, qui incluent runes et
+       autres apports. L'Armure de Warmog multiplie les premiers ; confondre les deux
+       lui ferait rendre plus qu'elle ne rend. */
+    pvObjets: it.pv || 0,
     mana: nu.mana == null ? null : nu.mana + g('mana'),
     armure: nu.armure + g('armure'),
     rm: nu.rm + g('rm'),
+    /* Part BONUS des résistances, isolée de la base du champion : c'est elle seule
+       que Jak'Sho amplifie. */
+    armureBonus: g('armure'),
+    rmBonus: g('rm'),
     accel: g('accel'),
     letalite: g('letalite'),
     penArmurePct: g('penArmure'),
@@ -120,16 +128,36 @@ function profil(id, niveau, idsObjets, extras = {}) {
      lui-même, donc tous les ratios de sorts et toutes les attaques qui suivent.
      Chargement paresseux pour éviter une dépendance circulaire entre les deux moteurs. */
   if (!extras.sansPassifs) {
-    const { statsAccordees } = require('./30_moteur_items');
-    const acc = statsAccordees(p);
-    Object.entries(acc.gains).forEach(([stat, v]) => {
+    const { statsAccordees, multiplicateursStat } = require('./30_moteur_items');
+
+    /* Trois passes, et l'ordre n'est pas décoratif :
+         1. multiplicateurs de phase « avant » — leur base ne dépend que des objets
+            (PV d'objets, résistances bonus) ;
+         2. stats accordées — additives, et certaines LISENT le résultat de la passe 1
+            (l'Armure sanguine convertit 2,5 % des PV bonus, ceux de Warmog compris) ;
+         3. multiplicateurs de phase « après » — leur base est la stat TOTALE, donc
+            après tout le reste (la Coiffe de Rabadon amplifie la puissance finale).
+       Inverser 2 et 3 ferait perdre à Rabadon la puissance accordée par les passifs. */
+    const appliquer = gains => Object.entries(gains).forEach(([stat, v]) => {
       if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
       else if (stat === 'ap') p.ap += v;
       else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
+      else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }
+      else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }
       else if (p[stat] != null) p[stat] += v;
     });
+
+    const opts = { fenetre: extras.fenetre };
+    const avant = multiplicateursStat(p, 'avant', opts);
+    appliquer(avant.gains);
+    const acc = statsAccordees(p);
+    appliquer(acc.gains);
+    const apres = multiplicateursStat(p, 'apres', opts);
+    appliquer(apres.gains);
+
     p.statsAccordees = acc.detail;
-    p.statsRefusees = acc.refus;
+    p.multiplicateurs = avant.detail.concat(apres.detail);
+    p.statsRefusees = acc.refus.concat(avant.refus, apres.refus);
   }
   return p;
 }
