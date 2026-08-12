@@ -74,6 +74,30 @@ verifie('Dent de Nashor : ' + nashor.valeurs.NashorsBaseValue + ' + ' +
 verifie('Au bout du rouleau : valeur fixe',
   I.evaluerPassif(3091, jinx, cible).brut, items.find(x => x.id === 3091).calculs.OnHitDamage.termes[0].valeur);
 
+console.log('\n── Base, bonus ou total : la table qui était permutée');
+/* Le Fléau de liche ressortait à « 75 % de l'AD BONUS » alors que le wiki dit « 75 %
+   de l'AD de BASE ». Sur un mage sans dégâts d'attaque bonus la lame enchantée tombait
+   à zéro ; sur un combattant elle explosait. Trois objets, trois valeurs du wiki. */
+const modeDe = (id, calcul, stat) => {
+  const t = (items.find(x => x.id === id).calculs[calcul].termes || [])
+    .find(x => x.stat === stat);
+  return t ? { mode: t.mode, valeur: t.valeur } : null;
+};
+const lich = modeDe(3100, 'SpellbladeDamage', 'AD');
+verifie('Fléau de liche : 75 % de l\'AD (wiki)', lich.valeur, 0.75);
+vrai('  et c\'est bien l\'AD de BASE, pas le bonus', lich.mode === 'base', lich.mode);
+const trin = modeDe(3078, 'SpellbladeDamage', 'AD');
+verifie('Force de la trinité : 200 % de l\'AD (wiki)', trin.valeur, 2);
+vrai('  sur l\'AD de base', trin.mode === 'base', trin.mode);
+const lichAP = modeDe(3100, 'SpellbladeDamage', 'AP');
+verifie('Fléau de liche : 45 % de puissance (wiki)', lichAP.valeur, 0.45);
+vrai('  et la puissance est bien en « total »', lichAP.mode === 'total', lichAP.mode);
+/* Contre-épreuve : un ratio explicitement « bonus » doit rester bonus. Sans elle, on
+   pourrait tout basculer en « base » et croire le problème réglé. */
+const term = modeDe(3302, 'OnHitDamage', 'AD');
+vrai('Terminus : son ratio d\'AD reste « bonus » (contre-épreuve)',
+     term.mode === 'bonus', term.mode);
+
 console.log('\n── Cumul des coups à l\'impact sur un build entier');
 const build = M.profil('Jinx', 18, [3153, 3115, 3091]);
 const oh = I.coupsAImpact(build, cible, { mitiger: M.mitiger });
@@ -91,6 +115,19 @@ vrai('le magique est moins réduit que le physique sur cette cible',
      nash.subis / nash.brut > bot.subis / bot.brut,
      Math.round(nash.subis / nash.brut * 100) + ' % contre ' +
      Math.round(bot.subis / bot.brut * 100) + ' %');
+
+console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
+/* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
+   l'exclure l'effacerait : sur la durée, la seule valeur juste est le tiers. */
+const kraken = M.profil('Jinx', 18, [6672]);
+const ohK = I.coupsAImpact(kraken, cible, { mitiger: M.mitiger });
+const lK = ohK.lignes.find(l => /krakens/i.test(l.objet));
+vrai('le Tueur de krakens est bien compté', !!lK, lK ? lK.cadence : '');
+if (lK) {
+  const seul = I.evaluerPassif(6672, kraken, cible);
+  verifie('  et vaut le tiers de son montant par attaque', lK.subis, seul.brut / 3, 0.5);
+  vrai('  sa cadence est affichée, pas cachée', /sur 3/.test(lK.cadence), lK.cadence);
+}
 
 console.log('\n── Refus et écarts assumés');
 const inconnu = I.evaluerPassif(999999, jinx, cible);

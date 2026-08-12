@@ -49,7 +49,27 @@ node 29_sonde_statmap.js     # re-dérive la table mStat depuis les données
 node 28_comparer.js Jinx 18 "3031,3006,3094,3072" "3153,3006,3085,3036" Rumble
 ```
 
-**164 vérifications** en tout : 63 runes, 30 objets, 47 modèle, 24 passifs.
+```bash
+node 32_audit_stats.js       # audit inverse : aucune stat de boutique non extraite
+```
+
+**190 vérifications** en tout : 63 runes, 30 objets, 63 modèle, 34 passifs.
+
+## Audit inverse des stats
+
+Vérifier que les stats extraites existent dans la description ne détecte pas l'**oubli**
+— c'est ainsi que `mAbilityHasteMod` avait disparu de 65 objets sans la moindre erreur.
+`32_audit_stats.js` fait l'inverse : il lit la ligne de boutique et exige que chaque
+entrée ait sa contrepartie extraite.
+
+**478 valeurs confrontées, 0 manquante, 0 écart** sur les 218 objets.
+
+Les deux « anomalies » trouvées venaient de l'audit, pas de l'extraction : les
+Chaussures de lanceur de sorts portent **réellement** 20 de pénétration plate ET 8 %
+(deux stats distinctes que l'audit comparait l'une à l'autre), et le « +0 % de
+critique » des Flèches des Yun Tal est exact — l'objet gagne son critique à l'usage.
+Au passage : Data Dragon **omet purement** la pénétration magique des Chaussures de
+sorcier, que le fichier de jeu donne à 12 — la valeur du wiki.
 
 `03_resolveur.js` est le cœur : il aplatit l'arbre de formule en une somme de termes
 `{ stat, mode, valeur }`. **Il ne devine jamais** — une part de type inconnu est
@@ -279,12 +299,34 @@ cible à pleine vie, ce qui **renverse un verdict** — le build à pénétratio
 |---|---|
 | objets finis (≥ 1 800 po) | 105 |
 | dont portant un passif chiffré | 102 |
-| **appliqués aux dégâts** | **15** |
-| écartés avec un motif | 4 |
-| pas encore modélisés | 83 |
+| **appliqués aux dégâts** | **24** |
+| écartés avec un motif | 7 |
+| pas encore modélisés | 71 |
 
-Les 83 restants ne sont pas approximés : `evaluerPassif` renvoie « non modélisé », et
+Les 71 restants ne sont pas approximés : `evaluerPassif` renvoie « non modélisé », et
 le comparateur les nomme. **Un build est donc sous-estimé, jamais surestimé.**
+
+### La table base / bonus / total était permutée
+
+Deuxième table écrite de mémoire, deuxième table fausse. `MODES` valait
+`{0:'base', 1:'bonus', 2:'total'}` — la bonne est `{0:'total', 1:'base', 2:'bonus'}`.
+
+Conséquence : le Fléau de liche ressortait à « 75 % de l'AD **bonus** » quand le wiki
+dit « 75 % de l'AD de **base** ». Sur un mage sans dégâts d'attaque bonus, la lame
+enchantée tombait à **zéro** ; sur un combattant elle explosait. Même chose pour la
+Force de la trinité (200 % de l'AD de base) et le Gantelet givrant (150 %).
+
+Comme pour `STATS`, la correction vient des données : trois familles de noms tombent
+sur trois index distincts — `TotalADRatio` en 0, `BaseADRatio` et `SpellbladeMultiplier`
+en 1, `BonusADRatio` et `BonusHealthRatio` en 2. Recoupé sur le wiki, et verrouillé par
+un test qui inclut une **contre-épreuve** : Terminus doit garder un ratio « bonus »,
+sinon on pourrait tout basculer en « base » et croire le problème réglé.
+
+### Cadence : amortir plutôt qu'exclure
+
+Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
+l'exclure l'effacerait : sur la durée, la seule valeur juste est **le tiers**, et la
+cadence est affichée à côté du montant.
 
 ### Pièges des passifs
 

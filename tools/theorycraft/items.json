@@ -1050,12 +1050,12 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1
      },
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1
      }
     ]
@@ -1067,12 +1067,12 @@
     "siCondition": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1
      },
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1
      }
     ]
@@ -1285,7 +1285,7 @@
     "termes": [
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.15000000596046448
      }
     ]
@@ -1299,7 +1299,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.15000000596046448
      }
     ]
@@ -1468,7 +1468,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.10000000149011612
      }
     ]
@@ -1477,7 +1477,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1
      }
     ]
@@ -2989,7 +2989,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1
      }
     ]
@@ -3663,7 +3663,7 @@
     "termes": [
      {
       "stat": "VitesseDeplacement",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05000000074505806
      }
     ]
@@ -4304,7 +4304,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.4000000059604645
      }
     ]
@@ -4313,7 +4313,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.20000000298023224
      }
     ]
@@ -4358,7 +4358,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.75
      }
     ]
@@ -4468,7 +4468,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.07999999821186066
      }
     ]
@@ -4646,7 +4646,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.07999999821186066
      }
     ]
@@ -6107,7 +6107,7 @@
      },
      {
       "stat": "Armure",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.10000000149011612
      }
     ]
@@ -6299,12 +6299,12 @@
      },
      {
       "stat": "Armure",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 1.75
      },
      {
       "stat": "RM",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 1.75
      }
     ]
@@ -6556,7 +6556,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.6499999761581421
      }
     ]
@@ -6710,7 +6710,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -6914,7 +6914,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05000000074505806
      }
     ]
@@ -6937,7 +6937,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05000000074505806
      }
     ]
@@ -7089,7 +7089,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05000000074505806
      }
     ]
@@ -7103,7 +7103,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -7163,7 +7163,7 @@
      },
      {
       "stat": "Letalite",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.25
      }
     ]
@@ -7221,7 +7221,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.029999999329447746
      }
     ]
@@ -7230,7 +7230,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.029999999329447746
      }
     ]
@@ -7298,7 +7298,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.019999999552965164
      }
     ]
@@ -7476,7 +7476,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.014999999664723873
      }
     ]
@@ -7490,7 +7490,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.014999999664723873
      }
     ]
@@ -7504,7 +7504,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.014999999664723873
      }
     ]
@@ -7777,7 +7777,7 @@
      },
      {
       "stat": "Letalite",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1.5
      }
     ]
@@ -7905,7 +7905,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -7919,7 +7919,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -7969,7 +7969,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -8047,7 +8047,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.009999999776482582
      }
     ]
@@ -8061,7 +8061,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.009999999776482582
      }
     ]
@@ -8075,7 +8075,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.009999999776482582
      }
     ]
@@ -8089,7 +8089,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.019999999552965164
      }
     ]
@@ -8103,7 +8103,7 @@
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.03999999910593033
      }
     ]
@@ -8274,7 +8274,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.800000011920929
      }
     ]
@@ -8283,7 +8283,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.800000011920929
      }
     ]
@@ -8328,7 +8328,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.4000000059604645
      }
     ]
@@ -8337,7 +8337,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.20000000298023224
      }
     ]
@@ -8346,7 +8346,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.4000000059604645,
       "facteurDistance": 0.5
      }
@@ -8401,7 +8401,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.15000000596046448
      }
     ]
@@ -8571,12 +8571,12 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.75
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.44999998807907104
      }
     ]
@@ -8637,7 +8637,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.15000000596046448
      }
     ]
@@ -8704,7 +8704,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1
      },
      {
@@ -8792,7 +8792,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1.5
      }
     ]
@@ -8954,7 +8954,7 @@
      },
      {
       "stat": "Letalite",
-      "mode": "base",
+      "mode": "total",
       "valeur": 25
      }
     ]
@@ -8968,7 +8968,7 @@
      },
      {
       "stat": "Letalite",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1.5
      }
     ]
@@ -9249,7 +9249,7 @@
      },
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05999999865889549
      }
     ]
@@ -9263,7 +9263,7 @@
      },
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.005999999955296514
      }
     ]
@@ -9281,7 +9281,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05999999865889549
      },
      {
@@ -9597,7 +9597,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.20000000298023224
      }
     ]
@@ -9661,7 +9661,7 @@
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.30000001192092896
      }
     ]
@@ -9721,13 +9721,13 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1.2000000476837158,
       "facteurDistance": 0.699999988079071
      },
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.05000000074505806,
       "facteurDistance": 0.699999988079071
      }
@@ -9737,13 +9737,13 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 3,
       "facteurDistance": 0.699999988079071
      },
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612,
       "facteurDistance": 0.699999988079071
      }
@@ -9859,12 +9859,12 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.10000000149011612
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -9878,12 +9878,12 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.10000000149011612
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -10331,7 +10331,7 @@
      },
      {
       "stat": "Letalite",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0
      }
     ]
@@ -10445,12 +10445,12 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.625
      },
      {
       "stat": "Crit",
-      "mode": "base",
+      "mode": "total",
       "valeur": 25
      }
     ]
@@ -10459,12 +10459,12 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 1.25
      },
      {
       "stat": "Crit",
-      "mode": "base",
+      "mode": "total",
       "valeur": 50
      }
     ]
@@ -10527,12 +10527,12 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.75
      },
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      }
     ]
@@ -10541,12 +10541,12 @@
     "termes": [
      {
       "stat": "AP",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.10000000149011612
      },
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.029999999329447746
      }
     ]
@@ -10609,7 +10609,7 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.12999999523162842
      }
     ]
@@ -10623,7 +10623,7 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.10000000149011612
      }
     ]
@@ -10676,7 +10676,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.014999999664723873
      }
     ]
@@ -10685,7 +10685,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.029999999329447746
      }
     ]
@@ -10753,7 +10753,7 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 1.5
      }
     ]
@@ -10767,7 +10767,7 @@
      },
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 1.125
      }
     ]
@@ -10964,7 +10964,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.019999999552965164
      }
     ]
@@ -11076,7 +11076,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.8999999761581421,
       "facteurDistance": 0.5
      }
@@ -11176,7 +11176,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.019999999552965164
      }
     ]
@@ -11185,7 +11185,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.10000000149011612
      }
     ]
@@ -11194,7 +11194,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.0600000032782555
      }
     ]
@@ -11203,7 +11203,7 @@
     "termes": [
      {
       "stat": "Portee",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.009999999776482582
      }
     ]
@@ -11212,7 +11212,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.012000000208616246
      }
     ]
@@ -11221,7 +11221,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.6000000238418579
      }
     ]
@@ -11230,7 +11230,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 0.5
      }
     ]
@@ -11542,7 +11542,7 @@
     "termes": [
      {
       "stat": "PVactuelsCible",
-      "mode": "base",
+      "mode": "total",
       "valeur": 1
      }
     ]
@@ -11861,7 +11861,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.4000000059604645
      }
     ]
@@ -11870,7 +11870,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.20000000298023224
      }
     ]
@@ -11879,7 +11879,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.800000011920929
      }
     ]
@@ -11935,7 +11935,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.029999999329447746,
       "facteurDistance": 0.5
      }
@@ -11945,7 +11945,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.009999999776482582,
       "facteurDistance": 0.5
      }
@@ -11955,7 +11955,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.03999999910593033,
       "facteurDistance": 0.5
      }
@@ -11965,7 +11965,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.09000000357627869,
       "facteurDistance": 0.5
      }
@@ -11975,7 +11975,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.009999999776482582,
       "facteurDistance": 0.5
      }
@@ -11985,7 +11985,7 @@
     "termes": [
      {
       "stat": "PV",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.029999999329447746,
       "facteurDistance": 0.5
      }
@@ -12044,7 +12044,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "total",
+      "mode": "bonus",
       "valeur": 0.75
      }
     ]
@@ -12165,7 +12165,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.800000011920929
      }
     ]
@@ -12174,7 +12174,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.4000000059604645
      }
     ]
@@ -12183,7 +12183,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "base",
+      "mode": "total",
       "valeur": 0.20000000298023224
      }
     ]
@@ -12286,7 +12286,7 @@
     "termes": [
      {
       "stat": "AD",
-      "mode": "bonus",
+      "mode": "base",
       "valeur": 2
      }
     ]

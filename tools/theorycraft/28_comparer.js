@@ -111,7 +111,7 @@ function afficher(nom, ids) {
     '(' + Math.round(p.crit * 100) + ' % crit, x' + aa.multiplicateurCritique + ')');
   oh.lignes.forEach(l => console.log('║    + ' + l.objet.padEnd(24) +
     String(Math.round(l.brut)).padStart(6) + ' brut  →  ' +
-    String(Math.round(l.subis)).padStart(6) + ' subis   (' + l.type + ', à l\'impact)'));
+    String(Math.round(l.subis)).padStart(6) + ' subis   (' + l.type + ', ' + l.cadence + ')'));
   const parCoupTotal = aa.parCoup + oh.subis;
   const dps = parCoupTotal * p.vitesseAttaque;
   if (oh.lignes.length)
@@ -199,7 +199,8 @@ if (B) {
      Les ranger avec les passifs appliqués serait trompeur. */
   const horsCalcul = tous.filter(i => {
     const m = I.MODELES[i];
-    return m && !m.nonApplique && m.declencheur && m.declencheur.type !== 'coupAImpact';
+    return m && !m.nonApplique && m.declencheur &&
+           !['coupAImpact', 'toutesNAttaques'].includes(m.declencheur.type);
   }).map(i => M.itemParId[i].nom + ' (' + I.MODELES[i].declencheur.type + ')');
   if (horsCalcul.length) {
     console.log('\n   Modélisés mais HORS du calcul par attaque (déclenchement à ' +

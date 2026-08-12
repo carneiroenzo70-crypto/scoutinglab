@@ -34,6 +34,14 @@ function valeurTerme(t, p, cible) {
     case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;
     case 'Armure': return t.valeur * p.armure;
     case 'RM':     return t.valeur * p.rm;
+    /* Stats du porteur dont certains passifs dépendent : la Faux spectrale ajoute
+       50 × la chance de critique, le Glaive d'ombre 1,5 × la létalité. Les refuser
+       privait le calculateur d'objets entiers. */
+    case 'Crit':       return t.valeur * (p.crit || 0);
+    case 'DegatsCrit': return t.valeur * (p.degatsCrit || 0);
+    case 'Letalite':   return t.valeur * (p.letalite || 0);
+    case 'Accel':      return t.valeur * (p.accel || 0);
+    case 'VitesseAttaque': return t.valeur * (p.vitesseAttaque || 0);
     default:       return null;          // stat non gérée : refus, jamais d'à-peu-près
   }
 }
@@ -139,14 +147,28 @@ function coupsAImpact(p, cible, options = {}) {
   let subisTotal = 0;
   (p.objets || []).forEach(id => {
     const m = MODELES[id];
-    if (!m || !m.declencheur || m.declencheur.type !== 'coupAImpact') return;
+    if (!m || !m.declencheur) return;
+    const type = m.declencheur.type;
+    /* Deux cadences entrent dans les dégâts par seconde :
+         — « à chaque attaque » : le montant entier ;
+         — « un coup sur n » : le montant AMORTI sur n attaques.
+       Amortir est exact sur la durée, et bien plus juste que d'exclure l'objet : le
+       Tueur de krakens frappe un coup sur trois, il vaut donc un tiers de son montant
+       par attaque. L'ajouter en entier le triplerait ; l'exclure l'effacerait. */
+    let part = 1;
+    if (type === 'toutesNAttaques') part = 1 / Math.max(1, m.declencheur.n || 1);
+    else if (type !== 'coupAImpact') return;
+
     const e = evaluerPassif(id, p, cible, options);
     if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }
     const mit = options.mitiger ? options.mitiger(e.brut, e.typeDegats, cible, p) : null;
-    const subis = mit ? mit.subis : e.brut;
+    const subis = (mit ? mit.subis : e.brut) * part;
     subisTotal += subis;
     lignes.push({ objet: e.objet, nom: e.nom, type: e.typeDegats,
-                  brut: e.brut, subis: Math.round(subis * 100) / 100, note: e.note });
+                  brut: e.brut, subis: Math.round(subis * 100) / 100,
+                  cadence: part === 1 ? 'chaque attaque'
+                         : '1 attaque sur ' + m.declencheur.n + ' (amorti)',
+                  note: e.note });
   });
   return { subis: subisTotal, lignes, refus };
 }

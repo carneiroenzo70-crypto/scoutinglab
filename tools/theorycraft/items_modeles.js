@@ -90,7 +90,51 @@ module.exports = {
     note: 'les dégâts contre les structures sont ignorés'
   },
 
+  3074: { // Hydre vorace — Fendoir
+    nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'coupAImpact' },
+    calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
+    note: 'Croissant vorace (l\'actif) n\'est pas modélisé'
+  },
+
+  6631: { // Estropieur — Fendoir
+    nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'coupAImpact' },
+    calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
+    note: 'Onde de choc entravante (l\'actif) n\'est pas modélisée'
+  },
+
+  6672: { // Tueur de krakens — Trempe
+    nom: 'Trempe', effet: 'degats', typeDegats: 'brut',
+    /* Un coup sur trois seulement : compté comme tel dans les dégâts par seconde,
+       et surtout PAS ajouté à chaque attaque. */
+    declencheur: { type: 'toutesNAttaques', n: 3 }, calcul: 'DamageAmount',
+    distance: { facteur: 'RangedDamageMultiplier' },
+    note: 'l\'amplification selon les PV manquants de la cible n\'est pas appliquée : ' +
+          'valeur de plancher, cible à pleine vie'
+  },
+
   /* ── Lame enchantée : la prochaine attaque APRÈS une compétence ─────────────── */
+
+  3078: { // Force de la trinité — Lame enchantée
+    nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
+    calcul: 'SpellbladeDamage'
+  },
+
+  2510: { // Aube et crépuscule — Lame enchantée
+    nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
+    calcul: 'SpellbladeDamage',
+    note: 'le soin associé (SpellbladeHealing) n\'est pas compté dans les dégâts'
+  },
+
+  3508: { // Faux spectrale — Lame enchantée
+    nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
+    declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
+    calcul: 'SpellbladeDamage',
+    note: 'le rendu de mana n\'est pas modélisé'
+  },
 
   3100: { // Fléau de liche — Lame enchantée
     nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',
@@ -150,6 +194,36 @@ module.exports = {
   },
 
   /* ── Objets à passif défensif ou utilitaire, sans dégâts à ajouter ──────────── */
+
+  3097: { // Lame tempête — Éclair
+    nom: 'Éclair', effet: 'degats', typeDegats: 'magique',
+    declencheur: { type: 'energise' }, calcul: 'TotalProcDamage'
+  },
+
+  /* ── Boucliers ──────────────────────────────────────────────────────────────── */
+
+  3156: { // Gueule de Malmortius — Lien vital
+    nom: 'Lien vital', effet: 'bouclier',
+    declencheur: { type: 'seuilPV', seuil: 'LowHealthThreshold', recharge: 'Cooldown' },
+    calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }
+  },
+
+  6673: { // Arc-bouclier immortel
+    nom: 'Lien vital', effet: 'bouclier',
+    declencheur: { type: 'seuilPV', seuil: 'HealthThreshold', recharge: 'Cooldown' },
+    calcul: 'ShieldAmount'
+  },
+
+  /* ── Amplification : ne s'ajoute pas aux dégâts, elle les multiplie ──────────
+     Les ranger avec les passifs de dégâts serait une faute de raisonnement : on ne
+     peut pas additionner « +3 % de dégâts » à un montant. Ils sont donc déclarés
+     comme non appliqués, en attendant une passe dédiée à l'amplification. */
+  4633: { nonApplique: 'amplification des dégâts (jusqu\'à +8 % en combat prolongé) : ' +
+                       'multiplie les dégâts au lieu de s\'y ajouter — non appliquée' },
+  3161: { nonApplique: 'amplification des dégâts de compétence par cumuls : ' +
+                       'multiplie au lieu de s\'ajouter — non appliquée' },
+  8020: { nonApplique: 'amplification subie PAR LA CIBLE (+12 % de dégâts magiques) : ' +
+                       'appartient à la cible, pas au porteur' },
 
   3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },

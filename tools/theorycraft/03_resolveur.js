@@ -52,7 +52,18 @@ const STATS = {
      DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14, 15, 16 (Olaf), 19, 20,
      21, 30. Le résolveur les signale plutôt que de les supposer. */
 };
-const MODES = { 0: 'base', 1: 'bonus', 2: 'total' };
+/* Base, bonus ou total ? Cette table-ci était PERMUTÉE — la même erreur que STATS, et
+   au moins aussi coûteuse : le Fléau de liche ressortait à « 75 % de l'AD bonus » quand
+   le wiki dit « 75 % de l'AD de BASE ». Sur un mage sans dégâts d'attaque bonus, la
+   lame enchantée tombait à zéro ; sur un combattant elle explosait.
+
+   Dérivée des noms de DataValues (cf. 29_sonde_statmap.js), qui tranchent sans
+   ambiguïté — trois familles de noms, trois index distincts :
+     0 → TotalADRatio, APRatio          (total)
+     1 → BaseADRatio, SpellbladeMultiplier, SheenMult, HealBaseADRatio   (base)
+     2 → BonusADRatio, BonusHealthRatio, BonusResist, MeleeBonusADRatio  (bonus)
+   Recoupé sur le wiki : la Force de la trinité inflige « 200 % de l'AD de base ». */
+const MODES = { 0: 'total', 1: 'base', 2: 'bonus' };
 
 /* Les noms de DataValues ne sont pas cohérents en casse dans les fichiers de Riot :
    une formule référence « rAPCoefficient » quand la définition s'appelle parfois
