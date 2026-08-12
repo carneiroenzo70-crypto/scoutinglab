@@ -1,0 +1,1897 @@
+{
+ "Top": [
+  {
+   "nom": "Rumble",
+   "picks": 1471,
+   "wr": "54%"
+  },
+  {
+   "nom": "KSante",
+   "picks": 1332,
+   "wr": "44%"
+  },
+  {
+   "nom": "Sion",
+   "picks": 1224,
+   "wr": "47%"
+  },
+  {
+   "nom": "Gnar",
+   "picks": 1224,
+   "wr": "56%"
+  },
+  {
+   "nom": "Ambessa",
+   "picks": 1115,
+   "wr": "48%"
+  },
+  {
+   "nom": "Renekton",
+   "picks": 1029,
+   "wr": "51%"
+  },
+  {
+   "nom": "Jayce",
+   "picks": 680,
+   "wr": "50%"
+  },
+  {
+   "nom": "Ornn",
+   "picks": 473,
+   "wr": "47%"
+  },
+  {
+   "nom": "Yorick",
+   "picks": 387,
+   "wr": "48%"
+  },
+  {
+   "nom": "Zaahen",
+   "picks": 378,
+   "wr": "53%"
+  },
+  {
+   "nom": "Gwen",
+   "picks": 374,
+   "wr": "58%"
+  },
+  {
+   "nom": "Aatrox",
+   "picks": 318,
+   "wr": "49%"
+  },
+  {
+   "nom": "Jax",
+   "picks": 314,
+   "wr": "50%"
+  },
+  {
+   "nom": "Vayne",
+   "picks": 236,
+   "wr": "64%"
+  },
+  {
+   "nom": "Olaf",
+   "picks": 209,
+   "wr": "59%"
+  },
+  {
+   "nom": "Aurora",
+   "picks": 170,
+   "wr": "42%"
+  },
+  {
+   "nom": "Varus",
+   "picks": 160,
+   "wr": "52%"
+  },
+  {
+   "nom": "Kennen",
+   "picks": 130,
+   "wr": "44%"
+  },
+  {
+   "nom": "Shen",
+   "picks": 108,
+   "wr": "50%"
+  },
+  {
+   "nom": "RekSai",
+   "picks": 106,
+   "wr": "56%"
+  },
+  {
+   "nom": "Gragas",
+   "picks": 104,
+   "wr": "47%"
+  },
+  {
+   "nom": "Malphite",
+   "picks": 99,
+   "wr": "48%"
+  },
+  {
+   "nom": "Anivia",
+   "picks": 96,
+   "wr": "55%"
+  },
+  {
+   "nom": "Dr. Mundo",
+   "picks": 83,
+   "wr": "47%"
+  },
+  {
+   "nom": "Galio",
+   "picks": 79,
+   "wr": "42%"
+  },
+  {
+   "nom": "Poppy",
+   "picks": 64,
+   "wr": "53%"
+  },
+  {
+   "nom": "Camille",
+   "picks": 63,
+   "wr": "43%"
+  },
+  {
+   "nom": "Volibear",
+   "picks": 55,
+   "wr": "55%"
+  },
+  {
+   "nom": "Irelia",
+   "picks": 52,
+   "wr": "56%"
+  },
+  {
+   "nom": "Fiora",
+   "picks": 51,
+   "wr": "47%"
+  },
+  {
+   "nom": "Twisted Fate",
+   "picks": 47,
+   "wr": "66%"
+  },
+  {
+   "nom": "Mordekaiser",
+   "picks": 47,
+   "wr": "34%"
+  },
+  {
+   "nom": "Kled",
+   "picks": 46,
+   "wr": "50%"
+  },
+  {
+   "nom": "Yone",
+   "picks": 38,
+   "wr": "61%"
+  },
+  {
+   "nom": "Chogath",
+   "picks": 36,
+   "wr": "36%"
+  },
+  {
+   "nom": "Akali",
+   "picks": 35,
+   "wr": "60%"
+  },
+  {
+   "nom": "Yasuo",
+   "picks": 35,
+   "wr": "37%"
+  },
+  {
+   "nom": "Gangplank",
+   "picks": 32,
+   "wr": "63%"
+  },
+  {
+   "nom": "Tristana",
+   "picks": 30,
+   "wr": "40%"
+  },
+  {
+   "nom": "Darius",
+   "picks": 28,
+   "wr": "43%"
+  },
+  {
+   "nom": "Sylas",
+   "picks": 22,
+   "wr": "45%"
+  },
+  {
+   "nom": "Cassiopeia",
+   "picks": 21,
+   "wr": "57%"
+  },
+  {
+   "nom": "Swain",
+   "picks": 20,
+   "wr": "45%"
+  },
+  {
+   "nom": "Garen",
+   "picks": 20,
+   "wr": "45%"
+  },
+  {
+   "nom": "Sett",
+   "picks": 19,
+   "wr": "58%"
+  },
+  {
+   "nom": "Shyvana",
+   "picks": 18,
+   "wr": "44%"
+  },
+  {
+   "nom": "Tryndamere",
+   "picks": 17,
+   "wr": "41%"
+  },
+  {
+   "nom": "Vladimir",
+   "picks": 16,
+   "wr": "31%"
+  },
+  {
+   "nom": "Urgot",
+   "picks": 15,
+   "wr": "53%"
+  },
+  {
+   "nom": "Illaoi",
+   "picks": 14,
+   "wr": "43%"
+  },
+  {
+   "nom": "Ryze",
+   "picks": 13,
+   "wr": "38%"
+  },
+  {
+   "nom": "Udyr",
+   "picks": 13,
+   "wr": "38%"
+  },
+  {
+   "nom": "Naafiri",
+   "picks": 11,
+   "wr": "73%"
+  },
+  {
+   "nom": "Skarner",
+   "picks": 11,
+   "wr": "55%"
+  },
+  {
+   "nom": "Riven",
+   "picks": 11,
+   "wr": "64%"
+  },
+  {
+   "nom": "Kayle",
+   "picks": 10,
+   "wr": "20%"
+  },
+  {
+   "nom": "Singed",
+   "picks": 10,
+   "wr": "30%"
+  },
+  {
+   "nom": "Pantheon",
+   "picks": 9,
+   "wr": "33%"
+  },
+  {
+   "nom": "Nidalee",
+   "picks": 8,
+   "wr": "38%"
+  },
+  {
+   "nom": "Smolder",
+   "picks": 7,
+   "wr": "29%"
+  },
+  {
+   "nom": "Sejuani",
+   "picks": 7,
+   "wr": "29%"
+  },
+  {
+   "nom": "Maokai",
+   "picks": 7,
+   "wr": "57%"
+  },
+  {
+   "nom": "Nasus",
+   "picks": 6,
+   "wr": "67%"
+  },
+  {
+   "nom": "Lee Sin",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Quinn",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Xin Zhao",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Wukong",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Annie",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Locke",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Viktor",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Corki",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Warwick",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Brand",
+   "picks": 3,
+   "wr": "0%"
+  },
+  {
+   "nom": "Orianna",
+   "picks": 2,
+   "wr": "100%"
+  },
+  {
+   "nom": "Karma",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ahri",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Zeri",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Graves",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Tahm Kench",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Teemo",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Nautilus",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Vi",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Trundle",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Diana",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Lissandra",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Heimerdinger",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Kassadin",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Malzahar",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zac",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ekko",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Vex",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zilean",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Kayn",
+   "picks": 1,
+   "wr": "0%"
+  }
+ ],
+ "Jungle": [
+  {
+   "nom": "Jarvan IV",
+   "picks": 1624,
+   "wr": "53%"
+  },
+  {
+   "nom": "Xin Zhao",
+   "picks": 1614,
+   "wr": "49%"
+  },
+  {
+   "nom": "Vi",
+   "picks": 1282,
+   "wr": "52%"
+  },
+  {
+   "nom": "Wukong",
+   "picks": 1258,
+   "wr": "43%"
+  },
+  {
+   "nom": "Pantheon",
+   "picks": 1203,
+   "wr": "50%"
+  },
+  {
+   "nom": "Nocturne",
+   "picks": 841,
+   "wr": "50%"
+  },
+  {
+   "nom": "Lee Sin",
+   "picks": 730,
+   "wr": "55%"
+  },
+  {
+   "nom": "Naafiri",
+   "picks": 653,
+   "wr": "50%"
+  },
+  {
+   "nom": "Skarner",
+   "picks": 442,
+   "wr": "52%"
+  },
+  {
+   "nom": "Dr. Mundo",
+   "picks": 404,
+   "wr": "50%"
+  },
+  {
+   "nom": "Trundle",
+   "picks": 397,
+   "wr": "53%"
+  },
+  {
+   "nom": "Aatrox",
+   "picks": 334,
+   "wr": "50%"
+  },
+  {
+   "nom": "Qiyana",
+   "picks": 238,
+   "wr": "50%"
+  },
+  {
+   "nom": "Ambessa",
+   "picks": 215,
+   "wr": "48%"
+  },
+  {
+   "nom": "Zaahen",
+   "picks": 208,
+   "wr": "52%"
+  },
+  {
+   "nom": "Jayce",
+   "picks": 177,
+   "wr": "48%"
+  },
+  {
+   "nom": "Sejuani",
+   "picks": 156,
+   "wr": "49%"
+  },
+  {
+   "nom": "Poppy",
+   "picks": 121,
+   "wr": "59%"
+  },
+  {
+   "nom": "Malphite",
+   "picks": 115,
+   "wr": "55%"
+  },
+  {
+   "nom": "Maokai",
+   "picks": 95,
+   "wr": "49%"
+  },
+  {
+   "nom": "Viego",
+   "picks": 86,
+   "wr": "37%"
+  },
+  {
+   "nom": "Olaf",
+   "picks": 72,
+   "wr": "51%"
+  },
+  {
+   "nom": "KhaZix",
+   "picks": 51,
+   "wr": "53%"
+  },
+  {
+   "nom": "RekSai",
+   "picks": 44,
+   "wr": "52%"
+  },
+  {
+   "nom": "Jax",
+   "picks": 43,
+   "wr": "53%"
+  },
+  {
+   "nom": "Zyra",
+   "picks": 38,
+   "wr": "42%"
+  },
+  {
+   "nom": "Nidalee",
+   "picks": 34,
+   "wr": "56%"
+  },
+  {
+   "nom": "Kindred",
+   "picks": 33,
+   "wr": "24%"
+  },
+  {
+   "nom": "Sylas",
+   "picks": 30,
+   "wr": "47%"
+  },
+  {
+   "nom": "Shyvana",
+   "picks": 30,
+   "wr": "47%"
+  },
+  {
+   "nom": "Ivern",
+   "picks": 29,
+   "wr": "38%"
+  },
+  {
+   "nom": "Volibear",
+   "picks": 28,
+   "wr": "46%"
+  },
+  {
+   "nom": "Nasus",
+   "picks": 28,
+   "wr": "68%"
+  },
+  {
+   "nom": "Shen",
+   "picks": 23,
+   "wr": "48%"
+  },
+  {
+   "nom": "Graves",
+   "picks": 21,
+   "wr": "57%"
+  },
+  {
+   "nom": "Diana",
+   "picks": 17,
+   "wr": "47%"
+  },
+  {
+   "nom": "Taliyah",
+   "picks": 16,
+   "wr": "50%"
+  },
+  {
+   "nom": "Rengar",
+   "picks": 15,
+   "wr": "60%"
+  },
+  {
+   "nom": "Gwen",
+   "picks": 13,
+   "wr": "15%"
+  },
+  {
+   "nom": "Hecarim",
+   "picks": 13,
+   "wr": "31%"
+  },
+  {
+   "nom": "Lillia",
+   "picks": 13,
+   "wr": "54%"
+  },
+  {
+   "nom": "Darius",
+   "picks": 11,
+   "wr": "64%"
+  },
+  {
+   "nom": "Zac",
+   "picks": 10,
+   "wr": "30%"
+  },
+  {
+   "nom": "Zed",
+   "picks": 9,
+   "wr": "33%"
+  },
+  {
+   "nom": "Nunu",
+   "picks": 9,
+   "wr": "56%"
+  },
+  {
+   "nom": "Belveth",
+   "picks": 7,
+   "wr": "29%"
+  },
+  {
+   "nom": "Karthus",
+   "picks": 7,
+   "wr": "29%"
+  },
+  {
+   "nom": "Talon",
+   "picks": 6,
+   "wr": "50%"
+  },
+  {
+   "nom": "Chogath",
+   "picks": 5,
+   "wr": "40%"
+  },
+  {
+   "nom": "Udyr",
+   "picks": 5,
+   "wr": "60%"
+  },
+  {
+   "nom": "Morgana",
+   "picks": 5,
+   "wr": "40%"
+  },
+  {
+   "nom": "Nautilus",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Neeko",
+   "picks": 4,
+   "wr": "100%"
+  },
+  {
+   "nom": "Sion",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Amumu",
+   "picks": 4,
+   "wr": "25%"
+  },
+  {
+   "nom": "Brand",
+   "picks": 4,
+   "wr": "75%"
+  },
+  {
+   "nom": "Shaco",
+   "picks": 4,
+   "wr": "75%"
+  },
+  {
+   "nom": "Rumble",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Camille",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Locke",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Ornn",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Urgot",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Tryndamere",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Fiddlesticks",
+   "picks": 3,
+   "wr": "0%"
+  },
+  {
+   "nom": "Master Yi",
+   "picks": 3,
+   "wr": "0%"
+  },
+  {
+   "nom": "Kayn",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Gnar",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Rammus",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Briar",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Kaisa",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Elise",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ekko",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Mordekaiser",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Sett",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Warwick",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Fizz",
+   "picks": 1,
+   "wr": "0%"
+  }
+ ],
+ "Mid": [
+  {
+   "nom": "Ryze",
+   "picks": 1630,
+   "wr": "51%"
+  },
+  {
+   "nom": "Orianna",
+   "picks": 1113,
+   "wr": "53%"
+  },
+  {
+   "nom": "Ahri",
+   "picks": 962,
+   "wr": "53%"
+  },
+  {
+   "nom": "Aurora",
+   "picks": 855,
+   "wr": "45%"
+  },
+  {
+   "nom": "Azir",
+   "picks": 828,
+   "wr": "45%"
+  },
+  {
+   "nom": "Viktor",
+   "picks": 792,
+   "wr": "49%"
+  },
+  {
+   "nom": "Taliyah",
+   "picks": 716,
+   "wr": "47%"
+  },
+  {
+   "nom": "Syndra",
+   "picks": 680,
+   "wr": "49%"
+  },
+  {
+   "nom": "Cassiopeia",
+   "picks": 661,
+   "wr": "55%"
+  },
+  {
+   "nom": "Akali",
+   "picks": 655,
+   "wr": "54%"
+  },
+  {
+   "nom": "Annie",
+   "picks": 554,
+   "wr": "53%"
+  },
+  {
+   "nom": "Galio",
+   "picks": 528,
+   "wr": "46%"
+  },
+  {
+   "nom": "Anivia",
+   "picks": 486,
+   "wr": "54%"
+  },
+  {
+   "nom": "Sylas",
+   "picks": 329,
+   "wr": "49%"
+  },
+  {
+   "nom": "LeBlanc",
+   "picks": 276,
+   "wr": "49%"
+  },
+  {
+   "nom": "Yone",
+   "picks": 264,
+   "wr": "48%"
+  },
+  {
+   "nom": "Mel",
+   "picks": 244,
+   "wr": "41%"
+  },
+  {
+   "nom": "Hwei",
+   "picks": 213,
+   "wr": "45%"
+  },
+  {
+   "nom": "Twisted Fate",
+   "picks": 201,
+   "wr": "57%"
+  },
+  {
+   "nom": "Locke",
+   "picks": 123,
+   "wr": "52%"
+  },
+  {
+   "nom": "Zoe",
+   "picks": 112,
+   "wr": "54%"
+  },
+  {
+   "nom": "Lissandra",
+   "picks": 69,
+   "wr": "46%"
+  },
+  {
+   "nom": "Ziggs",
+   "picks": 52,
+   "wr": "46%"
+  },
+  {
+   "nom": "Aurelion Sol",
+   "picks": 44,
+   "wr": "66%"
+  },
+  {
+   "nom": "Jayce",
+   "picks": 42,
+   "wr": "40%"
+  },
+  {
+   "nom": "Sion",
+   "picks": 33,
+   "wr": "55%"
+  },
+  {
+   "nom": "Yasuo",
+   "picks": 32,
+   "wr": "56%"
+  },
+  {
+   "nom": "Tristana",
+   "picks": 31,
+   "wr": "52%"
+  },
+  {
+   "nom": "KogMaw",
+   "picks": 31,
+   "wr": "39%"
+  },
+  {
+   "nom": "Swain",
+   "picks": 25,
+   "wr": "72%"
+  },
+  {
+   "nom": "Zed",
+   "picks": 23,
+   "wr": "57%"
+  },
+  {
+   "nom": "Veigar",
+   "picks": 23,
+   "wr": "30%"
+  },
+  {
+   "nom": "Vex",
+   "picks": 23,
+   "wr": "61%"
+  },
+  {
+   "nom": "Xerath",
+   "picks": 20,
+   "wr": "30%"
+  },
+  {
+   "nom": "Malzahar",
+   "picks": 18,
+   "wr": "50%"
+  },
+  {
+   "nom": "Irelia",
+   "picks": 16,
+   "wr": "38%"
+  },
+  {
+   "nom": "Smolder",
+   "picks": 15,
+   "wr": "47%"
+  },
+  {
+   "nom": "Lux",
+   "picks": 15,
+   "wr": "60%"
+  },
+  {
+   "nom": "Ekko",
+   "picks": 15,
+   "wr": "27%"
+  },
+  {
+   "nom": "Kassadin",
+   "picks": 14,
+   "wr": "29%"
+  },
+  {
+   "nom": "Vladimir",
+   "picks": 13,
+   "wr": "15%"
+  },
+  {
+   "nom": "Corki",
+   "picks": 12,
+   "wr": "58%"
+  },
+  {
+   "nom": "Diana",
+   "picks": 10,
+   "wr": "50%"
+  },
+  {
+   "nom": "Neeko",
+   "picks": 9,
+   "wr": "44%"
+  },
+  {
+   "nom": "Vayne",
+   "picks": 8,
+   "wr": "50%"
+  },
+  {
+   "nom": "Renekton",
+   "picks": 8,
+   "wr": "38%"
+  },
+  {
+   "nom": "Morgana",
+   "picks": 8,
+   "wr": "50%"
+  },
+  {
+   "nom": "Ezreal",
+   "picks": 7,
+   "wr": "57%"
+  },
+  {
+   "nom": "Varus",
+   "picks": 6,
+   "wr": "17%"
+  },
+  {
+   "nom": "Rumble",
+   "picks": 6,
+   "wr": "33%"
+  },
+  {
+   "nom": "Ambessa",
+   "picks": 6,
+   "wr": "50%"
+  },
+  {
+   "nom": "VelKoz",
+   "picks": 5,
+   "wr": "40%"
+  },
+  {
+   "nom": "Fizz",
+   "picks": 5,
+   "wr": "40%"
+  },
+  {
+   "nom": "Xin Zhao",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Gwen",
+   "picks": 4,
+   "wr": "75%"
+  },
+  {
+   "nom": "Naafiri",
+   "picks": 4,
+   "wr": "0%"
+  },
+  {
+   "nom": "Gragas",
+   "picks": 4,
+   "wr": "75%"
+  },
+  {
+   "nom": "KSante",
+   "picks": 3,
+   "wr": "100%"
+  },
+  {
+   "nom": "Aatrox",
+   "picks": 3,
+   "wr": "100%"
+  },
+  {
+   "nom": "Qiyana",
+   "picks": 3,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zeri",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Gnar",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Malphite",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Seraphine",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Viego",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Zyra",
+   "picks": 2,
+   "wr": "0%"
+  },
+  {
+   "nom": "Nautilus",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Karma",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Pantheon",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Lucian",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ashe",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Dr. Mundo",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Kaisa",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Nami",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Skarner",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ornn",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Kennen",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Nasus",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Chogath",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Kayle",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Mordekaiser",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Soraka",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zilean",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Brand",
+   "picks": 1,
+   "wr": "0%"
+  }
+ ],
+ "ADC": [
+  {
+   "nom": "Ezreal",
+   "picks": 1708,
+   "wr": "50%"
+  },
+  {
+   "nom": "Yunara",
+   "picks": 1391,
+   "wr": "49%"
+  },
+  {
+   "nom": "Corki",
+   "picks": 1153,
+   "wr": "48%"
+  },
+  {
+   "nom": "Jhin",
+   "picks": 892,
+   "wr": "45%"
+  },
+  {
+   "nom": "Ashe",
+   "picks": 887,
+   "wr": "58%"
+  },
+  {
+   "nom": "Lucian",
+   "picks": 828,
+   "wr": "51%"
+  },
+  {
+   "nom": "Varus",
+   "picks": 821,
+   "wr": "50%"
+  },
+  {
+   "nom": "Caitlyn",
+   "picks": 801,
+   "wr": "55%"
+  },
+  {
+   "nom": "Sivir",
+   "picks": 779,
+   "wr": "52%"
+  },
+  {
+   "nom": "Kaisa",
+   "picks": 674,
+   "wr": "51%"
+  },
+  {
+   "nom": "Ziggs",
+   "picks": 370,
+   "wr": "45%"
+  },
+  {
+   "nom": "Aphelios",
+   "picks": 368,
+   "wr": "48%"
+  },
+  {
+   "nom": "Xayah",
+   "picks": 354,
+   "wr": "53%"
+  },
+  {
+   "nom": "Miss Fortune",
+   "picks": 326,
+   "wr": "48%"
+  },
+  {
+   "nom": "Zeri",
+   "picks": 155,
+   "wr": "50%"
+  },
+  {
+   "nom": "Kalista",
+   "picks": 151,
+   "wr": "50%"
+  },
+  {
+   "nom": "Senna",
+   "picks": 142,
+   "wr": "46%"
+  },
+  {
+   "nom": "Jinx",
+   "picks": 139,
+   "wr": "48%"
+  },
+  {
+   "nom": "Tristana",
+   "picks": 136,
+   "wr": "41%"
+  },
+  {
+   "nom": "Mel",
+   "picks": 127,
+   "wr": "42%"
+  },
+  {
+   "nom": "Viktor",
+   "picks": 116,
+   "wr": "51%"
+  },
+  {
+   "nom": "Syndra",
+   "picks": 102,
+   "wr": "46%"
+  },
+  {
+   "nom": "Smolder",
+   "picks": 90,
+   "wr": "37%"
+  },
+  {
+   "nom": "Cassiopeia",
+   "picks": 59,
+   "wr": "59%"
+  },
+  {
+   "nom": "Draven",
+   "picks": 43,
+   "wr": "56%"
+  },
+  {
+   "nom": "Seraphine",
+   "picks": 42,
+   "wr": "52%"
+  },
+  {
+   "nom": "KogMaw",
+   "picks": 39,
+   "wr": "46%"
+  },
+  {
+   "nom": "Vayne",
+   "picks": 30,
+   "wr": "43%"
+  },
+  {
+   "nom": "Taliyah",
+   "picks": 30,
+   "wr": "63%"
+  },
+  {
+   "nom": "Xerath",
+   "picks": 17,
+   "wr": "53%"
+  },
+  {
+   "nom": "Yasuo",
+   "picks": 15,
+   "wr": "27%"
+  },
+  {
+   "nom": "Locke",
+   "picks": 12,
+   "wr": "58%"
+  },
+  {
+   "nom": "Hwei",
+   "picks": 11,
+   "wr": "27%"
+  },
+  {
+   "nom": "Sion",
+   "picks": 10,
+   "wr": "60%"
+  },
+  {
+   "nom": "Vladimir",
+   "picks": 10,
+   "wr": "50%"
+  },
+  {
+   "nom": "VelKoz",
+   "picks": 8,
+   "wr": "75%"
+  },
+  {
+   "nom": "Samira",
+   "picks": 8,
+   "wr": "75%"
+  },
+  {
+   "nom": "Akali",
+   "picks": 7,
+   "wr": "43%"
+  },
+  {
+   "nom": "Sylas",
+   "picks": 7,
+   "wr": "29%"
+  },
+  {
+   "nom": "Orianna",
+   "picks": 6,
+   "wr": "50%"
+  },
+  {
+   "nom": "Dr. Mundo",
+   "picks": 6,
+   "wr": "17%"
+  },
+  {
+   "nom": "Lux",
+   "picks": 6,
+   "wr": "33%"
+  },
+  {
+   "nom": "Twitch",
+   "picks": 6,
+   "wr": "50%"
+  },
+  {
+   "nom": "Swain",
+   "picks": 5,
+   "wr": "80%"
+  },
+  {
+   "nom": "Brand",
+   "picks": 4,
+   "wr": "0%"
+  },
+  {
+   "nom": "Jayce",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Anivia",
+   "picks": 3,
+   "wr": "100%"
+  },
+  {
+   "nom": "Galio",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Veigar",
+   "picks": 3,
+   "wr": "67%"
+  },
+  {
+   "nom": "Nilah",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Heimerdinger",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Chogath",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Tahm Kench",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Karma",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ambessa",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Ryze",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Gnar",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Naafiri",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Annie",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Olaf",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Aatrox",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Ornn",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Karthus",
+   "picks": 1,
+   "wr": "100%"
+  }
+ ],
+ "Support": [
+  {
+   "nom": "Nautilus",
+   "picks": 1341,
+   "wr": "47%"
+  },
+  {
+   "nom": "Bard",
+   "picks": 1223,
+   "wr": "57%"
+  },
+  {
+   "nom": "Lulu",
+   "picks": 973,
+   "wr": "46%"
+  },
+  {
+   "nom": "Karma",
+   "picks": 941,
+   "wr": "47%"
+  },
+  {
+   "nom": "Neeko",
+   "picks": 909,
+   "wr": "50%"
+  },
+  {
+   "nom": "Seraphine",
+   "picks": 862,
+   "wr": "55%"
+  },
+  {
+   "nom": "Alistar",
+   "picks": 836,
+   "wr": "55%"
+  },
+  {
+   "nom": "Rell",
+   "picks": 803,
+   "wr": "47%"
+  },
+  {
+   "nom": "Nami",
+   "picks": 802,
+   "wr": "49%"
+  },
+  {
+   "nom": "Rakan",
+   "picks": 743,
+   "wr": "51%"
+  },
+  {
+   "nom": "Leona",
+   "picks": 713,
+   "wr": "49%"
+  },
+  {
+   "nom": "Milio",
+   "picks": 592,
+   "wr": "49%"
+  },
+  {
+   "nom": "Camille",
+   "picks": 336,
+   "wr": "51%"
+  },
+  {
+   "nom": "Braum",
+   "picks": 314,
+   "wr": "46%"
+  },
+  {
+   "nom": "Shen",
+   "picks": 305,
+   "wr": "53%"
+  },
+  {
+   "nom": "Pyke",
+   "picks": 175,
+   "wr": "49%"
+  },
+  {
+   "nom": "Thresh",
+   "picks": 160,
+   "wr": "49%"
+  },
+  {
+   "nom": "Poppy",
+   "picks": 152,
+   "wr": "53%"
+  },
+  {
+   "nom": "Renata Glasc",
+   "picks": 146,
+   "wr": "45%"
+  },
+  {
+   "nom": "Anivia",
+   "picks": 85,
+   "wr": "51%"
+  },
+  {
+   "nom": "Yuumi",
+   "picks": 82,
+   "wr": "45%"
+  },
+  {
+   "nom": "Blitzcrank",
+   "picks": 70,
+   "wr": "51%"
+  },
+  {
+   "nom": "Elise",
+   "picks": 51,
+   "wr": "43%"
+  },
+  {
+   "nom": "Lux",
+   "picks": 50,
+   "wr": "62%"
+  },
+  {
+   "nom": "Pantheon",
+   "picks": 31,
+   "wr": "45%"
+  },
+  {
+   "nom": "Soraka",
+   "picks": 26,
+   "wr": "58%"
+  },
+  {
+   "nom": "Senna",
+   "picks": 21,
+   "wr": "57%"
+  },
+  {
+   "nom": "Tahm Kench",
+   "picks": 21,
+   "wr": "38%"
+  },
+  {
+   "nom": "Skarner",
+   "picks": 19,
+   "wr": "42%"
+  },
+  {
+   "nom": "Galio",
+   "picks": 16,
+   "wr": "38%"
+  },
+  {
+   "nom": "Taric",
+   "picks": 13,
+   "wr": "15%"
+  },
+  {
+   "nom": "Amumu",
+   "picks": 13,
+   "wr": "54%"
+  },
+  {
+   "nom": "Sona",
+   "picks": 13,
+   "wr": "38%"
+  },
+  {
+   "nom": "Maokai",
+   "picks": 11,
+   "wr": "45%"
+  },
+  {
+   "nom": "Janna",
+   "picks": 9,
+   "wr": "33%"
+  },
+  {
+   "nom": "Zilean",
+   "picks": 8,
+   "wr": "13%"
+  },
+  {
+   "nom": "Morgana",
+   "picks": 7,
+   "wr": "71%"
+  },
+  {
+   "nom": "LeBlanc",
+   "picks": 4,
+   "wr": "50%"
+  },
+  {
+   "nom": "Sylas",
+   "picks": 4,
+   "wr": "25%"
+  },
+  {
+   "nom": "Trundle",
+   "picks": 4,
+   "wr": "0%"
+  },
+  {
+   "nom": "Gragas",
+   "picks": 4,
+   "wr": "25%"
+  },
+  {
+   "nom": "Nidalee",
+   "picks": 4,
+   "wr": "75%"
+  },
+  {
+   "nom": "Rumble",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Mel",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Fiddlesticks",
+   "picks": 3,
+   "wr": "33%"
+  },
+  {
+   "nom": "Ashe",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "KSante",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Lissandra",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Sett",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "VelKoz",
+   "picks": 2,
+   "wr": "50%"
+  },
+  {
+   "nom": "Orianna",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Jarvan IV",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Vi",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Annie",
+   "picks": 1,
+   "wr": "100%"
+  },
+  {
+   "nom": "Jax",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zaahen",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Hwei",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Heimerdinger",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Zac",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Rammus",
+   "picks": 1,
+   "wr": "0%"
+  },
+  {
+   "nom": "Shaco",
+   "picks": 1,
+   "wr": "100%"
+  }
+ ]
+}

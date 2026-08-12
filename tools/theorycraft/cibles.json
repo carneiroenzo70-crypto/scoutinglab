@@ -1,0 +1,632 @@
+[
+ {
+  "id": "Rumble",
+  "nom": "Rumble",
+  "role": "Top",
+  "rang": 1,
+  "picks": 1471
+ },
+ {
+  "id": "KSante",
+  "nom": "K'Sante",
+  "role": "Top",
+  "rang": 2,
+  "picks": 1332
+ },
+ {
+  "id": "Sion",
+  "nom": "Sion",
+  "role": "Top",
+  "rang": 3,
+  "picks": 1224
+ },
+ {
+  "id": "Gnar",
+  "nom": "Gnar",
+  "role": "Top",
+  "rang": 4,
+  "picks": 1224
+ },
+ {
+  "id": "Ambessa",
+  "nom": "Ambessa",
+  "role": "Top",
+  "rang": 5,
+  "picks": 1115
+ },
+ {
+  "id": "Renekton",
+  "nom": "Renekton",
+  "role": "Top",
+  "rang": 6,
+  "picks": 1029
+ },
+ {
+  "id": "Jayce",
+  "nom": "Jayce",
+  "role": "Top",
+  "rang": 7,
+  "picks": 680
+ },
+ {
+  "id": "Ornn",
+  "nom": "Ornn",
+  "role": "Top",
+  "rang": 8,
+  "picks": 473
+ },
+ {
+  "id": "Yorick",
+  "nom": "Yorick",
+  "role": "Top",
+  "rang": 9,
+  "picks": 387
+ },
+ {
+  "id": "Zaahen",
+  "nom": "Zaahen",
+  "role": "Top",
+  "rang": 10,
+  "picks": 378
+ },
+ {
+  "id": "Gwen",
+  "nom": "Gwen",
+  "role": "Top",
+  "rang": 11,
+  "picks": 374
+ },
+ {
+  "id": "Aatrox",
+  "nom": "Aatrox",
+  "role": "Top",
+  "rang": 12,
+  "picks": 318
+ },
+ {
+  "id": "Jax",
+  "nom": "Jax",
+  "role": "Top",
+  "rang": 13,
+  "picks": 314
+ },
+ {
+  "id": "Vayne",
+  "nom": "Vayne",
+  "role": "Top",
+  "rang": 14,
+  "picks": 236
+ },
+ {
+  "id": "Olaf",
+  "nom": "Olaf",
+  "role": "Top",
+  "rang": 15,
+  "picks": 209
+ },
+ {
+  "id": "Aurora",
+  "nom": "Aurora",
+  "role": "Top",
+  "rang": 16,
+  "picks": 170
+ },
+ {
+  "id": "Varus",
+  "nom": "Varus",
+  "role": "Top",
+  "rang": 17,
+  "picks": 160
+ },
+ {
+  "id": "Kennen",
+  "nom": "Kennen",
+  "role": "Top",
+  "rang": 18,
+  "picks": 130
+ },
+ {
+  "id": "Shen",
+  "nom": "Shen",
+  "role": "Top",
+  "rang": 19,
+  "picks": 108
+ },
+ {
+  "id": "RekSai",
+  "nom": "Rek'Sai",
+  "role": "Top",
+  "rang": 20,
+  "picks": 106
+ },
+ {
+  "id": "JarvanIV",
+  "nom": "Jarvan IV",
+  "role": "Jungle",
+  "rang": 1,
+  "picks": 1624
+ },
+ {
+  "id": "XinZhao",
+  "nom": "Xin Zhao",
+  "role": "Jungle",
+  "rang": 2,
+  "picks": 1614
+ },
+ {
+  "id": "Vi",
+  "nom": "Vi",
+  "role": "Jungle",
+  "rang": 3,
+  "picks": 1282
+ },
+ {
+  "id": "MonkeyKing",
+  "nom": "Wukong",
+  "role": "Jungle",
+  "rang": 4,
+  "picks": 1258
+ },
+ {
+  "id": "Pantheon",
+  "nom": "Pantheon",
+  "role": "Jungle",
+  "rang": 5,
+  "picks": 1203
+ },
+ {
+  "id": "Nocturne",
+  "nom": "Nocturne",
+  "role": "Jungle",
+  "rang": 6,
+  "picks": 841
+ },
+ {
+  "id": "LeeSin",
+  "nom": "Lee Sin",
+  "role": "Jungle",
+  "rang": 7,
+  "picks": 730
+ },
+ {
+  "id": "Naafiri",
+  "nom": "Naafiri",
+  "role": "Jungle",
+  "rang": 8,
+  "picks": 653
+ },
+ {
+  "id": "Skarner",
+  "nom": "Skarner",
+  "role": "Jungle",
+  "rang": 9,
+  "picks": 442
+ },
+ {
+  "id": "DrMundo",
+  "nom": "Dr. Mundo",
+  "role": "Jungle",
+  "rang": 10,
+  "picks": 404
+ },
+ {
+  "id": "Trundle",
+  "nom": "Trundle",
+  "role": "Jungle",
+  "rang": 11,
+  "picks": 397
+ },
+ {
+  "id": "Qiyana",
+  "nom": "Qiyana",
+  "role": "Jungle",
+  "rang": 13,
+  "picks": 238
+ },
+ {
+  "id": "Sejuani",
+  "nom": "Sejuani",
+  "role": "Jungle",
+  "rang": 17,
+  "picks": 156
+ },
+ {
+  "id": "Poppy",
+  "nom": "Poppy",
+  "role": "Jungle",
+  "rang": 18,
+  "picks": 121
+ },
+ {
+  "id": "Malphite",
+  "nom": "Malphite",
+  "role": "Jungle",
+  "rang": 19,
+  "picks": 115
+ },
+ {
+  "id": "Maokai",
+  "nom": "Maokai",
+  "role": "Jungle",
+  "rang": 20,
+  "picks": 95
+ },
+ {
+  "id": "Ryze",
+  "nom": "Ryze",
+  "role": "Mid",
+  "rang": 1,
+  "picks": 1630
+ },
+ {
+  "id": "Orianna",
+  "nom": "Orianna",
+  "role": "Mid",
+  "rang": 2,
+  "picks": 1113
+ },
+ {
+  "id": "Ahri",
+  "nom": "Ahri",
+  "role": "Mid",
+  "rang": 3,
+  "picks": 962
+ },
+ {
+  "id": "Azir",
+  "nom": "Azir",
+  "role": "Mid",
+  "rang": 5,
+  "picks": 828
+ },
+ {
+  "id": "Viktor",
+  "nom": "Viktor",
+  "role": "Mid",
+  "rang": 6,
+  "picks": 792
+ },
+ {
+  "id": "Taliyah",
+  "nom": "Taliyah",
+  "role": "Mid",
+  "rang": 7,
+  "picks": 716
+ },
+ {
+  "id": "Syndra",
+  "nom": "Syndra",
+  "role": "Mid",
+  "rang": 8,
+  "picks": 680
+ },
+ {
+  "id": "Cassiopeia",
+  "nom": "Cassiopeia",
+  "role": "Mid",
+  "rang": 9,
+  "picks": 661
+ },
+ {
+  "id": "Akali",
+  "nom": "Akali",
+  "role": "Mid",
+  "rang": 10,
+  "picks": 655
+ },
+ {
+  "id": "Annie",
+  "nom": "Annie",
+  "role": "Mid",
+  "rang": 11,
+  "picks": 554
+ },
+ {
+  "id": "Galio",
+  "nom": "Galio",
+  "role": "Mid",
+  "rang": 12,
+  "picks": 528
+ },
+ {
+  "id": "Anivia",
+  "nom": "Anivia",
+  "role": "Mid",
+  "rang": 13,
+  "picks": 486
+ },
+ {
+  "id": "Sylas",
+  "nom": "Sylas",
+  "role": "Mid",
+  "rang": 14,
+  "picks": 329
+ },
+ {
+  "id": "Leblanc",
+  "nom": "LeBlanc",
+  "role": "Mid",
+  "rang": 15,
+  "picks": 276
+ },
+ {
+  "id": "Yone",
+  "nom": "Yone",
+  "role": "Mid",
+  "rang": 16,
+  "picks": 264
+ },
+ {
+  "id": "Mel",
+  "nom": "Mel",
+  "role": "Mid",
+  "rang": 17,
+  "picks": 244
+ },
+ {
+  "id": "Hwei",
+  "nom": "Hwei",
+  "role": "Mid",
+  "rang": 18,
+  "picks": 213
+ },
+ {
+  "id": "TwistedFate",
+  "nom": "Twisted Fate",
+  "role": "Mid",
+  "rang": 19,
+  "picks": 201
+ },
+ {
+  "id": "Locke",
+  "nom": "Locke",
+  "role": "Mid",
+  "rang": 20,
+  "picks": 123
+ },
+ {
+  "id": "Ezreal",
+  "nom": "Ezreal",
+  "role": "ADC",
+  "rang": 1,
+  "picks": 1708
+ },
+ {
+  "id": "Yunara",
+  "nom": "Yunara",
+  "role": "ADC",
+  "rang": 2,
+  "picks": 1391
+ },
+ {
+  "id": "Corki",
+  "nom": "Corki",
+  "role": "ADC",
+  "rang": 3,
+  "picks": 1153
+ },
+ {
+  "id": "Jhin",
+  "nom": "Jhin",
+  "role": "ADC",
+  "rang": 4,
+  "picks": 892
+ },
+ {
+  "id": "Ashe",
+  "nom": "Ashe",
+  "role": "ADC",
+  "rang": 5,
+  "picks": 887
+ },
+ {
+  "id": "Lucian",
+  "nom": "Lucian",
+  "role": "ADC",
+  "rang": 6,
+  "picks": 828
+ },
+ {
+  "id": "Caitlyn",
+  "nom": "Caitlyn",
+  "role": "ADC",
+  "rang": 8,
+  "picks": 801
+ },
+ {
+  "id": "Sivir",
+  "nom": "Sivir",
+  "role": "ADC",
+  "rang": 9,
+  "picks": 779
+ },
+ {
+  "id": "Kaisa",
+  "nom": "Kai'Sa",
+  "role": "ADC",
+  "rang": 10,
+  "picks": 674
+ },
+ {
+  "id": "Ziggs",
+  "nom": "Ziggs",
+  "role": "ADC",
+  "rang": 11,
+  "picks": 370
+ },
+ {
+  "id": "Aphelios",
+  "nom": "Aphelios",
+  "role": "ADC",
+  "rang": 12,
+  "picks": 368
+ },
+ {
+  "id": "Xayah",
+  "nom": "Xayah",
+  "role": "ADC",
+  "rang": 13,
+  "picks": 354
+ },
+ {
+  "id": "MissFortune",
+  "nom": "Miss Fortune",
+  "role": "ADC",
+  "rang": 14,
+  "picks": 326
+ },
+ {
+  "id": "Zeri",
+  "nom": "Zeri",
+  "role": "ADC",
+  "rang": 15,
+  "picks": 155
+ },
+ {
+  "id": "Kalista",
+  "nom": "Kalista",
+  "role": "ADC",
+  "rang": 16,
+  "picks": 151
+ },
+ {
+  "id": "Senna",
+  "nom": "Senna",
+  "role": "ADC",
+  "rang": 17,
+  "picks": 142
+ },
+ {
+  "id": "Jinx",
+  "nom": "Jinx",
+  "role": "ADC",
+  "rang": 18,
+  "picks": 139
+ },
+ {
+  "id": "Tristana",
+  "nom": "Tristana",
+  "role": "ADC",
+  "rang": 19,
+  "picks": 136
+ },
+ {
+  "id": "Nautilus",
+  "nom": "Nautilus",
+  "role": "Support",
+  "rang": 1,
+  "picks": 1341
+ },
+ {
+  "id": "Bard",
+  "nom": "Bard",
+  "role": "Support",
+  "rang": 2,
+  "picks": 1223
+ },
+ {
+  "id": "Lulu",
+  "nom": "Lulu",
+  "role": "Support",
+  "rang": 3,
+  "picks": 973
+ },
+ {
+  "id": "Karma",
+  "nom": "Karma",
+  "role": "Support",
+  "rang": 4,
+  "picks": 941
+ },
+ {
+  "id": "Neeko",
+  "nom": "Neeko",
+  "role": "Support",
+  "rang": 5,
+  "picks": 909
+ },
+ {
+  "id": "Seraphine",
+  "nom": "Seraphine",
+  "role": "Support",
+  "rang": 6,
+  "picks": 862
+ },
+ {
+  "id": "Alistar",
+  "nom": "Alistar",
+  "role": "Support",
+  "rang": 7,
+  "picks": 836
+ },
+ {
+  "id": "Rell",
+  "nom": "Rell",
+  "role": "Support",
+  "rang": 8,
+  "picks": 803
+ },
+ {
+  "id": "Nami",
+  "nom": "Nami",
+  "role": "Support",
+  "rang": 9,
+  "picks": 802
+ },
+ {
+  "id": "Rakan",
+  "nom": "Rakan",
+  "role": "Support",
+  "rang": 10,
+  "picks": 743
+ },
+ {
+  "id": "Leona",
+  "nom": "Leona",
+  "role": "Support",
+  "rang": 11,
+  "picks": 713
+ },
+ {
+  "id": "Milio",
+  "nom": "Milio",
+  "role": "Support",
+  "rang": 12,
+  "picks": 592
+ },
+ {
+  "id": "Camille",
+  "nom": "Camille",
+  "role": "Support",
+  "rang": 13,
+  "picks": 336
+ },
+ {
+  "id": "Braum",
+  "nom": "Braum",
+  "role": "Support",
+  "rang": 14,
+  "picks": 314
+ },
+ {
+  "id": "Pyke",
+  "nom": "Pyke",
+  "role": "Support",
+  "rang": 16,
+  "picks": 175
+ },
+ {
+  "id": "Thresh",
+  "nom": "Thresh",
+  "role": "Support",
+  "rang": 17,
+  "picks": 160
+ },
+ {
+  "id": "Renata",
+  "nom": "Renata Glasc",
+  "role": "Support",
+  "rang": 19,
+  "picks": 146
+ }
+]

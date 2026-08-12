@@ -24,3 +24,6 @@ ws-server/.dev.vars
 
 # Artefacts de build de wrangler
 .wrangler/
+
+# Cache brut des fichiers de jeu (re-telechargeable via tools/theorycraft/02_fetch.js)
+tools/theorycraft/bin/

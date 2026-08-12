@@ -26,3 +26,6 @@ VisionScore - Standalone.html
 
 # Serveur temps reel (deploye sur Cloudflare, pas sur Vercel)
 ws-server/
+
+# Outillage de theorycraft (extraction des donnees de jeu) — usage interne
+tools/
