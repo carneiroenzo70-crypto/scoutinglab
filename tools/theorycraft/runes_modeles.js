@@ -106,7 +106,16 @@ module.exports = {
 
   8010: { // Conquérant
     effet: 'stat', unite: 'force adaptative',
+    /* Le nombre de cumuls générés par frappe n'est pas dans le fichier : la
+       description le donne (2 en mêlée, 1 à distance). C'est ce qui décide combien de
+       frappes il faut pour atteindre le maximum — la différence entre 6 et 12 coups. */
+    valeursExternes: {
+      source: 'description en jeu (patch 16.16.1) — absent du fichier de jeu',
+      valeurs: { CumulsParFrappe: 2, CumulsParFrappeDistance: 1 }
+    },
     declencheur: { type: 'frappes', sources: ['attaque', 'competence'],
+                   cumulsParFrappeCle: 'CumulsParFrappe',
+                   cumulsParFrappeDistanceCle: 'CumulsParFrappeDistance',
                    note: '2 cumuls par frappe ; 1 seul par attaque pour les champions à distance' },
     montant: { parCumul: ['MinAdaptivePerStack', 'MaxAdaptivePerStack', 'MaxStacks'] },
     notes: 'Au maximum d\'effets, rend 8% des dégâts infligés en PV (5% à distance).'
@@ -280,14 +289,33 @@ module.exports = {
           notes: 'Et +10 accélération d\'objet (ItemHaste).' },
   8410: { effet: 'utilitaire', unite: '% de vitesse de déplacement',
           declencheur: { type: 'cibleImmobilisee' },
-          montant: { fixe: 'MovementSpeedPercentBonus' },
-          notes: 'Moitié moins vers les cibles immobilisées par un allié.' },
+          /* Le fichier de jeu ne porte QUE la valeur MAJORÉE (15 %, contre une cible
+             que VOUS avez immobilisée). Le cas courant — une cible immobilisée par un
+             allié — vaut 7,5 %, et n'existe que dans la description en jeu. Servir 15
+             revenait à annoncer systématiquement le meilleur cas. */
+          valeursExternes: {
+            source: 'description en jeu (patch 16.16.1) — absent du fichier de jeu',
+            valeurs: { VitesseBase: 0.075 }
+          },
+          montant: { fixe: 'VitesseBase' },
+          notes: 'Valeur courante (cible immobilisée par un allié). DOUBLÉE à 15 % '
+               + 'contre une cible que vous avez vous-même immobilisée '
+               + '(MovementSpeedPercentBonus).' },
 
   // ── Précision
   8009: { effet: 'utilitaire', unite: 'mana rendue', cooldown: 'CooldownDuration',
           declencheur: { type: 'frappes', sources: ['attaque', 'competence'] },
+          /* Le modificateur « à distance » n'est PAS dans le fichier de jeu : seule la
+             description l'annonce (80 %). Sans lui, la rune était surestimée d'un quart
+             sur tout champion à distance. */
+          valeursExternes: {
+            source: 'description en jeu (patch 16.16.1) — absent du fichier de jeu',
+            valeurs: { ModDistance: 0.8 }
+          },
           montant: { niveau: ['MinFlatRestore', 'MaxFlatRestore'] },
-          notes: '80% d\'efficacité à distance. 6 d\'énergie pour les champions à énergie.' },
+          distance: { facteurCle: 'ModDistance' },
+          notes: '6 d\'énergie pour les champions à énergie. Une participation à une '
+               + 'élimination rend 15 % du mana maximum.' },
   9101: { effet: 'soin', declencheur: { type: 'elimination', note: 'tuer une cible, sbires compris' },
           montant: { niveau: ['TooltipMinHeal', 'TooltipMaxHeal'] } },
   9111: { effet: 'soin', declencheur: { type: 'participationElimination' },
@@ -343,10 +371,12 @@ module.exports = {
           notes: 'Et +10 vitesse de déplacement.' },
   8236: { effet: 'stat', unite: 'force adaptative (puissance)',
           declencheur: { type: 'minuteDeJeu', intervalleCle: 'UpdateAfterMinutes' },
-          montant: { fixe: 'AdaptiveAP' },
-          notes: 'Progression triangulaire : à n intervalles de 10 min, le total vaut '
-               + 'AdaptiveAP x n(n+1)/2 → 8, 24, 48, 80, 120, 168… La valeur donnée est '
-               + 'celle du premier palier.' },
+          montant: { triangulaire: { valeur: 'AdaptiveAP', intervalle: 'UpdateAfterMinutes' } },
+          notes: 'Progression TRIANGULAIRE : à n paliers de 10 min, le total vaut '
+               + 'AdaptiveAP x n(n+1)/2 → 8, 24, 48, 80, 120, 168 — chaque palier ajoute '
+               + 'plus que le précédent. Le fichier de jeu ne porte QUE le premier palier '
+               + '(8) : s\'y tenir sous-estimait la rune d\'un facteur 21 sur une partie '
+               + 'de 60 min. Le contexte doit fournir `minutes`.' },
   8210: { effet: 'stat', unite: 'accélération de compétence',
           declencheur: { type: 'niveauAtteint', note: '+5 au niveau 5, +5 de plus au niveau 8' },
           montant: { fixe: 'HasteBonus1' },

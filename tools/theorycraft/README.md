@@ -50,10 +50,11 @@ node 28_comparer.js Jinx 18 "3031,3006,3094,3072" "3153,3006,3085,3036" Rumble
 ```
 
 ```bash
-node 32_audit_stats.js       # audit inverse : aucune stat de boutique non extraite
+node 32_audit_stats.js       # audit inverse des objets : aucune stat de boutique oubliée
+node 33_audit_runes.js       # audit inverse des runes : 98 % des nombres couverts
 ```
 
-**190 vérifications** en tout : 63 runes, 30 objets, 63 modèle, 34 passifs.
+**206 vérifications** en tout : 79 runes, 30 objets, 63 modèle, 34 passifs.
 
 ## Audit inverse des stats
 
@@ -169,6 +170,32 @@ rendre sa borne basse, au niveau 18 sa borne haute. Simple, et difficile à truq
 - **Versions à distance** : parfois un simple facteur (Poigne × 0,4), parfois une
   fourchette entièrement différente (Tempo mortel 9-30 en mêlée, 6-24 à distance),
   parfois une valeur fixe distincte (Démolition 85 vs 50).
+
+#### Audit inverse des runes (`33_audit_runes.js`)
+
+Contrairement aux objets, les descriptions de runes sont **entièrement rendues**,
+chiffres compris. Le contrôle est donc bien plus fort : chaque nombre annoncé doit se
+retrouver, soit dans les valeurs extraites, soit dans ce que le moteur calcule.
+
+**289 nombres confrontés, 98 % couverts.** Les 4 résiduels sont structurels (« 1 sec »,
+seuils de cumuls). Cet audit a trouvé trois défauts réels :
+
+- **Tempête menaçante suivait une progression TRIANGULAIRE**, pas linéaire. Le fichier
+  de jeu ne porte que le premier palier (8) ; la description donne toute la suite —
+  8, 24, 48, 80, 120, 168, soit `AdaptiveAP × n(n+1)/2`. S'en tenir au fichier
+  **sous-estimait la rune d'un facteur 21** sur une partie de 60 minutes.
+- **Vitesse d'approche** : le fichier ne porte QUE la valeur majorée (15 %, contre une
+  cible que *vous* avez immobilisée). Le cas courant vaut 7,5 %. Servir 15 revenait à
+  annoncer systématiquement le meilleur cas.
+- **Présence d'esprit** : le modificateur « 80 % à distance » est absent du fichier —
+  la rune était surestimée d'un quart sur tout champion à distance.
+
+Le moteur expose désormais `valeurAD` : la force adaptative vaut X en puissance **ou
+0,6 X en dégâts d'attaque**, et les descriptions donnent toujours les deux. N'en servir
+qu'une laissait croire l'autre absente.
+
+⚠ Cet audit ne peut confirmer que ce que le texte imprime. Le Grimoire déchaîné porte
+un gabarit non résolu (`@f3@`) : il est compté à part, jamais validé par complaisance.
 
 #### Clés hachées levées par recoupement externe
 

@@ -10,6 +10,10 @@ function verifie(libelle, obtenu, attendu, tol = 0.01) {
     'obtenu ' + obtenu + '   attendu ' + attendu);
   bon ? ok++ : ko++;
 }
+function vrai(libelle, cond, detail = '') {
+  console.log((cond ? '  OK   ' : '  ÉCHEC') + '  ' + libelle + (detail ? '  ' + detail : ''));
+  cond ? ok++ : ko++;
+}
 
 console.log('── Interpolation par niveau (borne basse au niv. 1, haute au niv. 18)');
 verifie('Électrocution niv.1, aucune stat', evaluerRune(8112, { niveau: 1 }).valeur, 70);
@@ -123,6 +127,38 @@ verifie('Fontaine de vie niv.1 mêlée', evaluerRune(8463, { niveau: 1 }).valeur
 verifie('Fontaine de vie niv.18 mêlée', evaluerRune(8463, { niveau: 18 }).valeur, 54.71);
 verifie('Fontaine de vie niv.18 distance (x0,7)',
   evaluerRune(8463, { niveau: 18, distance: true }).valeur, 38.3, 0.02);
+
+console.log('\n── Progression triangulaire (Tempête menaçante)');
+/* Le fichier de jeu ne porte QUE le premier palier (8). La description donne toute la
+   suite : 8, 24, 48, 80, 120, 168 — chaque palier ajoute plus que le précédent.
+   S'en tenir au premier sous-estimait la rune d'un facteur 21 sur une partie longue. */
+[[0, 0], [10, 8], [20, 24], [30, 48], [40, 80], [50, 120], [60, 168]].forEach(([min, att]) =>
+  verifie('Tempête menaçante à ' + min + ' min', evaluerRune(8236, { minutes: min }).valeur, att));
+vrai('la progression n\'est PAS linéaire (60 min ≠ 6 × 10 min)',
+     evaluerRune(8236, { minutes: 60 }).valeur !== 6 * evaluerRune(8236, { minutes: 10 }).valeur);
+
+console.log('\n── Équivalent adaptatif en dégâts d\'attaque');
+/* Les descriptions donnent toujours les deux formes (« 18 dégâts d'attaque ou 30
+   puissance »). N'en servir qu'une laissait croire l'autre absente. */
+const ca = evaluerRune(8233, { niveau: 18 });
+verifie('Concentration absolue : 30 en puissance', ca.valeur, 30);
+verifie('  soit 18 en dégâts d\'attaque (0,6 ×)', ca.valeurAD, 18);
+vrai('  une rune non adaptative n\'a pas d\'équivalent AD',
+     evaluerRune(8112, { niveau: 1 }).valeurAD === null ||
+     evaluerRune(8439, { niveau: 1 }).valeurAD === null);
+
+console.log('\n── Valeurs absentes du fichier, relevées dans la description en jeu');
+// Vitesse d'approche : le fichier ne porte que la valeur MAJORÉE (15 %)
+const va = evaluerRune(8410, {});
+verifie('Vitesse d\'approche : 7,5 % (cas courant)', va.valeur, 7.5);
+vrai('  et non les 15 % du meilleur cas', Math.abs(va.valeur - 15) > 1);
+vrai('  la source est signalée comme externe', /description en jeu/.test(va.source || ''), va.source);
+// Présence d'esprit : 80 % à distance, absent du fichier
+const pe = evaluerRune(8009, { niveau: 18 });
+const peD = evaluerRune(8009, { niveau: 18, distance: true });
+verifie('Présence d\'esprit à distance : 80 % de la valeur en mêlée', peD.valeur, pe.valeur * 0.8, 0.02);
+vrai('  sans ce modificateur, la rune était surestimée d\'un quart à distance',
+     peD.valeur < pe.valeur);
 
 console.log('\n── Traçabilité de la source');
 const fdv = evaluerRune(8463, { niveau: 18 });

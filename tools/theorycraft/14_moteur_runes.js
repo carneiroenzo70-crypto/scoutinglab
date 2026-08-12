@@ -74,6 +74,21 @@ function valeurDe(m, r, ctx) {
     total += x;
     detail.push({ source: m.montant.fixe, valeur: x });
   }
+  /* Progression triangulaire : à n intervalles écoulés, le total vaut
+     valeur × n(n+1)/2 — chaque palier ajoute DAVANTAGE que le précédent.
+     Tempête menaçante donne ainsi 8, 24, 48, 80, 120, 168 et non 8, 16, 24…
+     Le fichier de jeu ne porte QUE le premier palier (8) : s'en tenir là
+     sous-estimait la rune d'un facteur 21 en fin de partie longue. */
+  if (m.montant && m.montant.triangulaire) {
+    const { valeur: cle, intervalle } = m.montant.triangulaire;
+    const pas = v[cle], inter = v[intervalle];
+    if (pas == null || !inter) return null;
+    const n = Math.floor((ctx.minutes || 0) / inter);
+    const x = pas * n * (n + 1) / 2;
+    total += x;
+    detail.push({ source: n + ' palier(s) de ' + inter + ' min → ' + pas + ' × ' +
+                          n + '(' + n + '+1)/2', valeur: x });
+  }
   // Part proportionnelle à une stat du porteur (PV max, PV bonus…)
   if (m.montant && m.montant.pourcentStat) {
     const [cle, stat, mode] = m.montant.pourcentStat;
@@ -193,6 +208,11 @@ function evaluerRune(id, ctx = {}) {
     declencheur: modele.declencheur || m.declencheur,
     cooldown: m.cooldown ? r.valeurs[m.cooldown] : null,
     valeur: res.total == null ? null : Math.round(res.total * 100) / 100,
+    /* Force adaptative : le jeu accorde X en puissance OU 0,6 X en dégâts d'attaque.
+       Les descriptions donnent systématiquement les deux (« 18 dégâts d'attaque ou
+       30 puissance ») ; n'en servir qu'une invitait à croire l'autre absente. */
+    valeurAD: (res.total != null && /adaptative/i.test(modele.unite || ''))
+              ? Math.round(res.total * 0.6 * 100) / 100 : null,
     unite: modele.unite || null,
     detail: res.detail,
     source: m.valeursExternes ? m.valeursExternes.source : 'fichier de jeu',
