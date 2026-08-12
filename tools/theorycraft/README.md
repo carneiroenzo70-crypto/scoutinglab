@@ -41,6 +41,10 @@ node 22_extraire_items.js    # → items.json
 node 23_rapport_items.js 3153 Liandry   # rendu lisible, pour confronter à la boutique
 node 24_test_items.js        # 30 vérifications contre deux sources indépendantes
 node 25_couverture_items.js  # ce qui manque encore, objet par objet
+
+# Modèle de dégâts et comparaison
+node 27_test_modele.js       # 45 vérifications, toutes calculables au crayon
+node 28_comparer.js Jinx 18 "3031,3006,3094,3072" "3153,3006,3085,3036" Rumble
 ```
 
 `03_resolveur.js` est le cœur : il aplatit l'arbre de formule en une somme de termes
@@ -217,6 +221,54 @@ prouve rien. Trois contrôles indépendants :
    serait invérifiable.
 3. **Périmètre** : aucune description ne doit contenir le mot « manche », vocabulaire
    qui n'existe qu'en Arena.
+
+## Modèle de dégâts (`26_modele_degats.js`)
+
+Les trois socles se rejoignent ici : les sorts donnent les ratios, les objets donnent
+les stats, les runes lisent ces mêmes stats. Une rune ne se juge pas dans le vide —
+Électrocution vaut 5 % de la puissance, elle ne dit donc la même chose qu'une fois le
+build posé.
+
+Quatre formules du jeu, **toutes vérifiées sur le wiki avant d'être codées** :
+
+| Formule | Valeur |
+|---|---|
+| Croissance par niveau | `base + g × (n−1) × (0,7025 + 0,0175 × (n−1))` — quadratique, et vaut exactement 17 g au niveau 18 |
+| Vitesse d'attaque | formule à part : `VAbase + (bonus + croissance) × ratio` |
+| Réduction | `100 / (100 + R)`, et `2 − 100 / (100 − R)` si R < 0 |
+| Pénétration | réduction plate → réduction % → pénétration % → létalité |
+
+### Pièges du modèle
+
+- **L'ordre des pénétrations n'est pas commutatif.** 100 d'armure avec 40 % de
+  pénétration puis 18 de létalité donnent 42 ; dans l'autre sens, 49,2. Le second
+  sous-estimerait les dégâts de tous les builds d'assassin.
+- **La létalité vaut 1 pour 1 depuis la V14.1.** Les anciennes formules la faisaient
+  dépendre du niveau : les reprendre serait un contresens.
+- **Les pénétrations en pourcentage se multiplient, elles ne s'additionnent pas.**
+  35 % + 30 % font 54,5 %, pas 65 % — additionner surestimerait de 10,5 points
+  précisément les builds qu'on veut comparer.
+- **Le multiplicateur de critique se lit par champion.** Il vaut 2 pour 89 des 90
+  champions, mais **Ashe est à 1** : ses coups critiques n'infligent aucun dégât
+  supplémentaire. Le coder en dur doublait ses dégâts d'attaque.
+- **Les attaques de base ne sont pas un détail.** Sur Jinx, 3 secondes d'attaques
+  pèsent plus que le combo complet. Un comparateur qui les ignore désigne le mauvais
+  gagnant — le comparateur donne donc trois mesures (combo seul, combo + 3 s, dégâts
+  par seconde soutenus), qui ne classent pas toujours pareil.
+- **Le type de dégâts n'est PAS dans le fichier de jeu** (il vit dans les blocs
+  d'application d'effet, absents des fichiers publics). Il est lu dans l'infobulle
+  française de Data Dragon, qui le nomme. Le déduire du ratio serait faux : le E de
+  Jinx est **magique** malgré son ratio de dégâts d'attaque. 353 sorts sur 359 typés ;
+  un sort à deux types est marqué « mixte » et sa mitigation n'est pas appliquée.
+
+### Limite connue, à traiter ensuite
+
+Les **passifs d'objet ne sont pas encore appliqués aux dégâts**. Leurs valeurs sont
+extraites et vérifiées (la Lame du roi déchu porte bien ses 9 % des PV max en mêlée,
+6 % à distance), mais leur *déclenchement* n'est pas modélisé : il reste à faire pour
+les objets ce que `runes_modeles.js` fait pour les runes. Le comparateur le dit
+explicitement et nomme les objets concernés — un build à coup-à-l'impact y est
+**sous-estimé**.
 
 ## À refaire à chaque patch
 

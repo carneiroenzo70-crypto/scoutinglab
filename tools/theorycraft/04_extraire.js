@@ -37,9 +37,35 @@ function statsDeBase(rec) {
     rmParNiv:  g('mrPerLevel'),
     va:        g('attackSpeedModifiable'),
     vaParNiv:  g('attackSpeedPerLevelModifiable'),
+    /* La vitesse d'attaque ne suit PAS la formule des autres stats : tout bonus
+       (croissance par niveau comprise) est multiplié par ce ratio. L'ignorer fausse
+       la vitesse d'attaque de fin de partie, donc tous les objets à coup à l'impact. */
+    vaRatio:   g('attackSpeedRatioModifiable', 'attackSpeedModifiable'),
     portee:    g('attackRangeModifiable'),
-    ms:        g('baseMoveSpeedModifiable')
+    ms:        g('baseMoveSpeedModifiable'),
+    /* Multiplicateur de coup critique. Il vaut 2 pour presque tout le monde, mais
+       certains champions l'ont réduit en compensation d'un kit : le lire évite de
+       coder en dur une valeur fausse sur ces cas-là. */
+    critMult:  g('critDamageMultiplier')
   };
+}
+
+/* Physique, magique ou brut ? Le fichier de jeu ne porte pas cette information dans les
+   formules — elle vit dans les blocs d'application d'effet, absents des fichiers publics.
+   Sans elle, impossible d'appliquer l'armure ou la résistance magique : le calculateur
+   serait faux, pas incomplet.
+
+   On la lit donc dans l'infobulle FRANÇAISE de Data Dragon, qui la nomme explicitement
+   (« dégâts magiques »). C'est du texte écrit par Riot, pas une déduction : déduire
+   « ratio AD donc physique » serait faux sur Jinx (son E est magique malgré son ratio AD).
+   Un sort qui inflige deux types est marqué « mixte » et non tranché arbitrairement. */
+function typeDeDegats(ddSpell) {
+  const t = ((ddSpell || {}).tooltip || '').replace(/<[^>]+>/g, ' ');
+  const trouves = [...new Set((t.match(/dégâts (physiques|magiques|bruts)/gi) || [])
+    .map(x => x.toLowerCase().split(' ')[1]))];
+  if (!trouves.length) return null;
+  if (trouves.length > 1) return 'mixte:' + trouves.join('+');
+  return { physiques: 'physique', magiques: 'magique', bruts: 'brut' }[trouves[0]] || null;
 }
 
 const bilan = { ok: 0, partiel: 0, vide: 0 };
@@ -107,6 +133,7 @@ cibles.forEach(cible => {
     champ.sorts[touche] = {
       nomInterne: nom,
       nbRangs,
+      typeDegats: typeDeDegats(ddSpell),
       cooldown: spell.cooldownTime || spell.Cooldown || null,
       cout: spell.mana || spell.manaValues || null,
       portee: spell.castRangeValues || spell.castRange || null,
