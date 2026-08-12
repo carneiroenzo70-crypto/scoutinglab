@@ -1049,7 +1049,7 @@
    "ExecuteDamage": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 1
      },
@@ -1066,7 +1066,7 @@
     "defaut": null,
     "siCondition": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 1
      },
@@ -3124,7 +3124,8 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 0.10000000149011612
+      "valeur": 0.10000000149011612,
+      "facteurDistance": 0.800000011920929
      }
     ]
    },
@@ -3662,7 +3663,7 @@
    "MSToAdaptiveCalc": {
     "termes": [
      {
-      "stat": "Crit",
+      "stat": "VitesseDeplacement",
       "mode": "base",
       "valeur": 0.05000000074505806
      }
@@ -3897,7 +3898,8 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 20
+      "valeur": 20,
+      "facteurDistance": 0.5
      }
     ]
    }
@@ -3999,7 +4001,8 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 0.15000000596046448
+      "valeur": 0.15000000596046448,
+      "facteurDistance": 0.6669999957084656
      }
     ]
    },
@@ -4465,7 +4468,7 @@
       ]
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.07999999821186066
      }
@@ -4643,7 +4646,7 @@
       ]
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.07999999821186066
      }
@@ -5771,12 +5774,14 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 8
+      "valeur": 8,
+      "facteurDistance": 0.5
      }
     ]
    }
   },
   "alertes": [
+   "DataValue absent: {ca6deae2}",
    "DataValue absent: {eb8d750f}"
   ]
  },
@@ -6299,7 +6304,7 @@
       "valeur": 1.75
      },
      {
-      "stat": "Accel",
+      "stat": "RM",
       "mode": "total",
       "valeur": 1.75
      }
@@ -7149,23 +7154,10 @@
    "LethalityAmount": 18,
    "ResetWindow": 3
   },
-  "calculs": {
-   "UltimateRefund": {
-    "termes": [
-     {
-      "stat": "flat",
-      "mode": "flat",
-      "valeur": 10
-     },
-     {
-      "stat": "stat29",
-      "mode": "base",
-      "valeur": 0.25
-     }
-    ]
-   }
-  },
-  "alertes": []
+  "calculs": {},
+  "alertes": [
+   "mStat non identifié : 29"
+  ]
  },
  {
   "id": 2502,
@@ -7216,7 +7208,7 @@
    "DrainCalc": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.029999999329447746
      }
@@ -7464,7 +7456,7 @@
       "valeur": 20
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.014999999664723873
      }
@@ -7478,7 +7470,7 @@
       "valeur": 20
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.014999999664723873
      }
@@ -7492,7 +7484,7 @@
       "valeur": 20
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.014999999664723873
      }
@@ -7645,7 +7637,8 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 6
+      "valeur": 6,
+      "facteurDistance": 0.6669999957084656
      }
     ]
    }
@@ -7756,31 +7749,20 @@
      }
     ]
    },
-   "ProcDamage": {
-    "termes": [
-     {
-      "stat": "flat",
-      "mode": "flat",
-      "valeur": 50
-     },
-     {
-      "stat": "stat29",
-      "mode": "base",
-      "valeur": 1.5
-     }
-    ]
-   },
    "TotalWardDamage": {
     "termes": [
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 3
+      "valeur": 3,
+      "facteurDistance": 0.6669999957084656
      }
     ]
    }
   },
-  "alertes": []
+  "alertes": [
+   "mStat non identifié : 29"
+  ]
  },
  {
   "id": 4401,
@@ -8033,7 +8015,7 @@
       "valeur": 15
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.009999999776482582
      }
@@ -8047,7 +8029,7 @@
       "valeur": 15
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.009999999776482582
      }
@@ -8061,7 +8043,7 @@
       "valeur": 15
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.009999999776482582
      }
@@ -8075,7 +8057,7 @@
       "valeur": 30
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.019999999552965164
      }
@@ -8089,7 +8071,7 @@
       "valeur": 60
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.03999999910593033
      }
@@ -8334,7 +8316,8 @@
      {
       "stat": "AD",
       "mode": "base",
-      "valeur": 0.4000000059604645
+      "valeur": 0.4000000059604645,
+      "facteurDistance": 0.5
      }
     ]
    }
@@ -8386,7 +8369,7 @@
    "ShieldCalc": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.15000000596046448
      }
@@ -8831,7 +8814,9 @@
   },
   "calculs": {},
   "alertes": [
+   "DataValue absent: {51df2a01}",
    "DataValue absent: {e367e801}",
+   "DataValue absent: {4b5548be}",
    "DataValue absent: {b1f09313}"
   ]
  },
@@ -8928,37 +8913,12 @@
    "DoTDuration": 3,
    "AbilityDamageRangeMod": 0.5
   },
-  "calculs": {
-   "DamageCalc": {
-    "termes": [
-     {
-      "stat": "flat",
-      "mode": "flat",
-      "valeur": 300
-     },
-     {
-      "stat": "stat29",
-      "mode": "base",
-      "valeur": 25
-     }
-    ]
-   },
-   "AbilityDamageCalc": {
-    "termes": [
-     {
-      "stat": "flat",
-      "mode": "flat",
-      "valeur": 50
-     },
-     {
-      "stat": "stat29",
-      "mode": "base",
-      "valeur": 1.5
-     }
-    ]
-   }
-  },
-  "alertes": []
+  "calculs": {},
+  "alertes": [
+   "DataValue absent: {a99340ef}",
+   "mStat non identifié : 29",
+   "DataValue absent: {d62bdfef}"
+  ]
  },
  {
   "id": 3032,
@@ -9005,6 +8965,7 @@
   },
   "calculs": {},
   "alertes": [
+   "DataValue absent: {1eea3407}",
    "DataValue absent: {52d90ad0}"
   ]
  },
@@ -9110,7 +9071,8 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 20
+      "valeur": 20,
+      "facteurDistance": 0.5
      }
     ]
    }
@@ -9227,7 +9189,7 @@
       "valeur": 70
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.05999999865889549
      }
@@ -9241,7 +9203,7 @@
       "valeur": 7.000000104308128
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.005999999955296514
      }
@@ -9259,7 +9221,7 @@
    "DamageCalc": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.05999999865889549
      },
@@ -9701,12 +9663,14 @@
      {
       "stat": "AD",
       "mode": "bonus",
-      "valeur": 1.2000000476837158
+      "valeur": 1.2000000476837158,
+      "facteurDistance": 0.699999988079071
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.05000000074505806
+      "valeur": 0.05000000074505806,
+      "facteurDistance": 0.699999988079071
      }
     ]
    },
@@ -9715,12 +9679,14 @@
      {
       "stat": "AD",
       "mode": "bonus",
-      "valeur": 3
+      "valeur": 3,
+      "facteurDistance": 0.699999988079071
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.10000000149011612
+      "valeur": 0.10000000149011612,
+      "facteurDistance": 0.699999988079071
      }
     ]
    },
@@ -9736,7 +9702,8 @@
         "niveau": 9,
         "parNiveau": 6
        }
-      ]
+      ],
+      "facteurDistance": 0.5
      }
     ]
    }
@@ -10105,7 +10072,8 @@
         "niveau": 9,
         "parNiveau": 5
        }
-      ]
+      ],
+      "facteurDistance": 0.800000011920929
      }
     ]
    },
@@ -10121,7 +10089,8 @@
         "niveau": 9,
         "parNiveau": 5
        }
-      ]
+      ],
+      "facteurDistance": 0.800000011920929
      }
     ]
    }
@@ -10178,7 +10147,8 @@
         "niveau": 9,
         "parNiveau": 30
        }
-      ]
+      ],
+      "facteurDistance": 0.800000011920929
      }
     ]
    }
@@ -10275,23 +10245,10 @@
    "LethalityAmount": 15,
    "SlowThreshold": 0.5
   },
-  "calculs": {
-   "PenCalc": {
-    "termes": [
-     {
-      "stat": "flat",
-      "mode": "flat",
-      "valeur": 0
-     },
-     {
-      "stat": "stat29",
-      "mode": "base",
-      "valeur": 0
-     }
-    ]
-   }
-  },
-  "alertes": []
+  "calculs": {},
+  "alertes": [
+   "mStat non identifié : 29"
+  ]
  },
  {
   "id": 6699,
@@ -10403,7 +10360,7 @@
       "valeur": 0.625
      },
      {
-      "stat": "DegatsCrit",
+      "stat": "Crit",
       "mode": "base",
       "valeur": 25
      }
@@ -10417,7 +10374,7 @@
       "valeur": 1.25
      },
      {
-      "stat": "DegatsCrit",
+      "stat": "Crit",
       "mode": "base",
       "valeur": 50
      }
@@ -10499,7 +10456,7 @@
       "valeur": 0.10000000149011612
      },
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.029999999329447746
      }
@@ -10629,7 +10586,7 @@
    "TotalHealing": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.014999999664723873
      }
@@ -10638,7 +10595,7 @@
    "TotalHealingTooltip": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.029999999329447746
      }
@@ -10917,7 +10874,7 @@
    "{1247259a}": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.019999999552965164
      }
@@ -11031,7 +10988,8 @@
      {
       "stat": "AD",
       "mode": "bonus",
-      "valeur": 0.8999999761581421
+      "valeur": 0.8999999761581421,
+      "facteurDistance": 0.5
      }
     ]
    }
@@ -11128,7 +11086,7 @@
    "MeleeItemCalcValue": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.019999999552965164
      }
@@ -11137,7 +11095,7 @@
    "MeleeItemCalcValueB": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.10000000149011612
      }
@@ -11146,25 +11104,16 @@
    "RangedItemCalcValueB": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.0600000032782555
-     }
-    ]
-   },
-   "ChampRange": {
-    "termes": [
-     {
-      "stat": "stat31",
-      "mode": "bonus",
-      "valeur": 0.009999999776482582
      }
     ]
    },
    "RangedItemCalcValue": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
       "valeur": 0.012000000208616246
      }
@@ -11173,7 +11122,7 @@
    "ShieldSize": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "total",
       "valeur": 0.6000000238418579
      }
@@ -11190,7 +11139,7 @@
    }
   },
   "alertes": [
-   "valeur bornée (min/max non appliqué)"
+   "mStat non identifié : 31"
   ]
  },
  {
@@ -11494,7 +11443,7 @@
    "{405deeb1}": {
     "termes": [
      {
-      "stat": "ManaActuelle",
+      "stat": "PVactuelsCible",
       "mode": "base",
       "valeur": 1
      }
@@ -11887,54 +11836,60 @@
    "CalcValueB": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.029999999329447746
+      "valeur": 0.029999999329447746,
+      "facteurDistance": 0.5
      }
     ]
    },
    "CalcValue": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.009999999776482582
+      "valeur": 0.009999999776482582,
+      "facteurDistance": 0.5
      }
     ]
    },
    "CalcValueC": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.03999999910593033
+      "valeur": 0.03999999910593033,
+      "facteurDistance": 0.5
      }
     ]
    },
    "CalcValueD": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.09000000357627869
+      "valeur": 0.09000000357627869,
+      "facteurDistance": 0.5
      }
     ]
    },
    "OnHitDamageCalc": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.009999999776482582
+      "valeur": 0.009999999776482582,
+      "facteurDistance": 0.5
      }
     ]
    },
    "ConeDamageCalc": {
     "termes": [
      {
-      "stat": "Mana",
+      "stat": "PV",
       "mode": "base",
-      "valeur": 0.029999999329447746
+      "valeur": 0.029999999329447746,
+      "facteurDistance": 0.5
      }
     ]
    }

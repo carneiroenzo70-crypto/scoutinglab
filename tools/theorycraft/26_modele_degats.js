@@ -214,11 +214,20 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible) {
    Coup moyen = AD × (1 + chance de critique × (multiplicateur − 1 + bonus de critique))
    Le multiplicateur est lu par champion : il vaut 2 partout SAUF Ashe, dont les coups
    critiques n'infligent aucun dégât supplémentaire (multiplicateur 1). Le coder en dur
-   aurait doublé ses dégâts d'attaque. */
+   aurait doublé ses dégâts d'attaque.
+
+   ⚠ Sur un champion dont les coups critiques ne font AUCUN bonus, le bonus de dégâts
+   critiques des objets ne s'applique pas non plus — le wiki est explicite sur Ashe :
+   « l'amplification de dégâts critiques de la Lame d'infini ne lui profite pas ».
+   Ajouter ce bonus lui aurait accordé +30 % de dégâts d'attaque inexistants.
+
+   ⚠ Limite : le passif d'Ashe convertit sa CHANCE de critique en dégâts d'attaque
+   bonus. Ce gain-là n'est pas modélisé (c'est un passif de champion, pas d'objet) :
+   ses dégâts sont donc sous-estimés ici, jamais surestimés. */
 function degatsAttaque(p, cible) {
   const base = champions[p.champion].base;
   const mult = base.critMult != null ? base.critMult : 2;
-  const gainCritique = Math.max(0, mult - 1) + (p.degatsCrit || 0);
+  const gainCritique = mult <= 1 ? 0 : (mult - 1 + (p.degatsCrit || 0));
   const parCoupBrut = p.adTotal * (1 + p.crit * gainCritique);
   const m = cible ? mitiger(parCoupBrut, 'physique', cible, p) : null;
   const parCoup = m ? m.subis : parCoupBrut;

@@ -13,12 +13,35 @@
 const RANGS = [1, 2, 3, 4, 5];
 const rangsDe = n => [1, 2, 3, 4, 5].slice(0, n || 5);
 
-// Correspondance mStat → caractéristique. Vérifiée empiriquement (cf. 04_statmap.js) :
-// on la confirme en recoupant avec le nom du DataValue employé (« TotalADRatio »…).
+/* Correspondance mStat → caractéristique.
+
+   ⚠ Cette table a été FAUSSE sur six index. Écrite de mémoire, elle ne cassait rien :
+   elle donnait des chiffres faux (mStat 9 lu « PV » alors qu'il vaut « bonus de dégâts
+   critiques » — sur Ashe, Caitlyn, Lucian, Miss Fortune) ou faisait refuser des sorts
+   en silence (mStat 12 lu « Mana » alors qu'il vaut « PV max » — l'Hydre titanesque).
+
+   Elle est maintenant dérivée des DONNÉES, par `29_sonde_statmap.js` : les noms de
+   DataValues sont auto-documentés, et regrouper les noms observés par index donne la
+   correspondance sans rien deviner. La preuve de chaque entrée est en commentaire.
+
+   RÈGLE : un index sans preuve reste NON MAPPÉ. Le résolveur le signale et refuse le
+   calcul. Mieux vaut un sort absent qu'un sort faux. */
 const STATS = {
-  0: 'AP', 1: 'Armure', 2: 'AD', 3: 'DureeWindup', 4: 'Portee', 5: 'VitesseAttaque',
-  6: 'Accel', 7: 'Crit', 8: 'DegatsCrit', 9: 'PV', 10: 'PVactuels', 11: 'PVmanquants',
-  12: 'Mana', 13: 'ManaActuelle', 14: 'ManaManquante', 15: 'RM', 16: 'VitesseDeplacement'
+  0:  'AP',                  // APRatio(95), ShieldAPRatio, HealAPRatio, NashorsAPValue
+  1:  'Armure',              // BonusArmorDamageRatio, MeleeOnHitARRatio, BraumArmorPercent
+  2:  'AD',                  // ADRatio(34), BonusADRatio, SpellbladeMultiplier, SheenMult
+  4:  'VitesseAttaque',      // ASCoeff, HealthPerAS, AStoADChampion
+  6:  'RM',                  // MRRatio, BonusMRRatio, PassiveResistPercent
+  7:  'VitesseDeplacement',  // MSAdaptiveRatio, DashSpeedRatio, DashSpeedMod
+  8:  'Crit',                // CritRatio, CritChanceMultiplier, CritChanceAmp
+  9:  'DegatsCrit',          // CritDamage, TotalDamageCrit, HeadShotBonusDamage
+  12: 'PV',                  // BonusHealthRatio, ShieldHealthRatio, MaxStackDamageHPRatio
+  13: 'PVactuelsCible',      // Lame du roi déchu : % des PV ACTUELS de la cible (wiki : « current health »)
+  18: 'VolVie',              // Omnivamp_LifeStealScaling
+  34: 'Accel'                // ASPerHS (vitesse d'attaque par point d'accélération)
+  /* Non mappés, faute de preuve — chacun n'apparaît qu'une ou deux fois, sans nom de
+     DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14, 15, 16 (Olaf), 19, 20,
+     21, 29, 30, 31. Le résolveur les signale plutôt que de les supposer. */
 };
 const MODES = { 0: 'base', 1: 'bonus', 2: 'total' };
 
@@ -101,7 +124,10 @@ function evalPart(p, ctx, rang, prof, alertes) {
         coef = { n: a[rang] != null ? a[rang] : a[a.length - 1] };
       } else coef = evalPart(p.mSubpart, ctx, rang, prof + 1, alertes);
       if (!coef || coef.n == null) return null;
-      const stat = STATS[p.mStat || 0] || ('stat' + p.mStat);
+      /* Index non prouvé = refus. Le mapper au hasard produirait un chiffre plausible
+         et faux — c'est exactement ce qui est arrivé avec mStat 9. */
+      const stat = STATS[p.mStat || 0];
+      if (!stat) { alertes.add('mStat non identifié : ' + p.mStat); return null; }
       const mode = MODES[p.mStatFormula || 0] || 'base';
       return { termes: [{ stat, mode, valeur: coef.n }] };
     }
@@ -205,6 +231,16 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
     return parRang;
   }
 
+  /* Multiplicateur « à distance » porté par le calcul lui-même (et non par une branche
+     conditionnelle). L'Hydre titanesque et l'Hydre profane l'utilisent : un champion à
+     distance n'obtient que la moitié de l'effet. L'ignorer surestimait ces objets sur
+     tous les champions à distance. */
+  let facteurDistance = null;
+  if (c.mRangedMultiplier) {
+    const m = evalPart(c.mRangedMultiplier, ctx, 1, 0, alertes);
+    if (m && m.n != null) facteurDistance = m.n;
+  }
+
   const parRang = {};
   RANGS.forEach(r => {
     const termes = [];
@@ -215,6 +251,7 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
       if (v.n != null) termes.push({ stat: 'flat', mode: 'flat', valeur: v.n });
       else termes.push(...v.termes);
     });
+    if (ok && facteurDistance != null) termes.forEach(t => { t.facteurDistance = facteurDistance; });
     parRang[r] = ok ? termes : null;
   });
   return parRang;

@@ -141,6 +141,17 @@ verifie('Ashe, 100 % de critique : aucun gain (multiplicateur 1)',
         asheAA.parCoupBrut, ashe.adTotal, 0.02);
 vrai('  et son multiplicateur est bien lu à 1, pas supposé à 2',
      asheAA.multiplicateurCritique === 1);
+/* Le wiki est explicite : « l'amplification de dégâts critiques de la Lame d'infini ne
+   lui profite pas ». Lui accorder les +30 % de l'objet inventait 30 % de dégâts. */
+const asheIE = M.profil('Ashe', 18, [3031], { crit: 1 });
+verifie('Ashe avec la Lame d\'infini : le bonus de dégâts critiques ne s\'applique pas',
+        M.degatsAttaque(asheIE, null).parCoupBrut, asheIE.adTotal, 0.02);
+// Contrôle en miroir : sur un champion normal, ce même bonus DOIT s'appliquer
+const jinxIE = M.profil('Jinx', 18, [3031], { crit: 1 });
+const cd = M.itemParId[3031].stats.degatsCrit.valeur;
+// 100 % de critique, multiplicateur 2, +30 % de l'objet → coup moyen à 2,3 fois l'AD
+verifie('  mais il s\'applique bien sur Jinx (contrôle en miroir)',
+        M.degatsAttaque(jinxIE, null).parCoupBrut, jinxIE.adTotal * (1 + (2 - 1 + cd)), 0.02);
 // Le DPS est bien le coup mitigé multiplié par la vitesse d'attaque
 const aa = M.degatsAttaque(p, cible);
 // tolérance large : les deux membres sont arrondis à deux décimales avant comparaison
