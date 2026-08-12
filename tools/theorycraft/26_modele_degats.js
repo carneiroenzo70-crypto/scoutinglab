@@ -44,6 +44,10 @@ function statsChampion(id, niveau) {
     pv: croissance(b.pv, b.pvParNiv, niveau),
     armure: croissance(b.armure, b.armParNiv, niveau),
     rm: croissance(b.rm, b.rmParNiv, niveau),
+    /* Le mana suit la même croissance quadratique que les autres stats. `null` sur les
+       champions à énergie ou à fureur : leur en attribuer fausserait tout ce qui scale
+       dessus (Ryze, le Manamune). */
+    mana: b.mana == null ? null : croissance(b.mana, b.manaParNiv, niveau),
     va: vitesseAttaque(b, niveau),
     portee: b.portee, ms: b.ms,
     distance: b.portee > 300      // sert aux runes et objets à version « à distance »
@@ -95,6 +99,7 @@ function profil(id, niveau, idsObjets, extras = {}) {
     ap: g('ap'),
     pvBonus: g('pv'),
     pvMax: nu.pv + g('pv'),
+    mana: nu.mana == null ? null : nu.mana + g('mana'),
     armure: nu.armure + g('armure'),
     rm: nu.rm + g('rm'),
     accel: g('accel'),
@@ -109,6 +114,23 @@ function profil(id, niveau, idsObjets, extras = {}) {
     or: (objets || []).reduce((s, i) => s + (itemParId[i] ? itemParId[i].prix : 0), 0)
   };
   p.adTotal = p.adBase + p.adBonus;
+
+  /* Stats accordées par les passifs d'objet (Manamune : 2 % du mana max en dégâts
+     d'attaque ; Gage de Sterak : 50 % de l'AD de base). Elles modifient le profil
+     lui-même, donc tous les ratios de sorts et toutes les attaques qui suivent.
+     Chargement paresseux pour éviter une dépendance circulaire entre les deux moteurs. */
+  if (!extras.sansPassifs) {
+    const { statsAccordees } = require('./30_moteur_items');
+    const acc = statsAccordees(p);
+    Object.entries(acc.gains).forEach(([stat, v]) => {
+      if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
+      else if (stat === 'ap') p.ap += v;
+      else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
+      else if (p[stat] != null) p[stat] += v;
+    });
+    p.statsAccordees = acc.detail;
+    p.statsRefusees = acc.refus;
+  }
   return p;
 }
 
@@ -167,6 +189,9 @@ function valeurTerme(t, p) {
     case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);
     case 'Armure': return t.valeur * p.armure;
     case 'RM':  return t.valeur * p.rm;
+    /* Mana maximum — indispensable à Ryze, dont les quatre sorts en dépendent.
+       `null` sur un champion à énergie : refuser vaut mieux que compter zéro. */
+    case 'Mana': return p.mana == null ? null : t.valeur * p.mana;
     default:    return null;                      // stat non gérée : on refuse, on n'invente pas
   }
 }

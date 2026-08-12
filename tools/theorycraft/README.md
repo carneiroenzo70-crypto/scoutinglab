@@ -54,7 +54,7 @@ node 32_audit_stats.js       # audit inverse des objets : aucune stat de boutiqu
 node 33_audit_runes.js       # audit inverse des runes : 98 % des nombres couverts
 ```
 
-**206 vérifications** en tout : 79 runes, 30 objets, 63 modèle, 34 passifs.
+**212 vérifications** en tout : 79 runes, 30 objets, 63 modèle, 40 passifs.
 
 ## Audit inverse des stats
 
@@ -326,11 +326,11 @@ cible à pleine vie, ce qui **renverse un verdict** — le build à pénétratio
 |---|---|
 | objets finis (≥ 1 800 po) | 105 |
 | dont portant un passif chiffré | 102 |
-| **appliqués aux dégâts** | **24** |
+| **appliqués aux dégâts** | **26** |
 | écartés avec un motif | 7 |
-| pas encore modélisés | 71 |
+| pas encore modélisés | 69 |
 
-Les 71 restants ne sont pas approximés : `evaluerPassif` renvoie « non modélisé », et
+Les 69 restants ne sont pas approximés : `evaluerPassif` renvoie « non modélisé », et
 le comparateur les nomme. **Un build est donc sous-estimé, jamais surestimé.**
 
 ### La table base / bonus / total était permutée
@@ -348,6 +348,33 @@ sur trois index distincts — `TotalADRatio` en 0, `BaseADRatio` et `SpellbladeM
 en 1, `BonusADRatio` et `BonusHealthRatio` en 2. Recoupé sur le wiki, et verrouillé par
 un test qui inclut une **contre-épreuve** : Terminus doit garder un ratio « bonus »,
 sinon on pourrait tout basculer en « base » et croire le problème réglé.
+
+### Les passifs qui ACCORDENT des stats
+
+Catégorie à part, et la plus lourde de conséquences : ils ne s'ajoutent pas aux dégâts,
+ils modifient le **profil** — donc tous les ratios de sorts et toutes les attaques qui
+suivent. `statsAccordees` est appliqué par `profil()` avant tout autre calcul.
+
+| Objet | Effet | Vérifié |
+|---|---|---|
+| Gage de Sterak | +50 % de l'AD **de base** en AD bonus | wiki |
+| Manamune | +2 % du **mana maximum** en AD bonus | wiki |
+
+⚠ Une seule passe, volontairement : aucun objet actuel n'accorde une stat que lit un
+autre passif. Si cela changeait, il faudrait itérer.
+
+### Le mana manquait entièrement au modèle
+
+Découvert en modélisant le Manamune : **le profil ne portait aucun mana**, alors que
+Ryze — 1er pick Mid — fait reposer ses quatre sorts dessus. Ses calculs étaient
+**refusés en silence**.
+
+Les clés sont hachées dans `primaryAbilityResource` ; elles ont été identifiées par
+**concordance numérique** avec Data Dragon (`{726ee5cd}` = 300 = `mp` de Ryze,
+`{6216bf7b}` = 70 = `mpperlevel`) — la même méthode que pour les runes.
+**79 champions, 0 écart** entre le fichier de jeu et Data Dragon. Les 11 sans mana sont
+exactement les champions à énergie, fureur ou chaleur : `arType` les distingue, et leur
+attribuer du mana fausserait tout ce qui scale dessus.
 
 ### Cadence : amortir plutôt qu'exclure
 

@@ -34,6 +34,10 @@ function valeurTerme(t, p, cible) {
     case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;
     case 'Armure': return t.valeur * p.armure;
     case 'RM':     return t.valeur * p.rm;
+    /* Mana maximum. `null` sur un champion à énergie ou à fureur : on refuse plutôt
+       que de compter zéro, sinon le Manamune paraîtrait ne rien donner alors qu'il
+       est simplement inapplicable. */
+    case 'Mana':   return p.mana == null ? null : t.valeur * p.mana;
     /* Stats du porteur dont certains passifs dépendent : la Faux spectrale ajoute
        50 × la chance de critique, le Glaive d'ombre 1,5 × la létalité. Les refuser
        privait le calculateur d'objets entiers. */
@@ -109,6 +113,23 @@ function evaluerPassif(id, p, cible, options = {}) {
       brut *= o.valeurs[m.distance.facteur];
       detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });
     }
+  } else if (m.statsAccordees) {
+    /* Passif qui accorde une stat plutôt que des dégâts : il est traité par
+       `statsAccordees()` et intégré au profil. On renvoie ici le montant accordé, pour
+       que l'objet ne passe pas pour « non évaluable » alors qu'il est parfaitement
+       modélisé. */
+    brut = 0;
+    for (const { stat, calcul } of m.statsAccordees) {
+      const c = o.calculs[calcul];
+      if (!c || !c.termes) return { ok: false, nom: o.nom, raison: 'calcul absent : ' + calcul };
+      for (const t of c.termes) {
+        const v = valeurTerme(t, p, cible);
+        if (v == null) return { ok: false, nom: o.nom,
+                                raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
+        brut += v;
+        detail.push({ part: stat + ' ← ' + t.stat, valeur: Math.round(v * 100) / 100 });
+      }
+    }
   } else {
     return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };
   }
@@ -173,6 +194,41 @@ function coupsAImpact(p, cible, options = {}) {
   return { subis: subisTotal, lignes, refus };
 }
 
+/* Stats accordées par les passifs d'objet (Manamune : 2 % du mana max en dégâts
+   d'attaque ; Gage de Sterak : 50 % de l'AD de base).
+
+   Elles ne s'ajoutent pas aux dégâts, elles modifient le PROFIL — donc tous les ratios
+   de sorts et toutes les attaques qui suivent. Les ignorer, c'est perdre plus de 30
+   dégâts d'attaque sur un Ryze au Manamune, silencieusement.
+
+   ⚠ Une seule passe, volontairement : les stats accordées sont calculées sur le profil
+   AVANT passifs. Aucun objet actuel n'accorde une stat que lit un autre passif (le
+   Manamune lit le mana, Sterak lit l'AD de base, ni l'un ni l'autre ne lit l'AD bonus),
+   donc l'ordre n'a pas d'incidence. Si un objet le faisait un jour, il faudrait itérer
+   — la note est ici pour qu'on s'en souvienne. */
+function statsAccordees(p) {
+  const gains = {}; const detail = []; const refus = [];
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || !m.statsAccordees) return;
+    const o = parId[id];
+    m.statsAccordees.forEach(({ stat, calcul }) => {
+      const c = o.calculs[calcul];
+      if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + calcul); return; }
+      let v = 0; let ok = true;
+      c.termes.forEach(t => {
+        const x = valeurTerme(t, p, null);
+        if (x == null) { ok = false; return; }
+        v += x;
+      });
+      if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
+      gains[stat] = (gains[stat] || 0) + v;
+      detail.push({ objet: o.nom, nom: m.nom, stat, valeur: Math.round(v * 100) / 100 });
+    });
+  });
+  return { gains, detail, refus };
+}
+
 /* État de la modélisation, sans arrondi flatteur : combien d'objets finis portent un
    passif chiffré, et combien sont réellement appliqués aux dégâts. */
 function couverture() {
@@ -184,4 +240,4 @@ function couverture() {
   return { finis, avecPassif, modelises, ecartes, sansModele };
 }
 
-module.exports = { evaluerPassif, coupsAImpact, couverture, MODELES, parId };
+module.exports = { evaluerPassif, coupsAImpact, statsAccordees, couverture, MODELES, parId };

@@ -200,6 +200,26 @@ module.exports = {
     declencheur: { type: 'energise' }, calcul: 'TotalProcDamage'
   },
 
+  /* ── Passifs qui ACCORDENT DES STATS ────────────────────────────────────────
+     Catégorie à part, et la plus lourde de conséquences : ils ne s'ajoutent pas aux
+     dégâts, ils modifient le PROFIL — donc tous les ratios de sorts, toutes les
+     attaques, tout ce qui suit. Le Manamune sur Ryze, c'est plus de 30 dégâts
+     d'attaque invisibles si on ne les compte pas.
+     `statsAccordees` est lu par `profil()` avant tout autre calcul. */
+
+  3004: { // Manamune — Effroi
+    nom: 'Effroi', effet: 'stat',
+    statsAccordees: [{ stat: 'ad', calcul: 'BonusADFromMana' }],
+    note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis transformation en ' +
+          'Muramana) n\'est pas modélisé — valeur de départ uniquement'
+  },
+
+  3053: { // Gage de Sterak — Griffes qui happent
+    nom: 'Griffes qui happent', effet: 'stat',
+    statsAccordees: [{ stat: 'ad', calcul: 'BonusAD' }],
+    note: 'le bouclier Lien vital (60 % des PV bonus) n\'est pas compté dans les dégâts'
+  },
+
   /* ── Boucliers ──────────────────────────────────────────────────────────────── */
 
   3156: { // Gueule de Malmortius — Lien vital

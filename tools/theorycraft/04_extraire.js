@@ -43,11 +43,30 @@ function statsDeBase(rec) {
     vaRatio:   g('attackSpeedRatioModifiable', 'attackSpeedModifiable'),
     portee:    g('attackRangeModifiable'),
     ms:        g('baseMoveSpeedModifiable'),
+    /* MANA. Absent de mes premières extractions, alors que Ryze — 1er pick Mid — fait
+       reposer ses quatre sorts dessus et que le Manamune convertit 2 % du mana max en
+       dégâts d'attaque. Sans lui, ces calculs étaient refusés en silence.
+
+       Les clés sont hachées dans `primaryAbilityResource`. Elles ont été identifiées
+       par CONCORDANCE NUMÉRIQUE avec Data Dragon : {726ee5cd} = 300 = `mp` de Ryze,
+       {6216bf7b} = 70 = `mpperlevel`. La même méthode que pour les runes.
+       `arType` distingue la ressource : 0 = mana. Un champion à énergie ou à fureur
+       ne doit pas se voir attribuer du mana. */
+    ...ressource(rec),
     /* Multiplicateur de coup critique. Il vaut 2 pour presque tout le monde, mais
        certains champions l'ont réduit en compensation d'un kit : le lire évite de
        coder en dur une valeur fausse sur ces cas-là. */
     critMult:  g('critDamageMultiplier')
   };
+}
+
+/* Ressource principale du champion. Renvoie du mana seulement si `arType` vaut 0 :
+   attribuer du mana à un champion à énergie fausserait tout ce qui scale dessus. */
+function ressource(rec) {
+  const r = rec.primaryAbilityResource;
+  if (!r || (r.arType || 0) !== 0) return { mana: null, manaParNiv: null, typeRessource: r ? r.arType : null };
+  const lire = cle => (r[cle] && r[cle].baseValue != null) ? r[cle].baseValue : null;
+  return { mana: lire('{726ee5cd}'), manaParNiv: lire('{6216bf7b}'), typeRessource: 0 };
 }
 
 /* Physique, magique ou brut ? Le fichier de jeu ne porte pas cette information dans les

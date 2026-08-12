@@ -32,6 +32,16 @@ const cible = M.cibleChampion('Rumble', 18, []);
 const jinx = M.profil('Jinx', 18, []);      // à distance
 const rumble = M.profil('Rumble', 18, []);  // mêlée
 
+/* Profil de référence pour le balayage de tous les passifs : il faut un champion en
+   MÊLÉE et AVEC DU MANA. Rumble n'a pas de mana (il fonctionne à la chaleur) : le
+   Manamune y est légitimement inapplicable, et le balayage le comptait à tort comme un
+   échec. On choisit le champion dans les données plutôt que de le coder en dur. */
+const idRef = Object.keys(M.champions).find(id => {
+  const b = M.champions[id].base;
+  return b.mana != null && b.portee <= 300;
+});
+const ref = M.profil(idRef, 18, []);
+
 console.log('── Pourcentage porté par la CIBLE (le piège du facteur 2400)');
 /* La Lame du roi déchu stocke « 0,09 » dans un calcul et la multiplication par les PV
    de la cible dans un AUTRE. Lire le premier seul donnait 0,06 au lieu de 145. */
@@ -116,6 +126,32 @@ vrai('le magique est moins réduit que le physique sur cette cible',
      Math.round(nash.subis / nash.brut * 100) + ' % contre ' +
      Math.round(bot.subis / bot.brut * 100) + ' %');
 
+console.log('\n── Passifs qui ACCORDENT des stats (ils changent tout le reste)');
+/* Ceux-là ne s'ajoutent pas aux dégâts : ils modifient le profil, donc tous les ratios
+   de sorts et toutes les attaques qui suivent. Deux valeurs confirmées sur le wiki. */
+// Gage de Sterak : « bonus attack damage equal to 50% base AD »
+const sterak = M.profil('Aatrox', 18, [3053]);
+const nu = M.profil('Aatrox', 18, [], { sansPassifs: true });
+verifie('Gage de Sterak : 50 % de l\'AD de base en AD bonus (wiki)',
+        sterak.adBonus, nu.adBase * 0.5, 0.5);
+vrai('  le gain est tracé, pas fondu dans le total',
+     (sterak.statsAccordees || []).some(x => /Sterak/.test(x.objet)));
+// Manamune : « bonus attack damage equal to 2% maximum mana »
+const mana = M.profil('Ryze', 18, [3004]);
+const manaStat = items.find(x => x.id === 3004).stats.ad.valeur;
+verifie('Manamune : 2 % du mana max, en plus de sa stat propre (wiki)',
+        mana.adBonus, manaStat + mana.mana * 0.02, 0.5);
+/* Le mana manquait totalement au modèle. Ryze — 1er pick Mid — fait reposer ses quatre
+   sorts dessus : ils étaient refusés en silence. */
+vrai('le mana est désormais dans le profil', mana.mana > 1000, Math.round(mana.mana) + '');
+const calculQ = Object.keys(M.champions.Ryze.sorts.Q.calculs)
+  .find(n => M.champions.Ryze.sorts.Q.calculs[n].genre === 'degats');
+const q = M.evaluerCalcul('Ryze', 'Q', calculQ, 5, mana, cible);
+vrai('  et le Q de Ryze se calcule enfin', q.ok && q.brut > 0, q.ok ? q.brut + ' brut' : q.raison);
+/* Un champion à énergie ne doit PAS se voir attribuer du mana : compter zéro ferait
+   croire que le Manamune ne donne rien, au lieu de dire qu'il est inapplicable. */
+vrai('un champion à énergie n\'a pas de mana', M.profil('Rumble', 18, []).mana === null);
+
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,
    l'exclure l'effacerait : sur la durée, la seule valeur juste est le tiers. */
@@ -172,7 +208,7 @@ Object.keys(I.MODELES).map(Number).forEach(id => {
   const m = I.MODELES[id];
   if (m.nonApplique) return;
   const o = items.find(x => x.id === id);
-  const e = I.evaluerPassif(id, rumble, cible);
+  const e = I.evaluerPassif(id, ref, cible);
   if (!e.ok) { echecs.push(o.nom + ' : ' + e.raison); return; }
 
   const phrase = phraseDuPassif(id, m.nom);
