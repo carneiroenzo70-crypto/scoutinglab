@@ -34,6 +34,13 @@ node 07_bilan.js      # couverture globale
 node 09_runes.js          # perks.bin.json + libellés fr → runes.json
 node 11_rapport_runes.js  # rendu lisible des pierres de fondation
 node 12_diag_hash.js      # part de clés non résolues par CommunityDragon
+
+# Objets
+node 17_fetch_items.js       # les 3 sources (non versionnées, 15 Mo)
+node 22_extraire_items.js    # → items.json
+node 23_rapport_items.js 3153 Liandry   # rendu lisible, pour confronter à la boutique
+node 24_test_items.js        # 30 vérifications contre deux sources indépendantes
+node 25_couverture_items.js  # ce qui manque encore, objet par objet
 ```
 
 `03_resolveur.js` est le cœur : il aplatit l'arbre de formule en une somme de termes
@@ -158,9 +165,63 @@ et `evaluerRune()` renvoie systématiquement le champ `source` — on ne mélang
 silencieusement une mesure et une saisie. **Cette valeur ne se mettra pas à jour toute
 seule au prochain patch, contrairement à toutes les autres.**
 
+## Objets (`items.json`)
+
+Même bonne surprise que pour les runes : `game/items.cdtb.bin.json` porte le **même
+arbre de formule typé** que les sorts. Les passifs ne sont donc pas de la prose à
+recopier — ils se résolvent avec `03_resolveur.js`, à trois types de parts près.
+
+| | |
+|---|---|
+| objets de la Faille, achetables | **218** |
+| dont finis (≥ 1 800 po) | 105 |
+| finis avec un passif résolu en formule | 59 |
+| finis avec des valeurs nommées seulement | 43 |
+| **finis annonçant un effet sans aucune valeur lisible** | **0** |
+
+### Ce que le fichier de jeu apporte que Data Dragon n'a pas
+
+Data Dragon publie des stats correctes mais **incomplètes** : ni l'accélération de
+compétence (65 objets), ni la létalité (12), ni la pénétration. Or ce sont exactement
+les stats qui décident un build. Le fichier de jeu les donne toutes.
+
+### Pièges des objets
+
+- **`maps['11']` ne suffit PAS à isoler la Faille.** Riot marque « carte 11 » les
+  doublons d'Arena — Nécrophage, Épée du divin — qui parlent de « fin de manche » et
+  n'existent pas en partie classée. Ils portent un identifiant à **six chiffres** bâti
+  sur l'objet d'origine (323070 = la Larme 3070). Le seuil `id < 100000` les écarte.
+  ⚠️ Le critère tentant `maps['35']` est **faux** : il exclurait 77 objets légitimes
+  (bottes, objets de Doran, potions, balises).
+- **Croissance par paliers.** `ByCharLevelBreakpointsCalculationPart` porte une valeur
+  de départ *et* des seuils (« +30 par niveau à partir du 9 »). Ne garder que la valeur
+  au niveau 1 sous-estimait d'un facteur 2 : le bouclier de l'Arc-bouclier immortel est
+  400 au niveau 1 mais **700** au niveau 18.
+- **Formules à deux branches.** Mêlée/distance n'est pas un simple facteur : c'est une
+  `GameCalculationConditional` avec deux formules distinctes (Lame du roi déchu, 9 % des
+  PV max en mêlée contre 6 % à distance). `resoudreConditionnel` rend les deux.
+- **Champs de stats aux préfixes irréguliers.** Un filtre par préfixe qui oubliait
+  `mAbilityHasteMod` vidait silencieusement l'accélération sur 65 objets — sans la
+  moindre erreur. C'est le test contre la description en boutique qui l'a rattrapé.
+- **Flottants sales** : le jeu stocke `0.30000001192092896` pour 30 %.
+
+### Comment on vérifie (`24_test_items.js`)
+
+Aucune valeur attendue ne vient de `items.json` — un test qui se compare à lui-même ne
+prouve rien. Trois contrôles indépendants :
+
+1. **407 valeurs confrontées à Data Dragon**, qui publie ses propres stats. Deux
+   lectures du même objet doivent concorder. 0 écart.
+2. **Accélération et létalité confrontées à la description française en boutique**,
+   rendue indépendamment. Sans ce contrôle, la moitié de l'apport du fichier de jeu
+   serait invérifiable.
+3. **Périmètre** : aucune description ne doit contenir le mot « manche », vocabulaire
+   qui n'existe qu'en Arena.
+
 ## À refaire à chaque patch
 
-Relancer `02_fetch.js` puis `04_extraire.js`. Les données de pro play
+Relancer `02_fetch.js` puis `04_extraire.js` (champions), et `17_fetch_items.js` puis
+`22_extraire_items.js` (objets). Les données de pro play
 (`proplay.json`, via gol.gg) se rafraîchissent avec `01_cibles.js`.
 ⚠️ Leaguepedia bloque les requêtes depuis certains environnements — gol.gg a servi de
 source de repli pour les taux de pick.

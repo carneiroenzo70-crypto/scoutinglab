@@ -36,6 +36,19 @@ function creerContexte(spell) {
 }
 const lireDV = (ctx, nom) => ctx.dv[String(nom).toLowerCase()];
 
+/* Valeur d'une croissance par paliers au niveau demandé.
+   Chaque niveau franchi ajoute le gain du palier en vigueur à ce niveau-là
+   (« +7 par niveau à partir du 10 » = rien avant le 10, puis 7 par niveau du 10 au 18). */
+function valeurParPaliers(base, paliers, niveau) {
+  let v = base;
+  for (let n = 2; n <= Math.max(1, Math.min(18, niveau)); n++) {
+    let gain = 0;
+    for (const p of paliers) if (n >= p.niveau) gain = p.parNiveau;
+    v += gain;
+  }
+  return Math.round(v * 1000) / 1000;
+}
+
 // Évalue une part pour un rang donné. Renvoie {n} (nombre) ou {termes:[…]}.
 function evalPart(p, ctx, rang, prof, alertes) {
   if (!p || prof > 12) return null;
@@ -98,9 +111,19 @@ function evalPart(p, ctx, rang, prof, alertes) {
       return { termes: [{ stat: 'flat', mode: 'parNiveau', valeur: p.mStartValue || 0,
                           jusqua: p.mEndValue || 0 }] };
 
-    case 'ByCharLevelBreakpointsCalculationPart':
+    /* Croissance par paliers : une valeur de départ, puis un gain par niveau qui
+       change à certains seuils (« +7 par niveau à partir du 10 »). Ne garder que la
+       valeur au niveau 1 revenait à sous-estimer d'un facteur 2 à 3 en fin de partie —
+       le bouclier de l'Arc-bouclier immortel, par exemple. */
+    case 'ByCharLevelBreakpointsCalculationPart': {
+      const paliers = (p.mBreakpoints || []).map(b => ({
+        niveau: b.mLevel || 1,
+        parNiveau: b.mBonusPerLevelAtAndAfter != null ? b.mBonusPerLevelAtAndAfter : 0
+      })).sort((a, b) => a.niveau - b.niveau);
       return { termes: [{ stat: 'flat', mode: 'parNiveau', valeur: p.mLevel1Value || 0,
-                          jusqua: null, paliers: true }] };
+                          jusqua: valeurParPaliers(p.mLevel1Value || 0, paliers, 18),
+                          paliers }] };
+    }
 
     /* Scaling sur la ressource (mana max). Indispensable pour Ryze, 1er pick Mid,
        dont les quatre sorts en dépendent — sans ce type il ressortait vide. */
@@ -125,10 +148,27 @@ function evalPart(p, ctx, rang, prof, alertes) {
       return inner;
     }
 
-    case 'BuffCounterByNamedDataValueCalculationPart':
+    /* Valeur proportionnelle au nombre de cumuls d'un effet (Sceptre de Mejai,
+       Lame noire…). Le nom du buff est souvent haché : on garde le terme « par
+       cumul » et c'est l'appelant qui fournira le nombre de cumuls. */
     case 'BuffCounterByCoefficientCalculationPart':
-      alertes.add('cumul de buff (' + t + ') — non modélisé');
-      return null;
+    case 'BuffCounterByNamedDataValueCalculationPart': {
+      let c;
+      if (t === 'BuffCounterByCoefficientCalculationPart') c = p.mCoefficient || 0;
+      else {
+        const a = lireDV(ctx, p.mDataValue);
+        if (!a) { alertes.add('DataValue absent: ' + p.mDataValue); return null; }
+        c = a[rang] != null ? a[rang] : a[a.length - 1];
+      }
+      return { termes: [{ stat: 'Cumuls', mode: 'total', valeur: c, buff: p.mBuffName || null }] };
+    }
+
+    /* Valeur proportionnelle au nombre d'objets d'une rareté donnée déjà possédés
+       (« +X par objet légendaire »). epicness 5 = légendaire. */
+    case 'ByItemEpicnessCountCalculationPart':
+      return { termes: [{ stat: 'NbObjets', mode: 'total',
+                          valeur: p.Coefficient != null ? p.Coefficient : 1,
+                          rarete: p.epicness != null ? p.epicness : 5 }] };
 
     default:
       alertes.add('type inconnu: ' + t);
@@ -141,6 +181,17 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
   const c = ctx.calc[nom];
   if (!c || prof > 5) return null;
   const RANGS = rangsDe(nbRangs);
+
+  /* Formule à deux branches selon une condition de jeu — presque toujours
+     mêlée/distance sur les objets (Lame du roi déchu, Lame noire). On renvoie ici
+     la branche par défaut ; `resoudreConditionnel` donne les deux, pour qui veut
+     distinguer. Rendre la branche par défaut à un champion à distance serait un
+     contresens silencieux, d'où l'alerte. */
+  if (c.__type === 'GameCalculationConditional') {
+    alertes.add('formule conditionnelle (' +
+      ((c.mConditionalCalculationRequirements || {}).__type || 'condition inconnue') + ')');
+    return resoudreCalcul(c.mDefaultGameCalculation, ctx, alertes, nbRangs, prof + 1);
+  }
 
   if (c.__type === 'GameCalculationModified') {
     const base = resoudreCalcul(c.mModifiedGameCalculation, ctx, alertes, nbRangs, prof + 1);
@@ -169,4 +220,34 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
   return parRang;
 }
 
-module.exports = { creerContexte, resoudreCalcul, evalPart, STATS, MODES, RANGS, rangsDe };
+/* Les deux branches d'une formule conditionnelle, quand la distinction compte.
+   Renvoie null si la formule n'est pas conditionnelle — au caller de retomber sur
+   `resoudreCalcul`. */
+function resoudreConditionnel(nom, ctx, alertes, nbRangs = 5) {
+  const c = ctx.calc[nom];
+  if (!c || c.__type !== 'GameCalculationConditional') return null;
+  const muet = new Set();   // l'alerte du cas conditionnel n'a pas lieu d'être ici
+  return {
+    condition: (c.mConditionalCalculationRequirements || {}).__type || null,
+    defaut: resoudreCalcul(c.mDefaultGameCalculation, ctx, muet, nbRangs, 1),
+    siCondition: resoudreCalcul(c.mConditionalGameCalculation, ctx, muet, nbRangs, 1)
+  };
+}
+
+/* Contexte pour un OBJET. Même arbre de formules que les sorts, mais deux formes
+   diffèrent : les DataValues d'objet portent une valeur unique (`mName`/`mValue`)
+   là où un sort porte un tableau par rang, et `mEffectAmount` est une simple liste
+   de nombres. On normalise vers la forme « tableau » attendue par le résolveur —
+   un objet n'a qu'un seul « rang ». */
+function creerContexteObjet(item) {
+  const dv = {};
+  (item.mDataValues || []).forEach(v => {
+    if (v && v.mName) dv[String(v.mName).toLowerCase()] = [v.mValue || 0];
+  });
+  const eff = (item.mEffectAmount || []).map(v => [typeof v === 'number' ? v : 0]);
+  return { dv, eff, calc: item.mItemCalculations || {} };
+}
+
+module.exports = { creerContexte, creerContexteObjet, resoudreCalcul, resoudreConditionnel,
+                   valeurParPaliers,
+                   evalPart, STATS, MODES, RANGS, rangsDe };
