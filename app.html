@@ -1336,6 +1336,74 @@ body.map-fullscreen .logo-bg{ display:none; }
   letter-spacing: .015em !important; /* l'uppercase + tracking négatif serait illisible */
 }
 
+/* ════ Theorycraft — calculateur de build ════
+   Deux colonnes : réglages à gauche, résultats à droite. Le tableau des axes est de
+   l'information dense, pas du texte : chiffres alignés en tabulaire, état lisible à la
+   couleur ET à la forme (un liseré), jamais à la couleur seule. */
+.tc-grille{ display:grid; grid-template-columns:352px minmax(0,1fr); gap:16px; align-items:start; }
+.tc-col{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+.vsd .tc-bloc{ padding:16px; display:flex; flex-direction:column; gap:10px; }
+.tc-titre{ display:flex; align-items:center; justify-content:space-between; gap:8px;
+  font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--vs-fg-3); }
+.tc-compte{ font-family:var(--font-mono); font-size:11px; color:var(--vs-fg-2); letter-spacing:0; }
+.tc-select{ width:100%; background:var(--vs-forest-900); border:1px solid var(--vs-forest-600);
+  color:var(--vs-fg-1); border-radius:8px; padding:9px 11px; font-family:inherit; font-size:13.5px; }
+.tc-select:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:1px; }
+.tc-ligne-niv{ display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--vs-fg-2); }
+.tc-ligne-niv>span{ flex:none; width:96px; }
+.tc-range{ flex:1; accent-color:var(--vs-emerald-400); min-width:0; }
+.tc-num{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-1);
+  font-variant-numeric:tabular-nums; width:46px; text-align:right; flex:none; }
+.tc-liste{ max-height:210px; overflow-y:auto; display:flex; flex-direction:column;
+  border:1px solid var(--vs-forest-700); border-radius:8px; }
+.tc-item{ display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:7px 10px;
+  /* Séparateur pris sur un TOKEN, pas sur un blanc translucide : en thème clair, un
+     rgba(255,255,255,.05) posé sur du blanc ne se voit pas — la liste devenait un bloc. */
+  background:none; border:0; border-bottom:1px solid var(--vs-forest-600); color:var(--vs-fg-2);
+  font:inherit; font-size:12.5px; cursor:pointer; }
+.tc-item:last-child{ border-bottom:0; }
+.tc-item:hover{ background:rgba(45,212,167,.08); color:var(--vs-fg-1); }
+.tc-item.pris{ color:var(--vs-emerald-300); }
+.tc-item .po{ margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--vs-fg-3);
+  font-variant-numeric:tabular-nums; }
+.tc-puces{ display:flex; flex-wrap:wrap; gap:6px; }
+.tc-puce{ display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 9px;
+  border-radius:6px; background:rgba(45,212,167,.09); border:1px solid rgba(45,212,167,.35);
+  color:var(--vs-emerald-300); cursor:pointer; font-family:inherit; }
+.tc-puce:hover{ border-color:var(--vs-red-400); color:var(--vs-red-400); }
+.tc-puce.faute{ background:rgba(255,90,51,.1); border-color:rgba(255,90,51,.5); color:var(--vs-red-400); }
+.tc-vide{ color:var(--vs-fg-3); font-size:12px; }
+.tc-legalite{ border-left:2px solid var(--vs-red-400); background:rgba(255,90,51,.07);
+  padding:8px 11px; border-radius:0 6px 6px 0; font-size:12.5px; color:var(--vs-fg-2); }
+.tc-legalite b{ color:var(--vs-red-400); }
+.tc-legalite.ok{ border-left-color:var(--vs-emerald-400); background:rgba(45,212,167,.07); }
+.tc-legalite.ok b{ color:var(--vs-emerald-300); }
+.tc-patch{ font-family:var(--font-mono); font-size:11.5px; color:var(--vs-fg-2);
+  border:1px solid var(--vs-forest-600); border-radius:6px; padding:6px 10px; }
+
+/* Axes : une grille de mesures, lisible en diagonale */
+.tc-axes{ display:grid; gap:1px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+  background:var(--vs-forest-700); border:1px solid var(--vs-forest-700); border-radius:10px; overflow:hidden; }
+.tc-axe{ background:var(--vs-forest-900); padding:13px 14px; display:flex; flex-direction:column; gap:3px; }
+.tc-axe .v{ font-family:var(--font-mono); font-size:22px; line-height:1; letter-spacing:-.02em;
+  color:var(--vs-fg-1); font-variant-numeric:tabular-nums; }
+.tc-axe .v small{ font-size:12px; color:var(--vs-fg-3); }
+.tc-axe .l{ font-size:11.5px; color:var(--vs-fg-2); line-height:1.35; }
+.tc-axe.fort .v{ color:var(--vs-emerald-300); }
+
+.tc-tab{ width:100%; border-collapse:collapse; font-size:13px; }
+.tc-tab th, .tc-tab td{ padding:7px 10px; text-align:left; border-bottom:1px solid var(--vs-forest-600); }
+.tc-tab thead th{ font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--vs-fg-3); font-weight:600; }
+.tc-tab tr:last-child td{ border-bottom:0; }
+.tc-tab td.n{ font-family:var(--font-mono); text-align:right; font-variant-numeric:tabular-nums; color:var(--vs-fg-1); }
+.tc-tab td.s{ color:var(--vs-fg-3); font-size:11.5px; }
+.tc-scroll{ overflow-x:auto; }
+.tc-refus{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.tc-refus li{ font-size:12.5px; color:var(--vs-fg-2); padding-left:12px; position:relative; line-height:1.45; }
+.tc-refus li::before{ content:''; position:absolute; left:0; top:8px; width:4px; height:4px;
+  border-radius:50%; background:var(--vs-fg-3); }
+@media (max-width:980px){ .tc-grille{ grid-template-columns:1fr; } }
+
 /* ════ Menu latéral (drawer) ════ */
 .vsd-burger{ color:#F0F4F8; background:transparent; border:1px solid #245C52; border-radius:9px; width:40px; height:34px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex:none; transition:all .15s; }
 .vsd-burger:hover{ background:#143F39; border-color:#2DD4A7; }
@@ -3561,6 +3629,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="vsd-drawer-item" data-nav="analytics" onclick="vsdDrawerGo('analytics')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Analytics</span></button>
     <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
+    <button class="vsd-drawer-item" data-nav="theorycraft" onclick="vsdDrawerGo('theorycraft')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg><span>Calculateur</span></button>
     <!-- Top 30 : accessible depuis les onglets du CRM Agent -->
     <div style="flex:1"></div>
     <div class="vsd-drawer-sep"></div>
@@ -5289,6 +5358,83 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
       </div>
     </div><!-- /panel-scrimlab -->
+
+    <!-- ════ THEORYCRAFT — calculateur de build et de runes ════
+         Le moteur vit dans tools/theorycraft et se compile en /assets/theorycraft.js
+         (`node tools/theorycraft/50_bundle_navigateur.js`). Aucune formule n'est
+         réécrite ici : cette page ne fait qu'appeler et afficher. -->
+    <div id="panel-theorycraft" class="panel">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
+
+        <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
+          <div class="page-head" style="min-width:0">
+            <div class="eyebrow">Theorycraft</div>
+            <h2 class="h2">Calculateur de build</h2>
+            <p class="muted">Chiffres calculés sur les scripts du jeu. Le moteur refuse
+              d'afficher ce qu'il ne peut pas justifier — chaque refus porte son motif.</p>
+          </div>
+          <div class="tc-patch" id="tc-patch">Chargement du moteur…</div>
+        </div>
+
+        <div class="tc-grille">
+          <!-- ── Réglages ─────────────────────────────────────────────── -->
+          <aside class="tc-col">
+            <div class="card tc-bloc">
+              <div class="tc-titre">Champion</div>
+              <select id="tc-champion" class="tc-select" onchange="tcRendre()"></select>
+              <label class="tc-ligne-niv">
+                <span>Niveau</span>
+                <input type="range" id="tc-niveau" min="1" max="18" value="18"
+                       oninput="tcMajNiveau(this.value)" class="tc-range"/>
+                <b id="tc-niveau-v" class="tc-num">18</b>
+              </label>
+            </div>
+
+            <div class="card tc-bloc">
+              <div class="tc-titre">Objets <span class="tc-compte" id="tc-obj-compte">0 / 6</span></div>
+              <div id="tc-obj-choisis" class="tc-puces"></div>
+              <div id="tc-legalite" class="tc-legalite" hidden></div>
+              <input type="search" id="tc-obj-q" class="tc-select" placeholder="Chercher un objet…"
+                     oninput="tcListerObjets()" autocomplete="off"/>
+              <div id="tc-obj-liste" class="tc-liste"></div>
+            </div>
+
+            <div class="card tc-bloc">
+              <div class="tc-titre">Runes <span class="tc-compte" id="tc-rune-compte">0</span></div>
+              <div id="tc-rune-choisies" class="tc-puces"></div>
+              <div id="tc-page-runes" class="tc-legalite" hidden></div>
+              <select id="tc-rune-arbre" class="tc-select" onchange="tcListerRunes()"></select>
+              <div id="tc-rune-liste" class="tc-liste"></div>
+            </div>
+
+            <div class="card tc-bloc">
+              <div class="tc-titre">Cible</div>
+              <select id="tc-cible" class="tc-select" onchange="tcRendre()"></select>
+              <label class="tc-ligne-niv">
+                <span>Combat</span>
+                <input type="range" id="tc-fenetre" min="4" max="60" step="2" value="20"
+                       oninput="tcMajFenetre(this.value)" class="tc-range"/>
+                <b id="tc-fenetre-v" class="tc-num">20 s</b>
+              </label>
+              <label class="tc-ligne-niv">
+                <span>Part physique</span>
+                <input type="range" id="tc-partphys" min="0" max="100" step="10" value="50"
+                       oninput="tcMajPart(this.value)" class="tc-range"/>
+                <b id="tc-partphys-v" class="tc-num">50 %</b>
+              </label>
+              <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
+                La part physique sert aux PV effectifs mixtes : un tank ne se juge pas
+                pareil face à une composition à dégâts magiques.</p>
+            </div>
+          </aside>
+
+          <!-- ── Résultats ────────────────────────────────────────────── -->
+          <section class="tc-col" id="tc-resultats">
+            <div class="card tc-bloc"><p class="muted" style="margin:0">Chargement du moteur…</p></div>
+          </section>
+        </div>
+      </div>
+    </div><!-- /panel-theorycraft -->
 
   </main>
 </div><!-- /shell -->
@@ -10667,13 +10813,16 @@ function switchPanel(id) {
   if (id === 'top50') { top50RenderTable(); }
   // 'analyse' (Comparer) pointe sur nav-crm : l'outil vit désormais dans CRM Agent.
   const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-crm',
-                    top50:'nav-crm', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
+                    top50:'nav-crm', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics',
+                    theorycraft:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
   if (id === 'analyse') { buildAnalysePanel(); if (typeof anSyncTabs === 'function') anSyncTabs('comparer'); }
   if (id === 'analytics') { initAnalytics(); anEnterHub(); }
   if (id === 'scrimlab' && typeof slOnEnterStudio === 'function') slOnEnterStudio();
+  // Theorycraft : le moteur (~1 Mo) n'est chargé qu'ici, à la première ouverture
+  if (id === 'theorycraft' && typeof tcOuvrir === 'function') tcOuvrir();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
@@ -20689,6 +20838,261 @@ function vsdApplyCursor(){
   if(m && m!=='systeme') document.documentElement.setAttribute('data-cursor', m);
   document.querySelectorAll('.vsd-cursor-opt').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-cursor')===m); });
 }
+/* ══════════ THEORYCRAFT — calculateur de build et de runes ══════════
+   Cette page n'implémente AUCUNE formule : elle appelle `window.vsTheorycraft`, compilé
+   depuis tools/theorycraft par `node tools/theorycraft/50_bundle_navigateur.js`. C'est
+   volontaire — une seconde implémentation divergerait de la première dès le prochain
+   patch, sans que rien ne le signale.
+
+   Le moteur pèse ~1 Mo : il est chargé À LA DEMANDE, à la première ouverture du panneau,
+   jamais au démarrage de l'application. */
+var tcEtat = { champion:'Ryze', niveau:18, objets:[], runes:[], cible:'Sion',
+               fenetre:20, partPhys:0.5, arbre:'Sorcellerie' };
+var tcPret = false, tcEnCours = null;
+
+function tcCharger(){
+  if (tcPret) return Promise.resolve(true);
+  if (tcEnCours) return tcEnCours;
+  tcEnCours = new Promise(function(resolve){
+    var s = document.createElement('script');
+    s.src = '/assets/theorycraft.js';
+    s.onload = function(){ tcPret = !!window.vsTheorycraft; resolve(tcPret); };
+    s.onerror = function(){ resolve(false); };
+    document.head.appendChild(s);
+  });
+  return tcEnCours;
+}
+
+function tcOuvrir(){
+  var res = document.getElementById('tc-resultats');
+  tcCharger().then(function(ok){
+    if (!ok){
+      document.getElementById('tc-patch').textContent = 'moteur indisponible';
+      res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">' +
+        '<b>Moteur non chargé.</b> Le fichier /assets/theorycraft.js n\'a pas pu être ' +
+        'récupéré. Rien n\'est affiché plutôt qu\'un chiffre approché.</div></div>';
+      return;
+    }
+    var T = window.vsTheorycraft;
+    document.getElementById('tc-patch').textContent = 'données ' + T.version;
+
+    var selC = document.getElementById('tc-champion'), selT = document.getElementById('tc-cible');
+    if (!selC.options.length){
+      /* Champions triés par nom, avec leur poste : un coach cherche « Ryze », pas un
+         identifiant interne. */
+      var liste = Object.keys(T.champions).map(function(id){
+        return { id:id, nom:T.champions[id].nom || id, role:T.champions[id].role || '' };
+      }).sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
+      liste.forEach(function(c){
+        selC.appendChild(new Option(c.nom + (c.role ? ' · ' + c.role : ''), c.id));
+        selT.appendChild(new Option(c.nom + (c.role ? ' · ' + c.role : ''), c.id));
+      });
+      selC.value = tcEtat.champion; selT.value = tcEtat.cible;
+
+      var arbres = [];
+      T.runes.forEach(function(r){ if (r.active && arbres.indexOf(r.arbre) < 0) arbres.push(r.arbre); });
+      var selA = document.getElementById('tc-rune-arbre');
+      arbres.sort().forEach(function(a){ selA.appendChild(new Option(a, a)); });
+      selA.value = tcEtat.arbre;
+    }
+    tcListerObjets(); tcListerRunes(); tcRendre();
+  });
+}
+
+function tcMajNiveau(v){ tcEtat.niveau = +v; document.getElementById('tc-niveau-v').textContent = v; tcRendre(); }
+function tcMajFenetre(v){ tcEtat.fenetre = +v; document.getElementById('tc-fenetre-v').textContent = v + ' s'; tcRendre(); }
+function tcMajPart(v){ tcEtat.partPhys = +v/100; document.getElementById('tc-partphys-v').textContent = v + ' %'; tcRendre(); }
+
+/* Liste des objets FINIS : proposer les composants noierait le choix sous 218 entrées. */
+function tcListerObjets(){
+  if (!tcPret) return;
+  var T = window.vsTheorycraft;
+  var q = (document.getElementById('tc-obj-q').value || '').toLowerCase().trim();
+  var el = document.getElementById('tc-obj-liste');
+  var liste = T.objets.filter(function(o){
+    return o.fini && o.prix >= 800 && (!q || o.nom.toLowerCase().indexOf(q) >= 0);
+  }).sort(function(a,b){ return b.prix - a.prix; }).slice(0, 60);
+  el.innerHTML = liste.map(function(o){
+    var pris = tcEtat.objets.indexOf(o.id) >= 0;
+    return '<button type="button" class="tc-item' + (pris ? ' pris' : '') +
+      '" onclick="tcBasculerObjet(' + o.id + ')">' +
+      (pris ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 5 5L20 7"/></svg>' : '') +
+      anEsc(o.nom) + '<span class="po">' + o.prix + '</span></button>';
+  }).join('') || '<div class="tc-item" style="cursor:default">Aucun objet ne correspond.</div>';
+}
+
+function tcBasculerObjet(id){
+  var i = tcEtat.objets.indexOf(id);
+  if (i >= 0) tcEtat.objets.splice(i, 1);
+  else if (tcEtat.objets.length < 6) tcEtat.objets.push(id);
+  else if (typeof showToast === 'function') showToast('Six emplacements maximum.', 'error');
+  tcListerObjets(); tcRendre();
+}
+
+function tcListerRunes(){
+  if (!tcPret) return;
+  var T = window.vsTheorycraft;
+  tcEtat.arbre = document.getElementById('tc-rune-arbre').value;
+  var el = document.getElementById('tc-rune-liste');
+  var liste = T.runes.filter(function(r){ return r.active && r.arbre === tcEtat.arbre; })
+                     .sort(function(a,b){ return a.slot - b.slot; });
+  var GENRE = { majeure:'majeure', mineure:'mineure', fragment:'fragment' };
+  el.innerHTML = liste.map(function(r){
+    var pris = tcEtat.runes.indexOf(r.id) >= 0;
+    return '<button type="button" class="tc-item' + (pris ? ' pris' : '') +
+      '" onclick="tcBasculerRune(' + r.id + ')">' + anEsc(r.nom) +
+      '<span class="po">' + (GENRE[r.genre] || r.genre) + '</span></button>';
+  }).join('');
+}
+
+function tcBasculerRune(id){
+  var i = tcEtat.runes.indexOf(id);
+  if (i >= 0) tcEtat.runes.splice(i, 1); else tcEtat.runes.push(id);
+  tcListerRunes(); tcRendre();
+}
+
+/* Rendu. Tout ce qui est affiché vient du moteur ; ce qu'il refuse est montré comme
+   refus, jamais remplacé par une estimation. */
+function tcRendre(){
+  if (!tcPret) return;
+  var T = window.vsTheorycraft;
+  tcEtat.champion = document.getElementById('tc-champion').value || tcEtat.champion;
+  tcEtat.cible = document.getElementById('tc-cible').value || tcEtat.cible;
+
+  var leg = T.buildLegal(tcEtat.objets);
+  var elLeg = document.getElementById('tc-legalite');
+  document.getElementById('tc-obj-compte').textContent = tcEtat.objets.length + ' / 6 · ' + leg.or + ' po';
+  if (leg.legal){ elLeg.hidden = true; }
+  else {
+    elLeg.hidden = false; elLeg.className = 'tc-legalite';
+    elLeg.innerHTML = leg.infractions.map(function(i){
+      return '<b>' + anEsc(i.regle) + (i.groupe ? ' — ' + anEsc(i.groupe) : '') + '</b>' +
+             (i.objets ? '<br>' + anEsc(i.objets.join(' + ')) : (i.detail ? '<br>' + anEsc(i.detail) : ''));
+    }).join('<br>');
+  }
+  var fautifs = {};
+  leg.infractions.forEach(function(i){ (i.objets || []).forEach(function(n){ fautifs[n] = 1; }); });
+  document.getElementById('tc-obj-choisis').innerHTML = tcEtat.objets.length
+    ? tcEtat.objets.map(function(id){
+        var o = T.objets.filter(function(x){ return x.id === id; })[0] || { nom:id };
+        return '<button type="button" class="tc-puce' + (fautifs[o.nom] ? ' faute' : '') +
+               '" onclick="tcBasculerObjet(' + id + ')" title="Retirer">' + anEsc(o.nom) + '</button>';
+      }).join('')
+    : '<span class="tc-vide">Aucun objet.</span>';
+
+  var page = T.pageLegale(tcEtat.runes);
+  document.getElementById('tc-rune-compte').textContent = tcEtat.runes.length + ' rune(s)';
+  var elPage = document.getElementById('tc-page-runes');
+  if (!tcEtat.runes.length){ elPage.hidden = true; }
+  else {
+    elPage.hidden = false;
+    elPage.className = 'tc-legalite' + (page.legale ? ' ok' : '');
+    elPage.innerHTML = page.legale
+      ? '<b>Page valide</b><br>' + anEsc(page.arbrePrincipal + ' + ' + (page.arbreSecondaire || '—'))
+      : '<b>Page incomplète</b><br>' + anEsc(page.infractions.map(function(i){
+          return i.regle + (i.detail ? ' (' + i.detail + ')' : ''); }).join(' · '));
+  }
+  document.getElementById('tc-rune-choisies').innerHTML = tcEtat.runes.length
+    ? tcEtat.runes.map(function(id){
+        var r = T.runes.filter(function(x){ return x.id === id; })[0] || { nom:id };
+        return '<button type="button" class="tc-puce" onclick="tcBasculerRune(' + id +
+               ')" title="Retirer">' + anEsc(r.nom) + '</button>';
+      }).join('')
+    : '<span class="tc-vide">Aucune rune.</span>';
+
+  var opts = { fenetre:tcEtat.fenetre, runes:tcEtat.runes, partPhysique:tcEtat.partPhys };
+  var cible = T.cibleChampion(tcEtat.cible, tcEtat.niveau, []);
+  var f = T.ficheBuild(tcEtat.champion, tcEtat.niveau, tcEtat.objets,
+                       Object.assign({ cible:cible }, opts));
+  var p = T.profil(tcEtat.champion, tcEtat.niveau, tcEtat.objets, opts);
+  if (!f || !p){ document.getElementById('tc-resultats').innerHTML =
+    '<div class="card tc-bloc"><div class="tc-legalite"><b>Champion hors panel.</b></div></div>'; return; }
+
+  var html = '';
+
+  /* ── Axes ── */
+  var ctrl = f.utilitaire, auto = f.soutien.autonomie;
+  html += '<div class="card tc-bloc"><div class="tc-titre">Vue d\'ensemble' +
+    '<span class="tc-compte">' + f.or + ' po</span></div><div class="tc-axes">' +
+    tcAxe(Math.round(f.offensif.adTotal), 'dégâts d\'attaque', f.offensif.adTotal > f.offensif.ap) +
+    tcAxe(Math.round(f.offensif.ap), 'puissance', f.offensif.ap > f.offensif.adTotal) +
+    tcAxe(f.defensif.pvEffectifsMixte.toLocaleString('fr-FR'), 'PV effectifs mixtes') +
+    tcAxe(ctrl.accel + '<small> (−' + ctrl.reductionRecharge + ' %)</small>', 'accélération') +
+    tcAxe(Math.round(ctrl.vitesseDeplacement), 'vitesse de déplacement') +
+    tcAxe(auto ? auto.cycles : '—', auto ? 'cycles Q-W-E-R' : 'pas de mana') +
+    '</div>';
+  if (f.defensif.boucliers.lignes.length)
+    html += '<p class="faint" style="margin:0;font-size:11.5px">Boucliers : ' +
+      anEsc(f.defensif.boucliers.lignes.map(function(l){ return l.objet + ' (' + l.absorbe + ' absorbés)'; }).join(', ')) +
+      ' — comptés à part, car conditionnels.</p>';
+  html += '</div>';
+
+  /* ── Dégâts par sort ── */
+  var lignes = [], refus = [];
+  ['Q','W','E','R'].forEach(function(t){
+    var s = (T.champions[tcEtat.champion].sorts || {})[t];
+    if (!s) return;
+    if (s.nonExploitable){ refus.push(t + ' — ' + s.nonExploitable); return; }
+    var noms = Object.keys(s.calculs).filter(function(n){ return s.calculs[n].genre === 'degats'; });
+    if (!noms.length) return;
+    var rang = t === 'R' ? 3 : 5;
+    var r = T.evaluerCalcul(tcEtat.champion, t, noms[0], rang, p, cible);
+    if (!r.ok){ refus.push(t + ' — ' + r.raison); return; }
+    lignes.push({ t:t, nom:noms[0], type:r.type, brut:r.brut, subis:r.subis,
+                  amp:r.amplification ? Math.round(r.amplification.total * 100) : 0 });
+  });
+  if (lignes.length){
+    html += '<div class="card tc-bloc"><div class="tc-titre">Dégâts par compétence' +
+      '<span class="tc-compte">contre ' + anEsc(cible.nom) + ', niveau ' + tcEtat.niveau + '</span></div>' +
+      '<div class="tc-scroll"><table class="tc-tab"><thead><tr><th>Sort</th><th>Type</th>' +
+      '<th style="text-align:right">Brut</th><th style="text-align:right">Subis</th><th style="text-align:right">Ampli.</th></tr></thead><tbody>' +
+      lignes.map(function(l){
+        return '<tr><td><b>' + l.t + '</b> <span class="s">' + anEsc(l.nom) + '</span></td>' +
+          '<td class="s">' + anEsc(l.type || '—') + '</td>' +
+          '<td class="n">' + Math.round(l.brut) + '</td>' +
+          '<td class="n">' + Math.round(l.subis) + '</td>' +
+          '<td class="n">' + (l.amp ? '+' + l.amp + ' %' : '—') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  }
+
+  /* ── Runes sur la fenêtre ── */
+  if (tcEtat.runes.length){
+    var rc = T.runesSurFenetre(tcEtat.champion, p, cible, tcEtat.fenetre, {});
+    if (rc.lignes.length){
+      html += '<div class="card tc-bloc"><div class="tc-titre">Runes sur ' + tcEtat.fenetre + ' s' +
+        '<span class="tc-compte">' + rc.degatsSubis + ' subis · ' + rc.soins + ' soignés</span></div>' +
+        '<div class="tc-scroll"><table class="tc-tab"><thead><tr><th>Rune</th><th>Genre</th>' +
+        '<th style="text-align:right">Par déclenchement</th><th style="text-align:right">Déclenchements</th>' +
+        '<th style="text-align:right">Total</th></tr></thead><tbody>' +
+        rc.lignes.map(function(l){
+          return '<tr><td>' + anEsc(l.rune) + '</td><td class="s">' + anEsc(l.genre) + '</td>' +
+            '<td class="n">' + l.parDeclenchement + '</td><td class="n">' + l.declenchements + '</td>' +
+            '<td class="n">' + (l.subis != null ? l.subis : l.total) + '</td></tr>';
+        }).join('') + '</tbody></table></div></div>';
+    }
+    (rc.refus || []).forEach(function(x){ refus.push(x); });
+  }
+
+  /* ── Ce que le moteur refuse ── */
+  var tousRefus = refus
+    .concat(p.statsRefusees || [])
+    .concat(p.runesRefusees || [])
+    .concat((f.defensif.boucliers.refus) || []);
+  if (tousRefus.length){
+    html += '<div class="card tc-bloc"><div class="tc-titre">Non compté, et pourquoi' +
+      '<span class="tc-compte">' + tousRefus.length + '</span></div><ul class="tc-refus">' +
+      tousRefus.slice(0, 12).map(function(x){ return '<li>' + anEsc(x) + '</li>'; }).join('') +
+      '</ul></div>';
+  }
+
+  document.getElementById('tc-resultats').innerHTML = html;
+}
+
+function tcAxe(valeur, libelle, fort){
+  return '<div class="tc-axe' + (fort ? ' fort' : '') + '"><div class="v">' + valeur +
+         '</div><div class="l">' + libelle + '</div></div>';
+}
+
 /* ── Ripple Material Design sur les boutons (délégation globale) ──
    Onde qui part du point de clic — durée 420ms ease-out, pas de rebond (brief motion). */
 (function vsRippleInit(){
