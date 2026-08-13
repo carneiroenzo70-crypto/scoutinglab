@@ -136,6 +136,69 @@ if (bouclier) {
           0.5);
 }
 
+console.log('\n── Régénération : une base qui n\'existait pas');
+/* 12 objets à « % de régénération de vie » et 15 à « % de régénération de mana »
+   multipliaient jusqu'ici une base absente du modèle. Elle est extraite du fichier de
+   jeu, PAR SECONDE — Data Dragon, lui, publie par 5 secondes. */
+const DD = require('./champFull.json').data;
+verifie('la régénération de base concorde avec Data Dragon (facteur 5)',
+        M.champions.Ryze.base.regenPV * 5, DD.Ryze.stats.hpregen, 0.02);
+verifie('  de même pour le mana', M.champions.Ryze.base.regenMana * 5, DD.Ryze.stats.mpregen, 0.02);
+/* Trois champions n'ont pas la clé dans le fichier : leur valeur vient d'un gabarit non
+   exposé. Data Dragon comble, et le repli est marqué — pas silencieux. */
+vrai('les trois champions sans la clé portent la mention de leur source',
+     ['Maokai', 'Rakan', 'Milio'].every(c => /Data Dragon/.test(M.champions[c].base.sourceRegen)),
+     M.champions.Maokai.base.sourceRegen);
+vrai('  et les 87 autres viennent du fichier de jeu',
+     Object.values(M.champions).filter(c => c.base.sourceRegen === 'fichier de jeu').length === 87);
+
+/* Concordance de l'unité des OBJETS, vérifiée sur la boutique : le Bouclier de Doran est
+   extrait à 0,8 et annonce « 4 PV toutes les 5 sec ». Même unité que les champions. */
+const doran = stat(1054, 'regenPV');
+verifie('un objet à régénération plate s\'ajoute dans la même unité',
+        M.profil('Ryze', 18, [1054], { fenetre: 10 }).regenPVtotal,
+        M.profil('Ryze', 18, [], { fenetre: 10 }).regenPVbase + doran, 0.01);
+/* Et le pourcentage multiplie bien la base — c'était le point mort. */
+const pct = stat(1006, 'regenPVpct');
+verifie('un objet en pourcentage multiplie la base du champion',
+        M.profil('Ryze', 18, [1006], { fenetre: 10 }).regenPVtotal,
+        M.profil('Ryze', 18, [], { fenetre: 10 }).regenPVbase * (1 + pct), 0.01);
+
+console.log('\n── Autonomie en mana : les coûts des sorts servent enfin');
+const ryze = S.ficheBuild('Ryze', 18, [3003]);
+const auto = ryze.soutien.autonomie;
+vrai('le coût d\'un cycle complet est chiffré', auto && auto.coutDuCycle > 0,
+     auto.coutDuCycle + ' de mana pour Q+W+E+R');
+verifie('  et le nombre de cycles suit la réserve', auto.cycles,
+        Math.floor(M.profil('Ryze', 18, [3003], { fenetre: 10 }).mana / auto.coutDuCycle), 0);
+/* Un champion sans mana ne doit pas recevoir « 0 cycle » — ce serait faux, pas
+   incomplet : la question ne se pose pas dans les mêmes termes. */
+vrai('un champion à chaleur n\'a pas d\'autonomie en mana, et non zéro',
+     S.ficheBuild('Rumble', 18, []).soutien.autonomie === null);
+
+console.log('\n── Accélération d\'ultime : elle ne touche que le R');
+/* Trois objets finis la portent, dans une clé que Data Dragon ne publie pas. Elle
+   n'était appliquée nulle part : la Malfaisance perdait tout son intérêt. */
+const malf = M.profil('Syndra', 18, [3118], { fenetre: 10 });
+verifie('la Malfaisance apporte 20 d\'accélération d\'ultime', malf.accelUltime, 20, 0.01);
+const cdR = M.champions.Syndra.sorts.R.cooldown[3];
+verifie('  et le R en profite', M.rechargeReelle(cdR, malf.accel + malf.accelUltime),
+        cdR * 100 / (100 + malf.accel + malf.accelUltime), 0.01);
+/* Contre-épreuve : si on la versait dans l'accélération générale, le Q en profiterait
+   aussi — quatre fois l'effet réel. */
+const fen = (p, t) => {
+  const c = M.champions.Syndra.sorts[t];
+  const nom = Object.keys(c.calculs).find(n => c.calculs[n].genre === 'degats');
+  const r = M.degatsSurFenetre('Syndra', p, null, 60,
+    x => (x === t && nom) ? 1 : null);
+  return (r.lignes.find(l => l.touche === t) || {}).recharge;
+};
+const sans = M.profil('Syndra', 18, [], { fenetre: 10 });
+verifie('le Q, lui, garde sa recharge inchangée', fen(malf, 'Q'),
+        M.rechargeReelle(M.champions.Syndra.sorts.Q.cooldown[5], malf.accel), 0.05);
+vrai('  alors que le R accélère nettement', fen(malf, 'R') < fen(sans, 'R') * 0.8,
+     fen(sans, 'R') + ' s → ' + fen(malf, 'R') + ' s');
+
 console.log('\n── La fiche d\'un build ne se résume pas à ses dégâts');
 const fTank = S.ficheBuild('Sion', 18, [3068, 3143, 3083, 3075]);
 const fMage = S.ficheBuild('Ryze', 18, [3089, 3157, 3003, 4645]);

@@ -48,6 +48,11 @@ function statsChampion(id, niveau) {
        champions à énergie ou à fureur : leur en attribuer fausserait tout ce qui scale
        dessus (Ryze, le Manamune). */
     mana: b.mana == null ? null : croissance(b.mana, b.manaParNiv, niveau),
+    /* Régénérations PAR SECONDE, croissance quadratique comme les autres stats.
+       `null` sur les champions sans mana : leur attribuer une régénération de mana
+       ferait croire à une réserve qu'ils n'ont pas. */
+    regenPV: croissance(b.regenPV, b.regenPVparNiv, niveau),
+    regenMana: b.regenMana == null ? null : croissance(b.regenMana, b.regenManaParNiv, niveau),
     va: vitesseAttaque(b, niveau),
     portee: b.portee, ms: b.ms,
     distance: b.portee > 300      // sert aux runes et objets à version « à distance »
@@ -153,6 +158,14 @@ function profil(id, niveau, idsObjets, extras = {}) {
     armureBonus: g('armure'),
     rmBonus: g('rm'),
     accel: g('accel'),
+    /* Accélération d'ULTIME : une stat distincte, qui ne réduit que la recharge du R.
+       La verser dans l'accélération générale accélérerait aussi Q, W et E — quatre fois
+       son effet réel. Trois objets finis la portent, et Data Dragon ne la publie pas. */
+    accelUltime: g('accelUltime'),
+    /* Régénérations de base, par seconde. Les pourcentages des objets les multiplient —
+       sans base extraite, ils ne multipliaient rien. */
+    regenPVbase: nu.regenPV,
+    regenManaBase: nu.regenMana,
     letalite: g('letalite'),
     penArmurePct: g('penArmure'),
     penMagiquePlate: g('penMagiquePlat'),
@@ -255,6 +268,15 @@ function profil(id, niveau, idsObjets, extras = {}) {
      formules propres : ratio de vitesse d'attaque du champion, plafond progressif de la
      vitesse de déplacement. */
   recalculerDerivees(p, (champions[id] || {}).base, niveau);
+
+  /* Régénérations totales, PAR SECONDE. Les objets en pourcentage multiplient la base du
+     champion ; les objets à valeur plate s'y ajoutent.
+     ⚠ Les deux sources sont bien dans la même unité, vérifié par concordance avec la
+     boutique : le Bouclier de Doran est extrait à 0,8 et annonce « 4 PV toutes les
+     5 sec » ; la Corne du gardien à 4 pour « 20 PV toutes les 5 sec ». */
+  p.regenPVtotal = p.regenPVbase * (1 + (p.regenPVpct || 0)) + (p.regenPV || 0);
+  p.regenManaTotal = p.regenManaBase == null ? null
+    : p.regenManaBase * (1 + (p.regenManapct || 0)) + (p.regenMana || 0);
   return p;
 }
 
@@ -481,6 +503,13 @@ function degatsSurFenetre(champId, p, cible, secondes, evaluerSort, coupBonus = 
     const degats = evaluerSort(touche);
     if (degats == null) return;
 
+    /* L'accélération d'ULTIME ne s'ajoute qu'au R. Trois objets finis la portent, et
+       elle n'était appliquée nulle part : la Malfaisance perdait ainsi tout son intérêt,
+       et l'Hexplaque expérimentale n'apportait rien du tout au modèle.
+       La verser dans l'accélération générale l'aurait au contraire appliquée aux quatre
+       sorts — quatre fois son effet réel. */
+    const accelSort = p.accel + (touche === 'R' ? (p.accelUltime || 0) : 0);
+
     /* Compétences à charges : le « cooldown » n'est alors que le délai entre deux
        tirs (0,5 s pour le E de Rumble). Ce qui limite vraiment, c'est la recharge
        d'une charge. Sans ce cas, on comptait 21 lancers en 10 s au lieu de 3. */
@@ -491,7 +520,7 @@ function degatsSurFenetre(champId, p, cible, secondes, evaluerSort, coupBonus = 
          disponible ET la recharge écoulée. Ne regarder que la recharge de charge
          surestimerait le R de LeBlanc (5 s de charge, mais 25 s de recharge). */
       cdBase = Math.max(entreLancers, s.rechargeCharge);
-      const cd = rechargeReelle(cdBase, p.accel);
+      const cd = rechargeReelle(cdBase, accelSort);
       /* Réserve de départ : on ne peut vider ses charges d'un coup que si le délai
          entre deux lancers est court. Le E de Rumble enchaîne ses 2 tirs en 0,5 s ;
          le R d'Ashe, lui, attend 5 s entre deux. */
@@ -514,7 +543,7 @@ function degatsSurFenetre(champId, p, cible, secondes, evaluerSort, coupBonus = 
       refus.push(touche + ' : recharge annoncée de ' + cdBase + ' s, sans charges déclarées');
       return;
     }
-    const cd = rechargeReelle(cdBase, p.accel);
+    const cd = rechargeReelle(cdBase, accelSort);
     // premier lancer à t = 0, puis un par recharge écoulée
     lancers = 1 + Math.floor(secondes / cd);
     total += degats * lancers;

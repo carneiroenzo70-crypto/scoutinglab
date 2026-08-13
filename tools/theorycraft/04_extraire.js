@@ -16,7 +16,7 @@ const TOUCHES = ['Q', 'W', 'E', 'R'];
 const estDegats = n => /damage|dmg/i.test(n);
 const estSoin   = n => /heal|shield|absorb/i.test(n);
 
-function statsDeBase(rec) {
+function statsDeBase(rec, id) {
   // Les stats sont enveloppées dans un ModifiableFloat : { baseValue: 590 }
   const g = (...noms) => {
     for (const n of noms) {
@@ -53,6 +53,16 @@ function statsDeBase(rec) {
        `arType` distingue la ressource : 0 = mana. Un champion à énergie ou à fureur
        ne doit pas se voir attribuer du mana. */
     ...ressource(rec),
+    /* RÉGÉNÉRATION. Absente jusqu'ici, ce qui rendait inertes les 12 objets à
+       « % de régénération de vie » et les 15 à « % de régénération de mana » : ils
+       multipliaient une base inexistante.
+
+       ⚠ Deux échelles différentes selon la source : le fichier de jeu compte PAR
+       SECONDE, Data Dragon PAR 5 SECONDES. Le facteur 5 est exact sur les 87 champions
+       où les deux existent — c'est ce qui identifie les clés hachées du mana
+       ({c4ab3550} = régén de base, {3a509002} = par niveau), même méthode que pour le
+       mana lui-même. On stocke PAR SECONDE. */
+    ...regeneration(rec, id),
     /* Multiplicateur de coup critique. Il vaut 2 pour presque tout le monde, mais
        certains champions l'ont réduit en compensation d'un kit : le lire évite de
        coder en dur une valeur fausse sur ces cas-là. */
@@ -75,6 +85,32 @@ function ressource(rec) {
   if (!r || (r.arType || 0) !== 0) return { mana: null, manaParNiv: null, typeRessource: r ? r.arType : null };
   const lire = cle => (r[cle] && r[cle].baseValue != null) ? r[cle].baseValue : null;
   return { mana: lire('{726ee5cd}'), manaParNiv: lire('{6216bf7b}'), typeRessource: 0 };
+}
+
+/* Régénération de vie et de mana, PAR SECONDE.
+
+   `baseStaticHPRegenModifiable` manque à trois champions du panel (Maokai, Rakan,
+   Milio) : leur valeur vient d'un gabarit que les fichiers publics n'exposent pas.
+   Data Dragon la publie, et concorde exactement avec le fichier sur les 87 autres —
+   il comble donc ces trois trous, et le repli est marqué `sourceRegen`. Compter zéro
+   aurait été pire qu'un repli : on aurait annoncé « ne régénère pas ». */
+function regeneration(rec, id) {
+  const dd = ((DD[id] || {}).stats) || {};
+  const lire = o => (o && o.baseValue != null) ? o.baseValue : null;
+  const parSeconde = x => (x == null ? null : x / 5);
+
+  let regenPV = lire(rec.baseStaticHPRegenModifiable);
+  let sourceRegen = 'fichier de jeu';
+  if (regenPV == null) { regenPV = parSeconde(dd.hpregen); sourceRegen = 'Data Dragon (clé absente du fichier)'; }
+  const regenPVparNiv = lire(rec.hpRegenPerLevelModifiable);
+
+  const r = rec.primaryAbilityResource || {};
+  const aDuMana = (r.arType || 0) === 0;
+  return {
+    regenPV, regenPVparNiv, sourceRegen,
+    regenMana: aDuMana ? lire(r['{c4ab3550}']) : null,
+    regenManaParNiv: aDuMana ? lire(r['{3a509002}']) : null
+  };
 }
 
 /* Physique, magique ou brut ? Le fichier de jeu ne porte pas cette information dans les
@@ -112,7 +148,7 @@ cibles.forEach(cible => {
   const noms = rec.spellNames || rec.mSpellNames || [];
   const champ = {
     id: cible.id, nom: cible.nom, role: cible.role, rang: cible.rang, picks: cible.picks,
-    base: statsDeBase(rec), sorts: {}
+    base: statsDeBase(rec, cible.id), sorts: {}
   };
 
   const blocs = Object.entries(d).filter(([, v]) => v && v.__type === 'SpellObject' && v.mSpell);

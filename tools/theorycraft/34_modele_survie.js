@@ -139,7 +139,46 @@ function soinsDuChampion(champId, touche, rang, p) {
                  'PRODUIT, pas ce qu\'il reçoit' };
 }
 
-/* ── 4. FICHE COMPLÈTE D'UN BUILD ───────────────────────────────────────────────
+/* ── 4. AUTONOMIE EN MANA ───────────────────────────────────────────────────────
+   Combien de cycles Q-W-E-R la réserve permet-elle, et en combien de temps la
+   régénération la reconstitue-t-elle ? Les coûts des sorts sont extraits depuis le début
+   pour les 90 champions et n'avaient jamais servi. C'est pourtant un axe de choix réel :
+   un mage sans mana ne fait aucun dégât, quel que soit son ratio.
+
+   `null` sur un champion à énergie, à fureur ou à chaleur : la question ne se pose pas
+   dans les mêmes termes, et répondre « 0 cycle » serait faux plutôt qu'incomplet. */
+function autonomieMana(champId, p) {
+  if (p.mana == null) return null;
+  const c = M.champions[champId];
+  if (!c) return null;
+
+  let cout = 0; const detail = []; const inconnus = [];
+  ['Q', 'W', 'E', 'R'].forEach(t => {
+    const s = c.sorts[t];
+    if (!s) return;
+    /* `cout` est un tableau indexé par rang. Un sort sans coût déclaré (passif, sort à
+       bascule) est signalé, pas compté zéro : la différence compte sur un cycle. */
+    if (!Array.isArray(s.cout)) { inconnus.push(t); return; }
+    const v = s.cout[s.nbRangs] != null ? s.cout[s.nbRangs] : s.cout[s.cout.length - 1];
+    if (v == null) { inconnus.push(t); return; }
+    cout += v;
+    detail.push({ touche: t, cout: v });
+  });
+  if (!cout) return { cycles: null, raison: 'aucun coût en mana déclaré' };
+
+  return {
+    coutDuCycle: Math.round(cout),
+    cycles: Math.floor(p.mana / cout),
+    regenParSeconde: Math.round((p.regenManaTotal || 0) * 100) / 100,
+    /* Secondes pour reconstituer un cycle complet — la mesure la plus lisible : elle
+       dit si le champion peut relancer son combo avant que sa recharge ne soit finie. */
+    secondesParCycle: p.regenManaTotal ? Math.round(cout / p.regenManaTotal) : null,
+    detail,
+    sortsSansCout: inconnus.length ? inconnus : null
+  };
+}
+
+/* ── 5. FICHE COMPLÈTE D'UN BUILD ───────────────────────────────────────────────
    Tous les axes côte à côte, sans en privilégier un. C'est ce que le comparateur doit
    afficher : un build ne se juge pas sur un chiffre unique, et le meilleur build en
    dégâts n'est presque jamais le meilleur build tout court. */
@@ -182,7 +221,13 @@ function ficheBuild(champId, niveau, objets, options = {}) {
     soutien: {
       ...drain(p, aa.dps, options.dpsCompetences || 0),
       soinsEtBoucliers: p.soinsEtBoucliers || 0,
-      regenPV: p.regenPV || 0, regenPVpct: p.regenPVpct || 0
+      /* Régénérations PAR SECONDE, base du champion comprise. Les 12 objets à
+         « % de régénération de vie » et les 15 à « % de régénération de mana »
+         multipliaient jusqu'ici une base qui n'existait pas dans le modèle. */
+      regenPVparSeconde: Math.round((p.regenPVtotal || 0) * 100) / 100,
+      regenManaParSeconde: p.regenManaTotal == null ? null
+        : Math.round(p.regenManaTotal * 100) / 100,
+      autonomie: autonomieMana(champId, p)
     },
 
     passifs: {

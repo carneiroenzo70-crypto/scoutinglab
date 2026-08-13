@@ -449,6 +449,39 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Trois stats qui ne multipliaient rien
+
+Trois manques du même genre, chacun rendant inerte une partie de l'équipement déjà
+extraite.
+
+**L'accélération d'ULTIME n'était appliquée nulle part.** Trois objets finis la portent
+(`valeurs.UltimateHaste` : 30, 30, 20) et Data Dragon ne la publie pas — la Malfaisance
+perdait donc tout son intérêt et l'Hexplaque expérimentale n'apportait rien au modèle.
+Elle ne réduit **que** la recharge du R : la verser dans l'accélération générale
+l'aurait appliquée aux quatre sorts, soit quatre fois son effet réel. Le R de Syndra
+passe de 80 s à 59,3 s avec la Malfaisance ; son Q ne bouge pas, et le test le vérifie.
+
+**La régénération n'existait pas dans le modèle** — 12 objets à « % de régénération de
+vie » et 15 à « % de régénération de mana » multipliaient une base absente. Elle est
+désormais extraite du fichier de jeu, **par seconde**, avec deux confirmations
+indépendantes de l'unité :
+
+- champions : le fichier compte par seconde, Data Dragon par 5 secondes ; le facteur 5
+  est exact sur les **87 champions** où les deux existent — c'est ce qui identifie les
+  clés hachées du mana (`{c4ab3550}`, `{3a509002}`) ;
+- objets : le Bouclier de Doran est extrait à 0,8 et sa boutique annonce « 4 PV toutes
+  les 5 sec » ; la Corne du gardien à 4 pour « 20 PV toutes les 5 sec ».
+
+Trois champions (Maokai, Rakan, Milio) n'ont pas la clé — leur valeur vient d'un gabarit
+non exposé. Data Dragon comble le trou, et le repli est **marqué** dans `sourceRegen`
+plutôt que fondu dans la masse.
+
+**Les coûts des sorts, extraits depuis le début, ne servaient à rien.** `autonomieMana()`
+en tire un axe réel : coût d'un cycle Q-W-E-R, nombre de cycles que la réserve permet, et
+secondes nécessaires à la régénération pour en reconstituer un. Un mage sans mana
+n'inflige rien, quel que soit son ratio. ⚠ `null` — et non « 0 cycle » — sur un champion
+à énergie, à fureur ou à chaleur : la question ne se pose pas dans les mêmes termes.
+
 ### Les runes n'entraient pas dans les stats du build
 
 Le chaînon manquant, et il touchait l'objectif même du projet : le moteur de runes

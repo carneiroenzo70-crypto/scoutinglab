@@ -273,10 +273,14 @@ function statsAccordees(profilInitial) {
         /* Second cas : le fichier ne porte qu'un pourcentage nu, sans formule. La base
            est alors déclarée dans le modèle, d'après la description en jeu, et lue sur
            le profil — jamais devinée. Un pourcentage sans base est refusé. */
-        const pct = o.valeurs[valeur];
-        if (pct == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
-        if (!base || p[base] == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
-        v = pct * p[base];
+        const brut = o.valeurs[valeur];
+        if (brut == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
+        /* Sans `base`, la clé porte un montant PLAT (30 d'accélération d'ultime) et non
+           un pourcentage : on la sert telle quelle. Avec `base`, c'est une proportion
+           d'une stat du profil, qui doit exister — un pourcentage sans base est refusé. */
+        if (base == null) v = brut;
+        else if (p[base] == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
+        else v = brut * p[base];
       }
       gains[stat] = (gains[stat] || 0) + v;
       appliquerGain(p, stat, v);            // le passif suivant verra ce gain

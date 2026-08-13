@@ -305,6 +305,27 @@ module.exports = {
           'n\'est pas appliqué : cible et porteur sont supposés à pleine vie, donc 0'
   },
 
+  /* ── Accélération d'ULTIME ───────────────────────────────────────────────────
+     Une stat à part entière, et qui n'existait nulle part dans le modèle : trois objets
+     finis la portent, dans `valeurs.UltimateHaste`, et Data Dragon ne la publie pas.
+     Elle ne réduit QUE la recharge de l'ultime — la verser dans l'accélération générale
+     accélérerait aussi Q, W et E, soit quatre fois son effet réel.
+
+     C'est aussi le premier cas de `statsAccordees` sans base : la clé porte un montant
+     plat (30), pas une proportion d'une stat du porteur. */
+
+  2512: { // Chasseur de monstres — Veille de nuit
+    nom: 'Veille de nuit', effet: 'stat',
+    statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
+    note: 'Barrage d\'ouverture (3 attaques renforcées après l\'ultime) n\'est pas modélisé'
+  },
+
+  3073: { // Hexplaque expérimentale — Charge Hextech
+    nom: 'Charge Hextech', effet: 'stat',
+    statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
+    note: 'Surcharge (vitesse d\'attaque et de déplacement après l\'ultime) n\'est pas modélisée'
+  },
+
   /* ── Passifs qui MULTIPLIENT une stat ───────────────────────────────────────
      Troisième catégorie, distincte des deux précédentes, et purement arithmétique :
      ils ne s'ajoutent ni aux dégâts ni au profil sous forme de montant fixe — ils
@@ -510,6 +531,10 @@ module.exports = {
        pourcentage aurait donné 10 % — trois fois moins sur une cible à 100 de RM. */
     reduction: { resistance: 'rm', mode: 'plat', calcul: 'MagicResistanceShred',
                  condition: { apresUltime: true, libelle: 'après avoir touché avec l\'ultime' } },
+    /* Mépris : +20 d'accélération d'ULTIME, inconditionnelle. Un objet peut donc porter
+       à la fois une réduction de résistance et un gain de stat — les deux catégories
+       sont lues indépendamment. */
+    statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
     note: 'les dégâts de zone du sol brûlé ne sont pas comptés en cible unique'
   },
 
