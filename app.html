@@ -56,6 +56,10 @@ const VS_STORE_DOMAINS = {
   kpis:       ['vs_kpi_prefs', 'vs_arc_prefs'],
   refbase:    ['vs_refbase'],
   elite:      ['vs_elite_seuils'],
+  /* Builds enregistrés du calculateur. Le domaine doit exister AUSSI dans la liste
+     blanche de api/store.js, sinon le PUT répond 400 et la sauvegarde échoue en
+     silence — le cache local donnerait alors l'illusion que tout est enregistré. */
+  builds:     ['vs_builds'],
 };
 const vsStore = (function () {
   const timers = {};
@@ -1366,6 +1370,17 @@ body.map-fullscreen .logo-bg{ display:none; }
 .tc-item.pris{ color:var(--vs-emerald-300); }
 .tc-item .po{ margin-left:auto; font-family:var(--font-mono); font-size:11px; color:var(--vs-fg-3);
   font-variant-numeric:tabular-nums; }
+/* Builds enregistrés : case de comparaison, nom cliquable, suppression */
+.tc-coche{ flex:none; width:16px; height:16px; border-radius:4px; border:1px solid var(--vs-forest-500);
+  background:transparent; color:var(--vs-forest-950); display:inline-flex; align-items:center;
+  justify-content:center; cursor:pointer; padding:0; }
+.tc-coche.on{ background:var(--vs-emerald-400); border-color:var(--vs-emerald-400); color:#07211D; }
+.tc-b-nom{ flex:1; min-width:0; text-align:left; background:none; border:0; padding:0; cursor:pointer;
+  font:inherit; font-size:12.5px; color:var(--vs-fg-1); display:flex; flex-direction:column; gap:1px; }
+.tc-b-nom small{ color:var(--vs-fg-3); font-size:11px; }
+.tc-b-nom:hover{ color:var(--vs-emerald-300); }
+.tc-x{ flex:none; background:none; border:0; color:var(--vs-fg-3); cursor:pointer; padding:2px; display:flex; }
+.tc-x:hover{ color:var(--vs-red-400); }
 .tc-puces{ display:flex; flex-wrap:wrap; gap:6px; }
 .tc-puce{ display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 9px;
   border-radius:6px; background:rgba(45,212,167,.09); border:1px solid rgba(45,212,167,.35);
@@ -5405,6 +5420,20 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <div id="tc-page-runes" class="tc-legalite" hidden></div>
               <select id="tc-rune-arbre" class="tc-select" onchange="tcListerRunes()"></select>
               <div id="tc-rune-liste" class="tc-liste"></div>
+            </div>
+
+            <div class="card tc-bloc">
+              <div class="tc-titre">Builds enregistrés <span class="tc-compte" id="tc-b-compte">0</span></div>
+              <div style="display:flex;gap:6px">
+                <input id="tc-b-nom" class="tc-select" placeholder="Nom du build…" autocomplete="off"
+                       onkeydown="if(event.key==='Enter')tcEnregistrer()"/>
+                <button type="button" class="btn btn-cta btn-sm" onclick="tcEnregistrer()"
+                        style="flex:none;padding:9px 14px">Enregistrer</button>
+              </div>
+              <div id="tc-b-liste" class="tc-liste" style="max-height:none"></div>
+              <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
+                Coche deux builds pour les comparer axe par axe. Ils suivent la structure,
+                pas le navigateur.</p>
             </div>
 
             <div class="card tc-bloc">
@@ -20895,7 +20924,7 @@ function tcOuvrir(){
       arbres.sort().forEach(function(a){ selA.appendChild(new Option(a, a)); });
       selA.value = tcEtat.arbre;
     }
-    tcListerObjets(); tcListerRunes(); tcRendre();
+    tcListerObjets(); tcListerRunes(); tcListerBuilds(); tcRendre();
   });
 }
 
@@ -21008,7 +21037,9 @@ function tcRendre(){
   if (!f || !p){ document.getElementById('tc-resultats').innerHTML =
     '<div class="card tc-bloc"><div class="tc-legalite"><b>Champion hors panel.</b></div></div>'; return; }
 
-  var html = '';
+  /* La comparaison passe EN PREMIER : quand deux builds sont cochés, c'est la question
+     posée, et le build en cours d'édition n'est plus que le contexte. */
+  var html = tcComparaisonHtml();
 
   /* ── Axes ── */
   var ctrl = f.utilitaire, auto = f.soutien.autonomie;
@@ -21086,6 +21117,164 @@ function tcRendre(){
   }
 
   document.getElementById('tc-resultats').innerHTML = html;
+}
+
+/* ── Builds enregistrés ──────────────────────────────────────────────────────
+   Le calculateur perdait tout au rechargement : impossible de bâtir une bibliothèque,
+   de comparer deux options, de transmettre un build à un joueur. Ils passent donc par
+   `vsStore`, comme les fiches et les rosters — ils appartiennent à la STRUCTURE, pas au
+   navigateur, et suivent le coach d'un poste à l'autre.
+
+   ⚠ Le domaine doit exister des DEUX côtés (VS_STORE_DOMAINS ici, DOMAINS dans
+   api/store.js) : le serveur refuse tout domaine hors liste, et le cache local
+   donnerait alors l'illusion d'un enregistrement réussi. */
+var tcCompare = [];
+
+function tcBuilds(){
+  try { return JSON.parse(localStorage.getItem('vs_builds') || '[]') || []; } catch(e){ return []; }
+}
+function tcBuildsEcrire(liste){
+  try { localStorage.setItem('vs_builds', JSON.stringify(liste)); } catch(e){}
+  if (typeof vsStore !== 'undefined') vsStore.save('builds');
+}
+
+function tcEnregistrer(){
+  if (!tcPret) return;
+  var champ = document.getElementById('tc-b-nom');
+  var nom = (champ.value || '').trim();
+  if (!nom){
+    var T = window.vsTheorycraft;
+    nom = ((T.champions[tcEtat.champion] || {}).nom || tcEtat.champion) + ' · ' + tcEtat.objets.length + ' objets';
+  }
+  var liste = tcBuilds();
+  liste.unshift({
+    id: 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    nom: nom, champion: tcEtat.champion, niveau: tcEtat.niveau,
+    objets: tcEtat.objets.slice(), runes: tcEtat.runes.slice(),
+    cible: tcEtat.cible, fenetre: tcEtat.fenetre, partPhys: tcEtat.partPhys,
+    maj: Date.now()
+  });
+  tcBuildsEcrire(liste);
+  champ.value = '';
+  tcListerBuilds();
+  if (typeof showToast === 'function') showToast('Build « ' + nom + ' » enregistré.', 'success');
+}
+
+function tcAppliquer(id){
+  var b = tcBuilds().filter(function(x){ return x.id === id; })[0];
+  if (!b) return;
+  tcEtat.champion = b.champion; tcEtat.niveau = b.niveau;
+  tcEtat.objets = (b.objets || []).slice(); tcEtat.runes = (b.runes || []).slice();
+  tcEtat.cible = b.cible || tcEtat.cible; tcEtat.fenetre = b.fenetre || tcEtat.fenetre;
+  tcEtat.partPhys = b.partPhys != null ? b.partPhys : tcEtat.partPhys;
+  document.getElementById('tc-champion').value = b.champion;
+  document.getElementById('tc-cible').value = tcEtat.cible;
+  document.getElementById('tc-niveau').value = tcEtat.niveau;
+  document.getElementById('tc-niveau-v').textContent = tcEtat.niveau;
+  document.getElementById('tc-fenetre').value = tcEtat.fenetre;
+  document.getElementById('tc-fenetre-v').textContent = tcEtat.fenetre + ' s';
+  document.getElementById('tc-partphys').value = Math.round(tcEtat.partPhys * 100);
+  document.getElementById('tc-partphys-v').textContent = Math.round(tcEtat.partPhys * 100) + ' %';
+  tcListerObjets(); tcListerRunes(); tcRendre();
+}
+
+function tcSupprimer(id, ev){
+  if (ev) ev.stopPropagation();
+  tcBuildsEcrire(tcBuilds().filter(function(x){ return x.id !== id; }));
+  tcCompare = tcCompare.filter(function(x){ return x !== id; });
+  tcListerBuilds(); tcRendre();
+}
+
+/* Deux builds au maximum : au-delà, le tableau cesse d'être lisible et la question
+   « lequel des deux » n'a plus de sens. Le troisième coché remplace le plus ancien. */
+function tcBasculerCompare(id, ev){
+  if (ev) ev.stopPropagation();
+  var i = tcCompare.indexOf(id);
+  if (i >= 0) tcCompare.splice(i, 1);
+  else { tcCompare.push(id); if (tcCompare.length > 2) tcCompare.shift(); }
+  tcListerBuilds(); tcRendre();
+}
+
+function tcListerBuilds(){
+  var liste = tcBuilds();
+  document.getElementById('tc-b-compte').textContent = liste.length || '0';
+  var el = document.getElementById('tc-b-liste');
+  if (!liste.length){
+    el.innerHTML = '<div class="tc-item" style="cursor:default">Aucun build enregistré.</div>';
+    return;
+  }
+  var T = window.vsTheorycraft;
+  el.innerHTML = liste.map(function(b){
+    var coche = tcCompare.indexOf(b.id) >= 0;
+    var nomC = T && T.champions[b.champion] ? T.champions[b.champion].nom : b.champion;
+    return '<div class="tc-item" style="cursor:default">' +
+      '<button type="button" class="tc-coche' + (coche ? ' on' : '') + '" title="Comparer" ' +
+        'onclick="tcBasculerCompare(\'' + b.id + '\',event)">' +
+        (coche ? '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><path d="m5 12 5 5L20 7"/></svg>' : '') + '</button>' +
+      '<button type="button" class="tc-b-nom" onclick="tcAppliquer(\'' + b.id + '\')" title="Charger ce build">' +
+        anEsc(b.nom) + '<small>' + anEsc(nomC) + ' · niv. ' + b.niveau + ' · ' +
+        (b.objets || []).length + ' objets</small></button>' +
+      '<button type="button" class="tc-x" title="Supprimer" onclick="tcSupprimer(\'' + b.id + '\',event)">' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>' +
+      '</div>';
+  }).join('');
+}
+
+/* Comparaison A/B. Le seul chiffre qui ne veut rien dire, c'est un chiffre seul :
+   tout le modèle l'a montré — un build gagne en dégâts, l'autre en survie. On affiche
+   donc les deux colonnes ET l'écart, et on marque le meilleur PAR AXE, jamais un
+   « vainqueur » global qui n'existe pas. */
+function tcComparaisonHtml(){
+  if (tcCompare.length !== 2) return '';
+  var T = window.vsTheorycraft;
+  var tous = tcBuilds();
+  var b = tcCompare.map(function(id){ return tous.filter(function(x){ return x.id === id; })[0]; });
+  if (!b[0] || !b[1]) return '';
+
+  var f = b.map(function(x){
+    var cible = T.cibleChampion(x.cible || tcEtat.cible, x.niveau, []);
+    return T.ficheBuild(x.champion, x.niveau, x.objets || [], {
+      cible: cible, fenetre: x.fenetre || 20, runes: x.runes || [],
+      partPhysique: x.partPhys != null ? x.partPhys : 0.5
+    });
+  });
+  if (!f[0] || !f[1]) return '';
+
+  var axes = [
+    ['Dégâts d\'attaque', function(x){ return Math.round(x.offensif.adTotal); }, 1],
+    ['Puissance', function(x){ return Math.round(x.offensif.ap); }, 1],
+    ['Dégâts par seconde (attaques)', function(x){ return Math.round(x.offensif.dpsAttaques); }, 1],
+    ['PV effectifs mixtes', function(x){ return x.defensif.pvEffectifsMixte; }, 1],
+    ['Armure', function(x){ return x.defensif.armure; }, 1],
+    ['Résistance magique', function(x){ return x.defensif.rm; }, 1],
+    ['Accélération de compétence', function(x){ return x.utilitaire.accel; }, 1],
+    ['Vitesse de déplacement', function(x){ return Math.round(x.utilitaire.vitesseDeplacement); }, 1],
+    ['Cycles Q-W-E-R', function(x){ return x.soutien.autonomie ? x.soutien.autonomie.cycles : null; }, 1],
+    ['Or dépensé', function(x){ return x.or; }, -1]
+  ];
+
+  var lignes = axes.map(function(a){
+    var v = [a[1](f[0]), a[1](f[1])];
+    if (v[0] == null && v[1] == null) return '';
+    var meilleur = -1;
+    if (v[0] != null && v[1] != null && v[0] !== v[1]) meilleur = (v[0] - v[1]) * a[2] > 0 ? 0 : 1;
+    var ecart = (v[0] != null && v[1] != null && v[1] !== 0)
+      ? Math.round((v[0] - v[1]) / Math.abs(v[1]) * 100) : null;
+    return '<tr><th>' + anEsc(a[0]) + '</th>' +
+      v.map(function(x, i){
+        return '<td class="n"' + (meilleur === i ? ' style="color:var(--vs-emerald-300);font-weight:700"' : '') +
+               '>' + (x == null ? '—' : x.toLocaleString('fr-FR')) + '</td>';
+      }).join('') +
+      '<td class="n s">' + (ecart == null ? '—' : (ecart > 0 ? '+' : '') + ecart + ' %') + '</td></tr>';
+  }).join('');
+
+  return '<div class="card tc-bloc"><div class="tc-titre">Comparaison' +
+    '<span class="tc-compte">meilleur PAR AXE — il n\'y a pas de vainqueur global</span></div>' +
+    '<div class="tc-scroll"><table class="tc-tab"><thead><tr><th>Axe</th>' +
+    b.map(function(x){ return '<th style="text-align:right">' + anEsc(x.nom) + '</th>'; }).join('') +
+    '<th style="text-align:right">Écart</th></tr></thead><tbody>' + lignes + '</tbody></table></div>' +
+    '<p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">L\'écart est donné ' +
+    'du premier build vers le second. Sur l\'or, c\'est le moins cher qui est marqué.</p></div>';
 }
 
 function tcAxe(valeur, libelle, fort){

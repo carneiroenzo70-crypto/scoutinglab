@@ -5,7 +5,10 @@
 // client) : tous les comptes coach d'une même structure partagent ces données.
 const { verifyToken, getBearer, upstash, orgOfToken } = require('./_auth');
 
-const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons', 'kpis', 'refbase', 'elite'];
+// `builds` : les builds enregistrés du calculateur de theorycraft. Le domaine doit être
+// déclaré ICI aussi — le PUT refuse (400) tout domaine hors liste, et une sauvegarde
+// rejetée ne se verrait pas côté client, qui garde son cache local.
+const DOMAINS = ['fiches', 'rosters', 'crm', 'structures', 'seasons', 'kpis', 'refbase', 'elite', 'builds'];
 const MAX_BYTES = 1024 * 1024; // 1 Mo / domaine
 
 module.exports = async function handler(req, res) {
