@@ -1340,6 +1340,12 @@ body.map-fullscreen .logo-bg{ display:none; }
   letter-spacing: .015em !important; /* l'uppercase + tracking négatif serait illisible */
 }
 
+/* Passerelle feuille de route → calculateur */
+.ss-pl-tc{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+.ss-pl-champ{ flex:1; min-width:150px; background:var(--vs-forest-900); border:1px solid var(--vs-forest-600);
+  color:var(--vs-fg-1); border-radius:8px; padding:7px 10px; font-family:inherit; font-size:12.5px; }
+.ss-pl-champ:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:1px; }
+
 /* ════ Theorycraft — calculateur de build ════
    Deux colonnes : réglages à gauche, résultats à droite. Le tableau des axes est de
    l'information dense, pas du texte : chiffres alignés en tabulaire, état lisible à la
@@ -8213,7 +8219,12 @@ function ssPlanEnsure(m) {
     if (!p.players[r]) {
       var s = (ros && ros.slots) ? ros.slots[r] : null;
       var nm = s ? (s.proName || String(s.pseudo || '').split('#')[0]) : '';
-      p.players[r] = { me: nm || '', matchup: '', notes: '' };
+      /* `champ` : le champion que NOTRE joueur prévoit de jouer. Ajout purement
+         additif — les feuilles déjà enregistrées n'ont pas le champ, et cette
+         fonction le remplit à vide au premier affichage. Rien à migrer.
+         Sans lui, le calculateur ne connaîtrait qu'une moitié du matchup : le pool
+         adverse vient de la base compét, notre pick n'est écrit nulle part. */
+      p.players[r] = { me: nm || '', champ: '', matchup: '', notes: '' };
     }
   });
   return p;
@@ -8266,6 +8277,12 @@ function ssPlanHtml(m) {
       + (opp ? ('<button type="button" class="ss-pl-auto" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
       + '</span><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)"></label>'
       + '<label class="ss-pl-field"><span class="label">Consignes</span><textarea class="ss-pl-ta" rows="2" placeholder="Une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea></label>'
+      /* Passerelle vers le calculateur. La cible se déduit du pool adverse (base
+         compét) ; notre pick, lui, n'existe nulle part ailleurs — d'où ce champ. */
+      + '<div class="ss-pl-tc">'
+        + '<input class="ss-pl-champ" list="ss-champ-liste" value="' + anEsc(pl.champ || '') + '" placeholder="Notre champion (optionnel)" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'champ\',this.value)">'
+        + '<button type="button" class="btn btn-ghost btn-xs" onclick="ssTesterBuild(\'' + m.id + '\',\'' + role + '\')" title="Ouvre le calculateur avec ce matchup préchargé">Tester au calculateur</button>'
+      + '</div>'
       + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
   }).join('');
@@ -20924,6 +20941,7 @@ function tcOuvrir(){
       arbres.sort().forEach(function(a){ selA.appendChild(new Option(a, a)); });
       selA.value = tcEtat.arbre;
     }
+    tcRemplirDatalist();
     tcListerObjets(); tcListerRunes(); tcListerBuilds(); tcRendre();
   });
 }
@@ -21117,6 +21135,94 @@ function tcRendre(){
   }
 
   document.getElementById('tc-resultats').innerHTML = html;
+}
+
+/* ══════════ Passerelle avant-match → calculateur ══════════
+   La feuille de route connaît le pool de champions de l'adversaire (base compét
+   Leaguepedia, via `ssMatchupBrief`) mais pas ce que NOTRE joueur va prendre : elle
+   stocke son nom, pas son pick. D'où le champ « Notre champion » et cette passerelle.
+
+   Règle tenue ici comme ailleurs : on n'échoue jamais en silence, et on ne bloque pas
+   sur une moitié manquante. Champion introuvable → le calculateur s'ouvre quand même
+   avec la cible préchargée, et le message dit ce qui n'a pas été repris. */
+function tcNormaliser(s){
+  /* NFD sépare « é » en « e » + marque combinante ; le filtre [^a-z0-9] qui suit
+     élimine ensuite la marque tout seul. Pas de plage de diacritiques écrite à la
+     main : une classe de caractères combinants littéraux dans le source est
+     exactement le genre de chose qu'un passage d'encodage mutile en silence. */
+  return String(s || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]/g, '');
+}
+/* Résout un nom saisi à la main vers un identifiant du moteur. Exact d'abord, puis
+   préfixe — « lee » doit trouver Lee Sin, mais « a » ne doit pas rendre un champion
+   au hasard, d'où le refus dès qu'un préfixe court est ambigu. */
+function tcTrouverChampion(saisi){
+  var T = window.vsTheorycraft; if (!T || !saisi) return null;
+  var q = tcNormaliser(saisi); if (!q) return null;
+  var ids = Object.keys(T.champions);
+  var exact = ids.filter(function(id){
+    return tcNormaliser(T.champions[id].nom) === q || tcNormaliser(id) === q; });
+  if (exact.length) return exact[0];
+  if (q.length < 3) return null;
+  var partiels = ids.filter(function(id){
+    return tcNormaliser(T.champions[id].nom).indexOf(q) === 0 || tcNormaliser(id).indexOf(q) === 0; });
+  return partiels.length === 1 ? partiels[0] : null;
+}
+/* Remplit la liste de suggestions du champ « Notre champion ». Silencieuse tant que
+   le moteur n'a pas été chargé : la saisie libre reste possible, et la résolution se
+   fait de toute façon au clic. */
+function tcRemplirDatalist(){
+  var T = window.vsTheorycraft; if (!T) return;
+  var dl = document.getElementById('ss-champ-liste');
+  if (!dl){ dl = document.createElement('datalist'); dl.id = 'ss-champ-liste'; document.body.appendChild(dl); }
+  if (dl.options.length) return;
+  var noms = Object.keys(T.champions).map(function(id){ return T.champions[id].nom || id; })
+             .sort(function(a,b){ return a.localeCompare(b,'fr'); });
+  dl.innerHTML = noms.map(function(n){ return '<option value="' + anEsc(n) + '"></option>'; }).join('');
+}
+
+function ssTesterBuild(mid, role){
+  var m = ssData().matches.find(function (x) { return x.id === mid; });
+  if (!m) return;
+  var pl = (ssPlanEnsure(m).players || {})[role] || {};
+  tcCharger().then(function(ok){
+    if (!ok){
+      if (typeof showToast === 'function') showToast('Moteur du calculateur indisponible.', 'error');
+      return;
+    }
+    tcRemplirDatalist();
+    var manques = [];
+
+    var mien = tcTrouverChampion(pl.champ);
+    /* « pas reconnu » aurait laissé croire à une faute de frappe : le moteur ne couvre
+       que les 90 champions du panel pro, et Teemo — bien réel — n'en fait pas partie.
+       Le message ne tranche pas entre les deux causes, il dit ce qui est vrai. */
+    if (pl.champ && !mien) manques.push('« ' + pl.champ + ' » ne correspond à aucun des 90 champions du panel');
+    else if (!pl.champ) manques.push('notre champion n\'est pas renseigné');
+
+    /* Cible : le champion le plus joué / au meilleur ratio de l'adversaire, tel que
+       la base compét le rapporte. C'est une PROBABILITÉ, pas une certitude — le
+       message le dit, et le coach peut changer la cible d'un clic. */
+    var b = (typeof ssMatchupBrief === 'function') ? ssMatchupBrief(mid, role) : null;
+    var attendu = b && (b.ban || (b.top || [])[0]);
+    var cible = attendu ? tcTrouverChampion(attendu.name) : null;
+    if (attendu && !cible) manques.push('« ' + attendu.name + ' », le pick le plus probable, est hors du panel');
+    else if (!attendu) manques.push('aucune statistique adverse chargée pour ce poste');
+
+    if (mien) tcEtat.champion = mien;
+    if (cible) tcEtat.cible = cible;
+    switchPanel('theorycraft');
+    setTimeout(function(){
+      if (mien) document.getElementById('tc-champion').value = mien;
+      if (cible) document.getElementById('tc-cible').value = cible;
+      tcRendre();
+      if (typeof showToast === 'function'){
+        var T = window.vsTheorycraft;
+        if (mien && cible) showToast('Matchup chargé : ' + T.champions[mien].nom + ' contre ' +
+          T.champions[cible].nom + ' (pick le plus probable).', 'success');
+        else showToast('Calculateur ouvert. Non repris : ' + manques.join(' ; ') + '.', 'warning');
+      }
+    }, 120);
+  });
 }
 
 /* ── Builds enregistrés ──────────────────────────────────────────────────────
