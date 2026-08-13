@@ -84,7 +84,11 @@ function statsDeRunes(ids, profil, adaptatifAP, ctx = {}) {
   const contexte = Object.assign({
     niveau: profil.niveau || 18,
     adBase: profil.adBase || 0, adBonus: profil.adBonus || 0,
-    ap: profil.ap || 0, pvMax: profil.pvMax || 0, pvBonus: profil.pvBonus || 0
+    ap: profil.ap || 0, pvMax: profil.pvMax || 0, pvBonus: profil.pvBonus || 0,
+    /* Le drapeau « à distance » manquait ici aussi : plusieurs runes ont une version
+       réduite pour les champions à distance, et le moteur ne pouvait pas l'appliquer
+       faute de savoir à qui il avait affaire. */
+    distance: profil.distance
   }, ctx);
 
   (ids || []).forEach(id => {
@@ -162,6 +166,17 @@ const AMPLIS = {
     portee: 'tous', valeur: 'DamageAmp', exigeOuverture: true,
     quoi: 'première frappe du combat, 3 s'
   },
+  8005: { // Attaque soutenue — le second effet, longtemps ignoré
+    /* La rune n'inflige pas que ses 160 points : elle augmente AUSSI de 8 % tous les
+       dégâts que vous infligez, jusqu'à la fin du combat (`AmpPotencyMaxSelf`).
+       Le modèle ne voyait que la première moitié.
+       Sa condition — 3 attaques consécutives — n'a pas besoin d'être supposée : elle se
+       calcule, fenêtre de combat × vitesse d'attaque ≥ 3 frappes. */
+    portee: 'tous', valeur: 'AmpPotencyMaxSelf',
+    exigeAttaques: 'HitsRequired',
+    quoi: '3 attaques de base consécutives'
+  },
+
   8224: { // Arcaniste axiomatique
     portee: 'ultime', valeur: 'DamageAmp',
     quoi: 'dégâts d\'ultime uniquement',
@@ -202,6 +217,21 @@ function amplificationDeRunes(p, cible, type, source, ctx = {}) {
     } else {
       if (a.exigeOuverture && !ctx.ouvertureCombat) {
         refus.push(r.nom + ' : ' + a.quoi + ' — non déclarée'); return;
+      }
+      /* Condition CALCULÉE plutôt que supposée : la fenêtre de combat et la vitesse
+         d'attaque disent si les 3 frappes ont eu le temps de tomber. Sur une fenêtre
+         trop courte, la rune ne s'applique pas — et le dit. */
+      if (a.exigeAttaques) {
+        const n = v[a.exigeAttaques];
+        const fenetre = ctx.fenetre != null ? ctx.fenetre : p.fenetre;
+        if (fenetre == null || !p.vitesseAttaque) {
+          refus.push(r.nom + ' : ' + a.quoi + ' — durée de combat ou vitesse d\'attaque inconnue'); return;
+        }
+        if (fenetre * p.vitesseAttaque < n) {
+          refus.push(r.nom + ' : ' + a.quoi + ' — la fenêtre de ' + fenetre +
+                     ' s n\'en permet que ' + Math.floor(fenetre * p.vitesseAttaque));
+          return;
+        }
       }
       if (a.seuilCible) {
         if (!cible || cible.pvMax == null) { refus.push(r.nom + ' : PV de la cible inconnus'); return; }

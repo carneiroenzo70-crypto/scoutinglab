@@ -449,6 +449,43 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Une rune ne vaut rien hors du temps
+
+Quatorze runes de dégâts et sept de soin étaient modélisées et chiffrées depuis
+longtemps — mais évaluées **une par une, hors du temps**. Or l'Électrocution inflige 240
+toutes les 20 s et la Brûlure 40 toutes les 10 : comparées à l'unité, la première paraît
+six fois meilleure ; sur 20 s l'écart tombe à 4, sur 60 s à 3,4. Sans cadence, on ne
+pouvait ni les additionner aux dégâts d'un build, ni les comparer entre elles.
+
+`38_runes_combat.js` les rapporte à une fenêtre de combat, avec la même liste blanche
+qu'ailleurs : n'entre que la rune dont le **rythme est déterminé par le fichier** — une
+recharge (Électrocution, Comète, Brûlure, Attaque soutenue, Goût du sang), un intervalle
+(Poigne de l'immortel), ou un débit continu (Toucher de feu mortel). Les seize autres
+dépendent d'une immobilisation, d'une élimination, d'un bouclier posé : **refusées avec
+leur motif**.
+
+⚠ **Les recharges de runes ne sont pas réduites par l'accélération de compétence.** Leur
+appliquer `rechargeReelle` aurait gonflé toutes les runes de dégâts sur les builds à
+forte accélération — exactement ceux qu'on veut comparer.
+
+**Le type des dégâts adaptatifs suit le champion** : magique du côté puissance, physique
+du côté dégâts d'attaque, avec le même départage que la force adaptative. Ce n'est pas
+une étiquette : contre la cible de référence, 60 % des dégâts passent en magique contre
+39 % en physique.
+
+Deux trouvailles au passage :
+
+- **La pénalité « à distance » n'était appliquée nulle part.** Le moteur de runes savait
+  la traiter depuis le premier jour — personne ne lui disait de quel champion il
+  s'agissait. `ctx.distance` n'était passé ni ici ni dans le pont vers le profil : toutes
+  les runes concernées servaient leur valeur de mêlée. La Poigne de l'immortel en donnait
+  **deux fois et demie trop** sur une ADC.
+- **L'Attaque soutenue n'était modélisée qu'à moitié.** Elle n'inflige pas que ses 160
+  points : elle amplifie aussi de 8 % tous les dégâts infligés (`AmpPotencyMaxSelf`).
+  Sa condition — 3 attaques consécutives — n'a pas besoin d'être supposée, elle se
+  **calcule** : fenêtre de combat × vitesse d'attaque. Sur 20 s elle s'applique ; sur
+  2 s le refus précise combien de frappes la fenêtre permet.
+
 ### Trois stats qui ne multipliaient rien
 
 Trois manques du même genre, chacun rendant inerte une partie de l'équipement déjà
