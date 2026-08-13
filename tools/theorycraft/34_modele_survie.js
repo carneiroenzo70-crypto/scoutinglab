@@ -121,22 +121,94 @@ function drain(p, degatsAttaqueParSeconde = 0, degatsCompetenceParSeconde = 0) {
 
    ⚠ Elle amplifie les soins que le porteur PRODUIT et les boucliers qu'il pose, pas les
    soins qu'il reçoit d'autrui — d'où le nom du champ et cette note. */
-function soinsDuChampion(champId, touche, rang, p) {
+function soinsDuChampion(champId, touche, rang, p, partPhysique = 0.5) {
   const c = M.champions[champId];
   const sort = c && c.sorts[touche];
   if (!sort) return { ok: false, raison: 'compétence absente' };
   const amp = 1 + (p.soinsEtBoucliers || 0);
-  const lignes = [];
+
+  /* Un bouclier vaut PLUS que sa valeur affichée, et c'est ce que la confusion
+     soin/bouclier masquait. Le wiki officiel est explicite : « resistances will still
+     mitigate the damage BEFORE being absorbed by shielding » — les dégâts sont donc
+     réduits par l'armure et la RM AVANT d'entamer le bouclier. Un bouclier de 300 sur
+     un champion à 100 d'armure absorbe 600 points de dégâts physiques bruts.
+     Un soin, lui, rend exactement ce qu'il annonce : il reconstitue des PV.
+
+     C'est le même multiplicateur que pour les PV effectifs, réutilisé plutôt que
+     réécrit — une formule employée deux fois ne peut pas diverger d'elle-même. */
+  const multPhys = 1 / M.multiplicateur(p.armure);
+  const multMag = 1 / M.multiplicateur(p.rm);
+  const multMixte = 1 / (partPhysique / multPhys + (1 - partPhysique) / multMag);
+
+  const soins = [], boucliers = [];
   Object.entries(sort.calculs).forEach(([nom, calc]) => {
-    if (calc.genre !== 'soin') return;
+    if (calc.genre !== 'soin' && calc.genre !== 'bouclier') return;
     const r = M.evaluerCalcul(champId, touche, nom, rang, p, null);
     if (!r.ok) return;
-    lignes.push({ calcul: nom, brut: r.brut, amplifie: Math.round(r.brut * amp * 100) / 100 });
+    const amplifie = Math.round(r.brut * amp * 100) / 100;
+    if (calc.genre === 'soin') soins.push({ calcul: nom, brut: r.brut, amplifie });
+    else boucliers.push({
+      calcul: nom, brut: r.brut, amplifie,
+      /* Ce que le bouclier absorbe réellement, résistances comprises. */
+      absorbePhysique: Math.round(amplifie * multPhys),
+      absorbeMagique: Math.round(amplifie * multMag),
+      absorbeMixte: Math.round(amplifie * multMixte)
+    });
   });
-  if (!lignes.length) return { ok: false, raison: 'aucun calcul de soin ou de bouclier sur ' + touche };
-  return { ok: true, amplification: amp, lignes,
+  if (!soins.length && !boucliers.length)
+    return { ok: false, raison: 'aucun calcul de soin ni de bouclier sur ' + touche };
+  return { ok: true, amplification: amp, soins, boucliers,
            note: 'l\'efficacité des soins et boucliers amplifie ce que le champion ' +
-                 'PRODUIT, pas ce qu\'il reçoit' };
+                 'PRODUIT, pas ce qu\'il reçoit ; un bouclier absorbe APRÈS les ' +
+                 'résistances, un soin rend exactement sa valeur' };
+}
+
+/* ── 3 bis. BOUCLIERS D'OBJET ───────────────────────────────────────────────────
+   Un bouclier n'est pas un soin, et la distinction se paie cher : les dégâts sont
+   réduits par les résistances AVANT d'entamer le bouclier (wiki officiel). Un bouclier
+   de 500 sur un champion à 200 d'armure absorbe 1 500 points de dégâts physiques bruts.
+
+   Certains boucliers ne valent que contre un type — le Rookern kaénique n'arrête que la
+   magie. Le compter comme un bouclier ordinaire doublerait sa valeur face à un
+   adversaire à dégâts mixtes, d'où le champ `contre`. */
+function boucliers(p, options = {}) {
+  const { evaluerPassif, MODELES } = require('./30_moteur_items');
+  const partPhysique = options.partPhysique != null ? options.partPhysique : 0.5;
+  const multPhys = 1 / M.multiplicateur(p.armure);
+  const multMag = 1 / M.multiplicateur(p.rm);
+
+  const lignes = []; const refus = [];
+  let total = 0, absorbe = 0;
+
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || m.effet !== 'bouclier') return;
+    const e = evaluerPassif(id, p, options.cible || null, { fenetre: options.fenetre });
+    if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }
+
+    /* Part du combat que ce bouclier peut effectivement absorber : la totalité pour un
+       bouclier ordinaire, la seule part magique pour le Rookern. */
+    const part = m.contre === 'magique' ? (1 - partPhysique)
+               : m.contre === 'physique' ? partPhysique : 1;
+    const mult = m.contre === 'magique' ? multMag
+               : m.contre === 'physique' ? multPhys
+               : 1 / (partPhysique / multPhys + (1 - partPhysique) / multMag);
+    const a = e.brut * mult * part;
+    total += e.brut; absorbe += a;
+    lignes.push({ objet: e.objet, nom: e.nom, montant: e.brut,
+                  contre: m.contre || 'tous types',
+                  absorbe: Math.round(a),
+                  declencheur: (m.declencheur || {}).type || null,
+                  note: e.note });
+  });
+
+  return {
+    montant: Math.round(total),
+    absorbe: Math.round(absorbe),
+    lignes, refus,
+    note: 'les résistances réduisent les dégâts AVANT le bouclier : un bouclier vaut ' +
+          'donc plus que sa valeur affichée, et d\'autant plus que le porteur est résistant'
+  };
 }
 
 /* ── 4. AUTONOMIE EN MANA ───────────────────────────────────────────────────────
@@ -187,6 +259,7 @@ function ficheBuild(champId, niveau, objets, options = {}) {
   if (!p) return null;
   const survie = pvEffectifs(p, options.partPhysique != null ? options.partPhysique : 0.5);
   const aa = M.degatsAttaque(p, options.cible || null);
+  const bou = boucliers(p, options);
 
   return {
     champion: p.nom, niveau, or: p.or,
@@ -206,7 +279,12 @@ function ficheBuild(champId, niveau, objets, options = {}) {
       pv: survie.pv, armure: Math.round(p.armure), rm: Math.round(p.rm),
       pvEffectifsPhysique: survie.contrePhysique,
       pvEffectifsMagique: survie.contreMagique,
-      pvEffectifsMixte: survie.mixte
+      pvEffectifsMixte: survie.mixte,
+      /* Les boucliers s'ajoutent aux PV effectifs, mais SÉPARÉMENT : ils sont
+         conditionnels et temporaires. Les fondre dans le chiffre principal ferait
+         passer un build à boucliers pour durablement plus résistant qu'il n'est. */
+      boucliers: bou,
+      pvEffectifsAvecBoucliers: survie.mixte + bou.absorbe
     },
 
     utilitaire: {
@@ -238,4 +316,5 @@ function ficheBuild(champId, niveau, objets, options = {}) {
   };
 }
 
-module.exports = { pvEffectifs, gainSurvie, controle, drain, soinsDuChampion, ficheBuild };
+module.exports = { pvEffectifs, gainSurvie, controle, drain, boucliers,
+                   soinsDuChampion, autonomieMana, ficheBuild };

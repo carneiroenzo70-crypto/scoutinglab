@@ -103,6 +103,25 @@ function evaluerPassif(id, p, cible, options = {}) {
       brut += v;
       detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });
     }
+  } else if (m.termesDeclares) {
+    /* Termes DÉCLARÉS : le fichier porte les nombres dans ses DataValues sans les
+       assembler en `mItemCalculations`. On déclare alors la formule — jamais les
+       valeurs, qui restent lues dans `o.valeurs`. Un terme dont la clé manque est
+       refusé, pas approché. */
+    brut = 0;
+    for (const t of m.termesDeclares) {
+      const coef = o.valeurs[t.cle];
+      if (coef == null) return { ok: false, nom: o.nom, raison: 'valeur absente : ' + t.cle };
+      const v = valeurTerme({ stat: t.stat, mode: t.mode, valeur: coef }, p, cible);
+      if (v == null) return { ok: false, nom: o.nom,
+                              raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
+      brut += v;
+      detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });
+    }
+    if (p.distance && m.distance && m.distance.facteur && o.valeurs[m.distance.facteur] != null) {
+      brut *= o.valeurs[m.distance.facteur];
+      detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });
+    }
   } else if (m.valeur) {
     const v = o.valeurs[m.valeur];
     if (v == null) return { ok: false, raison: 'valeur absente : ' + m.valeur, nom: o.nom };

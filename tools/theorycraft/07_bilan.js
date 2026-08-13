@@ -7,7 +7,7 @@ Object.values(champs).forEach(c => {
     const s = c.sorts[t]; if (!s) return;
     sorts++;
     if (Object.keys(s.calculs).length) avecCalc++;
-    if (Object.values(s.calculs).some(x => x.genre === 'degats' || x.genre === 'soin')) avecDegats++;
+    if (Object.values(s.calculs).some(x => x.genre === 'degats' || x.genre === 'soin' || x.genre === 'bouclier')) avecDegats++;
     if (s.alertes.length) alertes++;
   });
 });

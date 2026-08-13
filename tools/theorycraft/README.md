@@ -558,6 +558,38 @@ secondes nécessaires à la régénération pour en reconstituer un. Un mage san
 n'inflige rien, quel que soit son ratio. ⚠ `null` — et non « 0 cycle » — sur un champion
 à énergie, à fureur ou à chaleur : la question ne se pose pas dans les mêmes termes.
 
+### Un bouclier n'est pas un soin
+
+Dernière limite annoncée par l'audit, et ce n'était pas du vocabulaire : les deux
+partageaient l'étiquette `soin`, alors que le wiki officiel est explicite —
+« *resistances will still mitigate the damage **before** being absorbed by shielding* ».
+
+Un soin rend exactement ce qu'il annonce. Un **bouclier absorbe après les résistances**,
+donc il vaut sa valeur **multipliée par le facteur de PV effectifs**. Le bouclier du E de
+Lulu, 372 points affichés, absorbe **946** de dégâts physiques sur un profil à 154
+d'armure — deux fois et demie ce que la lecture naïve donnait. Et l'écart grandit avec la
+résistance, donc précisément sur les champions qui posent des boucliers.
+
+Le genre est désormais séparé à l'extraction : **40 boucliers, 35 soins** là où il y avait
+75 entrées indistinctes. `soinsDuChampion()` rend les deux listes séparément, et chaque
+bouclier porte ce qu'il absorbe réellement contre le physique, le magique et un mélange.
+
+Quatre boucliers d'objet rejoignent le modèle. L'un impose une nuance qui vaut d'être
+dite : le **Rookern kaénique** n'arrête que la magie — le compter comme un bouclier
+ordinaire doublerait sa valeur face à un adversaire à dégâts mixtes, d'où le champ
+`contre`. Les boucliers sont comptés **à part** des PV effectifs : ils sont conditionnels
+et temporaires, les fondre dans le chiffre principal ferait passer un build pour
+durablement plus résistant qu'il n'est.
+
+Éclipse n'a **aucun** `mItemCalculations` — ses nombres vivent dans les DataValues, comme
+pour trois sorts de champion. D'où une forme de **termes déclarés** : la formule est
+écrite dans le modèle, les valeurs restent lues dans le fichier.
+
+Trois boucliers restent écartés, chacun avec son motif : le Médaillon de l'Iron Solari
+protège un **allié** et non le porteur ; le Voile de la banshee et le Manteau de la nuit
+bloquent une **compétence entière**, dont la valeur dépend du sort bloqué et non d'un
+montant.
+
 ### Les runes n'entraient pas dans les stats du build
 
 Le chaînon manquant, et il touchait l'objectif même du projet : le moteur de runes

@@ -386,6 +386,39 @@ module.exports = {
     calcul: 'ShieldAmount'
   },
 
+  2504: { // Rookern kaénique — Fléau des mages
+    nom: 'Fléau des mages', effet: 'bouclier',
+    declencheur: { type: 'horsCombat', duree: 'OutOfCombatDuration' },
+    calcul: 'ShieldCalc',
+    /* Bouclier ANTI-MAGIE uniquement : il n'absorbe rien de physique. Le compter comme
+       un bouclier ordinaire doublerait sa valeur face à un adversaire à dégâts mixtes. */
+    contre: 'magique',
+    note: 'exige 15 s sans subir de dégâts magiques'
+  },
+
+  3072: { // Soif-de-sang — Bouclier d'ichor
+    nom: 'Bouclier d\'ichor', effet: 'bouclier',
+    declencheur: { type: 'volVieExcedentaire', seuil: 'Threshold' },
+    calcul: 'OvershieldCalc',
+    note: 'plafond du bouclier ; il se remplit du vol de vie excédentaire au-delà de ' +
+          '70 % des PV, un rythme que le modèle ne connaît pas'
+  },
+
+  6692: { // Éclipse — Lune ascendante
+    /* Aucun `mItemCalculations` : les nombres vivent dans les DataValues, comme pour
+       trois sorts de champion. On déclare donc les termes, sans en inventer aucun —
+       150 de base + 40 % de l'AD bonus, moitié à distance (`RangedShieldMult`). */
+    nom: 'Lune ascendante', effet: 'bouclier',
+    declencheur: { type: 'deuxFrappes', fenetre: 'WindowDuration', recharge: 'Cooldown' },
+    termesDeclares: [
+      { stat: 'flat', mode: 'flat', cle: 'MeleeBaseShield' },
+      { stat: 'AD', mode: 'bonus', cle: 'MeleeBonusADShieldRatio' }
+    ],
+    distance: { facteur: 'RangedShieldMult' },
+    note: 'la part en pourcentage des PV max (MeleePercMaxHP) concerne les dégâts de ' +
+          'Lune ascendante, pas le bouclier'
+  },
+
   6664: { // Rayonnement du vide — Immolation
     /* Même famille que l'Égide solaire, chiffres différents : 15 + 1 % des PV bonus.
        Les deux clés TOOLTIPONLY (10 et 1,75) NE correspondent PAS au calcul (15 et 1) :
@@ -537,6 +570,15 @@ module.exports = {
     statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
     note: 'les dégâts de zone du sol brûlé ne sont pas comptés en cible unique'
   },
+
+  /* Boucliers réels mais non chiffrables ici. */
+  3190: { nonApplique: 'Dévotion : le bouclier (290 à 360 PV) est posé sur les ALLIÉS ' +
+                       'proches, pas sur le porteur — hors d\'un calcul en cible unique' },
+  3102: { nonApplique: 'bouclier ANTISORTS : il bloque une compétence entière, sa valeur ' +
+                       'dépend donc du sort bloqué et non d\'un montant' },
+  3814: { nonApplique: 'bouclier antisorts : même raison que le Voile de la banshee' },
+  6695: { nonApplique: 'Briseur de boucliers : réduit les boucliers REÇUS PAR LA CIBLE ; ' +
+                       'utile contre une composition à boucliers, sans effet sur le porteur' },
 
   3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },

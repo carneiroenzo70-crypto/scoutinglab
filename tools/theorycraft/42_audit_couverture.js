@@ -92,6 +92,6 @@ console.log('\n══ CE QUE LE MODÈLE NE SAIT TOUJOURS PAS');
     : 'aucune lacune de sort — les 11 de l\'audit précédent sont corrigées',
   declaresHorsPortee.length + ' sorts déclarés hors portée, motif écrit',
   'les amplifications conditionnelles au placement ou au contrôle (4 objets)',
-  'la classification soin / bouclier reste commune (`estSoin` couvre les deux)'
+  'les boucliers antisorts et ceux posés sur un ALLIÉ, dont la valeur ne se chiffre pas en points'
 ].forEach(x => console.log('  · ' + x));
 console.log('');

@@ -123,16 +123,19 @@ vrai('  additionner les deux canaux serait un contresens',
      Math.abs(d.parSeconde - (200 + 300) * 0.3) > 1,
      'obtenu ' + d.parSeconde + ', le raccourci donnerait ' + (200 + 300) * 0.3);
 
-/* Les calculs de genre « soin » sont extraits depuis le début pour les 90 champions et
-   n'avaient jamais servi. L'efficacité des soins et boucliers les amplifie. */
+/* Les calculs de soin et de bouclier sont extraits depuis le début pour les 90 champions
+   et n'avaient jamais servi. L'efficacité des soins et boucliers de l'équipement les
+   amplifie — les deux genres sont désormais rendus séparément. */
 const sup = M.profil('Lulu', 18, [3222, 3504], { fenetre: 10 });
-const bouclier = ['Q', 'W', 'E', 'R'].map(k => S.soinsDuChampion('Lulu', k, 5, sup)).find(r => r.ok);
-vrai('un bouclier de champion est enfin chiffré', !!bouclier,
-     bouclier ? bouclier.lignes[0].calcul + ' = ' + bouclier.lignes[0].brut : 'aucun');
-if (bouclier) {
-  verifie('  et amplifié par les soins et boucliers de l\'équipement',
-          bouclier.lignes[0].amplifie,
-          bouclier.lignes[0].brut * (1 + stat(3222, 'soinsEtBoucliers') + stat(3504, 'soinsEtBoucliers')),
+const protection = ['Q', 'W', 'E', 'R'].map(k => S.soinsDuChampion('Lulu', k, 5, sup))
+  .find(r => r.ok && (r.soins.length || r.boucliers.length));
+const premier = protection && (protection.boucliers[0] || protection.soins[0]);
+vrai('une protection de champion est enfin chiffrée', !!premier,
+     premier ? premier.calcul + ' = ' + premier.brut : 'aucune');
+if (premier) {
+  verifie('  et amplifiée par les soins et boucliers de l\'équipement',
+          premier.amplifie,
+          premier.brut * (1 + stat(3222, 'soinsEtBoucliers') + stat(3504, 'soinsEtBoucliers')),
           0.5);
 }
 
@@ -198,6 +201,59 @@ verifie('le Q, lui, garde sa recharge inchangée', fen(malf, 'Q'),
         M.rechargeReelle(M.champions.Syndra.sorts.Q.cooldown[5], malf.accel), 0.05);
 vrai('  alors que le R accélère nettement', fen(malf, 'R') < fen(sans, 'R') * 0.8,
      fen(sans, 'R') + ' s → ' + fen(malf, 'R') + ' s');
+
+console.log('\n── Un bouclier n\'est pas un soin');
+/* Les deux partageaient une même étiquette. Ce n'est pas du vocabulaire : le wiki
+   officiel dit que « resistances will still mitigate the damage BEFORE being absorbed
+   by shielding ». Un bouclier profite donc des résistances, un soin non. */
+const genres = {};
+Object.values(M.champions).forEach(c => Object.values(c.sorts).forEach(s =>
+  Object.values(s.calculs).forEach(v => { genres[v.genre] = (genres[v.genre] || 0) + 1; })));
+vrai('les deux genres sont désormais distincts',
+     genres.bouclier > 0 && genres.soin > 0,
+     genres.bouclier + ' boucliers, ' + genres.soin + ' soins (75 sous une seule étiquette avant)');
+
+const lulu = M.profil('Lulu', 18, [3222, 3504, 3157], { fenetre: 10 });
+const eLulu = ['Q', 'W', 'E', 'R'].map(t => S.soinsDuChampion('Lulu', t, 5, lulu)).find(r => r.ok && r.boucliers.length);
+vrai('le bouclier de Lulu est classé comme tel', !!eLulu && eLulu.boucliers.length === 1,
+     eLulu ? eLulu.boucliers[0].calcul : 'aucun');
+if (eLulu) {
+  const b = eLulu.boucliers[0];
+  verifie('  amplifié par l\'efficacité des soins et boucliers',
+          b.amplifie, b.brut * (1 + stat(3222, 'soinsEtBoucliers') + stat(3504, 'soinsEtBoucliers')), 0.5);
+  /* LE point : ce que le bouclier absorbe RÉELLEMENT, résistances comprises. */
+  verifie('  et il absorbe bien plus que sa valeur affichée',
+          b.absorbePhysique, b.amplifie / M.multiplicateur(lulu.armure), 1);
+  vrai('  soit deux fois et demie sa valeur sur ce profil',
+       b.absorbePhysique > b.amplifie * 2,
+       b.amplifie + ' affichés → ' + b.absorbePhysique + ' absorbés contre ' +
+       Math.round(lulu.armure) + ' d\'armure');
+}
+
+/* Boucliers d'objet : quatre sont désormais chiffrés, dont un qui ne vaut que contre
+   la magie — le compter comme les autres doublerait sa valeur. */
+const bouclierTank = S.ficheBuild('Sion', 18, [2504, 6673, 3068, 3143], { fenetre: 10 }).defensif;
+vrai('les boucliers d\'objet sont comptés à part des PV effectifs',
+     bouclierTank.pvEffectifsAvecBoucliers > bouclierTank.pvEffectifsMixte,
+     bouclierTank.pvEffectifsMixte + ' → ' + bouclierTank.pvEffectifsAvecBoucliers);
+const rookern = bouclierTank.boucliers.lignes.find(l => /Rookern/.test(l.objet));
+vrai('  et le Rookern est marqué « contre la magie » seulement',
+     rookern && rookern.contre === 'magique',
+     rookern ? rookern.montant + ' de bouclier, ' + rookern.absorbe + ' absorbés' : 'absent');
+vrai('  un bouclier ordinaire du même profil absorbe davantage, à montant comparable',
+     (() => {
+       const arc = bouclierTank.boucliers.lignes.find(l => /Arc-bouclier/.test(l.objet));
+       return arc && rookern && (arc.absorbe / arc.montant) > (rookern.absorbe / rookern.montant);
+     })(), 'le Rookern ne couvre que la moitié magique du combat');
+
+/* Éclipse n'a AUCUN calcul dans le fichier : ses nombres vivent dans les DataValues.
+   Les termes sont déclarés, les valeurs restent lues — et la version à distance suit. */
+const ecl = require('./30_moteur_items');
+const eclM = ecl.evaluerPassif(6692, M.profil('Sion', 18, [6692], { fenetre: 10 }), null, {});
+const eclD = ecl.evaluerPassif(6692, M.profil('Jhin', 18, [6692], { fenetre: 10 }), null, {});
+verifie('Éclipse en mêlée : base + 40 % de l\'AD bonus', eclM.brut,
+        stat(6692, 'ad') * 0.4 + 150, 0.5);
+verifie('  et la moitié à distance', eclD.brut, eclM.brut * 0.5, 0.5);
 
 console.log('\n── La fiche d\'un build ne se résume pas à ses dégâts');
 const fTank = S.ficheBuild('Sion', 18, [3068, 3143, 3083, 3075]);

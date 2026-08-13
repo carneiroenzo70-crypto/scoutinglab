@@ -15,7 +15,13 @@ const SORTS = require('./sorts_modeles');
 
 const TOUCHES = ['Q', 'W', 'E', 'R'];
 const estDegats = n => /damage|dmg/i.test(n);
-const estSoin   = n => /heal|shield|absorb/i.test(n);
+/* Soin et bouclier étaient rangés sous la MÊME étiquette. Ce n'est pas un détail de
+   vocabulaire : un soin rend des PV déjà perdus, un bouclier absorbe des dégâts à venir.
+   Le premier se compare aux PV, le second aux PV EFFECTIFS — il profite de l'armure et
+   de la résistance magique, tant qu'il tient. Les confondre sous-estime tout bouclier
+   posé sur un champion résistant, et d'autant plus qu'il est résistant. */
+const estBouclier = n => /shield|absorb/i.test(n);
+const estSoin     = n => /heal/i.test(n) && !estBouclier(n);
 
 function statsDeBase(rec, id) {
   // Les stats sont enveloppées dans un ModifiableFloat : { baseValue: 590 }
@@ -189,7 +195,9 @@ cibles.forEach(cible => {
       const resolus = Object.keys(r).filter(x => r[x]);
       if (!resolus.length) return;
       calculs[nomCalc] = {
-        genre: estDegats(nomCalc) ? 'degats' : estSoin(nomCalc) ? 'soin' : 'autre',
+        genre: estDegats(nomCalc) ? 'degats'
+             : estBouclier(nomCalc) ? 'bouclier'
+             : estSoin(nomCalc) ? 'soin' : 'autre',
         parRang: r
       };
     });

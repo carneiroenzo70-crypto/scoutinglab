@@ -52,7 +52,7 @@ liste.forEach(id => {
     const s = c.sorts[t];
     if (!s) { console.log('  ' + t + ' : —'); return; }
     const deg = Object.entries(s.calculs).filter(([, v]) => v.genre === 'degats');
-    const soin = Object.entries(s.calculs).filter(([, v]) => v.genre === 'soin');
+    const soin = Object.entries(s.calculs).filter(([, v]) => v.genre === 'soin' || v.genre === 'bouclier');
     console.log('  ' + t + ' (' + s.nomInterne + ')');
     deg.slice(0, 3).forEach(([n, v]) => console.log('      dégâts · ' + n + ' : ' + rendre(v, s.nbRangs)));
     soin.slice(0, 2).forEach(([n, v]) => console.log('      soin/bouclier · ' + n + ' : ' + rendre(v, s.nbRangs)));
