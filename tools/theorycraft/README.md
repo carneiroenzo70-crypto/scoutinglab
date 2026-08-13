@@ -449,6 +449,45 @@ une cible à pleine vie, la Flamme-ombre vaut zéro. Quatre amplifications réel
 écartées pour cette raison (Lunettes Hextech et Concentration lointaine : position ;
 Mandat impérial : contrôle appliqué ; Orgueil : élimination récente).
 
+### Audit avant câblage : le modèle chiffrait des builds impossibles
+
+Vérification demandée avant de brancher tout ceci dans le produit. Les données sont à
+jour (**16.16.1**, la version courante) et les **69 runes actives sont toutes
+modélisées**. Mais l'audit a trouvé un manque de nature différente des précédents : le
+modèle savait **chiffrer** n'importe quelle combinaison, pas dire si elle est
+**achetable**. Un chiffre juste sur un build impossible ne vaut rien.
+
+Les règles de légalité existent dans le fichier et n'étaient pas extraites :
+`mItemGroups` + `mMaxGroupOwnable`. **21 groupes contraignants** — bottes, objets à
+Larme, Hydres, Immolations, Lien vital, Mercure, pénétration magique…
+
+Quatre groupes portent un nom haché. Ils sont nommés **par leur appartenance**, ce que la
+donnée permet de vérifier : `{8b55a7b3}` est la Lame enchantée parce que ses **sept
+membres portent tous un calcul `SpellbladeDamage`** — pas parce que le nom y ressemble.
+
+⚠ Le fichier appelle `LastWhisper` le groupe que la boutique nomme aujourd'hui
+**« Fatality »**. Un premier résumé du wiki affirmait que le Couperet noir n'en faisait
+pas partie et pouvait se cumuler avec les Salutations de Dominik ; les **trois fiches**
+concernées (Couperet noir, Dominik, Serylda) annoncent pourtant toutes « Limited to 1
+Fatality item ». Nom interne ancien, contrainte bien réelle.
+
+**Et cette contrainte invalidait un de mes propres exemples.** Le test qui démontre la
+composition réduction + pénétration utilisait Couperet noir + Salutations de Dominik. Ce
+build est impossible — et pas par malchance de paire : **tous** les objets à pénétration
+d'armure en pourcentage sont dans ce groupe, Couperet compris. Réduction en % et
+pénétration en % ne peuvent donc jamais coexister via l'équipement. Le test utilise
+désormais Couperet + létalité, qui est légal *et* plus non-commutatif.
+
+`40_legalite.js` valide un build (emplacements, doublons, groupes, objets réservés) et
+une page de runes (1 majeure, 3+2 mineures, emplacements distincts, 3 fragments, un par
+rangée) — la structure venant du fichier, pas d'une convention supposée. Un refus nomme
+toujours le groupe et les objets fautifs, et `conflits()` propose quoi garder.
+
+`42_audit_couverture.js` décrit l'état complet, **sans arrondi flatteur**, à relancer
+après chaque patch. Au jour de l'audit : 48 passifs d'objet appliqués sur 102, 69/69
+runes modélisées, et **96,9 % des sorts exploitables** — les 11 lacunes restantes sont
+nommées une par une.
+
 ### Une rune ne vaut rien hors du temps
 
 Quatorze runes de dégâts et sept de soin étaient modélisées et chiffrées depuis

@@ -138,6 +138,17 @@ idsSR.forEach(id => {
     composeDe: (d.from || []).map(Number),
     seConstruitEn: (d.into || []).map(Number),
     categories: b.mCategories || [],
+    /* GROUPES D'OBJETS — les règles de LÉGALITÉ d'un build, et rien de moins.
+       `mItemGroups` liste les groupes auxquels l'objet appartient ; chaque groupe porte
+       un `mMaxGroupOwnable`. Sans eux, un constructeur de build peut proposer deux
+       paires de bottes, trois Hydres, ou le Couperet noir AVEC les Salutations de
+       Dominik — le jeu refuse ces achats, mais le modèle les acceptait.
+
+       ⚠ Le fichier nomme `LastWhisper` le groupe que la boutique et le wiki appellent
+       aujourd'hui « Fatality ». Nom interne conservé, nom d'affichage différent : c'est
+       le même groupe, vérifié sur les trois fiches concernées. */
+    groupes: (b.mItemGroups || []).map(g => g.replace('Items/ItemGroups/', ''))
+      .filter(g => g !== 'Default'),
     championRequis: b.mRequiredChampion || null,
     niveauRequis: b.mRequiredLevel || null,
     stats,
@@ -149,6 +160,24 @@ idsSR.forEach(id => {
 
 sortie.sort((a, b) => a.prix - b.prix || a.id - b.id);
 fs.writeFileSync(path.join(__dirname, 'items.json'), JSON.stringify(sortie, null, 1));
+
+/* Définitions des groupes : combien d'objets d'un même groupe peut-on posséder ?
+   On ne retient que les groupes réellement contraignants ET peuplés d'au moins deux
+   objets de la Faille. Les groupes à un seul membre expriment la règle « pas de
+   doublon », déjà appliquée ailleurs ; les inclure noierait les vraies contraintes
+   sous une centaine d'entrées sans intérêt. */
+const membres = {};
+sortie.forEach(o => (o.groupes || []).forEach(g => { (membres[g] = membres[g] || []).push(o.id); }));
+const groupes = {};
+Object.entries(bin).forEach(([cle, v]) => {
+  if (!v || v.__type !== 'ItemGroup') return;
+  const nom = cle.replace('Items/ItemGroups/', '');
+  const max = v.mMaxGroupOwnable;
+  if (max == null || !membres[nom] || membres[nom].length < 2) return;
+  groupes[nom] = { max, membres: membres[nom] };
+});
+fs.writeFileSync(path.join(__dirname, 'groupes_objets.json'), JSON.stringify(groupes, null, 1));
+console.log('Groupes contraignants (≥ 2 objets)  : ' + Object.keys(groupes).length);
 
 console.log('Objets retenus (Faille, achetables) : ' + sortie.length);
 console.log('  avec au moins une stat  : ' + sortie.filter(x => Object.keys(x.stats).length).length);

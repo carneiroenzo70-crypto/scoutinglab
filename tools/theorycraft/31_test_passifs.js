@@ -361,15 +361,29 @@ verifie('  la prendre pour de la pénétration plate donnerait autre chose',
         M.resistEffective(30, { penPct: 0.3, penPlate: 10 }), 11, 0.001);
 
 /* Bout en bout : la réduction doit vraiment atteindre les dégâts, et se composer avec
-   la pénétration en pourcentage du même build. */
+   la pénétration du même build.
+
+   ⚠ Cet exemple utilisait d'abord Couperet noir + Salutations de Dominik. Le contrôle
+   de légalité a montré que ce build est IMPOSSIBLE : les deux objets appartiennent au
+   groupe `LastWhisper` (« Fatality » dans la boutique), limité à un seul. Et ce n'est
+   pas un hasard de paire — TOUS les objets à pénétration d'armure en pourcentage sont
+   dans ce groupe, Couperet compris. Réduction en % et pénétration en % ne peuvent donc
+   jamais coexister via l'équipement.
+   La composition réelle à vérifier est donc réduction + LÉTALITÉ, qui est aussi le cas
+   le plus non-commutatif : la létalité s'applique en dernier, avec plancher à zéro. */
 const brut = 1000;
-const avecC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3071, 3036], { fenetre: 10 }), 'attaque');
-const sansC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3036], { fenetre: 10 }), 'attaque');
+const avecC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3071, 3142], { fenetre: 10 }), 'attaque');
+const sansC = M.mitiger(brut, 'physique', tanky, M.profil('Jhin', 18, [3142], { fenetre: 10 }), 'attaque');
 vrai('le Couperet noir augmente les dégâts réellement subis',
      avecC.subis > sansC.subis,
      Math.round(sansC.subis) + ' → ' + Math.round(avecC.subis) + ' sur ' + brut + ' bruts');
+const letalite = M.profil('Jhin', 18, [3142], { fenetre: 10 }).letalite;
 verifie('  et la résistance effective suit la séquence officielle',
-        avecC.resistEff, M.resistEffective(tanky.armure, { reducPct: 0.3, penPct: 0.35 }), 0.01);
+        avecC.resistEff,
+        M.resistEffective(tanky.armure, { reducPct: 0.3, penPlate: letalite }), 0.01);
+vrai('  ce build-ci est bien achetable, contrairement au précédent',
+     require('./40_legalite').buildLegal([3071, 3142]).legal &&
+     !require('./40_legalite').buildLegal([3071, 3036]).legal);
 
 console.log('\n── Cadence : amortir plutôt qu\'exclure ou compter en entier');
 /* Le Tueur de krakens frappe un coup sur trois. L'ajouter en entier le triplerait,

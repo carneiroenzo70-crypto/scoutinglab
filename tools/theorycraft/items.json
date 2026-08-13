@@ -16,6 +16,9 @@
    "Trinket",
    "Vision"
   ],
+  "groupes": [
+   "Trinket"
+  ],
   "championRequis": "FiddleSticks",
   "niveauRequis": null,
   "stats": {},
@@ -61,6 +64,9 @@
    "Trinket",
    "Vision"
   ],
+  "groupes": [
+   "Trinket"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {},
@@ -88,6 +94,9 @@
    "Active",
    "Trinket",
    "Vision"
+  ],
+  "groupes": [
+   "Trinket"
   ],
   "championRequis": null,
   "niveauRequis": 9,
@@ -134,6 +143,9 @@
    "Trinket",
    "Vision"
   ],
+  "groupes": [
+   "Trinket"
+  ],
   "championRequis": null,
   "niveauRequis": 1,
   "stats": {},
@@ -163,6 +175,9 @@
   "categories": [
    "Consumable"
   ],
+  "groupes": [
+   "TheBlackSpear"
+  ],
   "championRequis": "Kalista",
   "niveauRequis": null,
   "stats": {},
@@ -182,6 +197,9 @@
   "seConstruitEn": [],
   "categories": [
    "Consumable"
+  ],
+  "groupes": [
+   "TheBlackSpear"
   ],
   "championRequis": "Sylas",
   "niveauRequis": null,
@@ -205,6 +223,11 @@
    "Consumable",
    "Lane",
    "Jungle"
+  ],
+  "groupes": [
+   "Potion",
+   "Consumable",
+   "{ceef1d33}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -232,6 +255,11 @@
    "Stealth",
    "Vision"
   ],
+  "groupes": [
+   "WardPink",
+   "Consumable",
+   "{ceef1d33}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {},
@@ -257,6 +285,11 @@
    "Active",
    "Lane",
    "Jungle"
+  ],
+  "groupes": [
+   "Potion",
+   "Consumable",
+   "{ceef1d33}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -287,6 +320,7 @@
   "categories": [
    "ManaRegen"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -326,6 +360,7 @@
   "categories": [
    "AttackSpeed"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -363,6 +398,7 @@
   "categories": [
    "CooldownReduction"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -400,6 +436,11 @@
   "categories": [
    "Boots"
   ],
+  "groupes": [
+   "Boots",
+   "BootsOfSpeed",
+   "BootsWithoutActives"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -431,6 +472,7 @@
   "categories": [
    "HealthRegen"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -461,6 +503,7 @@
   "categories": [
    "Mana"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -504,6 +547,7 @@
   "categories": [
    "Armor"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -529,6 +573,9 @@
   "seConstruitEn": [],
   "categories": [
    "Damage",
+   "Consumable"
+  ],
+  "groupes": [
    "Consumable"
   ],
   "championRequis": null,
@@ -585,6 +632,7 @@
    "Damage",
    "Lane"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -614,6 +662,9 @@
    "Health",
    "SpellDamage",
    "Lane"
+  ],
+  "groupes": [
+   "Glory"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -693,6 +744,7 @@
   "categories": [
    "Health"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -734,6 +786,7 @@
   "categories": [
    "SpellBlock"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -785,6 +838,7 @@
   "categories": [
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -813,6 +867,10 @@
    "Lane",
    "ManaRegen",
    "SpellDamage"
+  ],
+  "groupes": [
+   "DoransItems",
+   "{5c63b904}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -865,6 +923,9 @@
    "SpellVamp",
    "Lane"
   ],
+  "groupes": [
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -908,6 +969,10 @@
   "categories": [
    "Mana",
    "ManaRegen"
+  ],
+  "groupes": [
+   "TearItems",
+   "{20cbfb4d}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -956,6 +1021,11 @@
    "Vision",
    "GoldPer",
    "Lane"
+  ],
+  "groupes": [
+   "GoldItems",
+   "DoransItems",
+   "{2b093179}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1103,6 +1173,11 @@
    "GoldPer",
    "Lane"
   ],
+  "groupes": [
+   "GoldItems",
+   "{4dbc5e26}",
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1156,6 +1231,11 @@
    "Vision",
    "GoldPer",
    "Lane"
+  ],
+  "groupes": [
+   "GoldItems",
+   "{4dbc5e26}",
+   "DoransItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1243,6 +1323,11 @@
    "GoldPer",
    "Lane"
   ],
+  "groupes": [
+   "GoldItems",
+   "{4dbc5e26}",
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1327,6 +1412,11 @@
    "GoldPer",
    "Lane"
   ],
+  "groupes": [
+   "GoldItems",
+   "{4dbc5e26}",
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1395,6 +1485,12 @@
    "Vision",
    "GoldPer",
    "Lane"
+  ],
+  "groupes": [
+   "GoldItems",
+   "{8b55a7b3}",
+   "{4dbc5e26}",
+   "DoransItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1500,6 +1596,10 @@
    "HealthRegen",
    "Lane"
   ],
+  "groupes": [
+   "DoransItems",
+   "{5c63b904}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1551,6 +1651,9 @@
    "SpellVamp",
    "Lane"
   ],
+  "groupes": [
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1589,6 +1692,7 @@
    "OnHit",
    "Lane"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1619,6 +1723,13 @@
   "seConstruitEn": [],
   "categories": [
    "Jungle"
+  ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems",
+   "{ceef1d33}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1670,6 +1781,13 @@
   "categories": [
    "Jungle"
   ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems",
+   "{ceef1d33}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {},
@@ -1712,6 +1830,13 @@
   "seConstruitEn": [],
   "categories": [
    "Jungle"
+  ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems",
+   "{ceef1d33}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1771,6 +1896,12 @@
   "categories": [
    "Jungle"
   ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {},
@@ -1829,6 +1960,12 @@
   "categories": [
    "Jungle"
   ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {},
@@ -1871,6 +2008,12 @@
   "seConstruitEn": [],
   "categories": [
    "Jungle"
+  ],
+  "groupes": [
+   "GoldItems",
+   "BaseJungleItems",
+   "{3aa8b165}",
+   "DoransItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -1925,6 +2068,10 @@
    "Armor",
    "Lane"
   ],
+  "groupes": [
+   "DoransItems",
+   "{5c63b904}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -1965,6 +2112,11 @@
    "Consumable",
    "NonbootsMovement",
    "Tenacity"
+  ],
+  "groupes": [
+   "Elixir",
+   "Consumable",
+   "{b4a76613}"
   ],
   "championRequis": null,
   "niveauRequis": 9,
@@ -2009,6 +2161,10 @@
    "ManaRegen",
    "SpellDamage"
   ],
+  "groupes": [
+   "Elixir",
+   "Consumable"
+  ],
   "championRequis": null,
   "niveauRequis": 9,
   "stats": {},
@@ -2052,6 +2208,10 @@
    "Damage",
    "LifeSteal",
    "SpellVamp"
+  ],
+  "groupes": [
+   "Elixir",
+   "Consumable"
   ],
   "championRequis": null,
   "niveauRequis": 9,
@@ -2104,6 +2264,7 @@
   "categories": [
    "CriticalStrike"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2148,6 +2309,7 @@
   "categories": [
    "ManaRegen"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2190,6 +2352,7 @@
   "categories": [
    "AttackSpeed"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2238,6 +2401,7 @@
    "AttackSpeed",
    "OnHit"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2284,6 +2448,7 @@
    "Damage",
    "NonbootsMovement"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2329,6 +2494,7 @@
   "categories": [
    "Armor"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2364,6 +2530,7 @@
    "Health",
    "NonbootsMovement"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2434,6 +2601,7 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2470,6 +2638,10 @@
   ],
   "categories": [
    "Armor"
+  ],
+  "groupes": [
+   "{87f1e822}",
+   "{8875daa8}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -2517,6 +2689,9 @@
   "categories": [
    "Damage"
   ],
+  "groupes": [
+   "{8875daa8}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2553,6 +2728,7 @@
    "Health",
    "HealthRegen"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2589,6 +2765,9 @@
   ],
   "categories": [
    "SpellDamage"
+  ],
+  "groupes": [
+   "{8875daa8}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -2634,6 +2813,7 @@
   "categories": [
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2669,6 +2849,7 @@
   "categories": [
    "SpellBlock"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2715,6 +2896,7 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2769,6 +2951,7 @@
   "categories": [
    "Damage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2812,6 +2995,7 @@
   "categories": [
    "Health"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2848,6 +3032,7 @@
    "Damage",
    "LifeSteal"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2884,6 +3069,7 @@
   "categories": [
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2925,6 +3111,7 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -2970,6 +3157,9 @@
   "categories": [
    "OnHit",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{8b55a7b3}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3023,6 +3213,7 @@
    "NonbootsMovement",
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3060,6 +3251,10 @@
    "Boots",
    "CooldownReduction"
   ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3095,6 +3290,10 @@
   "seConstruitEn": [],
   "categories": [
    "CooldownReduction",
+   "Boots"
+  ],
+  "groupes": [
+   "{a1360f8d}",
    "Boots"
   ],
   "championRequis": null,
@@ -3170,6 +3369,7 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3212,6 +3412,9 @@
   "categories": [
    "Health",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "ImmolateItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3272,6 +3475,9 @@
    "HealthRegen",
    "Lane"
   ],
+  "groupes": [
+   "GuardianItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3305,6 +3511,9 @@
    "SpellDamage",
    "ManaRegen",
    "Lane"
+  ],
+  "groupes": [
+   "GuardianItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3345,6 +3554,9 @@
    "Lane",
    "AbilityHaste"
   ],
+  "groupes": [
+   "GuardianItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3383,6 +3595,9 @@
    "Damage",
    "LifeSteal",
    "Lane"
+  ],
+  "groupes": [
+   "GuardianItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3426,6 +3641,11 @@
    "SpellVamp",
    "Boots"
   ],
+  "groupes": [
+   "BootsWithoutActives",
+   "Boots",
+   "{aba63cd2}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3463,6 +3683,10 @@
   ],
   "categories": [
    "Boots"
+  ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3505,6 +3729,7 @@
   "categories": [
    "Armor"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3554,6 +3779,9 @@
    "Damage",
    "ArmorPenetration"
   ],
+  "groupes": [
+   "{1c3fcb8a}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3591,6 +3819,11 @@
    "SpellVamp",
    "Boots"
   ],
+  "groupes": [
+   "BootsWithoutActives",
+   "Boots",
+   "{0e38f9bb}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3627,6 +3860,10 @@
   ],
   "seConstruitEn": [],
   "categories": [
+   "Boots"
+  ],
+  "groupes": [
+   "{a0360dfa}",
    "Boots"
   ],
   "championRequis": null,
@@ -3710,6 +3947,7 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3750,6 +3988,7 @@
    "Armor",
    "Damage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3790,6 +4029,10 @@
    "AttackSpeed",
    "Boots"
   ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3827,6 +4070,10 @@
   "categories": [
    "Boots",
    "MagicPenetration"
+  ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -3872,6 +4119,7 @@
    "Damage",
    "NonbootsMovement"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3928,6 +4176,7 @@
   "categories": [
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -3969,6 +4218,10 @@
    "AttackSpeed",
    "LifeSteal",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "{9e360ad4}",
+   "Boots"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4034,6 +4287,10 @@
    "Boots",
    "MagicPenetration"
   ],
+  "groupes": [
+   "{9d360941}",
+   "Boots"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4087,6 +4344,9 @@
    "MagicPenetration",
    "SpellDamage"
   ],
+  "groupes": [
+   "VoidPen"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4131,6 +4391,7 @@
    "Health",
    "Damage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4169,6 +4430,7 @@
   "categories": [
    "SpellDamage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4200,6 +4462,10 @@
   "categories": [
    "Armor",
    "Boots"
+  ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4243,6 +4509,7 @@
    "Damage",
    "AttackSpeed"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4282,6 +4549,10 @@
   "categories": [
    "Damage",
    "OnHit"
+  ],
+  "groupes": [
+   "LegendaryClearingItems",
+   "{cf1a44c0}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4392,6 +4663,7 @@
    "AttackSpeed",
    "NonbootsMovement"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4429,6 +4701,10 @@
   "seConstruitEn": [],
   "categories": [
    "Armor",
+   "Boots"
+  ],
+  "groupes": [
+   "{9c3607ae}",
    "Boots"
   ],
   "championRequis": null,
@@ -4516,6 +4792,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "MythicItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4562,6 +4841,10 @@
    "SpellBlock",
    "Tenacity"
   ],
+  "groupes": [
+   "Boots",
+   "BootsWithoutActives"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4604,6 +4887,10 @@
    "Boots",
    "Tenacity",
    "MagicResist"
+  ],
+  "groupes": [
+   "{9f360c67}",
+   "Boots"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4687,6 +4974,7 @@
    "HealthRegen",
    "SpellBlock"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4736,6 +5024,7 @@
   "categories": [
    "Damage"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4767,6 +5056,9 @@
   "categories": [
    "Active",
    "SpellBlock"
+  ],
+  "groupes": [
+   "Quicksilver"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4803,6 +5095,9 @@
   "categories": [
    "Health",
    "SpellDamage"
+  ],
+  "groupes": [
+   "{9b33c784}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4846,6 +5141,9 @@
   "categories": [
    "Damage",
    "SpellBlock"
+  ],
+  "groupes": [
+   "LifelineItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -4914,6 +5212,9 @@
    "Mana",
    "ManaRegen"
   ],
+  "groupes": [
+   "EternityItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4958,6 +5259,7 @@
    "Damage",
    "CriticalStrike"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -4999,6 +5301,7 @@
    "CooldownReduction",
    "ArmorPenetration"
   ],
+  "groupes": [],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5045,6 +5348,9 @@
    "ArmorPenetration",
    "Damage"
   ],
+  "groupes": [
+   "LastWhisper"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5079,6 +5385,9 @@
    "Health",
    "SpellDamage",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "Glory"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5138,6 +5447,10 @@
    "SpellDamage",
    "Active"
   ],
+  "groupes": [
+   "StopwatchGroup",
+   "{4c987493}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5175,6 +5488,9 @@
    3157
   ],
   "categories": [],
+  "groupes": [
+   "StopwatchGroup"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5212,6 +5528,9 @@
   "categories": [
    "SpellBlock",
    "SpellDamage"
+  ],
+  "groupes": [
+   "{3fcdbdac}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5258,6 +5577,9 @@
    "CooldownReduction",
    "NonbootsMovement",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{3179bd6e}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5313,6 +5635,9 @@
    "SpellBlock",
    "Armor",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{31b248b7}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5372,6 +5697,9 @@
    "Active",
    "MagicResist",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{9c26fd24}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5445,6 +5773,9 @@
    "ManaRegen",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{5aa31b15}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5496,6 +5827,9 @@
    "ManaRegen",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{ae562925}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5550,6 +5884,9 @@
    "ManaRegen",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{395dbfbb}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5616,6 +5953,13 @@
    "Mana",
    "ManaRegen"
   ],
+  "groupes": [
+   "{f4405fb4}",
+   "TearItems",
+   "{f842a497}",
+   "{6dcade42}",
+   "{20cbfb4d}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5679,6 +6023,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{ad562792}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5732,6 +6079,9 @@
    "AttackSpeed",
    "NonbootsMovement",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{f64062da}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -5803,6 +6153,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{0b3d7230}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5865,6 +6218,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{193d883a}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5920,6 +6276,9 @@
    "Tenacity",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{bf3ed580}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -5971,6 +6330,11 @@
    "Health",
    "Mana",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "TearItems",
+   "{153b4357}",
+   "{9d42d534}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6031,6 +6395,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{5f2a99fe}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6075,6 +6442,11 @@
   "categories": [
    "Health",
    "Armor"
+  ],
+  "groupes": [
+   "{20adb0c6}",
+   "{87f1e822}",
+   "{8875daa8}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6135,6 +6507,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{0c3b352c}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6179,6 +6554,9 @@
    "SpellDamage",
    "ManaRegen"
   ],
+  "groupes": [
+   "{3432bd77}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6221,6 +6599,9 @@
   "categories": [
    "Damage",
    "ArmorPenetration"
+  ],
+  "groupes": [
+   "{bc69c6e7}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6265,6 +6646,10 @@
    "NonbootsMovement",
    "Tenacity",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{f740646d}",
+   "LifelineItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6341,6 +6726,9 @@
    "SpellDamage",
    "Slow"
   ],
+  "groupes": [
+   "{0a3b3206}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6381,6 +6769,10 @@
    "SpellDamage",
    "Mana",
    "ManaRegen"
+  ],
+  "groupes": [
+   "EternityItems",
+   "{3e600631}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6434,6 +6826,9 @@
    "NonbootsMovement",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{6a3d47df}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6484,6 +6879,9 @@
    "AttackSpeed",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{2db003d4}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6525,6 +6923,10 @@
    "AttackSpeed",
    "OnHit",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "{a092a3c9}",
+   "{78ac5965}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6627,6 +7029,10 @@
    "AttackSpeed",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{ad94f6d7}",
+   "{3bbe1bdd}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6675,6 +7081,9 @@
    "CooldownReduction",
    "NonbootsMovement",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{9631810e}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6737,6 +7146,9 @@
    "AttackSpeed",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{b06536d5}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -6781,6 +7193,9 @@
    "CooldownReduction",
    "MagicResist",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{d4211923}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6827,6 +7242,9 @@
    "HealthRegen",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{1cab6be3}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6876,6 +7294,9 @@
    "SpellDamage",
    "Mana",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{143b41c4}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -6964,6 +7385,9 @@
    "Active",
    "Slow"
   ],
+  "groupes": [
+   "{9733c138}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7005,6 +7429,9 @@
   "categories": [
    "SpellDamage",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{466ecfe1}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7051,6 +7478,9 @@
    "Mana",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{3c60030b}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7129,6 +7559,9 @@
    "ArmorPenetration",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{bd69c87a}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7190,6 +7623,9 @@
    "Armor",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{683b0622}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7256,6 +7692,9 @@
    "Mana",
    "CooldownReduction",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{693b07b5}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7328,6 +7767,9 @@
    "Mana",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{f0405968}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7391,6 +7833,9 @@
    "Damage",
    "CriticalStrike"
   ],
+  "groupes": [
+   "{f1405afb}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7434,6 +7879,10 @@
    "Armor",
    "Aura",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "ImmolateItems",
+   "{27ab7d34}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7532,6 +7981,9 @@
    "OnHit",
    "Tenacity"
   ],
+  "groupes": [
+   "{a894eef8}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7584,6 +8036,9 @@
    "Active",
    "NonbootsMovement",
    "ArmorPenetration"
+  ],
+  "groupes": [
+   "{9833c2cb}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7685,6 +8140,9 @@
    "CooldownReduction",
    "ArmorPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{993602f5}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7814,6 +8272,9 @@
    "SpellBlock",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{27df203e}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -7863,6 +8324,9 @@
    "GoldPer",
    "NonbootsMovement",
    "MagicPenetration"
+  ],
+  "groupes": [
+   "{c07d0779}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -7998,6 +8462,10 @@
    "MagicResist",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{ad6770b3}",
+   "ImmolateItems"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8131,6 +8599,9 @@
    "ArmorPenetration",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{be69ca0d}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8196,6 +8667,10 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{0938f1dc}",
+   "{8875daa8}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8241,6 +8716,10 @@
    "CooldownReduction",
    "ArmorPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "LegendaryClearingItems",
+   "{cf1a44c0}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8373,6 +8852,9 @@
    "SpellBlock",
    "HealthRegen"
   ],
+  "groupes": [
+   "{623afcb0}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8428,6 +8910,12 @@
    "Mana",
    "AbilityHaste"
   ],
+  "groupes": [
+   "TearItems",
+   "LifelineItems",
+   "{2bb000ae}",
+   "{20cbfb4d}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8478,6 +8966,12 @@
    "CooldownReduction",
    "OnHit",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "TearItems",
+   "{29affd88}",
+   "{33df72dd}",
+   "{20cbfb4d}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8538,6 +9032,10 @@
    "OnHit",
    "NonbootsMovement",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{123d7d35}",
+   "{8b55a7b3}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8604,6 +9102,9 @@
    "OnHit",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{093b3073}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8664,6 +9165,10 @@
    "Armor",
    "Slow",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "{92901b7d}",
+   "{1b1c30d5}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8738,6 +9243,10 @@
    "Slow",
    "OnHit",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{b3677a25}",
+   "{8b55a7b3}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8819,6 +9328,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{b969c22e}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8870,6 +9382,10 @@
    "CooldownReduction",
    "MagicPenetration"
   ],
+  "groupes": [
+   "{6219a9e8}",
+   "VoidPen"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -8915,6 +9431,9 @@
    "Damage",
    "ArmorPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{f2405c8e}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -8998,6 +9517,10 @@
    "CriticalStrike",
    "AttackSpeed"
   ],
+  "groupes": [
+   "{aba3fe3b}",
+   "{3bbe1bdd}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9047,6 +9570,11 @@
    "CriticalStrike",
    "ArmorPenetration"
   ],
+  "groupes": [
+   "{aaa3fca8}",
+   "LastWhisper",
+   "{8875daa8}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9095,6 +9623,10 @@
    "NonbootsMovement",
    "ArmorPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{24adb712}",
+   "LastWhisper"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9160,6 +9692,9 @@
    "NonbootsMovement",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{22adb3ec}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9209,6 +9744,9 @@
   "categories": [
    "Health",
    "HealthRegen"
+  ],
+  "groupes": [
+   "{9f92a236}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9315,6 +9853,10 @@
    "OnHit",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{9e92a0a3}",
+   "{3bbe1bdd}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9395,6 +9937,11 @@
    "SpellBlock",
    "SpellDamage"
   ],
+  "groupes": [
+   "{103d7a0f}",
+   "{3fcdbdac}",
+   "{1e7a50ee}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9434,6 +9981,9 @@
    "AttackSpeed",
    "SpellDamage",
    "OnHit"
+  ],
+  "groupes": [
+   "{9a42d07b}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9524,6 +10074,9 @@
    "MagicPenetration",
    "SpellDamage"
   ],
+  "groupes": [
+   "VoidPen"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9560,6 +10113,9 @@
    "SpellDamage",
    "MagicPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "VoidPen"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9626,6 +10182,9 @@
    "Active",
    "SpellVamp"
   ],
+  "groupes": [
+   "{9c33c917}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9687,6 +10246,10 @@
    "Health",
    "Damage",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "{212a0d1a}",
+   "DisabledOnFIRSTBLOODMode"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9788,6 +10351,11 @@
    "OnHit",
    "MagicPenetration",
    "ArmorPenetration"
+  ],
+  "groupes": [
+   "{370ee665}",
+   "LastWhisper",
+   "VoidPen"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -9909,6 +10477,11 @@
    "Damage",
    "ArmorPenetration"
   ],
+  "groupes": [
+   "{c6c2af47}",
+   "{3fcdbdac}",
+   "{1e7a50ee}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -9954,6 +10527,9 @@
    "SpellDamage",
    "NonbootsMovement",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{456ece4e}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10019,6 +10595,10 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{b458712e}",
+   "{8875daa8}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10061,6 +10641,9 @@
   "categories": [
    "Health",
    "SpellDamage"
+  ],
+  "groupes": [
+   "{42600c7d}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10109,6 +10692,9 @@
    "AttackSpeed",
    "OnHit",
    "NonbootsMovement"
+  ],
+  "groupes": [
+   "{a9652bd0}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10190,6 +10776,10 @@
    "Damage",
    "CriticalStrike"
   ],
+  "groupes": [
+   "LifelineItems",
+   "{aa652d63}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10250,6 +10840,9 @@
    "CriticalStrike",
    "ArmorPenetration"
   ],
+  "groupes": [
+   "{ad65321c}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10295,6 +10888,9 @@
    "CooldownReduction",
    "ArmorPenetration",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "LastWhisper"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10360,6 +10956,9 @@
    "ArmorPenetration",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{b069b403}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10412,6 +11011,10 @@
    "CooldownReduction",
    "OnHit",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{5ea32161}",
+   "{8b55a7b3}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10494,6 +11097,10 @@
    "OnHit",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{6c3d4b05}",
+   "{8b55a7b3}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10575,6 +11182,9 @@
    "Tenacity",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{653d4000}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10649,6 +11259,9 @@
    "Health",
    "HealthRegen"
   ],
+  "groupes": [
+   "{a292a6ef}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10712,6 +11325,9 @@
    "LifeSteal",
    "SpellVamp",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "LifelineItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -10830,6 +11446,9 @@
    "Damage",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{0538eb90}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -10929,6 +11548,9 @@
    "SpellDamage",
    "CooldownReduction",
    "SpellVamp"
+  ],
+  "groupes": [
+   "{bb6bb679}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11045,6 +11667,9 @@
    "CooldownReduction",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{a7561e20}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11102,6 +11727,9 @@
    "Armor",
    "Damage"
   ],
+  "groupes": [
+   "{2da0f94a}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11140,6 +11768,9 @@
    "Health",
    "Damage",
    "Tenacity"
+  ],
+  "groupes": [
+   "LifelineItems"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11260,6 +11891,10 @@
    "AttackSpeed",
    "NonbootsMovement"
   ],
+  "groupes": [
+   "{ac94f544}",
+   "{3bbe1bdd}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11318,6 +11953,9 @@
    "NonbootsMovement",
    "Tenacity"
   ],
+  "groupes": [
+   "Quicksilver"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11365,6 +12003,9 @@
    "LifeSteal",
    "Slow",
    "OnHit"
+  ],
+  "groupes": [
+   "{973182a1}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11567,6 +12208,9 @@
    "SpellDamage",
    "MagicPenetration"
   ],
+  "groupes": [
+   "{bd7d02c0}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11608,6 +12252,9 @@
    "SpellBlock",
    "Armor",
    "MagicResist"
+  ],
+  "groupes": [
+   "{ac676f20}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11653,6 +12300,11 @@
    "SpellDamage",
    "Active"
   ],
+  "groupes": [
+   "BuildsFromStopwatchGroup",
+   "{9b3188ed}",
+   "{4c987493}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11690,6 +12342,9 @@
   "categories": [
    "Health",
    "Damage"
+  ],
+  "groupes": [
+   "{673b048f}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11746,6 +12401,9 @@
    "CriticalStrike",
    "ArmorPenetration"
   ],
+  "groupes": [
+   "LastWhisper"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -11792,6 +12450,10 @@
    "CooldownReduction",
    "OnHit",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "LegendaryClearingItems",
+   "{cf1a44c0}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -11907,6 +12569,10 @@
    "Damage",
    "OnHit"
   ],
+  "groupes": [
+   "LegendaryClearingItems",
+   "{cf1a44c0}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -12012,6 +12678,9 @@
    "Armor",
    "Damage",
    "AbilityHaste"
+  ],
+  "groupes": [
+   "{001c1988}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -12125,6 +12794,11 @@
    "Damage",
    "AttackSpeed",
    "Slow"
+  ],
+  "groupes": [
+   "{b45aafc5}",
+   "LegendaryClearingItems",
+   "{cf1a44c0}"
   ],
   "championRequis": null,
   "niveauRequis": null,
@@ -12250,6 +12924,10 @@
    "NonbootsMovement",
    "AbilityHaste"
   ],
+  "groupes": [
+   "{2dadc53d}",
+   "{8b55a7b3}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -12321,6 +12999,9 @@
    "Damage",
    "LifeSteal"
   ],
+  "groupes": [
+   "{23adb57f}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -12377,6 +13058,10 @@
    "CriticalStrike",
    "Damage"
   ],
+  "groupes": [
+   "{aca3ffce}",
+   "{0321bdeb}"
+  ],
   "championRequis": null,
   "niveauRequis": null,
   "stats": {
@@ -12415,6 +13100,10 @@
   "seConstruitEn": [],
   "categories": [
    "SpellDamage"
+  ],
+  "groupes": [
+   "{ac92b6ad}",
+   "{bbcc250a}"
   ],
   "championRequis": null,
   "niveauRequis": null,
