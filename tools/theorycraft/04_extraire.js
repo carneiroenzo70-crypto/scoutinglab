@@ -11,6 +11,7 @@ const DIR = path.join(__dirname, 'bin');
 // Le fichier de jeu, lui, stocke 7 entrées extrapolées : sans cette borne on
 // afficherait deux rangs d'ultime qui n'existent pas.
 const DD = require('./champFull.json').data;
+const SORTS = require('./sorts_modeles');
 
 const TOUCHES = ['Q', 'W', 'E', 'R'];
 const estDegats = n => /damage|dmg/i.test(n);
@@ -193,10 +194,35 @@ cibles.forEach(cible => {
       };
     });
 
+    /* Corrections déclarées (cf. sorts_modeles.js) : genre mal deviné, type absent de
+       l'infobulle, ou nombres vivant dans les DataValues sans calcul associé. Elles ne
+       remplacent jamais une valeur du fichier — elles complètent ce que l'extraction
+       automatique ne peut pas deviner, et chacune porte sa source. */
+    const corr = ((SORTS[cible.id] || {})[touche]) || {};
+    Object.entries(corr.genres || {}).forEach(([n, g]) => { if (calculs[n]) calculs[n].genre = g; });
+    Object.entries(corr.ajouter || {}).forEach(([n, def]) => {
+      const parRang = {};
+      let complet = true;
+      for (let r = 1; r <= nbRangs; r++) {
+        const termes = def.termes.map(t => {
+          const arr = t.dv ? ctx.dv[t.dv.toLowerCase()] : null;
+          if (t.dv && !arr) { complet = false; return null; }
+          const v = arr ? (arr[r] != null ? arr[r] : arr[arr.length - 1]) : t.valeur;
+          return { stat: t.stat, mode: t.mode, valeur: v * (t.echelle != null ? t.echelle : 1) };
+        });
+        parRang[r] = complet ? termes : null;
+      }
+      if (complet) calculs[n] = { genre: def.genre, parRang, source: corr.source || null };
+      else alertes.add('DataValue absente pour la correction ' + n);
+    });
+
     champ.sorts[touche] = {
       nomInterne: nom,
       nbRangs,
-      typeDegats: typeDeDegats(ddSpell),
+      typeDegats: corr.type || typeDeDegats(ddSpell),
+      sourceType: corr.type ? corr.source : (typeDeDegats(ddSpell) ? 'infobulle Data Dragon' : null),
+      nonExploitable: corr.nonExploitable || null,
+      noteCorrection: corr.note || null,
       cooldown: spell.cooldownTime || spell.Cooldown || null,
       /* Compétences à charges. Sans ces deux champs, le E de Rumble passe pour une
          compétence à 0,5 s de recharge — ces 0,5 s sont en réalité le délai entre deux

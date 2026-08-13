@@ -57,9 +57,13 @@ ligne('champions du panel', tous.length);
    (une ruée, un bouclier, un changement de posture) n'est pas une lacune : c'est un
    sort qui n'inflige rien. Les compter comme des trous gonflerait artificiellement
    le problème — et masquerait les vrais. */
-const sansType = [], sansCalcul = [];
+const sansType = [], sansCalcul = [], declaresHorsPortee = [];
 tous.forEach(x => ['Q', 'W', 'E', 'R'].forEach((t, i) => {
   const s = x.sorts[t]; if (!s) return;
+  /* Un sort DÉCLARÉ non exploitable n'est pas une lacune : c'est un refus assumé et
+     motivé (les deux « sorts » d'Aphelios sont des enveloppes d'infobulle). Le compter
+     comme un trou entretiendrait un chiffre faussement inquiétant. */
+  if (s.nonExploitable) { declaresHorsPortee.push(x.id + ' ' + t + ' — ' + s.nonExploitable); return; }
   const aDegats = Object.values(s.calculs).some(c => c.genre === 'degats');
   if (aDegats && !s.typeDegats) { sansType.push(x.id + ' ' + t); return; }
   if (!aDegats) {
@@ -74,6 +78,8 @@ ligne('  inflige des dégâts, TYPE non déterminé', sansType.length);
 if (sansType.length) console.log('      ' + sansType.join(', '));
 ligne('  dégâts annoncés, AUCUN calcul extrait', sansCalcul.length);
 if (sansCalcul.length) console.log('      ' + sansCalcul.join(', '));
+ligne('  déclarés hors portée, avec motif', declaresHorsPortee.length);
+if (declaresHorsPortee.length) declaresHorsPortee.forEach(x => console.log('      ' + x));
 const pct = Math.round((1 - (sansType.length + sansCalcul.length) / totalSorts) * 1000) / 10;
 ligne('couverture exploitable des sorts', pct + ' %');
 
@@ -81,8 +87,10 @@ console.log('\n══ CE QUE LE MODÈLE NE SAIT TOUJOURS PAS');
 [
   cv.sansModele.length + ' passifs d\'objet non modélisés (boucliers, soins, dissipations)',
   Object.keys(C.SANS_CADENCE).length + ' runes sans cadence déterminable (élimination, immobilisation)',
-  sansType.length + ' sorts dont le type de dégâts n\'est pas tranché : mitigation non appliquée',
-  sansCalcul.length + ' sorts dont la formule n\'est pas dans les fichiers publics',
+  (sansType.length + sansCalcul.length)
+    ? (sansType.length + sansCalcul.length) + ' sorts encore incomplets'
+    : 'aucune lacune de sort — les 11 de l\'audit précédent sont corrigées',
+  declaresHorsPortee.length + ' sorts déclarés hors portée, motif écrit',
   'les amplifications conditionnelles au placement ou au contrôle (4 objets)',
   'la classification soin / bouclier reste commune (`estSoin` couvre les deux)'
 ].forEach(x => console.log('  · ' + x));

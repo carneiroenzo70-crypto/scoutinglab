@@ -143,13 +143,32 @@ function evalPart(p, ctx, rang, prof, alertes) {
         if (!a) { alertes.add('DataValue absent: ' + p.mDataValue); return null; }
         coef = { n: a[rang] != null ? a[rang] : a[a.length - 1] };
       } else coef = evalPart(p.mSubpart, ctx, rang, prof + 1, alertes);
-      if (!coef || coef.n == null) return null;
+      if (!coef) return null;
+
       /* Index non prouvé = refus. Le mapper au hasard produirait un chiffre plausible
          et faux — c'est exactement ce qui est arrivé avec mStat 9. */
       const stat = STATS[p.mStat || 0];
       if (!stat) { alertes.add('mStat non identifié : ' + p.mStat); return null; }
       const mode = MODES[p.mStatFormula || 0] || 'base';
-      return { termes: [{ stat, mode, valeur: coef.n }] };
+
+      /* Coefficient SCALAIRE : le cas courant, « 0,8 × puissance ». */
+      if (coef.n != null) return { termes: [{ stat, mode, valeur: coef.n }] };
+
+      /* Coefficient qui porte lui-même des STATS : la formule n'est plus linéaire.
+         Le W de Twisted Fate en est l'exemple type —
+             chance de critique × (0,575 × (base + AD + AP))
+         — et il y en a d'autres. Ce cas retournait `null` SANS ALERTE : les six
+         calculs de la Carte bleue disparaissaient donc en silence, et le sort passait
+         pour « sans dégâts » alors que son infobulle en annonce.
+
+         On le représente par un terme PRODUIT : la stat multiplie la somme de
+         sous-termes, que `valeurTerme` évalue récursivement. Linéariser aurait été
+         faux ; refuser aurait perdu le sort. */
+      if (coef.termes && coef.termes.length)
+        return { termes: [{ stat, mode, valeur: 1, facteurTermes: coef.termes }] };
+
+      alertes.add('coefficient non évaluable pour ' + stat);
+      return null;
     }
 
     case 'ByCharLevelInterpolationCalculationPart':

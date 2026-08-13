@@ -373,7 +373,32 @@ function mitiger(brut, type, cible, attaquant, source, ctx = {}) {
 }
 
 /* ── 5. Évaluation d'un sort ────────────────────────────────────────────────────── */
-function valeurTerme(t, p) {
+function valeurTerme(t, p, cible) {
+  /* Pourcentage porté par la CIBLE, et non par le porteur. Trois sorts en dépendent
+     entièrement (Dr Mundo Q, Kalista W, Camille R) : leurs dégâts sont un pourcentage
+     des PV adverses. Sans cible, on REFUSE — servir le pourcentage nu donnerait « 0,25
+     point de dégâts » là où le jeu en inflige des centaines, l'erreur exacte déjà
+     rencontrée sur la Lame du roi déchu. */
+  if (t.stat === 'PVactuelsCible' || t.stat === 'PVmaxCible') {
+    if (!cible || cible.pvMax == null) return null;
+    const base = t.stat === 'PVmaxCible' ? cible.pvMax
+               : (cible.pvActuels != null ? cible.pvActuels : cible.pvMax);
+    return t.valeur * base;
+  }
+  /* Terme PRODUIT : la stat multiplie une somme de sous-termes, au lieu d'un simple
+     coefficient. Le W de Twisted Fate est le cas type — chance de critique × (base +
+     AD + AP). Ces formules ne sont pas linéaires ; les six calculs de sa Carte bleue
+     disparaissaient en silence faute de savoir les représenter. */
+  if (t.facteurTermes) {
+    let somme = 0;
+    for (const st of t.facteurTermes) {
+      const v = valeurTerme(st, p, cible);
+      if (v == null) return null;
+      somme += v;
+    }
+    const stat = valeurTerme({ stat: t.stat, mode: t.mode, valeur: 1 }, p, cible);
+    return stat == null ? null : stat * somme * (t.valeur != null ? t.valeur : 1);
+  }
   switch (t.stat) {
     case 'flat':
       if (t.mode === 'parNiveau') {
@@ -390,6 +415,16 @@ function valeurTerme(t, p) {
     /* Mana maximum — indispensable à Ryze, dont les quatre sorts en dépendent.
        `null` sur un champion à énergie : refuser vaut mieux que compter zéro. */
     case 'Mana': return p.mana == null ? null : t.valeur * p.mana;
+    /* Stats du porteur dont certaines formules de sort dépendent — la chance de coup
+       critique du W de Twisted Fate, la vitesse d'attaque de plusieurs passifs. Le
+       moteur d'objets les servait déjà ; les refuser ici privait le calculateur de
+       sorts entiers, sans que rien ne le signale. */
+    case 'Crit':              return t.valeur * (p.crit || 0);
+    case 'DegatsCrit':        return t.valeur * (p.degatsCrit || 0);
+    case 'Letalite':          return t.valeur * (p.letalite || 0);
+    case 'VitesseAttaque':    return t.valeur * (p.vitesseAttaque || 0);
+    case 'VitesseDeplacement': return t.valeur * (p.ms || 0);
+    case 'VolVie':            return t.valeur * (p.volVie || 0);
     default:    return null;                      // stat non gérée : on refuse, on n'invente pas
   }
 }
@@ -406,7 +441,7 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible, ctx = {}) {
 
   let brut = 0; const detail = [];
   for (const t of termes) {
-    const v = valeurTerme(t, p);
+    const v = valeurTerme(t, p, cible);
     if (v == null) return { ok: false, raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
     brut += v;
     detail.push({ part: t.stat === 'flat' ? 'base' : t.stat + (t.mode === 'bonus' ? ' bonus' : ''),

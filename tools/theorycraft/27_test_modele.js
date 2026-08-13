@@ -229,5 +229,67 @@ vrai('champion inconnu → null', M.statsChampion('Personne', 18) === null);
 const rate = M.evaluerCalcul('Jinx', 'Q', 'CalculQuiNExistePas', 1, p, cible);
 vrai('calcul inexistant refusé avec un motif', rate.ok === false && !!rate.raison, rate.raison);
 
+console.log('\n── Les 11 lacunes de l\'audit de couverture');
+/* Chaque correction est déclarée dans `sorts_modeles.js` avec sa source. Aucun NOMBRE
+   n'y est inventé : seuls le genre, le type et la base du pourcentage y sont dits. */
+const SORTS = require('./sorts_modeles');
+const cibleA = M.cibleChampion('Sion', 18, [3083, 3068]);
+
+/* 1. Formule NON LINÉAIRE — le W de Twisted Fate : chance de critique × (base+AD+AP).
+      Elle retournait `null` SANS ALERTE : les six calculs de la Carte bleue
+      disparaissaient, et le sort passait pour « sans dégâts ». */
+const tf = M.profil('TwistedFate', 18, [3031], { fenetre: 10 });
+const bd = M.evaluerCalcul('TwistedFate', 'W', 'BlueDamage', 5, tf, cibleA);
+vrai('le W de Twisted Fate se calcule enfin', bd.ok && bd.brut > 0,
+     bd.ok ? bd.brut + ' brut' : bd.raison);
+const termeProduit = M.champions.TwistedFate.sorts.W.calculs.BlueDamage.parRang['5']
+  .find(t => t.facteurTermes);
+vrai('  et son terme produit est conservé, pas linéarisé',
+     !!termeProduit && termeProduit.stat === 'Crit',
+     termeProduit ? 'chance de critique × (' + termeProduit.facteurTermes.length + ' sous-termes)' : '');
+/* Contre-épreuve : le terme produit doit VARIER avec la chance de critique. */
+const tfCrit = M.profil('TwistedFate', 18, [3031, 3036], { fenetre: 10 });
+vrai('  le résultat suit la chance de critique',
+     M.evaluerCalcul('TwistedFate', 'W', 'BlueDamage', 5, tfCrit, cibleA).brut > bd.brut,
+     'crit ' + tf.crit + ' → ' + tfCrit.crit);
+
+/* 2. Pourcentage des PV de la CIBLE — trois sorts en dépendent entièrement. */
+[['DrMundo', 'Q', 'CurrentHealthDamage', 5, 'actuels'],
+ ['Kalista', 'W', 'MaxHealthDamage', 5, 'max']].forEach(([c, t, n, r, base]) => {
+  const pr = M.profil(c, 18, [], { fenetre: 10 });
+  const e = M.evaluerCalcul(c, t, n, r, pr, cibleA);
+  vrai(c + ' ' + t + ' : % des PV ' + base + ' de la cible', e.ok && e.brut > 100,
+       e.ok ? e.brut + ' brut sur une cible à ' + Math.round(cibleA.pvMax) + ' PV' : e.raison);
+});
+/* Sans cible, ces sorts doivent REFUSER : servir le pourcentage nu donnerait
+   « 0,3 point de dégâts » là où le jeu en inflige mille. */
+vrai('  sans cible fournie, le calcul est refusé plutôt que servi nu',
+     M.evaluerCalcul('DrMundo', 'Q', 'CurrentHealthDamage', 5,
+                     M.profil('DrMundo', 18, [], { fenetre: 10 }), null).ok === false);
+
+/* 3. Genre mal deviné : `ADRatioBonus` ne contient pas « damage ». */
+vrai('la Roulade de Vayne est reclassée en dégâts',
+     M.champions.Vayne.sorts.Q.calculs.ADRatioBonus.genre === 'degats');
+vrai('  et son type vient de l\'infobulle française',
+     M.champions.Vayne.sorts.Q.typeDegats === 'physique',
+     M.champions.Vayne.sorts.Q.sourceType || '');
+
+/* 4. Types vérifiés sur le wiki, valeurs gardées du FICHIER. */
+[['Ashe', 'Q', 'physique'], ['Jayce', 'R', 'magique'],
+ ['RekSai', 'W', 'magique'], ['Yunara', 'R', 'magique']].forEach(([c, t, ty]) => {
+  vrai(c + ' ' + t + ' : type ' + ty, M.champions[c].sorts[t].typeDegats === ty);
+});
+/* Le piège du wiki : ses tableaux mêlent des lignes d'HISTORIQUE de patch. Sur Rek'Sai
+   il annonce 50/75/100/125/150 ; le fichier donne 30/55/80/105/130. Le fichier prime. */
+verifie('Rek\'Sai W garde les valeurs du FICHIER, pas celles du wiki',
+        M.champions.RekSai.sorts.W.calculs.UnburrowDamage.parRang['1'][0].valeur, 30, 0.01);
+
+/* 5. Ce qui n'est PAS un sort est refusé explicitement, pas deviné. */
+vrai('les enveloppes d\'infobulle d\'Aphelios sont déclarées hors portée',
+     !!M.champions.Aphelios.sorts.Q.nonExploitable,
+     M.champions.Aphelios.sorts.Q.nonExploitable);
+vrai('chaque correction porte sa source', Object.values(SORTS).every(c =>
+     Object.values(c).every(s => s.source || s.nonExploitable)));
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);
