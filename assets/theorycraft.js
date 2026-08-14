@@ -1,7 +1,7 @@
 /* VisionScore — moteur de theorycraft, version navigateur.
    GÉNÉRÉ par tools/theorycraft/50_bundle_navigateur.js — ne pas éditer à la main.
    Toute correction se fait dans les modules source, puis on relance le script :
-   c'est ce qui garantit que le produit et les 435 vérifications parlent du même code.
+   c'est ce qui garantit que le produit et les 460 vérifications parlent du même code.
    Données Data Dragon 16.16.1. */
 (function (racine) {
   'use strict';
@@ -17209,593 +17209,804 @@
   d["./03_resolveur.js"] = d["./03_resolveur"];
 
   d["./items_modeles"] = function (module, exports, require) {
-    /* Modèles de comportement des passifs d'objet.
-    
-       Même séparation que `runes_modeles.js`, et pour la même raison : ici on décrit
-       UNIQUEMENT le comportement (quand ça se déclenche, sur quoi porte le pourcentage,
-       quel type de dégâts). Les NOMBRES restent lus dans `items.json`, extrait du fichier
-       de jeu. Un patch qui fait passer la Dent de Nashor de 15 à 20 se propage donc tout
-       seul ; seuls les remaniements de mécanique demandent une reprise.
-    
-       Ce fichier n'invente RIEN : chaque entrée pointe une clé existante du fichier de
-       jeu. Un objet sans entrée ici n'est pas appliqué aux dégâts — il est compté comme
-       non modélisé, pas approximé. C'est la leçon de `SiphonDamage`, une clé résiduelle
-       du fichier que j'avais prise pour un effet vivant : ne servir que ce qu'on a
-       délibérément vérifié.
-    
-       Champs :
-         nom          libellé du passif tel qu'il apparaît en jeu
-         effet        'degats' | 'soin' | 'bouclier' | 'stat' | 'multiplicateur'
-         statsAccordees      [{ stat, calcul }] ou [{ stat, valeur, base }] — s'AJOUTE au profil
-         multiplicateursStat [{ stat, portee, valeur }] — MULTIPLIE une stat du profil
-         phase        'avant' | 'apres' — de part et d'autre des stats accordées
-         typeDegats   'physique' | 'magique' | 'brut'
-         declencheur  { type: 'coupAImpact' }        à chaque attaque de base
-                      { type: 'apresCompetence', recharge: 'clé' }   lame enchantée
-                      { type: 'competence' }         à chaque compétence blessante
-                      { type: 'periodique', ... }    brûlure
-         calcul       nom du calcul résolu dans items.json (prioritaire)
-         valeur       à défaut, clé de `valeurs` (nombre simple)
-         surCible     true = le pourcentage porte sur la CIBLE, pas sur le porteur
-         distance     { facteur: 'clé' } ou { calcul: 'autreCalcul' } — version à distance
-         plafond      { cle: 'clé', contre: 'monstres' }
-         note         ce que le modèle NE couvre pas, dit explicitement                    */
-    
-    module.exports = {
-    
-      /* ── Coups à l'impact : s'ajoutent à CHAQUE attaque de base ─────────────────── */
-    
-      3153: { // Lame du roi déchu — Fil de brume
-        nom: 'Fil de brume', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'coupAImpact' },
-        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
-        /* ⚠ Le pourcentage porte sur les PV ACTUELS de la CIBLE (wiki : « current
-           health »), pas sur les PV max du porteur. Le confondre change tout : contre
-           une cible à 30 % de vie, l'effet est trois fois plus faible. */
-        surCible: 'pvActuels',
-        plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },
-        note: 'le ralentissement cumulable (Ombres griffues) n\'est pas modélisé'
-      },
-    
-      3115: { // Dent de Nashor — Morsure d'Icathia
-        nom: 'Morsure d\'Icathia', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'coupAImpact' }, calcul: 'TotalOnHitDamage'
-      },
-    
-      3091: { // Au bout du rouleau — Conflit
-        nom: 'Conflit', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage'
-      },
-    
-      3302: { // Terminus — Ombre
-        nom: 'Ombre', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage',
-        note: 'Juxtaposition (alternance lumière/ténèbres, résistances et pénétration ' +
-              'cumulables) n\'est pas modélisée'
-      },
-    
-      3124: { // Lame enragée de Guinsoo — Courroux
-        nom: 'Courroux', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'coupAImpact' }, valeur: 'OnHitDamage',
-        note: 'Frappe furieuse (cumuls de vitesse d\'attaque, puis coups dédoublés) ' +
-              'n\'est pas modélisée — l\'objet est donc sous-estimé'
-      },
-    
-      3748: { // Hydre titanesque — Fendoir
-        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamageCalc',
-        /* Le facteur « à distance » est porté par le calcul lui-même (mRangedMultiplier),
-           déjà résolu à l'extraction : moitié de l'effet. Vérifié sur le wiki :
-           1 % en mêlée, 0,5 % à distance. */
-        note: 'les dégâts de cône (3 % des PV max) ne touchent que des cibles ' +
-              'supplémentaires : hors du calcul en cible unique'
-      },
-    
-      6698: { // Hydre profane — Fendoir
-        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'coupAImpact' }, calcul: 'CleaveDamage',
-        note: 'Balayage hérétique (l\'actif) n\'est pas modélisé'
-      },
-    
-      3181: { // Brise-coques — Pilote
-        nom: 'Pilote', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'toutesNAttaques', n: 5 }, calcul: 'MaxStackDamage',
-        distance: { calculValeur: 'RangedSkipperADRatio' },
-        note: 'les dégâts contre les structures sont ignorés'
-      },
-    
-      3074: { // Hydre vorace — Fendoir
-        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'coupAImpact' },
-        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
-        note: 'Croissant vorace (l\'actif) n\'est pas modélisé'
-      },
-    
-      6631: { // Estropieur — Fendoir
-        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'coupAImpact' },
-        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },
-        note: 'Onde de choc entravante (l\'actif) n\'est pas modélisée'
-      },
-    
-      6672: { // Tueur de krakens — Trempe
-        nom: 'Trempe', effet: 'degats', typeDegats: 'brut',
-        /* Un coup sur trois seulement : compté comme tel dans les dégâts par seconde,
-           et surtout PAS ajouté à chaque attaque. */
-        declencheur: { type: 'toutesNAttaques', n: 3 }, calcul: 'DamageAmount',
-        distance: { facteur: 'RangedDamageMultiplier' },
-        note: 'l\'amplification selon les PV manquants de la cible n\'est pas appliquée : ' +
-              'valeur de plancher, cible à pleine vie'
-      },
-    
-      /* ── Lame enchantée : la prochaine attaque APRÈS une compétence ─────────────── */
-    
-      3078: { // Force de la trinité — Lame enchantée
-        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
-        calcul: 'SpellbladeDamage'
-      },
-    
-      2510: { // Aube et crépuscule — Lame enchantée
-        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
-        calcul: 'SpellbladeDamage',
-        note: 'le soin associé (SpellbladeHealing) n\'est pas compté dans les dégâts'
-      },
-    
-      3508: { // Faux spectrale — Lame enchantée
-        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
-        calcul: 'SpellbladeDamage',
-        note: 'le rendu de mana n\'est pas modélisé'
-      },
-    
-      3100: { // Fléau de liche — Lame enchantée
-        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
-        calcul: 'SpellbladeDamage'
-      },
-    
-      6662: { // Gantelet givrant — Lame enchantée
-        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },
-        calcul: 'SpellbladeDamage',
-        note: 'le champ de ralentissement n\'est pas modélisé'
-      },
-    
-      /* ── Attaques énergisées : à intervalle, pas à chaque coup ──────────────────── */
-    
-      3094: { // Canon ultrarapide — Sniper
-        nom: 'Sniper', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'energise' }, valeur: 'BonusDamage',
-        note: 'l\'énergie se charge en se déplaçant et en attaquant : le rythme réel ' +
-              'dépend du déplacement, non modélisé'
-      },
-    
-      3087: { // Poignard de Statikk — Étincelle électrique
-        nom: 'Étincelle électrique', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'energise' }, valeur: 'ChainDamage',
-        note: 'la chaîne touche plusieurs cibles : ici seule la première est comptée'
-      },
-    
-      /* ── Brûlures et effets périodiques ─────────────────────────────────────────── */
-    
-      6653: { // Tourment de Liandry — Souffrance
-        nom: 'Souffrance', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'periodique', duree: 'BurnDuration' },
-        valeur: 'BurnPercentHealthDamage', surCible: 'pvMax',
-        parSeconde: true,
-        plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },
-        note: 'l\'amplification progressive (jusqu\'à +6 % en combat prolongé) n\'est ' +
-              'pas appliquée ici'
-      },
-    
-      2503: { // Torche noire — Flamme funèbre
-        nom: 'Flamme funèbre', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'periodique', duree: 'BurnDuration' },
-        calcul: 'BurnDamagePerSecondCalc', parSeconde: true,
-        note: 'Feu noir (+4 % de puissance par champion brûlé) n\'est pas modélisé'
-      },
-    
-      3068: { // Égide solaire — Immolation
-        /* 20 + 1,5 % des PV bonus, une fois par seconde. Le fichier porte trois calculs
-           identiques (`DamagePerTick`, `DPS`, un hachage) et deux clés explicitement
-           marquées TOOLTIPONLY qui donnent les mêmes 20 et 1,5 : concordance interne
-           complète, on prend le calcul et non l'infobulle. */
-        nom: 'Immolation', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'periodique', duree: 'AuraDuration' },
-        calcul: 'DamagePerTick', parSeconde: true,
-        note: 'aura de zone : contre plusieurs ennemis, le total réel est un multiple ' +
-              'de ce chiffre ; les modificateurs sbires (×0,5) et monstres (×0,8) ne ' +
-              's\'appliquent pas à un champion'
-      },
-    
-      2502: { // Désespoir infini — Affliction
-        /* « Toutes les 4 sec de combat » : ce n'est ni un coup à l'impact ni du continu,
-           d'où un déclencheur à intervalle propre. 3 % des PV bonus, ce que confirme
-           `BonusHealthDrainPercentage` = 0,03. */
-        nom: 'Affliction', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'intervalle', recharge: 'Cooldown' },
-        calcul: 'DrainCalc',
-        note: 'le soin associé (250 % des dégâts) n\'est pas compté dans les dégâts'
-      },
-    
-      3084: { // Cœuracier — Consommation colossale
-        /* 70 + 6 % des PV MAX — la description l'écrit noir sur blanc, et le calcul le
-           confirme au chiffre près. Une fois par cible toutes les 30 s : hors de question
-           de l'ajouter à chaque attaque. */
-        nom: 'Consommation colossale', effet: 'degats', typeDegats: 'physique',
-        declencheur: { type: 'intervalle', recharge: 'PerTargetCooldown' },
-        calcul: 'DamageProcCalc',
-        note: 'les PV max gagnés au passage (10 % des dégâts) ne sont pas modélisés ; ' +
-              'la proximité requise (6 relevés, 700 unités) est supposée acquise'
-      },
-    
-      /* ── Actifs ─────────────────────────────────────────────────────────────────
-         Ils ne se déclenchent pas seuls : c'est le joueur qui les lance, avec une longue
-         recharge. Comptés à part des dégâts automatiques, jamais fondus dedans. */
-    
-      3152: { // Ceinture-roquette Hextech — Supersonique
-        nom: 'Supersonique', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'FireboltDamage'
-      },
-    
-      3146: { // Pistolame Hextech — Orbe de foudre
-        nom: 'Orbe de foudre', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'ActiveDamage',
-        note: 'le ralentissement (25 % pendant 1,5 s) n\'est pas modélisé'
-      },
-    
-      /* ── Dégâts liés aux compétences ────────────────────────────────────────────── */
-    
-      6655: { // Écho de Luden — Écho
-        nom: 'Écho', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'competence', recharge: 'Cooldown' },
-        calcul: 'SingleTargetMax',
-        note: 'valeur en cible unique (les 6 échos concentrés) ; en combat groupé ' +
-              'ils se répartissent'
-      },
-    
-      /* ── Objets à passif défensif ou utilitaire, sans dégâts à ajouter ──────────── */
-    
-      3097: { // Lame tempête — Éclair
-        nom: 'Éclair', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'energise' }, calcul: 'TotalProcDamage'
-      },
-    
-      /* ── Passifs qui ACCORDENT DES STATS ────────────────────────────────────────
-         Catégorie à part, et la plus lourde de conséquences : ils ne s'ajoutent pas aux
-         dégâts, ils modifient le PROFIL — donc tous les ratios de sorts, toutes les
-         attaques, tout ce qui suit. Le Manamune sur Ryze, c'est plus de 30 dégâts
-         d'attaque invisibles si on ne les compte pas.
-         `statsAccordees` est lu par `profil()` avant tout autre calcul. */
-    
-      3004: { // Manamune — Effroi
-        nom: 'Effroi', effet: 'stat',
-        statsAccordees: [{ stat: 'ad', calcul: 'BonusADFromMana' }],
-        note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis transformation en ' +
-              'Muramana) n\'est pas modélisé — valeur de départ uniquement'
-      },
-    
-      3053: { // Gage de Sterak — Griffes qui happent
-        nom: 'Griffes qui happent', effet: 'stat',
-        statsAccordees: [{ stat: 'ad', calcul: 'BonusAD' }],
-        note: 'le bouclier Lien vital (60 % des PV bonus) n\'est pas compté dans les dégâts'
-      },
-    
-      3003: { // Bâton de l'archange — Effroi
-        /* « Vous gagnez de la puissance équivalente à 1 % de votre mana BONUS » : le
-           fichier ne porte que le pourcentage, la base vient de la description. Compter
-           le mana total au lieu du mana bonus donnerait +10 de puissance imaginaires
-           à Ryze au niveau 18. */
-        nom: 'Effroi', effet: 'stat',
-        statsAccordees: [{ stat: 'ap', valeur: 'APFromMana', base: 'manaBonus' }],
-        note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis Sablier de Seraph) ' +
-              'n\'est pas modélisé — valeur de départ uniquement'
-      },
-    
-      3119: { // Approche de l'hiver — Effroi
-        /* La boutique n'imprime pas la valeur (gabarit non résolu). Le fichier, lui, est
-           sans ambiguïté : `BonusHPFromMana` = 15 % du mana TOTAL en PV bonus. */
-        nom: 'Effroi', effet: 'stat', ordre: -1,
-        statsAccordees: [{ stat: 'pv', calcul: 'BonusHPFromMana' }],
-        note: 'Flux de mana (jusqu\'à +360 de mana, puis Fimbulvetr) n\'est pas modélisé'
-      },
-    
-      2501: { // Armure sanguine — Tyrannie
-        /* `ordre: 1` — ce passif LIT les PV bonus, il doit donc passer après ceux qui en
-           accordent (l'Approche de l'hiver en donne 15 % du mana). Sans cet ordre, les
-           PV gagnés par un autre objet ne se convertiraient jamais en dégâts. */
-        ordre: 1,
-        /* Pas de `mItemCalculations` pour ce passif : le fichier ne porte que le
-           pourcentage brut. On déclare donc explicitement la BASE sur laquelle il
-           s'applique — « 2,5 % de vos PV bonus », d'après la description en jeu. */
-        nom: 'Tyrannie', effet: 'stat',
-        statsAccordees: [{ stat: 'ad', valeur: 'HPToADPercentage', base: 'pvBonus' }],
-        note: 'Représailles (jusqu\'à +12 % de dégâts d\'attaque selon les PV manquants) ' +
-              'n\'est pas appliqué : cible et porteur sont supposés à pleine vie, donc 0'
-      },
-    
-      /* ── Accélération d'ULTIME ───────────────────────────────────────────────────
-         Une stat à part entière, et qui n'existait nulle part dans le modèle : trois objets
-         finis la portent, dans `valeurs.UltimateHaste`, et Data Dragon ne la publie pas.
-         Elle ne réduit QUE la recharge de l'ultime — la verser dans l'accélération générale
-         accélérerait aussi Q, W et E, soit quatre fois son effet réel.
-    
-         C'est aussi le premier cas de `statsAccordees` sans base : la clé porte un montant
-         plat (30), pas une proportion d'une stat du porteur. */
-    
-      2512: { // Chasseur de monstres — Veille de nuit
-        nom: 'Veille de nuit', effet: 'stat',
-        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
-        note: 'Barrage d\'ouverture (3 attaques renforcées après l\'ultime) n\'est pas modélisé'
-      },
-    
-      3073: { // Hexplaque expérimentale — Charge Hextech
-        nom: 'Charge Hextech', effet: 'stat',
-        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
-        note: 'Surcharge (vitesse d\'attaque et de déplacement après l\'ultime) n\'est pas modélisée'
-      },
-    
-      /* ── Passifs qui MULTIPLIENT une stat ───────────────────────────────────────
-         Troisième catégorie, distincte des deux précédentes, et purement arithmétique :
-         ils ne s'ajoutent ni aux dégâts ni au profil sous forme de montant fixe — ils
-         appliquent un POURCENTAGE à une stat déjà constituée.
-    
-         L'ordre est donc capital, et c'est ce qui justifie le champ `phase` :
-           'avant' — la base ne dépend que des objets (les PV d'objets de Warmog, les
-                     résistances bonus de Jak'Sho) : on multiplie AVANT les passifs qui
-                     accordent des stats, puisque ceux-ci lisent le résultat (l'Armure
-                     sanguine convertit les PV bonus — Warmog compris — en dégâts).
-           'apres' — la base est la stat TOTALE (la Coiffe de Rabadon) : elle doit
-                     englober tout ce que les autres passifs ont accordé, donc en dernier.
-         Se tromper de phase, c'est perdre ou compter deux fois un pourcentage entier. */
-    
-      3089: { // Coiffe de Rabadon — Opus magique
-        nom: 'Opus magique', effet: 'multiplicateur', phase: 'apres',
-        /* « Vous augmentez votre puissance totale de 30 % » — totale, pas bonus : la
-           puissance de base des champions étant nulle, la distinction n'a d'effet que si
-           un autre passif en accorde, mais la coder juste coûte le même prix.
-           Objet PRÉSENT dans les builds de référence et jusqu'ici non appliqué : la
-           puissance de ces builds était sous-estimée de 30 %. */
-        multiplicateursStat: [{ stat: 'ap', portee: 'total', valeur: 'APAmp' }]
-      },
-    
-      6665: { // Jak'Sho, le Protéiforme — Vigueur de Néantin
-        nom: 'Vigueur de Néantin', effet: 'multiplicateur', phase: 'avant',
-        /* « armure et résistance magique BONUS » : la base du champion n'est pas
-           multipliée. Le lire « total » gonflerait l'effet de moitié au niveau 18. */
-        multiplicateursStat: [
-          { stat: 'armure', portee: 'bonus', valeur: 'BonusResistPercentage' },
-          { stat: 'rm',     portee: 'bonus', valeur: 'BonusResistPercentage' }
-        ],
-        condition: { apresSecondes: 5, libelle: 'après 5 s de combat contre des champions' },
-        note: 'ne s\'applique qu\'après 5 s de combat : compté seulement sur les fenêtres ' +
-              'd\'au moins 5 s, et sans effet sur les dégâts infligés (stats défensives)'
-      },
-    
-      3083: { // Armure de Warmog — Vitalité de Warmog
-        nom: 'Vitalité de Warmog', effet: 'multiplicateur', phase: 'avant',
-        /* « 12 % de vos PV d'OBJETS » — ni les PV de base, ni ceux des runes. D'où la
-           portée `objets`, distincte de `bonus` : sur un champion niveau 18 l'écart
-           entre les deux se compte en centaines de PV. */
-        multiplicateursStat: [{ stat: 'pv', portee: 'objets', valeur: 'HPAmp' }],
-        note: 'Cœur de Warmog (régénération hors combat) n\'entre pas dans un calcul de combat'
-      },
-    
-      /* ── Boucliers ──────────────────────────────────────────────────────────────── */
-    
-      3156: { // Gueule de Malmortius — Lien vital
-        nom: 'Lien vital', effet: 'bouclier',
-        declencheur: { type: 'seuilPV', seuil: 'LowHealthThreshold', recharge: 'Cooldown' },
-        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }
-      },
-    
-      6673: { // Arc-bouclier immortel
-        nom: 'Lien vital', effet: 'bouclier',
-        declencheur: { type: 'seuilPV', seuil: 'HealthThreshold', recharge: 'Cooldown' },
-        calcul: 'ShieldAmount'
-      },
-    
-      2504: { // Rookern kaénique — Fléau des mages
-        nom: 'Fléau des mages', effet: 'bouclier',
-        declencheur: { type: 'horsCombat', duree: 'OutOfCombatDuration' },
-        calcul: 'ShieldCalc',
-        /* Bouclier ANTI-MAGIE uniquement : il n'absorbe rien de physique. Le compter comme
-           un bouclier ordinaire doublerait sa valeur face à un adversaire à dégâts mixtes. */
-        contre: 'magique',
-        note: 'exige 15 s sans subir de dégâts magiques'
-      },
-    
-      3072: { // Soif-de-sang — Bouclier d'ichor
-        nom: 'Bouclier d\'ichor', effet: 'bouclier',
-        declencheur: { type: 'volVieExcedentaire', seuil: 'Threshold' },
-        calcul: 'OvershieldCalc',
-        note: 'plafond du bouclier ; il se remplit du vol de vie excédentaire au-delà de ' +
-              '70 % des PV, un rythme que le modèle ne connaît pas'
-      },
-    
-      6692: { // Éclipse — Lune ascendante
-        /* Aucun `mItemCalculations` : les nombres vivent dans les DataValues, comme pour
-           trois sorts de champion. On déclare donc les termes, sans en inventer aucun —
-           150 de base + 40 % de l'AD bonus, moitié à distance (`RangedShieldMult`). */
-        nom: 'Lune ascendante', effet: 'bouclier',
-        declencheur: { type: 'deuxFrappes', fenetre: 'WindowDuration', recharge: 'Cooldown' },
-        termesDeclares: [
-          { stat: 'flat', mode: 'flat', cle: 'MeleeBaseShield' },
-          { stat: 'AD', mode: 'bonus', cle: 'MeleeBonusADShieldRatio' }
-        ],
-        distance: { facteur: 'RangedShieldMult' },
-        note: 'la part en pourcentage des PV max (MeleePercMaxHP) concerne les dégâts de ' +
-              'Lune ascendante, pas le bouclier'
-      },
-    
-      6664: { // Rayonnement du vide — Immolation
-        /* Même famille que l'Égide solaire, chiffres différents : 15 + 1 % des PV bonus.
-           Les deux clés TOOLTIPONLY (10 et 1,75) NE correspondent PAS au calcul (15 et 1) :
-           on sert le calcul, qui est ce que le jeu applique, et on le dit ici plutôt que
-           de choisir en silence le chiffre le plus flatteur. */
-        nom: 'Immolation', effet: 'degats', typeDegats: 'magique',
-        declencheur: { type: 'periodique', duree: 'AuraDuration' },
-        calcul: 'DamagePerTick', parSeconde: true,
-        note: 'aura de zone ; Désolation (dégâts à l\'élimination) n\'est pas modélisée. ' +
-              'Les clés TOOLTIPONLY du fichier (10 + 1,75 %) contredisent son propre ' +
-              'calcul (15 + 1 %) : c\'est le calcul qui est servi'
-      },
-    
-      /* ── AMPLIFICATIONS : elles ne s'ajoutent pas aux dégâts, elles les multiplient ──
-    
-         Longtemps écartées faute de savoir où les brancher. Deux points ont dû être
-         vérifiés sur le wiki officiel avant d'écrire une ligne, et aucun des deux n'était
-         devinable :
-    
-         1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to
-            damage dealt now stack additively instead of multiplicatively ». C'est l'inverse
-            exact des pénétrations en pourcentage. Deux amplifications de 10 % donnent donc
-            +20 %, pas +21 %. Supposer la symétrie avec les pénétrations aurait été le
-            raisonnement naturel, et il aurait été faux.
-         2. Tueur de géants n'est PLUS limité aux dégâts physiques depuis la V13.10 :
-            « deal increased damage », tous types confondus.
-    
-         Champs : `portee` (à quelle SOURCE de dégâts ça s'applique), `types` (à quels types
-         de dégâts), et la façon dont le pourcentage se constitue (`montee`, `cumuls`,
-         `selonPVbonusCible`, `seuilPVCible`). */
-    
-      4633: { // Créateur de failles — Corruption du Néant + Infusion du Néant
-        nom: 'Corruption du Néant', effet: 'amplification',
-        /* « Pour chaque seconde passée en combat, vous infligez 2 % de dégâts bonus
-           (jusqu'à 8 %) » — tous types, toutes sources. Le plafond est atteint en 4 s
-           (`SecondsInCombat`), ce que confirme le rapport 0,08 / 0,02. */
-        amplification: {
-          portee: 'tous',
-          montee: { parSeconde: 'EternityDamageIncreasePerSecond',
-                    plafond: 'EternityDamageIncreaseMax' }
-        },
-        /* Second passif, indépendant : « Vous gagnez de la puissance équivalente à 2 % de
-           vos PV bonus ». Sans plafond d'après le wiki — la clé `MaxAPMultiplier` (0,05)
-           du fichier n'est corroborée nulle part, elle n'est donc PAS appliquée. */
-        statsAccordees: [{ stat: 'ap', calcul: '{1247259a}' }],
-        note: 'l\'omnivampirisme au plafond n\'est pas modélisé ; la clé MaxAPMultiplier ' +
-              'du fichier n\'est expliquée ni par la boutique ni par le wiki : non appliquée'
-      },
-    
-      3161: { // Lance de Shojin — Détermination inflexible
-        nom: 'Détermination inflexible', effet: 'amplification',
-        /* 3 % par cumul, 4 cumuls, sur les dégâts de COMPÉTENCE. Le wiki y ajoute les
-           dégâts de familier et de proc — d'où la portée `competences`, qui couvre aussi
-           les passifs d'objet.
-           ⚠ Désaccord assumé : le résumé du wiki dit « pas de distinction à distance »,
-           mais le fichier porte DEUX calculs vivants et cohérents entre eux
-           (MeleeItemCalcValue = 3, RangedItemCalcValue = 1,5) plus RangedMod = 0,5.
-           Le fichier de jeu prime ; la moitié est donc appliquée aux champions à distance. */
-        amplification: {
-          portee: 'competences', unite: 'pourcent', cumuls: 'StackCount',
-          calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }
-        },
-        note: 'cumuls supposés au maximum (4) : valeur de combat engagé, pas d\'ouverture'
-      },
-    
-      8020: { // Masque abyssal — Anéantissement
-        nom: 'Anéantissement', effet: 'amplification',
-        amplification: { portee: 'tous', types: ['magique'], valeur: 'DamageAmp' },
-        note: 'c\'est un affaiblissement porté PAR LA CIBLE : il profite aussi aux alliés ' +
-              'proches, ce que ce calcul en cible unique ne compte pas'
-      },
-    
-      3036: { // Salutations de Dominik — Tueur de géants
-        nom: 'Tueur de géants', effet: 'amplification',
-        /* « jusqu'à 15 % selon les PV BONUS de la cible, maximum à 1500 ». Dépend donc de
-           l'adversaire, pas du porteur : contre une cible sans PV bonus, l'effet est nul.
-           Tous types de dégâts depuis la V13.10 (vérifié) — le lire « physique » aurait
-           sous-estimé les builds hybrides. */
-        amplification: {
-          portee: 'tous',
-          selonPVbonusCible: { max: 'MaxBonusDamagePercent', plafondPV: 'MaxBonusHealth' }
-        }
-      },
-    
-      4645: { // Flamme-ombre — Floraicendre
-        nom: 'Floraicendre', effet: 'amplification',
-        /* +20 % sur les dégâts magiques et bruts, uniquement sous 40 % des PV de la cible.
-           La cible étant supposée à pleine vie par défaut, l'amplification vaut alors
-           zéro et le dit : c'est un plancher assumé, jamais une moyenne inventée. */
-        amplification: {
-          portee: 'tous', types: ['magique', 'brut'],
-          valeur: 'SpellItemDamageAmp', seuilPVCible: 'HealthThreshold'
-        }
-      },
-    
-      /* Amplifications réelles mais non déterminables ici : elles dépendent d'un état que
-         le modèle ne connaît pas (position, contrôle appliqué, élimination récente).
-         Les servir à leur valeur maximale gonflerait les builds qui les portent. */
-      2523: { nonApplique: 'jusqu\'à +10 % selon la DISTANCE à la cible : dépend du ' +
-                           'placement, que le modèle ne connaît pas' },
-      4628: { nonApplique: '+10 % après avoir touché à 600 unités au moins : dépend du ' +
-                           'placement et d\'une recharge de 30 s' },
-      4005: { nonApplique: '+7 % de vulnérabilité après avoir immobilisé la cible : ' +
-                           'dépend du kit du champion, hors du modèle d\'objets' },
-      6697: { nonApplique: 'AD gagnés à l\'élimination d\'un champion : dépend du déroulé ' +
-                           'de la partie (SpellMaxAmp vaut 0 dans le fichier)' },
-    
-      /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ──────────────────────────────────
-         Cinquième catégorie. Elle n'ajoute aucun dégât et n'amplifie rien : elle abaisse
-         l'armure ou la résistance magique de l'adversaire, donc TOUT ce qui le frappe
-         ensuite — y compris les dégâts des alliés.
-    
-         ⚠ Réduction ≠ pénétration, et l'ordre n'est pas commutatif : la réduction
-         s'applique AVANT la pénétration (cf. `resistEffective`). Confondre les deux
-         donnerait un chiffre faux dès qu'un build porte les deux, ce qui est le cas
-         courant (Couperet noir + Salutations de Dominik). */
-    
-      3071: { // Couperet noir — Découpage
-        nom: 'Découpage', effet: 'reduction',
-        /* 6 % par cumul, 5 cumuls = 30 % d'armure en moins. Vérifié sur le wiki.
-           ⚠ Le `RangedMod: 0.5` du fichier ne porte PAS sur le découpage : il modifie la
-           vitesse de déplacement de Ferveur, comme le montre `MSBonusSplit` (20 avec un
-           facteurDistance de 0,5). Le lire comme un demi-découpage à distance aurait été
-           l'erreur symétrique de celle évitée sur la Lance de Shojin — où, elle, la
-           version à distance existe bel et bien sous forme de second calcul. */
-        reduction: { resistance: 'armure', mode: 'pourcent',
-                     valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'physique' },
-        note: 'cumuls supposés au maximum ; le wiki précise que la première instance de ' +
-              'dégâts n\'en profite pas encore, ce détail n\'est pas modélisé'
-      },
-    
-      8010: { // Malédiction du sanguinaire — Vile décomposition
-        nom: 'Vile décomposition', effet: 'reduction',
-        reduction: { resistance: 'rm', mode: 'pourcent',
-                     valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'magique' },
-        note: 'cumuls supposés au maximum (4 × 7,5 % = 30 %)'
-      },
-    
-      3118: { // Malfaisance — Brouillard de haine
-        nom: 'Brouillard de haine', effet: 'reduction',
-        /* Réduction PLATE de 10, et non un pourcentage : le calcul du fichier donne 10 sec
-           et le wiki confirme « reduces their magic resistance by 10 ». La lire en
-           pourcentage aurait donné 10 % — trois fois moins sur une cible à 100 de RM. */
-        reduction: { resistance: 'rm', mode: 'plat', calcul: 'MagicResistanceShred',
-                     condition: { apresUltime: true, libelle: 'après avoir touché avec l\'ultime' } },
-        /* Mépris : +20 d'accélération d'ULTIME, inconditionnelle. Un objet peut donc porter
-           à la fois une réduction de résistance et un gain de stat — les deux catégories
-           sont lues indépendamment. */
-        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],
-        note: 'les dégâts de zone du sol brûlé ne sont pas comptés en cible unique'
-      },
-    
-      /* Boucliers réels mais non chiffrables ici. */
-      3190: { nonApplique: 'Dévotion : le bouclier (290 à 360 PV) est posé sur les ALLIÉS ' +
-                           'proches, pas sur le porteur — hors d\'un calcul en cible unique' },
-      3102: { nonApplique: 'bouclier ANTISORTS : il bloque une compétence entière, sa valeur ' +
-                           'dépend donc du sort bloqué et non d\'un montant' },
-      3814: { nonApplique: 'bouclier antisorts : même raison que le Voile de la banshee' },
-      6695: { nonApplique: 'Briseur de boucliers : réduit les boucliers REÇUS PAR LA CIBLE ; ' +
-                           'utile contre une composition à boucliers, sans effet sur le porteur' },
-    
-      3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
-      3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
-      3085: { nonApplique: 'les projectiles touchent des cibles SUPPLÉMENTAIRES : ' +
-                           'aucun gain en cible unique' }
-    };
+    /* Modèles de comportement des passifs d'objet.    
+        
+       Même séparation que `runes_modeles.js`, et pour la même raison : ici on décrit    
+       UNIQUEMENT le comportement (quand ça se déclenche, sur quoi porte le pourcentage,    
+       quel type de dégâts). Les NOMBRES restent lus dans `items.json`, extrait du fichier    
+       de jeu. Un patch qui fait passer la Dent de Nashor de 15 à 20 se propage donc tout    
+       seul ; seuls les remaniements de mécanique demandent une reprise.    
+        
+       Ce fichier n'invente RIEN : chaque entrée pointe une clé existante du fichier de    
+       jeu. Un objet sans entrée ici n'est pas appliqué aux dégâts — il est compté comme    
+       non modélisé, pas approximé. C'est la leçon de `SiphonDamage`, une clé résiduelle    
+       du fichier que j'avais prise pour un effet vivant : ne servir que ce qu'on a    
+       délibérément vérifié.    
+        
+       Champs :    
+         nom          libellé du passif tel qu'il apparaît en jeu    
+         effet        'degats' | 'soin' | 'bouclier' | 'stat' | 'multiplicateur'    
+         statsAccordees      [{ stat, calcul }] ou [{ stat, valeur, base }] — s'AJOUTE au profil    
+         multiplicateursStat [{ stat, portee, valeur }] — MULTIPLIE une stat du profil    
+         phase        'avant' | 'apres' — de part et d'autre des stats accordées    
+         typeDegats   'physique' | 'magique' | 'brut'    
+         declencheur  { type: 'coupAImpact' }        à chaque attaque de base    
+                      { type: 'apresCompetence', recharge: 'clé' }   lame enchantée    
+                      { type: 'competence' }         à chaque compétence blessante    
+                      { type: 'periodique', ... }    brûlure    
+         calcul       nom du calcul résolu dans items.json (prioritaire)    
+         valeur       à défaut, clé de `valeurs` (nombre simple)    
+         surCible     true = le pourcentage porte sur la CIBLE, pas sur le porteur    
+         distance     { facteur: 'clé' } ou { calcul: 'autreCalcul' } — version à distance    
+         plafond      { cle: 'clé', contre: 'monstres' }    
+         note         ce que le modèle NE couvre pas, dit explicitement                    */    
+        
+    module.exports = {    
+        
+      /* ── Coups à l'impact : s'ajoutent à CHAQUE attaque de base ─────────────────── */    
+        
+      3153: { // Lame du roi déchu — Fil de brume    
+        nom: 'Fil de brume', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'coupAImpact' },    
+        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },    
+        /* ⚠ Le pourcentage porte sur les PV ACTUELS de la CIBLE (wiki : « current    
+           health »), pas sur les PV max du porteur. Le confondre change tout : contre    
+           une cible à 30 % de vie, l'effet est trois fois plus faible. */    
+        surCible: 'pvActuels',    
+        plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },    
+        note: 'le ralentissement cumulable (Ombres griffues) n\'est pas modélisé'    
+      },    
+        
+      3115: { // Dent de Nashor — Morsure d'Icathia    
+        nom: 'Morsure d\'Icathia', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'coupAImpact' }, calcul: 'TotalOnHitDamage'    
+      },    
+        
+      3091: { // Au bout du rouleau — Conflit    
+        nom: 'Conflit', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage'    
+      },    
+        
+      3302: { // Terminus — Ombre    
+        nom: 'Ombre', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamage',    
+        note: 'Juxtaposition (alternance lumière/ténèbres, résistances et pénétration ' +    
+              'cumulables) n\'est pas modélisée'    
+      },    
+        
+      3124: { // Lame enragée de Guinsoo — Courroux    
+        nom: 'Courroux', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'coupAImpact' }, valeur: 'OnHitDamage',    
+        note: 'Frappe furieuse (cumuls de vitesse d\'attaque, puis coups dédoublés) ' +    
+              'n\'est pas modélisée — l\'objet est donc sous-estimé'    
+      },    
+        
+      3748: { // Hydre titanesque — Fendoir    
+        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'coupAImpact' }, calcul: 'OnHitDamageCalc',    
+        /* Le facteur « à distance » est porté par le calcul lui-même (mRangedMultiplier),    
+           déjà résolu à l'extraction : moitié de l'effet. Vérifié sur le wiki :    
+           1 % en mêlée, 0,5 % à distance. */    
+        note: 'les dégâts de cône (3 % des PV max) ne touchent que des cibles ' +    
+              'supplémentaires : hors du calcul en cible unique'    
+      },    
+        
+      6698: { // Hydre profane — Fendoir    
+        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'coupAImpact' }, calcul: 'CleaveDamage',    
+        note: 'Balayage hérétique (l\'actif) n\'est pas modélisé'    
+      },    
+        
+      3181: { // Brise-coques — Pilote    
+        nom: 'Pilote', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'toutesNAttaques', n: 5 }, calcul: 'MaxStackDamage',    
+        distance: { calculValeur: 'RangedSkipperADRatio' },    
+        note: 'les dégâts contre les structures sont ignorés'    
+      },    
+        
+      3074: { // Hydre vorace — Fendoir    
+        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'coupAImpact' },    
+        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },    
+        note: 'Croissant vorace (l\'actif) n\'est pas modélisé'    
+      },    
+        
+      6631: { // Estropieur — Fendoir    
+        nom: 'Fendoir', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'coupAImpact' },    
+        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' },    
+        note: 'Onde de choc entravante (l\'actif) n\'est pas modélisée'    
+      },    
+        
+      6672: { // Tueur de krakens — Trempe    
+        nom: 'Trempe', effet: 'degats', typeDegats: 'brut',    
+        /* Un coup sur trois seulement : compté comme tel dans les dégâts par seconde,    
+           et surtout PAS ajouté à chaque attaque. */    
+        declencheur: { type: 'toutesNAttaques', n: 3 }, calcul: 'DamageAmount',    
+        distance: { facteur: 'RangedDamageMultiplier' },    
+        note: 'l\'amplification selon les PV manquants de la cible n\'est pas appliquée : ' +    
+              'valeur de plancher, cible à pleine vie'    
+      },    
+        
+      /* ── Lame enchantée : la prochaine attaque APRÈS une compétence ─────────────── */    
+        
+      3078: { // Force de la trinité — Lame enchantée    
+        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },    
+        calcul: 'SpellbladeDamage'    
+      },    
+        
+      2510: { // Aube et crépuscule — Lame enchantée    
+        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },    
+        calcul: 'SpellbladeDamage',    
+        note: 'le soin associé (SpellbladeHealing) n\'est pas compté dans les dégâts'    
+      },    
+        
+      3508: { // Faux spectrale — Lame enchantée    
+        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },    
+        calcul: 'SpellbladeDamage',    
+        note: 'le rendu de mana n\'est pas modélisé'    
+      },    
+        
+      3100: { // Fléau de liche — Lame enchantée    
+        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },    
+        calcul: 'SpellbladeDamage'    
+      },    
+        
+      6662: { // Gantelet givrant — Lame enchantée    
+        nom: 'Lame enchantée', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'apresCompetence', recharge: 'SpellbladeCooldown' },    
+        calcul: 'SpellbladeDamage',    
+        note: 'le champ de ralentissement n\'est pas modélisé'    
+      },    
+        
+      /* ── Attaques énergisées : à intervalle, pas à chaque coup ──────────────────── */    
+        
+      3094: { // Canon ultrarapide — Sniper    
+        nom: 'Sniper', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'energise' }, valeur: 'BonusDamage',    
+        note: 'l\'énergie se charge en se déplaçant et en attaquant : le rythme réel ' +    
+              'dépend du déplacement, non modélisé'    
+      },    
+        
+      3087: { // Poignard de Statikk — Étincelle électrique    
+        nom: 'Étincelle électrique', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'energise' }, valeur: 'ChainDamage',    
+        note: 'la chaîne touche plusieurs cibles : ici seule la première est comptée'    
+      },    
+        
+      /* ── Brûlures et effets périodiques ─────────────────────────────────────────── */    
+        
+      6653: { // Tourment de Liandry — Souffrance    
+        nom: 'Souffrance', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'periodique', duree: 'BurnDuration' },    
+        valeur: 'BurnPercentHealthDamage', surCible: 'pvMax',    
+        parSeconde: true,    
+        plafond: { cle: 'MonsterDamageCap', contre: 'monstres' },    
+        note: 'l\'amplification progressive (jusqu\'à +6 % en combat prolongé) n\'est ' +    
+              'pas appliquée ici'    
+      },    
+        
+      2503: { // Torche noire — Flamme funèbre    
+        nom: 'Flamme funèbre', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'periodique', duree: 'BurnDuration' },    
+        calcul: 'BurnDamagePerSecondCalc', parSeconde: true,    
+        note: 'Feu noir (+4 % de puissance par champion brûlé) n\'est pas modélisé'    
+      },    
+        
+      3068: { // Égide solaire — Immolation    
+        /* 20 + 1,5 % des PV bonus, une fois par seconde. Le fichier porte trois calculs    
+           identiques (`DamagePerTick`, `DPS`, un hachage) et deux clés explicitement    
+           marquées TOOLTIPONLY qui donnent les mêmes 20 et 1,5 : concordance interne    
+           complète, on prend le calcul et non l'infobulle. */    
+        nom: 'Immolation', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'periodique', duree: 'AuraDuration' },    
+        calcul: 'DamagePerTick', parSeconde: true,    
+        note: 'aura de zone : contre plusieurs ennemis, le total réel est un multiple ' +    
+              'de ce chiffre ; les modificateurs sbires (×0,5) et monstres (×0,8) ne ' +    
+              's\'appliquent pas à un champion'    
+      },    
+        
+      2502: { // Désespoir infini — Affliction    
+        /* « Toutes les 4 sec de combat » : ce n'est ni un coup à l'impact ni du continu,    
+           d'où un déclencheur à intervalle propre. 3 % des PV bonus, ce que confirme    
+           `BonusHealthDrainPercentage` = 0,03. */    
+        nom: 'Affliction', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'intervalle', recharge: 'Cooldown' },    
+        calcul: 'DrainCalc',    
+        note: 'le soin associé (250 % des dégâts) n\'est pas compté dans les dégâts'    
+      },    
+        
+      3084: { // Cœuracier — Consommation colossale    
+        /* 70 + 6 % des PV MAX — la description l'écrit noir sur blanc, et le calcul le    
+           confirme au chiffre près. Une fois par cible toutes les 30 s : hors de question    
+           de l'ajouter à chaque attaque. */    
+        nom: 'Consommation colossale', effet: 'degats', typeDegats: 'physique',    
+        declencheur: { type: 'intervalle', recharge: 'PerTargetCooldown' },    
+        calcul: 'DamageProcCalc',    
+        note: 'les PV max gagnés au passage (10 % des dégâts) ne sont pas modélisés ; ' +    
+              'la proximité requise (6 relevés, 700 unités) est supposée acquise'    
+      },    
+        
+      /* ── Actifs ─────────────────────────────────────────────────────────────────    
+         Ils ne se déclenchent pas seuls : c'est le joueur qui les lance, avec une longue    
+         recharge. Comptés à part des dégâts automatiques, jamais fondus dedans. */    
+        
+      3152: { // Ceinture-roquette Hextech — Supersonique    
+        nom: 'Supersonique', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'FireboltDamage'    
+      },    
+        
+      3146: { // Pistolame Hextech — Orbe de foudre    
+        nom: 'Orbe de foudre', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'actif', recharge: 'Cooldown' }, calcul: 'ActiveDamage',    
+        note: 'le ralentissement (25 % pendant 1,5 s) n\'est pas modélisé'    
+      },    
+        
+      /* ── Dégâts liés aux compétences ────────────────────────────────────────────── */    
+        
+      6655: { // Écho de Luden — Écho    
+        nom: 'Écho', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'competence', recharge: 'Cooldown' },    
+        calcul: 'SingleTargetMax',    
+        note: 'valeur en cible unique (les 6 échos concentrés) ; en combat groupé ' +    
+              'ils se répartissent'    
+      },    
+        
+      /* ── Objets à passif défensif ou utilitaire, sans dégâts à ajouter ──────────── */    
+        
+      3097: { // Lame tempête — Éclair    
+        nom: 'Éclair', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'energise' }, calcul: 'TotalProcDamage'    
+      },    
+        
+      /* ── Passifs qui ACCORDENT DES STATS ────────────────────────────────────────    
+         Catégorie à part, et la plus lourde de conséquences : ils ne s'ajoutent pas aux    
+         dégâts, ils modifient le PROFIL — donc tous les ratios de sorts, toutes les    
+         attaques, tout ce qui suit. Le Manamune sur Ryze, c'est plus de 30 dégâts    
+         d'attaque invisibles si on ne les compte pas.    
+         `statsAccordees` est lu par `profil()` avant tout autre calcul. */    
+        
+      3004: { // Manamune — Effroi    
+        nom: 'Effroi', effet: 'stat',    
+        statsAccordees: [{ stat: 'ad', calcul: 'BonusADFromMana' }],    
+        note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis transformation en ' +    
+              'Muramana) n\'est pas modélisé — valeur de départ uniquement'    
+      },    
+        
+      3053: { // Gage de Sterak — Griffes qui happent    
+        nom: 'Griffes qui happent', effet: 'stat',    
+        statsAccordees: [{ stat: 'ad', calcul: 'BonusAD' }],    
+        note: 'le bouclier Lien vital (60 % des PV bonus) n\'est pas compté dans les dégâts'    
+      },    
+        
+      3003: { // Bâton de l'archange — Effroi    
+        /* « Vous gagnez de la puissance équivalente à 1 % de votre mana BONUS » : le    
+           fichier ne porte que le pourcentage, la base vient de la description. Compter    
+           le mana total au lieu du mana bonus donnerait +10 de puissance imaginaires    
+           à Ryze au niveau 18. */    
+        nom: 'Effroi', effet: 'stat',    
+        statsAccordees: [{ stat: 'ap', valeur: 'APFromMana', base: 'manaBonus' }],    
+        note: 'Flux de mana (jusqu\'à +360 de mana accumulé, puis Sablier de Seraph) ' +    
+              'n\'est pas modélisé — valeur de départ uniquement'    
+      },    
+        
+      3119: { // Approche de l'hiver — Effroi    
+        /* La boutique n'imprime pas la valeur (gabarit non résolu). Le fichier, lui, est    
+           sans ambiguïté : `BonusHPFromMana` = 15 % du mana TOTAL en PV bonus. */    
+        nom: 'Effroi', effet: 'stat', ordre: -1,    
+        statsAccordees: [{ stat: 'pv', calcul: 'BonusHPFromMana' }],    
+        note: 'Flux de mana (jusqu\'à +360 de mana, puis Fimbulvetr) n\'est pas modélisé'    
+      },    
+        
+      2501: { // Armure sanguine — Tyrannie    
+        /* `ordre: 1` — ce passif LIT les PV bonus, il doit donc passer après ceux qui en    
+           accordent (l'Approche de l'hiver en donne 15 % du mana). Sans cet ordre, les    
+           PV gagnés par un autre objet ne se convertiraient jamais en dégâts. */    
+        ordre: 1,    
+        /* Pas de `mItemCalculations` pour ce passif : le fichier ne porte que le    
+           pourcentage brut. On déclare donc explicitement la BASE sur laquelle il    
+           s'applique — « 2,5 % de vos PV bonus », d'après la description en jeu. */    
+        nom: 'Tyrannie', effet: 'stat',    
+        statsAccordees: [{ stat: 'ad', valeur: 'HPToADPercentage', base: 'pvBonus' }],    
+        note: 'Représailles (jusqu\'à +12 % de dégâts d\'attaque selon les PV manquants) ' +    
+              'n\'est pas appliqué : cible et porteur sont supposés à pleine vie, donc 0'    
+      },    
+        
+      /* ── Accélération d'ULTIME ───────────────────────────────────────────────────    
+         Une stat à part entière, et qui n'existait nulle part dans le modèle : trois objets    
+         finis la portent, dans `valeurs.UltimateHaste`, et Data Dragon ne la publie pas.    
+         Elle ne réduit QUE la recharge de l'ultime — la verser dans l'accélération générale    
+         accélérerait aussi Q, W et E, soit quatre fois son effet réel.    
+        
+         C'est aussi le premier cas de `statsAccordees` sans base : la clé porte un montant    
+         plat (30), pas une proportion d'une stat du porteur. */    
+        
+      2512: { // Chasseur de monstres — Veille de nuit    
+        nom: 'Veille de nuit', effet: 'stat',    
+        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],    
+        note: 'Barrage d\'ouverture (3 attaques renforcées après l\'ultime) n\'est pas modélisé'    
+      },    
+        
+      3073: { // Hexplaque expérimentale — Charge Hextech    
+        nom: 'Charge Hextech', effet: 'stat',    
+        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],    
+        note: 'Surcharge (vitesse d\'attaque et de déplacement après l\'ultime) n\'est pas modélisée'    
+      },    
+        
+      /* ── Passifs qui MULTIPLIENT une stat ───────────────────────────────────────    
+         Troisième catégorie, distincte des deux précédentes, et purement arithmétique :    
+         ils ne s'ajoutent ni aux dégâts ni au profil sous forme de montant fixe — ils    
+         appliquent un POURCENTAGE à une stat déjà constituée.    
+        
+         L'ordre est donc capital, et c'est ce qui justifie le champ `phase` :    
+           'avant' — la base ne dépend que des objets (les PV d'objets de Warmog, les    
+                     résistances bonus de Jak'Sho) : on multiplie AVANT les passifs qui    
+                     accordent des stats, puisque ceux-ci lisent le résultat (l'Armure    
+                     sanguine convertit les PV bonus — Warmog compris — en dégâts).    
+           'apres' — la base est la stat TOTALE (la Coiffe de Rabadon) : elle doit    
+                     englober tout ce que les autres passifs ont accordé, donc en dernier.    
+         Se tromper de phase, c'est perdre ou compter deux fois un pourcentage entier. */    
+        
+      3089: { // Coiffe de Rabadon — Opus magique    
+        nom: 'Opus magique', effet: 'multiplicateur', phase: 'apres',    
+        /* « Vous augmentez votre puissance totale de 30 % » — totale, pas bonus : la    
+           puissance de base des champions étant nulle, la distinction n'a d'effet que si    
+           un autre passif en accorde, mais la coder juste coûte le même prix.    
+           Objet PRÉSENT dans les builds de référence et jusqu'ici non appliqué : la    
+           puissance de ces builds était sous-estimée de 30 %. */    
+        multiplicateursStat: [{ stat: 'ap', portee: 'total', valeur: 'APAmp' }]    
+      },    
+        
+      6665: { // Jak'Sho, le Protéiforme — Vigueur de Néantin    
+        nom: 'Vigueur de Néantin', effet: 'multiplicateur', phase: 'avant',    
+        /* « armure et résistance magique BONUS » : la base du champion n'est pas    
+           multipliée. Le lire « total » gonflerait l'effet de moitié au niveau 18. */    
+        multiplicateursStat: [    
+          { stat: 'armure', portee: 'bonus', valeur: 'BonusResistPercentage' },    
+          { stat: 'rm',     portee: 'bonus', valeur: 'BonusResistPercentage' }    
+        ],    
+        condition: { apresSecondes: 5, libelle: 'après 5 s de combat contre des champions' },    
+        note: 'ne s\'applique qu\'après 5 s de combat : compté seulement sur les fenêtres ' +    
+              'd\'au moins 5 s, et sans effet sur les dégâts infligés (stats défensives)'    
+      },    
+        
+      3083: { // Armure de Warmog — Vitalité de Warmog    
+        nom: 'Vitalité de Warmog', effet: 'multiplicateur', phase: 'avant',    
+        /* « 12 % de vos PV d'OBJETS » — ni les PV de base, ni ceux des runes. D'où la    
+           portée `objets`, distincte de `bonus` : sur un champion niveau 18 l'écart    
+           entre les deux se compte en centaines de PV. */    
+        multiplicateursStat: [{ stat: 'pv', portee: 'objets', valeur: 'HPAmp' }],    
+        note: 'Cœur de Warmog (régénération hors combat) n\'entre pas dans un calcul de combat'    
+      },    
+        
+      /* ── Boucliers ──────────────────────────────────────────────────────────────── */    
+        
+      3156: { // Gueule de Malmortius — Lien vital    
+        nom: 'Lien vital', effet: 'bouclier',    
+        declencheur: { type: 'seuilPV', seuil: 'LowHealthThreshold', recharge: 'Cooldown' },    
+        calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }    
+      },    
+        
+      6673: { // Arc-bouclier immortel    
+        nom: 'Lien vital', effet: 'bouclier',    
+        declencheur: { type: 'seuilPV', seuil: 'HealthThreshold', recharge: 'Cooldown' },    
+        calcul: 'ShieldAmount'    
+      },    
+        
+      2504: { // Rookern kaénique — Fléau des mages    
+        nom: 'Fléau des mages', effet: 'bouclier',    
+        declencheur: { type: 'horsCombat', duree: 'OutOfCombatDuration' },    
+        calcul: 'ShieldCalc',    
+        /* Bouclier ANTI-MAGIE uniquement : il n'absorbe rien de physique. Le compter comme    
+           un bouclier ordinaire doublerait sa valeur face à un adversaire à dégâts mixtes. */    
+        contre: 'magique',    
+        note: 'exige 15 s sans subir de dégâts magiques'    
+      },    
+        
+      3072: { // Soif-de-sang — Bouclier d'ichor    
+        nom: 'Bouclier d\'ichor', effet: 'bouclier',    
+        declencheur: { type: 'volVieExcedentaire', seuil: 'Threshold' },    
+        calcul: 'OvershieldCalc',    
+        note: 'plafond du bouclier ; il se remplit du vol de vie excédentaire au-delà de ' +    
+              '70 % des PV, un rythme que le modèle ne connaît pas'    
+      },    
+        
+      6692: { // Éclipse — Lune ascendante    
+        /* Aucun `mItemCalculations` : les nombres vivent dans les DataValues, comme pour    
+           trois sorts de champion. On déclare donc les termes, sans en inventer aucun —    
+           150 de base + 40 % de l'AD bonus, moitié à distance (`RangedShieldMult`). */    
+        nom: 'Lune ascendante', effet: 'bouclier',    
+        declencheur: { type: 'deuxFrappes', fenetre: 'WindowDuration', recharge: 'Cooldown' },    
+        termesDeclares: [    
+          { stat: 'flat', mode: 'flat', cle: 'MeleeBaseShield' },    
+          { stat: 'AD', mode: 'bonus', cle: 'MeleeBonusADShieldRatio' }    
+        ],    
+        distance: { facteur: 'RangedShieldMult' },    
+        note: 'la part en pourcentage des PV max (MeleePercMaxHP) concerne les dégâts de ' +    
+              'Lune ascendante, pas le bouclier'    
+      },    
+        
+      6664: { // Rayonnement du vide — Immolation    
+        /* Même famille que l'Égide solaire, chiffres différents : 15 + 1 % des PV bonus.    
+           Les deux clés TOOLTIPONLY (10 et 1,75) NE correspondent PAS au calcul (15 et 1) :    
+           on sert le calcul, qui est ce que le jeu applique, et on le dit ici plutôt que    
+           de choisir en silence le chiffre le plus flatteur. */    
+        nom: 'Immolation', effet: 'degats', typeDegats: 'magique',    
+        declencheur: { type: 'periodique', duree: 'AuraDuration' },    
+        calcul: 'DamagePerTick', parSeconde: true,    
+        note: 'aura de zone ; Désolation (dégâts à l\'élimination) n\'est pas modélisée. ' +    
+              'Les clés TOOLTIPONLY du fichier (10 + 1,75 %) contredisent son propre ' +    
+              'calcul (15 + 1 %) : c\'est le calcul qui est servi'    
+      },    
+        
+      /* ── AMPLIFICATIONS : elles ne s'ajoutent pas aux dégâts, elles les multiplient ──    
+        
+         Longtemps écartées faute de savoir où les brancher. Deux points ont dû être    
+         vérifiés sur le wiki officiel avant d'écrire une ligne, et aucun des deux n'était    
+         devinable :    
+        
+         1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to    
+            damage dealt now stack additively instead of multiplicatively ». C'est l'inverse    
+            exact des pénétrations en pourcentage. Deux amplifications de 10 % donnent donc    
+            +20 %, pas +21 %. Supposer la symétrie avec les pénétrations aurait été le    
+            raisonnement naturel, et il aurait été faux.    
+         2. Tueur de géants n'est PLUS limité aux dégâts physiques depuis la V13.10 :    
+            « deal increased damage », tous types confondus.    
+        
+         Champs : `portee` (à quelle SOURCE de dégâts ça s'applique), `types` (à quels types    
+         de dégâts), et la façon dont le pourcentage se constitue (`montee`, `cumuls`,    
+         `selonPVbonusCible`, `seuilPVCible`). */    
+        
+      4633: { // Créateur de failles — Corruption du Néant + Infusion du Néant    
+        nom: 'Corruption du Néant', effet: 'amplification',    
+        /* « Pour chaque seconde passée en combat, vous infligez 2 % de dégâts bonus    
+           (jusqu'à 8 %) » — tous types, toutes sources. Le plafond est atteint en 4 s    
+           (`SecondsInCombat`), ce que confirme le rapport 0,08 / 0,02. */    
+        amplification: {    
+          portee: 'tous',    
+          montee: { parSeconde: 'EternityDamageIncreasePerSecond',    
+                    plafond: 'EternityDamageIncreaseMax' }    
+        },    
+        /* Second passif, indépendant : « Vous gagnez de la puissance équivalente à 2 % de    
+           vos PV bonus ». Sans plafond d'après le wiki — la clé `MaxAPMultiplier` (0,05)    
+           du fichier n'est corroborée nulle part, elle n'est donc PAS appliquée. */    
+        statsAccordees: [{ stat: 'ap', calcul: '{1247259a}' }],    
+        note: 'l\'omnivampirisme au plafond n\'est pas modélisé ; la clé MaxAPMultiplier ' +    
+              'du fichier n\'est expliquée ni par la boutique ni par le wiki : non appliquée'    
+      },    
+        
+      3161: { // Lance de Shojin — Détermination inflexible    
+        nom: 'Détermination inflexible', effet: 'amplification',    
+        /* 3 % par cumul, 4 cumuls, sur les dégâts de COMPÉTENCE. Le wiki y ajoute les    
+           dégâts de familier et de proc — d'où la portée `competences`, qui couvre aussi    
+           les passifs d'objet.    
+           ⚠ Désaccord assumé : le résumé du wiki dit « pas de distinction à distance »,    
+           mais le fichier porte DEUX calculs vivants et cohérents entre eux    
+           (MeleeItemCalcValue = 3, RangedItemCalcValue = 1,5) plus RangedMod = 0,5.    
+           Le fichier de jeu prime ; la moitié est donc appliquée aux champions à distance. */    
+        amplification: {    
+          portee: 'competences', unite: 'pourcent', cumuls: 'StackCount',    
+          calcul: 'MeleeItemCalcValue', distance: { calcul: 'RangedItemCalcValue' }    
+        },    
+        note: 'cumuls supposés au maximum (4) : valeur de combat engagé, pas d\'ouverture'    
+      },    
+        
+      8020: { // Masque abyssal — Anéantissement    
+        nom: 'Anéantissement', effet: 'amplification',    
+        amplification: { portee: 'tous', types: ['magique'], valeur: 'DamageAmp' },    
+        note: 'c\'est un affaiblissement porté PAR LA CIBLE : il profite aussi aux alliés ' +    
+              'proches, ce que ce calcul en cible unique ne compte pas'    
+      },    
+        
+      3036: { // Salutations de Dominik — Tueur de géants    
+        nom: 'Tueur de géants', effet: 'amplification',    
+        /* « jusqu'à 15 % selon les PV BONUS de la cible, maximum à 1500 ». Dépend donc de    
+           l'adversaire, pas du porteur : contre une cible sans PV bonus, l'effet est nul.    
+           Tous types de dégâts depuis la V13.10 (vérifié) — le lire « physique » aurait    
+           sous-estimé les builds hybrides. */    
+        amplification: {    
+          portee: 'tous',    
+          selonPVbonusCible: { max: 'MaxBonusDamagePercent', plafondPV: 'MaxBonusHealth' }    
+        }    
+      },    
+        
+      4645: { // Flamme-ombre — Floraicendre    
+        nom: 'Floraicendre', effet: 'amplification',    
+        /* +20 % sur les dégâts magiques et bruts, uniquement sous 40 % des PV de la cible.    
+           La cible étant supposée à pleine vie par défaut, l'amplification vaut alors    
+           zéro et le dit : c'est un plancher assumé, jamais une moyenne inventée. */    
+        amplification: {    
+          portee: 'tous', types: ['magique', 'brut'],    
+          valeur: 'SpellItemDamageAmp', seuilPVCible: 'HealthThreshold'    
+        }    
+      },    
+        
+      /* Amplifications réelles, conditionnées à un fait que le fichier ne porte pas : la    
+         DISTANCE à la cible, une immobilisation infligée. Elles étaient purement refusées ;    
+         elles le restent tant que l'appelant ne fournit pas ce fait — mais le refus dit    
+         désormais lequel, et une hypothèse explicite les débloque. Le modèle ne devine    
+         toujours rien : il demande. */    
+        
+      2523: { // Lunettes Hextech C44 — Ligne de mire    
+        nom: 'Grossissement', effet: 'amplification',    
+        amplification: {    
+          portee: 'attaques',    
+          /* PROPORTIONNELLE à la distance : le maximum n'est atteint qu'à 500 unités.    
+             Le servir à bout portant aurait été le contresens exact de l'objet. */    
+          surHypothese: { condition: 'distanceCible', valeur: 'MaxDamageAmp',    
+                          portee: 'MaxRange', quoi: 'jusqu\'à +10 % selon la DISTANCE à la cible' }    
+        },    
+        note: 'les 100 unités de portée d\'attaque supplémentaires sont une stat, pas une ' +    
+              'amplification : elles ne sont pas comptées ici'    
+      },    
+        
+      4628: { // Concentration lointaine — Tir de précision    
+        nom: 'Tir hyperprécis', effet: 'amplification',    
+        amplification: {    
+          portee: 'tous',    
+          surHypothese: { condition: 'touchesLointaines', valeur: 'DamageAmp',    
+                          quoi: 'coup(s) porté(s) à 600 unités ou plus' }    
+        },    
+        note: 'recharge de 30 s : au-delà d\'un déclenchement par 30 s, l\'hypothèse ' +    
+              'surestime — le modèle ne la borne pas, faute de savoir quand ils tombent'    
+      },    
+        
+      4005: { // Mandat impérial — Coordination    
+        nom: 'Commande', effet: 'amplification',    
+        amplification: {    
+          portee: 'tous',    
+          surHypothese: { condition: 'immobilisations', valeur: 'DamageAmp',    
+                          quoi: 'immobilisation(s) ou ralentissement(s) infligés par votre kit' }    
+        },    
+        note: 'c\'est un affaiblissement porté PAR LA CIBLE : il profite aussi aux alliés ' +    
+              'qui la frappent, ce qu\'un calcul en cible unique ne compte pas'    
+      },    
+        
+      6697: { nonApplique: 'AD gagnés à l\'élimination d\'un champion : dépend du déroulé ' +    
+                           'de la partie. `SpellMaxAmp` vaut ZÉRO dans le fichier — vestige, ' +    
+                           'comme le PenCalc de Serylda : le servir ressusciterait un effet mort' },    
+        
+      /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ──────────────────────────────────    
+         Cinquième catégorie. Elle n'ajoute aucun dégât et n'amplifie rien : elle abaisse    
+         l'armure ou la résistance magique de l'adversaire, donc TOUT ce qui le frappe    
+         ensuite — y compris les dégâts des alliés.    
+        
+         ⚠ Réduction ≠ pénétration, et l'ordre n'est pas commutatif : la réduction    
+         s'applique AVANT la pénétration (cf. `resistEffective`). Confondre les deux    
+         donnerait un chiffre faux dès qu'un build porte les deux, ce qui est le cas    
+         courant (Couperet noir + Salutations de Dominik). */    
+        
+      3071: { // Couperet noir — Découpage    
+        nom: 'Découpage', effet: 'reduction',    
+        /* 6 % par cumul, 5 cumuls = 30 % d'armure en moins. Vérifié sur le wiki.    
+           ⚠ Le `RangedMod: 0.5` du fichier ne porte PAS sur le découpage : il modifie la    
+           vitesse de déplacement de Ferveur, comme le montre `MSBonusSplit` (20 avec un    
+           facteurDistance de 0,5). Le lire comme un demi-découpage à distance aurait été    
+           l'erreur symétrique de celle évitée sur la Lance de Shojin — où, elle, la    
+           version à distance existe bel et bien sous forme de second calcul. */    
+        reduction: { resistance: 'armure', mode: 'pourcent',    
+                     valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'physique' },    
+        note: 'cumuls supposés au maximum ; le wiki précise que la première instance de ' +    
+              'dégâts n\'en profite pas encore, ce détail n\'est pas modélisé'    
+      },    
+        
+      8010: { // Malédiction du sanguinaire — Vile décomposition    
+        nom: 'Vile décomposition', effet: 'reduction',    
+        reduction: { resistance: 'rm', mode: 'pourcent',    
+                     valeur: 'ShredPerStack', cumuls: 'MaxStacks', declenchePar: 'magique' },    
+        note: 'cumuls supposés au maximum (4 × 7,5 % = 30 %)'    
+      },    
+        
+      3118: { // Malfaisance — Brouillard de haine    
+        nom: 'Brouillard de haine', effet: 'reduction',    
+        /* Réduction PLATE de 10, et non un pourcentage : le calcul du fichier donne 10 sec    
+           et le wiki confirme « reduces their magic resistance by 10 ». La lire en    
+           pourcentage aurait donné 10 % — trois fois moins sur une cible à 100 de RM. */    
+        reduction: { resistance: 'rm', mode: 'plat', calcul: 'MagicResistanceShred',    
+                     condition: { apresUltime: true, libelle: 'après avoir touché avec l\'ultime' } },    
+        /* Mépris : +20 d'accélération d'ULTIME, inconditionnelle. Un objet peut donc porter    
+           à la fois une réduction de résistance et un gain de stat — les deux catégories    
+           sont lues indépendamment. */    
+        statsAccordees: [{ stat: 'accelUltime', valeur: 'UltimateHaste' }],    
+        note: 'les dégâts de zone du sol brûlé ne sont pas comptés en cible unique'    
+      },    
+        
+      /* Boucliers réels mais non chiffrables ici. */    
+      3190: { nonApplique: 'Dévotion : le bouclier (290 à 360 PV) est posé sur les ALLIÉS ' +    
+                           'proches, pas sur le porteur — hors d\'un calcul en cible unique' },    
+      3102: { nonApplique: 'bouclier ANTISORTS : il bloque une compétence entière, sa valeur ' +    
+                           'dépend donc du sort bloqué et non d\'un montant' },    
+      3814: { nonApplique: 'bouclier antisorts : même raison que le Voile de la banshee' },    
+      6695: { nonApplique: 'Briseur de boucliers : réduit les boucliers REÇUS PAR LA CIBLE ; ' +    
+                           'utile contre une composition à boucliers, sans effet sur le porteur' },    
+        
+      3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },    
+      3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },    
+      3085: { nonApplique: 'les projectiles touchent des cibles SUPPLÉMENTAIRES : ' +    
+                           'aucun gain en cible unique' },    
+        
+      /* ═══ LES 40 PASSIFS RESTANTS ═══════════════════════════════════════════════════    
+         Jusqu'ici ils étaient comptés « pas encore modélisés » — un chiffre honnête mais    
+         muet : il ne disait pas lesquels manquaient par oubli et lesquels par impossibilité.    
+         Chacun porte désormais soit un modèle, soit un motif. Aucun ne reste sans réponse.    
+        
+         Neuf entrent dans des axes que le modèle possède déjà (stats accordées, soins,    
+         survie, vitesse de déplacement). Les autres sont refusés, et le motif dit lequel    
+         des trois obstacles s'applique : un état de partie inconnu (élimination, placement),    
+         une cible qui n'est pas le porteur (alliés), ou un effet qui ne se chiffre pas en    
+         points (stase, dissipation, exécution). ─────────────────────────────────────── */    
+        
+      /* ── Stats accordées ────────────────────────────────────────────────────────── */    
+        
+      6657: { // Bâton séculaire — Intemporel    
+        nom: 'Intemporel',    
+        statsAccordees: [    
+          { stat: 'pv',   valeur: 'HealthPerStack', cumuls: 'MaxStacks' },    
+          { stat: 'mana', valeur: 'ManaPerStack',   cumuls: 'MaxStacks' },    
+          { stat: 'ap',   valeur: 'APPerStack',     cumuls: 'MaxStacks' }    
+        ],    
+        note: 'cumuls supposés au MAXIMUM (10, soit dix minutes de partie) : +100 PV, ' +    
+              '+300 mana, +30 puissance. Éternité (mana rendu par les dégâts subis, soin ' +    
+              'par lancer) n\'est pas modélisé.'    
+      },    
+        
+      4401: { // Force de la nature — Inébranlable    
+        nom: 'Immuable',    
+        /* ⚠ `DamageReduction` vaut ZÉRO dans le fichier. Ce n'est pas une donnée manquante :    
+           le wiki dit que la réduction de dégâts magiques a été RETIRÉE en V14.1, remplacée    
+           par le cumul actuel. La clé est résiduelle, comme `SiphonDamage` en son temps.    
+           La servir aurait été inventer un effet mort. */    
+        statsAccordees: [    
+          { stat: 'rm', valeur: 'BonusMagicResist' },    
+          { stat: 'vd', valeur: 'MoveSpeed' }    
+        ],    
+        note: 'cumuls supposés au MAXIMUM (8) : +70 de résistance magique et +6 % de ' +    
+              'vitesse de déplacement. La clé DamageReduction du fichier vaut zéro — ' +    
+              'vestige du passif retiré en V14.1, non appliquée.'    
+      },    
+        
+      6621: { // Cœur de l'aube — Aube    
+        nom: 'Première lumière',    
+        /* « 2 % d'efficacité des soins et boucliers et 10 points de puissance pour chaque    
+           tranche de 100 % de régénération de mana de base supplémentaire. » La base est    
+           donc `regenManapct`, le cumul de tous les objets à % de régénération de mana —    
+           Cœur de l'aube compris, qui en porte 100 % à lui seul. */    
+        statsAccordees: [    
+          { stat: 'ap',               valeur: 'APPerManaRegen',      base: 'regenManapct', baseSiAbsente: 0 },    
+          { stat: 'soinsEtBoucliers', valeur: 'HSPowerPerManaRegen', base: 'regenManapct', baseSiAbsente: 0 }    
+        ],    
+        /* Doit passer APRÈS les objets qui apportent de la régénération de mana : sa base    
+           est leur somme. `ordre` élevé le place en fin de chaîne. */    
+        ordre: 50,    
+        note: 'la base est la régénération de mana en POURCENTAGE apportée par l\'équipement'    
+      },    
+        
+      4629: { // Volonté cosmique — Danse enchantée    
+        nom: 'Danse des sorts',    
+        statsAccordees: [{ stat: 'vdPlate', calcul: 'MoveSpeedAmount' }],    
+        /* Désaccord partiel assumé : le fichier porte `MaxStacks: 3` et    
+           `MaxMovespeedTooltip: 0,15`, quand le wiki décrit un bonus PLAT de 20 sans cumul.    
+           Les deux sources s'accordent sur le 20 (`MoveSpeedAmount`), et sur rien d'autre.    
+           On sert donc ce sur quoi elles s'accordent : trois fois 20 serait un chiffre    
+           qu'aucune des deux ne donne. */    
+        note: 'bonus plat de 20, actif seulement après avoir blessé un champion. Les clés ' +    
+              'MaxStacks (3) et MaxMovespeedTooltip (15 %) du fichier ne sont corroborées ' +    
+              'par aucune autre source : non appliquées.'    
+      },    
+        
+      /* ── Soins et boucliers REÇUS ───────────────────────────────────────────────── */    
+        
+      3065: { // Visage spirituel — Vitalité sans bornes    
+        nom: 'Vitalité intarissable', effet: 'soinsRecus',    
+        soinsRecus: { valeur: 'HealingIncrease', porteRegen: true },    
+        /* ⚠ Ce n'est PAS l'efficacité des soins et boucliers (`soinsEtBoucliers`), et les    
+           confondre serait une faute de sens autant que de calcul : celle-ci amplifie ce    
+           que le porteur PRODUIT pour autrui, celle-là ce qu'il REÇOIT — soins propres    
+           compris. Le wiki précise en outre qu'elle se compose MULTIPLICATIVEMENT avec les    
+           autres modificateurs de soin, là où l'efficacité s'additionne. Deux stats    
+           distinctes, deux règles de composition distinctes. */    
+        note: 'amplifie aussi la régénération de vie ; sans effet sur le vol de vie et ' +    
+              'l\'omnivampirisme, que le wiki exclut explicitement'    
+      },    
+        
+      /* ── Survie : ce qui réduit les dégâts REÇUS ────────────────────────────────── */    
+        
+      3143: { // Présage de Randuin — Résilience    
+        nom: 'Vigueur', effet: 'reductionCrit',    
+        reductionCrit: { valeur: 'PercentCritDamageReduction' },    
+        /* Porte sur le TOTAL du coup critique, pas sur son seul bonus — le wiki tranche :    
+           « un coup critique ordinaire inflige 140 % de l'AD au lieu de 200 % ». Lire    
+           « −30 % du bonus » aurait donné 170 %, une erreur de moitié. */    
+        note: 'l\'actif (ralentissement de zone) n\'est pas modélisé'    
+      },    
+        
+      3110: { // Cœur gelé — Gel    
+        nom: 'Caresse de l\'hiver', effet: 'ralentAttaqueCible',    
+        ralentAttaqueCible: { valeur: 'ASPDSlow', rayon: 'AuraRadius' },    
+        note: 'n\'affecte que les CHAMPIONS ennemis depuis la V14.19 ; l\'aura est ' +    
+              'permanente, sans recharge'    
+      },    
+        
+      2525: { // Harnais protoplasmique — Bouée de sauvetage    
+        nom: 'Lien vital', effet: 'soin',    
+        soin: { calcul: 'TotalHealthRegen', pvBonus: 'MaxHealthGain',    
+                seuilPV: 'LowHealthThreshold', duree: 'Duration', recharge: 'Cooldown' },    
+        note: 'ne se déclenche qu\'une fois par 90 s, sous 30 % des PV : c\'est un SURSIS, ' +    
+              'pas une régénération continue — il ne se compare pas aux PV effectifs'    
+      },    
+        
+      /* ── Refusés : l'état de partie n'est pas connu ─────────────────────────────── */    
+        
+      6333: { nonApplique: 'Ignorer la douleur REPORTE 30 % (mêlée) / 10 % (distance) des ' +    
+                           'dégâts subis en saignement, il ne les réduit pas : le total ' +    
+                           'encaissé est identique. Défi (soin de 75 % de l\'AD bonus) ' +    
+                           'exige une élimination dans les 3 s.' },    
+      2517: { nonApplique: 'omnivampirisme accordé à l\'ÉLIMINATION : dépend du déroulé de ' +    
+                           'la partie, pas du build' },    
+      3137: { nonApplique: 'soin accordé à l\'ÉLIMINATION (fenêtre de 3 s) : même raison' },    
+      6610: { nonApplique: 'soin conditionné aux PV manquants ET à un coup critique : ' +    
+                           'servir le maximum flatterait l\'objet, servir zéro le condamnerait' },    
+      2520: { nonApplique: 'dégâts déclenchés par une immobilisation puis une fenêtre ' +    
+                           'd\'élimination : dépend du kit du champion et du déroulé' },    
+      6676: { nonApplique: 'exécution sous 5 % des PV et or à l\'élimination : ni dégâts ' +    
+                           'ni statistique — l\'objet gagne des parties, pas des points' },    
+      3742: { nonApplique: 'cumuls gagnés en SE DÉPLAÇANT vers l\'ennemi : dépend du ' +    
+                           'trajet, que le modèle ne connaît pas' },    
+      3142: { nonApplique: 'Hâte fantôme : vitesse de déplacement HORS COMBAT, et un actif ' +    
+                           'de 6 s à déclencher — aucun des deux ne se chiffre en combat continu' },    
+      3179: { nonApplique: 'les dégâts du Glaive exigent d\'être sorti de la vision de la ' +    
+                           'cible : condition de partie, pas de build' },    
+      4646: { nonApplique: 'Bourrasque : décharge après un seuil de dégâts cumulés en 4 s, ' +    
+                           'puis 20 s de recharge — la cadence dépend du combat' },    
+      6696: { nonApplique: 'remboursement de l\'ULTIME après une élimination : agit sur la ' +    
+                           'rotation, pas sur un chiffre de combat' },    
+      6699: { nonApplique: 'létalité gagnée à l\'ÉLIMINATION ; les dégâts en % des PV ' +    
+                           'actuels sont plafonnés hors champions' },    
+      3032: { nonApplique: 'cumuls de dégâts critiques gagnés en attaquant, remis à zéro ' +    
+                           'hors combat : la valeur dépend de la durée d\'engagement' },    
+      6675: { nonApplique: 'réduit de 15 % la recharge RESTANTE des compétences de base à ' +    
+                           'chaque coup critique : agit sur la rotation, que ce modèle ne simule pas' },    
+      6616: { nonApplique: 'puissance et accélération gagnées après un soin ou un bouclier ' +    
+                           'posé sur un ALLIÉ : hors d\'un calcul en cible unique' },    
+      6694: { nonApplique: 'ne reste qu\'un ralentissement sous 50 % des PV. `PenCalc` est ' +    
+                           'un VESTIGE du passif Rancœur, retiré en V14.1 : ses deux ' +    
+                           'coefficients valent zéro dans le fichier — le servir aurait ' +    
+                           'ressuscité un effet mort' },    
+        
+      /* ── Refusés : l'effet ne se chiffre pas en points ──────────────────────────── */    
+        
+      3157: { nonApplique: 'STASE : invulnérabilité totale de 2,5 s, mais immobilité et ' +    
+                           'silence — sa valeur est tactique, pas numérique' },    
+      3026: { nonApplique: 'RÉSURRECTION : ne réduit aucun dégât, elle rejoue le combat. ' +    
+                           'L\'ajouter aux PV effectifs les doublerait à tort' },    
+      3139: { nonApplique: 'DISSIPATION d\'un contrôle : sa valeur dépend du sort dissipé' },    
+      3116: { nonApplique: 'ralentissement à chaque sort : un contrôle, pas des dégâts' },    
+      6609: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },    
+      3075: { nonApplique: 'Épines : 20 + 10 % de l\'armure bonus en dégâts MAGIQUES à ' +    
+                           'l\'attaquant, à chaque attaque SUBIE. Le montant dépend donc ' +    
+                           'de la cadence d\'attaque de l\'adversaire, que le modèle ne ' +    
+                           'simule pas — il chiffre ce que le porteur inflige, pas ce ' +    
+                           'qu\'on lui inflige' },    
+      2522: { nonApplique: 'rend du mana et augmente le coût des sorts : agit sur ' +    
+                           'l\'autonomie, déjà mesurée à part' },    
+        
+      /* ── Refusés : l'effet porte sur un ALLIÉ ───────────────────────────────────── */    
+        
+      3107: { nonApplique: 'soin de zone posé sur les ALLIÉS, plus des dégâts aux champions ' +    
+                           'ennemis dans la zone : hors d\'un calcul en cible unique' },    
+      3109: { nonApplique: 'redirige vers le porteur une part des dégâts subis par un ALLIÉ' },    
+      3222: { nonApplique: 'dissipe et soigne un ALLIÉ' },    
+      2065: { nonApplique: 'vitesse de déplacement de zone pour les ALLIÉS' },    
+      3050: { nonApplique: 'zone créée avec un ALLIÉ lié : exige un second champion' },    
+      3504: { nonApplique: 'vitesse d\'attaque accordée aux ALLIÉS soignés ou protégés' },    
+      6617: { nonApplique: 'soins et boucliers en chaîne sur les ALLIÉS proches' },    
+      6620: { nonApplique: 'soin de zone posé sur les ALLIÉS, chargé par les dégâts subis' },    
+      2524: { nonApplique: 'aura de vitesse d\'attaque pour les ALLIÉS proches' }    
+    };    
     
   };
   d["./items_modeles.js"] = d["./items_modeles"];
@@ -19245,6 +19456,25 @@
          boutique : le Bouclier de Doran est extrait à 0,8 et annonce « 4 PV toutes les    
          5 sec » ; la Corne du gardien à 4 pour « 20 PV toutes les 5 sec ». */    
       p.regenPVtotal = p.regenPVbase * (1 + (p.regenPVpct || 0)) + (p.regenPV || 0);    
+      /* Vitalité sans bornes (Visage spirituel) amplifie « tout soin et bouclier REÇU,    
+         ainsi que la régénération de vie ». Elle se compose MULTIPLICATIVEMENT, après le    
+         pourcentage de régénération : ce sont deux stats distinctes, et le wiki est    
+         explicite sur les deux points.    
+         Appliqué ICI, dans le profil, et non seulement dans l'affichage des défenses —    
+         sinon la même fiche annonçait deux régénérations différentes selon l'endroit où    
+         on la lisait, ce qui est pire qu'un chiffre faux : c'est un chiffre qui se    
+         contredit. */    
+      if (!extras.sansPassifs && p.regenPVtotal != null) {    
+        const { MODELES, parId } = require('./30_moteur_items');    
+        let recu = 0;    
+        (p.objets || []).forEach(id => {    
+          const m = MODELES[id];    
+          if (!m || m.effet !== 'soinsRecus' || !m.soinsRecus.porteRegen) return;    
+          const v = ((parId[id].valeurs) || {})[m.soinsRecus.valeur];    
+          if (v != null) recu += v;    
+        });    
+        if (recu) { p.soinsRecus = recu; p.regenPVtotal *= 1 + recu; }    
+      }    
       p.regenManaTotal = p.regenManaBase == null ? null    
         : p.regenManaBase * (1 + (p.regenManapct || 0)) + (p.regenMana || 0);    
       return p;    
@@ -19599,537 +19829,640 @@
   d["./26_modele_degats.js"] = d["./26_modele_degats"];
 
   d["./30_moteur_items"] = function (module, exports, require) {
-    /* Moteur d'évaluation des passifs d'objet.
-    
-       Comme pour les runes : les nombres viennent du fichier de jeu, seul le comportement
-       est encodé (`items_modeles.js`). Un objet sans modèle renvoie « non modélisé »,
-       jamais une valeur approchée.
-    
-       Le point délicat, propre aux objets : certains pourcentages portent sur la CIBLE
-       (la Lame du roi déchu frappe un pourcentage des PV actuels de l'adversaire) et non
-       sur le porteur. Confondre les deux fait varier le résultat du simple au triple selon
-       l'état de la cible. */
-    
-    const items = require('./items.json');
-    const MODELES = require('./items_modeles');
-    
-    const parId = {};
-    items.forEach(o => { parId[o.id] = o; });
-    
-    /* Valeur d'un terme résolu, dans le contexte du porteur et de la cible.
-       `surCible` détourne les termes de PV vers la cible : c'est le seul cas où une
-       formule d'objet ne parle pas du porteur. */
-    function valeurTerme(t, p, cible) {
-      const n = p.niveau || 18;
-      switch (t.stat) {
-        case 'flat':
-          if (t.mode === 'parNiveau') {
-            if (t.jusqua == null) return t.valeur;
-            return t.valeur + (t.jusqua - t.valeur) * (n - 1) / 17;
-          }
-          return t.valeur;
-        case 'AD':  return t.valeur * (t.mode === 'bonus' ? p.adBonus
-                                     : t.mode === 'base' ? p.adBase : p.adTotal);
-        case 'AP':  return t.valeur * p.ap;
-        case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);
-        case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;
-        case 'Armure': return t.valeur * p.armure;
-        case 'RM':     return t.valeur * p.rm;
-        /* Mana maximum. `null` sur un champion à énergie ou à fureur : on refuse plutôt
-           que de compter zéro, sinon le Manamune paraîtrait ne rien donner alors qu'il
-           est simplement inapplicable. */
-        case 'Mana':   return p.mana == null ? null : t.valeur * p.mana;
-        /* Stats du porteur dont certains passifs dépendent : la Faux spectrale ajoute
-           50 × la chance de critique, le Glaive d'ombre 1,5 × la létalité. Les refuser
-           privait le calculateur d'objets entiers. */
-        case 'Crit':       return t.valeur * (p.crit || 0);
-        case 'DegatsCrit': return t.valeur * (p.degatsCrit || 0);
-        case 'Letalite':   return t.valeur * (p.letalite || 0);
-        case 'Accel':      return t.valeur * (p.accel || 0);
-        case 'VitesseAttaque': return t.valeur * (p.vitesseAttaque || 0);
-        default:       return null;          // stat non gérée : refus, jamais d'à-peu-près
-      }
-    }
-    
-    /* Facteur porté par la CIBLE.
-    
-       Piège coûteux : le fichier de jeu ne range PAS le pourcentage et sa base dans le
-       même calcul. La Lame du roi déchu stocke « 0,09 » dans `MeleeItemCalcValue` et la
-       multiplication par les PV actuels de l'adversaire dans un calcul séparé. Lire le
-       premier seul donnait « 0,06 points de dégâts » au lieu de 145 — une erreur d'un
-       facteur 2400, silencieuse et parfaitement plausible à l'œil.
-    
-       D'où ce facteur appliqué en fin de calcul, déclaré objet par objet. */
-    function facteurCible(surCible, cible) {
-      if (!surCible) return { f: 1, libelle: null };
-      if (!cible) return null;
-      if (surCible === 'pvMax')
-        return { f: cible.pvMax, libelle: 'PV max de la cible' };
-      if (surCible === 'pvActuels')
-        return { f: pvActuels(cible), libelle: 'PV actuels de la cible' };
-      return null;
-    }
-    
-    /* PV actuels de la cible. Par défaut on suppose la cible à pleine vie — c'est le cas
-       le moins favorable aux objets en pourcentage de vie actuelle, donc le plus prudent
-       dans une comparaison de builds. */
-    const pvActuels = c => c.pvActuels != null ? c.pvActuels : c.pvMax;
-    
-    function evaluerPassif(id, p, cible, options = {}) {
-      const o = parId[id];
-      if (!o) return { ok: false, raison: 'objet inconnu ou hors Faille' };
-      const m = MODELES[id];
-      if (!m) return { ok: false, raison: 'non modélisé', nom: o.nom };
-      if (m.nonApplique) return { ok: true, nom: o.nom, applique: false, raison: m.nonApplique };
-    
-      /* Version à distance : soit un autre calcul entier, soit un simple facteur.
-         Le facteur porté par le calcul lui-même (mRangedMultiplier) est déjà résolu à
-         l'extraction et voyage avec le terme. */
-      let nomCalcul = m.calcul;
-      if (p.distance && m.distance && m.distance.calcul) nomCalcul = m.distance.calcul;
-    
-      let brut = null; const detail = [];
-      if (nomCalcul) {
-        const c = o.calculs[nomCalcul];
-        if (!c) return { ok: false, raison: 'calcul absent du fichier de jeu : ' + nomCalcul, nom: o.nom };
-        const termes = c.conditionnel ? (p.distance ? c.siCondition : c.defaut) : c.termes;
-        if (!termes) return { ok: false, raison: 'branche non résolue', nom: o.nom };
-        brut = 0;
-        for (const t of termes) {
-          let v = valeurTerme(t, p, cible);
-          if (v == null) return { ok: false, nom: o.nom,
-                                  raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
-          // facteur « à distance » porté par le calcul (les deux Hydres)
-          if (p.distance && t.facteurDistance != null) v *= t.facteurDistance;
-          brut += v;
-          detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });
-        }
-      } else if (m.termesDeclares) {
-        /* Termes DÉCLARÉS : le fichier porte les nombres dans ses DataValues sans les
-           assembler en `mItemCalculations`. On déclare alors la formule — jamais les
-           valeurs, qui restent lues dans `o.valeurs`. Un terme dont la clé manque est
-           refusé, pas approché. */
-        brut = 0;
-        for (const t of m.termesDeclares) {
-          const coef = o.valeurs[t.cle];
-          if (coef == null) return { ok: false, nom: o.nom, raison: 'valeur absente : ' + t.cle };
-          const v = valeurTerme({ stat: t.stat, mode: t.mode, valeur: coef }, p, cible);
-          if (v == null) return { ok: false, nom: o.nom,
-                                  raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };
-          brut += v;
-          detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });
-        }
-        if (p.distance && m.distance && m.distance.facteur && o.valeurs[m.distance.facteur] != null) {
-          brut *= o.valeurs[m.distance.facteur];
-          detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });
-        }
-      } else if (m.valeur) {
-        const v = o.valeurs[m.valeur];
-        if (v == null) return { ok: false, raison: 'valeur absente : ' + m.valeur, nom: o.nom };
-        brut = v;
-        detail.push({ part: m.valeur, valeur: v });
-        // facteur « à distance » exprimé comme une simple clé
-        if (p.distance && m.distance && m.distance.facteur && o.valeurs[m.distance.facteur] != null) {
-          brut *= o.valeurs[m.distance.facteur];
-          detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });
-        }
-      } else if (m.statsAccordees) {
-        /* Passif qui accorde une stat plutôt que des dégâts : il est traité par
-           `statsAccordees()` et intégré au profil. On renvoie ici le montant accordé, pour
-           que l'objet ne passe pas pour « non évaluable » alors qu'il est parfaitement
-           modélisé. */
-        const r = statsAccordees({ ...p, objets: [id] });
-        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
-        brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
-        r.detail.forEach(d => detail.push({ part: d.stat, valeur: d.valeur }));
-      } else if (m.multiplicateursStat) {
-        /* Passif multiplicateur : traité par `multiplicateursStat()` et intégré au profil.
-           On renvoie ici le montant de stat gagné, pour que l'objet ne passe pas pour
-           « non évaluable » alors qu'il est modélisé. */
-        const r = multiplicateursStat({ ...p, objets: [id] }, m.phase || 'apres',
-                                      { fenetre: options.fenetre });
-        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
-        brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
-        r.detail.forEach(d => detail.push({ part: d.stat + ' ×' + (1 + d.pourcent), valeur: d.valeur }));
-      } else if (m.amplification) {
-        /* Passif d'amplification : il n'a pas de montant propre, il multiplie ce que les
-           autres calculent. On renvoie ici le POURCENTAGE applicable dans le contexte
-           demandé — zéro quand la condition n'est pas remplie (la Flamme-ombre contre une
-           cible à pleine vie), ce qui est la réponse juste et non un refus. */
-        const r = amplification({ ...p, objets: [id] }, cible,
-                                (m.amplification.types || [])[0] || null, null,
-                                { fenetre: options.fenetre });
-        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
-        brut = r.total;
-        r.detail.forEach(d => detail.push({ part: 'amplification', valeur: d.pourcent }));
-      } else if (m.reduction) {
-        /* Passif de réduction : il n'a pas de montant de dégâts, il abaisse une résistance.
-           On renvoie le montant retiré — un pourcentage ou des points selon le mode. */
-        const r = reductionResistances({ ...p, objets: [id] },
-                                       { ultimeLance: true });   // inspection : condition supposée
-        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
-        brut = r.detail.reduce((s, d) => s + d.valeur, 0);
-        r.detail.forEach(d => detail.push({ part: d.resistance + ' (' + d.mode + ')', valeur: d.valeur }));
-      } else {
-        return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };
-      }
-    
-      /* Le pourcentage devient un montant. Sans cible, on refuse : afficher « 0,09 » là
-         où le jeu inflige 145 serait pire que ne rien afficher. */
-      const fc = facteurCible(m.surCible, cible);
-      if (!fc) return { ok: false, nom: o.nom,
-                        raison: 'pourcentage porté par la cible, mais aucune cible fournie' };
-      if (fc.f !== 1) {
-        brut *= fc.f;
-        detail.push({ part: '× ' + fc.libelle + ' (' + Math.round(fc.f) + ')', valeur: null });
-      }
-    
-      // Plafond contre monstres — sans effet sur un champion, mais on le transporte
-      let plafond = null;
-      if (m.plafond && o.valeurs[m.plafond.cle] != null) plafond = o.valeurs[m.plafond.cle];
-      if (plafond != null && options.contre === 'monstres') brut = Math.min(brut, plafond);
-    
-      return {
-        ok: true, applique: true, id, objet: o.nom, nom: m.nom,
-        effet: m.effet, typeDegats: m.typeDegats,
-        declencheur: m.declencheur,
-        brut: Math.round(brut * 100) / 100,
-        parSeconde: !!m.parSeconde,
-        plafondMonstres: plafond,
-        detail, note: m.note || null
-      };
-    }
-    
-    /* Somme des passifs de coup à l'impact d'un build : ce qui s'ajoute à CHAQUE attaque
-       de base. C'est le chiffre qui manquait au comparateur, et qui décide les builds à
-       vitesse d'attaque. */
-    function coupsAImpact(p, cible, options = {}) {
-      const lignes = []; const refus = [];
-      let subisTotal = 0;
-      (p.objets || []).forEach(id => {
-        const m = MODELES[id];
-        if (!m || !m.declencheur) return;
-        const type = m.declencheur.type;
-        /* Deux cadences entrent dans les dégâts par seconde :
-             — « à chaque attaque » : le montant entier ;
-             — « un coup sur n » : le montant AMORTI sur n attaques.
-           Amortir est exact sur la durée, et bien plus juste que d'exclure l'objet : le
-           Tueur de krakens frappe un coup sur trois, il vaut donc un tiers de son montant
-           par attaque. L'ajouter en entier le triplerait ; l'exclure l'effacerait. */
-        let part = 1;
-        if (type === 'toutesNAttaques') part = 1 / Math.max(1, m.declencheur.n || 1);
-        else if (type !== 'coupAImpact') return;
-    
-        const e = evaluerPassif(id, p, cible, options);
-        if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }
-        /* Source « objet » : la Lance de Shojin amplifie les procs d'objet, les Lunettes
-           Hextech non. Passer la source évite d'appliquer l'une pour l'autre. */
-        const mit = options.mitiger ? options.mitiger(e.brut, e.typeDegats, cible, p, 'objet') : null;
-        const subis = (mit ? mit.subis : e.brut) * part;
-        subisTotal += subis;
-        lignes.push({ objet: e.objet, nom: e.nom, type: e.typeDegats,
-                      brut: e.brut, subis: Math.round(subis * 100) / 100,
-                      cadence: part === 1 ? 'chaque attaque'
-                             : '1 attaque sur ' + m.declencheur.n + ' (amorti)',
-                      note: e.note });
-      });
-      return { subis: subisTotal, lignes, refus };
-    }
-    
-    /* Stats accordées par les passifs d'objet (Manamune : 2 % du mana max en dégâts
-       d'attaque ; Gage de Sterak : 50 % de l'AD de base).
-    
-       Elles ne s'ajoutent pas aux dégâts, elles modifient le PROFIL — donc tous les ratios
-       de sorts et toutes les attaques qui suivent. Les ignorer, c'est perdre plus de 30
-       dégâts d'attaque sur un Ryze au Manamune, silencieusement.
-    
-       ⚠ Les CHAÎNES de dépendance existent bel et bien, contrairement à ce que je croyais
-       au départ : l'Approche de l'hiver convertit le mana en PV, l'Armure sanguine convertit
-       les PV bonus en dégâts d'attaque. Additionner les deux sur un même profil figé ferait
-       perdre à la seconde tout ce que la première a accordé.
-    
-       D'où l'application INCRÉMENTALE sur une copie du profil, dans l'ordre déclaré par le
-       champ `ordre` : chaque passif voit le résultat de ceux qui le précèdent. Les gains
-       totaux sont renvoyés à l'appelant, qui les applique une seule fois au vrai profil —
-       une seule voie d'application, donc un seul endroit où se tromper. */
-    function appliquerGain(p, stat, v) {
-      /* Stats DÉRIVÉES : on incrémente le bonus brut, pas la valeur calculée. Ajouter
-         « +10 % » à une vitesse d'attaque de 0,83 donnerait 10,83 attaques par seconde. */
-      if (stat === 'vitesseAttaque') { p.bonusVitesseAttaque = (p.bonusVitesseAttaque || 0) + v; return; }
-      if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }
-      else if (stat === 'ap') p.ap += v;
-      else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }
-      else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }
-      else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }
-      /* `|| 0` et non `if (p[stat] != null)` : une rune peut apporter une stat qu'AUCUN
-         objet du build ne porte (vitesse de déplacement en %, ténacité, vol de vie). La
-         version prudente laissait alors tomber le gain sans un mot — c'est exactement la
-         fuite qu'on vient de boucher dans `profil()`. */
-      else p[stat] = (p[stat] || 0) + v;
-    }
-    
-    function statsAccordees(profilInitial) {
-      const gains = {}; const detail = []; const refus = [];
-      const p = { ...profilInitial };            // copie de travail, l'original est intact
-      const ordonnes = (p.objets || []).slice().sort(
-        (a, b) => ((MODELES[a] || {}).ordre || 0) - ((MODELES[b] || {}).ordre || 0));
-      ordonnes.forEach(id => {
-        const m = MODELES[id];
-        if (!m || !m.statsAccordees) return;
-        const o = parId[id];
-        m.statsAccordees.forEach(({ stat, calcul, valeur, base }) => {
-          let v = 0;
-          if (calcul) {
-            const c = o.calculs[calcul];
-            if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + calcul); return; }
-            let ok = true;
-            c.termes.forEach(t => {
-              const x = valeurTerme(t, p, null);
-              if (x == null) { ok = false; return; }
-              v += x;
-            });
-            if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
-          } else {
-            /* Second cas : le fichier ne porte qu'un pourcentage nu, sans formule. La base
-               est alors déclarée dans le modèle, d'après la description en jeu, et lue sur
-               le profil — jamais devinée. Un pourcentage sans base est refusé. */
-            const brut = o.valeurs[valeur];
-            if (brut == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
-            /* Sans `base`, la clé porte un montant PLAT (30 d'accélération d'ultime) et non
-               un pourcentage : on la sert telle quelle. Avec `base`, c'est une proportion
-               d'une stat du profil, qui doit exister — un pourcentage sans base est refusé. */
-            if (base == null) v = brut;
-            else if (p[base] == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
-            else v = brut * p[base];
-          }
-          gains[stat] = (gains[stat] || 0) + v;
-          appliquerGain(p, stat, v);            // le passif suivant verra ce gain
-          detail.push({ objet: o.nom, nom: m.nom, stat, valeur: Math.round(v * 100) / 100 });
-        });
-      });
-      return { gains, detail, refus };
-    }
-    
-    /* Passifs qui MULTIPLIENT une stat (Coiffe de Rabadon : +30 % de puissance totale).
-    
-       Ils ne s'ajoutent pas, ils amplifient — c'est pourquoi ils ne peuvent pas cohabiter
-       avec `statsAccordees` dans la même passe. Deux phases :
-         'avant' — base issue des seuls objets ; doit précéder les stats accordées, qui la
-                   lisent (l'Armure sanguine convertit les PV bonus, Warmog compris) ;
-         'apres' — base = la stat TOTALE ; doit englober ce que les autres ont accordé.
-    
-       `fenetre` (durée du combat, en secondes) sert aux passifs conditionnels : Jak'Sho ne
-       s'arme qu'après 5 s de combat. Fenêtre inconnue → le passif est refusé, pas supposé.
-    
-       Renvoie des GAINS ABSOLUS (et non un facteur) pour que l'appelant les ajoute comme
-       ceux de `statsAccordees` : une seule voie d'application, donc un seul endroit où se
-       tromper. */
-    const BASES = {
-      ap:     { total: p => p.ap },
-      ad:     { total: p => p.adTotal, bonus: p => p.adBonus, base: p => p.adBase },
-      pv:     { total: p => p.pvMax, bonus: p => p.pvBonus, objets: p => p.pvObjets },
-      armure: { total: p => p.armure, bonus: p => p.armureBonus },
-      rm:     { total: p => p.rm,     bonus: p => p.rmBonus }
-    };
-    
-    function multiplicateursStat(p, phase, options = {}) {
-      const gains = {}; const detail = []; const refus = [];
-      (p.objets || []).forEach(id => {
-        const m = MODELES[id];
-        if (!m || !m.multiplicateursStat) return;
-        if ((m.phase || 'apres') !== phase) return;
-        const o = parId[id];
-    
-        if (m.condition && m.condition.apresSecondes != null) {
-          const f = options.fenetre;
-          if (f == null) { refus.push(o.nom + ' : ' + m.condition.libelle + ', durée de combat non fournie'); return; }
-          if (f < m.condition.apresSecondes) { refus.push(o.nom + ' : ' + m.condition.libelle + ' (fenêtre de ' + f + ' s)'); return; }
-        }
-    
-        m.multiplicateursStat.forEach(({ stat, portee, valeur }) => {
-          const pct = o.valeurs[valeur];
-          if (pct == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }
-          const lire = (BASES[stat] || {})[portee];
-          if (!lire) { refus.push(o.nom + ' : portée non gérée ' + stat + '/' + portee); return; }
-          const socle = lire(p);
-          if (socle == null) { refus.push(o.nom + ' : base ' + stat + '/' + portee + ' indisponible'); return; }
-          const v = pct * socle;
-          gains[stat] = (gains[stat] || 0) + v;
-          detail.push({ objet: o.nom, nom: m.nom, stat,
-                        socle: Math.round(socle * 100) / 100,
-                        pourcent: pct, valeur: Math.round(v * 100) / 100 });
-        });
-      });
-      return { gains, detail, refus };
-    }
-    
-    /* ── AMPLIFICATION DES DÉGÂTS ──────────────────────────────────────────────────
-       Dernière des quatre catégories de passifs, et la seule qui ne produise ni dégâts ni
-       stat : elle multiplie ce que les autres ont calculé.
-    
-       Deux règles vérifiées sur le wiki officiel avant d'écrire cette fonction, aucune des
-       deux devinable :
-    
-       1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to
-          damage dealt now stack additively instead of multiplicatively ». C'est l'inverse
-          exact des pénétrations en pourcentage, qui se multiplient. Deux amplifications de
-          10 % donnent +20 %, pas +21 %. Raisonner par symétrie avec les pénétrations aurait
-          donné un chiffre faux, et plausible.
-       2. L'amplification porte sur les dégâts AVANT mitigation ; la réduction par les
-          résistances reste un facteur séparé.
-    
-       Une amplification ne s'applique pas à n'importe quoi :
-         `portee` — la SOURCE des dégâts (compétence, attaque de base, passif d'objet) ;
-         `types`  — le TYPE des dégâts (la Flamme-ombre ne touche pas le physique).
-       Une amplification dont la condition n'est pas vérifiable est REFUSÉE avec son motif,
-       jamais servie à sa valeur maximale : ce serait offrir un bonus permanent à l'objet
-       qui le porte, précisément dans une comparaison de builds. */
-    const PORTEES = {
-      /* `competences` couvre aussi les passifs d'objet : le wiki range explicitement les
-         « proc damage » avec les dégâts de compétence pour la Lance de Shojin. */
-      tous:        () => true,
-      competences: src => src === 'competence' || src === 'objet',
-      attaques:    src => src === 'attaque'
-    };
-    
-    function amplification(p, cible, type, source, options = {}) {
-      let total = 0; const detail = []; const refus = [];
-      (p.objets || []).forEach(id => {
-        const m = MODELES[id];
-        if (!m || !m.amplification) return;
-        const a = m.amplification;
-        const o = parId[id];
-    
-        const portee = PORTEES[a.portee];
-        if (!portee) { refus.push(o.nom + ' : portée non gérée ' + a.portee); return; }
-        if (source && !portee(source)) return;                 // hors champ : silencieux
-        if (a.types && type && !a.types.includes(type)) return;
-    
-        let pct = null;
-        if (a.montee) {
-          /* Montée en combat (Créateur de failles : 2 % par seconde, plafond 8 %). Sans
-             durée de combat, on refuse — la servir au plafond offrirait +8 % permanents. */
-          const f = options.fenetre != null ? options.fenetre : p.fenetre;
-          if (f == null) { refus.push(o.nom + ' : montée en combat, durée non fournie'); return; }
-          const parSec = o.valeurs[a.montee.parSeconde], plafond = o.valeurs[a.montee.plafond];
-          if (parSec == null || plafond == null) { refus.push(o.nom + ' : clés de montée absentes'); return; }
-          pct = Math.min(plafond, parSec * f);
-        } else if (a.selonPVbonusCible) {
-          /* Tueur de géants : dépend des PV BONUS de la cible, pas du porteur. Contre une
-             cible sans PV bonus, l'amplification est nulle — et doit l'être. */
-          if (!cible || cible.pvBonus == null) { refus.push(o.nom + ' : PV bonus de la cible inconnus'); return; }
-          const max = o.valeurs[a.selonPVbonusCible.max], seuil = o.valeurs[a.selonPVbonusCible.plafondPV];
-          if (max == null || !seuil) { refus.push(o.nom + ' : clés absentes'); return; }
-          pct = max * Math.min(1, cible.pvBonus / seuil);
-        } else if (a.calcul) {
-          /* Cumuls (Lance de Shojin) : le fichier exprime le pas en POINTS de pourcentage
-             (3 = 3 %), d'où la division. Version à distance quand le fichier en porte une. */
-          const nom = (p.distance && a.distance && a.distance.calcul) ? a.distance.calcul : a.calcul;
-          const c = o.calculs[nom];
-          if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + nom); return; }
-          let v = 0; let ok = true;
-          c.termes.forEach(t => { const x = valeurTerme(t, p, cible); if (x == null) ok = false; else v += x; });
-          if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
-          if (a.unite === 'pourcent') v /= 100;
-          if (a.cumuls) {
-            const n = o.valeurs[a.cumuls];
-            if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }
-            v *= n;
-          }
-          pct = v;
-        } else if (a.valeur) {
-          pct = o.valeurs[a.valeur];
-          if (pct == null) { refus.push(o.nom + ' : valeur absente ' + a.valeur); return; }
-        } else { refus.push(o.nom + ' : amplification sans source de valeur'); return; }
-    
-        /* Seuil de PV de la cible (Flamme-ombre : sous 40 %). La cible est supposée à
-           pleine vie par défaut : l'amplification vaut alors zéro, et c'est un plancher
-           assumé — le contraire d'une moyenne inventée. */
-        if (a.seuilPVCible) {
-          const seuil = o.valeurs[a.seuilPVCible];
-          if (!cible || cible.pvMax == null) { refus.push(o.nom + ' : PV de la cible inconnus'); return; }
-          const part = (cible.pvActuels != null ? cible.pvActuels : cible.pvMax) / cible.pvMax;
-          if (part >= seuil) return;                 // condition non remplie : aucun apport
-        }
-    
-        total += pct;
-        detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000 });
-      });
-      return { facteur: 1 + total, total, detail, refus };
-    }
-    
-    /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ────────────────────────────────────
-       Cinquième et dernière catégorie. Elle n'ajoute rien et n'amplifie rien : elle abaisse
-       l'armure ou la résistance magique de l'adversaire.
-    
-       ⚠ Réduction n'est PAS pénétration. La séquence officielle, déjà codée dans
-       `resistEffective`, est : réduction plate → réduction en % → pénétration en % →
-       pénétration plate. La réduction passe donc AVANT, et les confondre change le
-       résultat dès qu'un build porte les deux — le cas courant (Couperet noir +
-       Salutations de Dominik).
-    
-       Les réductions en pourcentage se composent MULTIPLICATIVEMENT entre elles (deux fois
-       20 % laissent 0,8 × 0,8 = 64 % de la résistance), comme les pénétrations et à
-       l'inverse des amplifications de dégâts. */
-    function reductionResistances(p, options = {}) {
-      const restant = { armure: 1, rm: 1 };
-      const plat = { armure: 0, rm: 0 };
-      const detail = []; const refus = [];
-    
-      (p.objets || []).forEach(id => {
-        const m = MODELES[id];
-        if (!m || !m.reduction) return;
-        const r = m.reduction; const o = parId[id];
-    
-        if (r.condition && r.condition.apresUltime && !options.ultimeLance) {
-          refus.push(o.nom + ' : ' + r.condition.libelle + ' — non déclaré'); return;
-        }
-    
-        let v;
-        if (r.calcul) {
-          const c = o.calculs[r.calcul];
-          if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + r.calcul); return; }
-          v = 0; let ok = true;
-          c.termes.forEach(t => { const x = valeurTerme(t, p, null); if (x == null) ok = false; else v += x; });
-          if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }
-        } else {
-          v = o.valeurs[r.valeur];
-          if (v == null) { refus.push(o.nom + ' : valeur absente ' + r.valeur); return; }
-          if (r.cumuls) {
-            const n = o.valeurs[r.cumuls];
-            if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }
-            v *= n;
-          }
-        }
-    
-        if (r.mode === 'pourcent') restant[r.resistance] *= (1 - v);
-        else plat[r.resistance] += v;
-        detail.push({ objet: o.nom, nom: m.nom, resistance: r.resistance,
-                      mode: r.mode, valeur: Math.round(v * 10000) / 10000 });
-      });
-    
-      return {
-        armurePct: Math.round((1 - restant.armure) * 100000) / 100000,
-        rmPct: Math.round((1 - restant.rm) * 100000) / 100000,
-        armurePlate: plat.armure, rmPlate: plat.rm,
-        detail, refus
-      };
-    }
-    
-    /* État de la modélisation, sans arrondi flatteur : combien d'objets finis portent un
-       passif chiffré, et combien sont réellement appliqués aux dégâts. */
-    function couverture() {
-      const finis = items.filter(o => o.fini && o.prix >= 1800);
-      const avecPassif = finis.filter(o => Object.keys(o.calculs).length || Object.keys(o.valeurs).length);
-      const modelises = avecPassif.filter(o => MODELES[o.id] && !MODELES[o.id].nonApplique);
-      const ecartes = avecPassif.filter(o => MODELES[o.id] && MODELES[o.id].nonApplique);
-      const sansModele = avecPassif.filter(o => !MODELES[o.id]);
-      return { finis, avecPassif, modelises, ecartes, sansModele };
-    }
-    
-    module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
-                       appliquerGain, amplification, reductionResistances,
-                       couverture, MODELES, parId };
+    /* Moteur d'évaluation des passifs d'objet.    
+        
+       Comme pour les runes : les nombres viennent du fichier de jeu, seul le comportement    
+       est encodé (`items_modeles.js`). Un objet sans modèle renvoie « non modélisé »,    
+       jamais une valeur approchée.    
+        
+       Le point délicat, propre aux objets : certains pourcentages portent sur la CIBLE    
+       (la Lame du roi déchu frappe un pourcentage des PV actuels de l'adversaire) et non    
+       sur le porteur. Confondre les deux fait varier le résultat du simple au triple selon    
+       l'état de la cible. */    
+        
+    const items = require('./items.json');    
+    const MODELES = require('./items_modeles');    
+        
+    const parId = {};    
+    items.forEach(o => { parId[o.id] = o; });    
+        
+    /* Valeur d'un terme résolu, dans le contexte du porteur et de la cible.    
+       `surCible` détourne les termes de PV vers la cible : c'est le seul cas où une    
+       formule d'objet ne parle pas du porteur. */    
+    function valeurTerme(t, p, cible) {    
+      const n = p.niveau || 18;    
+      switch (t.stat) {    
+        case 'flat':    
+          if (t.mode === 'parNiveau') {    
+            if (t.jusqua == null) return t.valeur;    
+            return t.valeur + (t.jusqua - t.valeur) * (n - 1) / 17;    
+          }    
+          return t.valeur;    
+        case 'AD':  return t.valeur * (t.mode === 'bonus' ? p.adBonus    
+                                     : t.mode === 'base' ? p.adBase : p.adTotal);    
+        case 'AP':  return t.valeur * p.ap;    
+        case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);    
+        case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;    
+        /* ⚠ Le MODE était ignoré sur ces deux stats : `p.armure` (le total) était servi là    
+           où la formule demande l'armure BONUS. Les PV et l'AD, juste au-dessus, le    
+           respectaient depuis toujours — l'oubli ne portait que sur les résistances.    
+           Le Lien vital du Harnais protoplasmique rend « 175 % de l'armure bonus + 175 %    
+           de la RM bonus » : sur un Sion équipé, le total au lieu du bonus donnait 1 055 PV    
+           au lieu de 750, soit 40 % de trop. La base du champion était comptée comme si    
+           elle venait de l'équipement. */    
+        case 'Armure': return t.valeur * (t.mode === 'bonus' ? p.armureBonus : p.armure);    
+        case 'RM':     return t.valeur * (t.mode === 'bonus' ? p.rmBonus : p.rm);    
+        /* Mana maximum. `null` sur un champion à énergie ou à fureur : on refuse plutôt    
+           que de compter zéro, sinon le Manamune paraîtrait ne rien donner alors qu'il    
+           est simplement inapplicable. */    
+        case 'Mana':   return p.mana == null ? null : t.valeur * p.mana;    
+        /* Stats du porteur dont certains passifs dépendent : la Faux spectrale ajoute    
+           50 × la chance de critique, le Glaive d'ombre 1,5 × la létalité. Les refuser    
+           privait le calculateur d'objets entiers. */    
+        case 'Crit':       return t.valeur * (p.crit || 0);    
+        case 'DegatsCrit': return t.valeur * (p.degatsCrit || 0);    
+        case 'Letalite':   return t.valeur * (p.letalite || 0);    
+        case 'Accel':      return t.valeur * (p.accel || 0);    
+        case 'VitesseAttaque': return t.valeur * (p.vitesseAttaque || 0);    
+        default:       return null;          // stat non gérée : refus, jamais d'à-peu-près    
+      }    
+    }    
+        
+    /* Facteur porté par la CIBLE.    
+        
+       Piège coûteux : le fichier de jeu ne range PAS le pourcentage et sa base dans le    
+       même calcul. La Lame du roi déchu stocke « 0,09 » dans `MeleeItemCalcValue` et la    
+       multiplication par les PV actuels de l'adversaire dans un calcul séparé. Lire le    
+       premier seul donnait « 0,06 points de dégâts » au lieu de 145 — une erreur d'un    
+       facteur 2400, silencieuse et parfaitement plausible à l'œil.    
+        
+       D'où ce facteur appliqué en fin de calcul, déclaré objet par objet. */    
+    function facteurCible(surCible, cible) {    
+      if (!surCible) return { f: 1, libelle: null };    
+      if (!cible) return null;    
+      if (surCible === 'pvMax')    
+        return { f: cible.pvMax, libelle: 'PV max de la cible' };    
+      if (surCible === 'pvActuels')    
+        return { f: pvActuels(cible), libelle: 'PV actuels de la cible' };    
+      return null;    
+    }    
+        
+    /* PV actuels de la cible. Par défaut on suppose la cible à pleine vie — c'est le cas    
+       le moins favorable aux objets en pourcentage de vie actuelle, donc le plus prudent    
+       dans une comparaison de builds. */    
+    const pvActuels = c => c.pvActuels != null ? c.pvActuels : c.pvMax;    
+        
+    function evaluerPassif(id, p, cible, options = {}) {    
+      const o = parId[id];    
+      if (!o) return { ok: false, raison: 'objet inconnu ou hors Faille' };    
+      const m = MODELES[id];    
+      if (!m) return { ok: false, raison: 'non modélisé', nom: o.nom };    
+      if (m.nonApplique) return { ok: true, nom: o.nom, applique: false, raison: m.nonApplique };    
+        
+      /* Version à distance : soit un autre calcul entier, soit un simple facteur.    
+         Le facteur porté par le calcul lui-même (mRangedMultiplier) est déjà résolu à    
+         l'extraction et voyage avec le terme. */    
+      let nomCalcul = m.calcul;    
+      if (p.distance && m.distance && m.distance.calcul) nomCalcul = m.distance.calcul;    
+        
+      let brut = null; const detail = [];    
+      if (nomCalcul) {    
+        const c = o.calculs[nomCalcul];    
+        if (!c) return { ok: false, raison: 'calcul absent du fichier de jeu : ' + nomCalcul, nom: o.nom };    
+        const termes = c.conditionnel ? (p.distance ? c.siCondition : c.defaut) : c.termes;    
+        if (!termes) return { ok: false, raison: 'branche non résolue', nom: o.nom };    
+        brut = 0;    
+        for (const t of termes) {    
+          let v = valeurTerme(t, p, cible);    
+          if (v == null) return { ok: false, nom: o.nom,    
+                                  raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };    
+          // facteur « à distance » porté par le calcul (les deux Hydres)    
+          if (p.distance && t.facteurDistance != null) v *= t.facteurDistance;    
+          brut += v;    
+          detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });    
+        }    
+      } else if (m.termesDeclares) {    
+        /* Termes DÉCLARÉS : le fichier porte les nombres dans ses DataValues sans les    
+           assembler en `mItemCalculations`. On déclare alors la formule — jamais les    
+           valeurs, qui restent lues dans `o.valeurs`. Un terme dont la clé manque est    
+           refusé, pas approché. */    
+        brut = 0;    
+        for (const t of m.termesDeclares) {    
+          const coef = o.valeurs[t.cle];    
+          if (coef == null) return { ok: false, nom: o.nom, raison: 'valeur absente : ' + t.cle };    
+          const v = valeurTerme({ stat: t.stat, mode: t.mode, valeur: coef }, p, cible);    
+          if (v == null) return { ok: false, nom: o.nom,    
+                                  raison: 'terme non modélisé : ' + t.stat + '/' + t.mode };    
+          brut += v;    
+          detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });    
+        }    
+        if (p.distance && m.distance && m.distance.facteur && o.valeurs[m.distance.facteur] != null) {    
+          brut *= o.valeurs[m.distance.facteur];    
+          detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });    
+        }    
+      } else if (m.valeur) {    
+        const v = o.valeurs[m.valeur];    
+        if (v == null) return { ok: false, raison: 'valeur absente : ' + m.valeur, nom: o.nom };    
+        brut = v;    
+        detail.push({ part: m.valeur, valeur: v });    
+        // facteur « à distance » exprimé comme une simple clé    
+        if (p.distance && m.distance && m.distance.facteur && o.valeurs[m.distance.facteur] != null) {    
+          brut *= o.valeurs[m.distance.facteur];    
+          detail.push({ part: 'à distance ×' + o.valeurs[m.distance.facteur], valeur: null });    
+        }    
+      } else if (m.statsAccordees) {    
+        /* Passif qui accorde une stat plutôt que des dégâts : il est traité par    
+           `statsAccordees()` et intégré au profil. On renvoie ici le montant accordé, pour    
+           que l'objet ne passe pas pour « non évaluable » alors qu'il est parfaitement    
+           modélisé. */    
+        const r = statsAccordees({ ...p, objets: [id] });    
+        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };    
+        brut = Object.values(r.gains).reduce((s, v) => s + v, 0);    
+        r.detail.forEach(d => detail.push({ part: d.stat, valeur: d.valeur }));    
+      } else if (m.effet === 'reductionCrit' || m.effet === 'ralentAttaqueCible' ||    
+                 m.effet === 'soinsRecus') {    
+        /* Défenses conditionnelles : elles ne produisent NI dégâts NI montant de soin, mais    
+           un FACTEUR appliqué ailleurs (`34_modele_survie.defenses`). Sans ce cas, elles    
+           remontaient « modèle sans calcul ni valeur » — un objet parfaitement modélisé    
+           passait pour inévaluable, ce qui est le plus mauvais des deux mondes : compté    
+           comme couvert dans l'audit, refusé à l'usage. */    
+        const cle = m[m.effet].valeur;    
+        const v = o.valeurs[cle];    
+        if (v == null) return { ok: false, nom: o.nom, raison: 'valeur absente : ' + cle };    
+        brut = v;    
+        detail.push({ part: cle, valeur: v });    
+      } else if (m.effet === 'soin' && m.soin && m.soin.calcul) {    
+        const c = o.calculs[m.soin.calcul];    
+        if (!c || !c.termes) return { ok: false, nom: o.nom, raison: 'calcul absent : ' + m.soin.calcul };    
+        brut = 0;    
+        for (const t of c.termes) {    
+          const v = valeurTerme(t, p, cible);    
+          if (v == null) return { ok: false, nom: o.nom, raison: 'terme non modélisé : ' + t.stat };    
+          brut += v;    
+          detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });    
+        }    
+      } else if (m.amplification && m.amplification.surHypothese) {    
+        /* Amplification conditionnée à une hypothèse : sans elle, ce n'est pas un échec du    
+           modèle mais un refus DÉLIBÉRÉ, au même titre que `nonApplique`. On le dit avec la    
+           même forme, pour que l'audit ne le compte pas comme une panne. */    
+        const h = (options.hypotheses || {})[m.amplification.surHypothese.condition];    
+        if (h == null) {    
+          return { ok: true, nom: o.nom, applique: false,    
+                   raison: m.amplification.surHypothese.quoi +    
+                           ' — fournissez `hypotheses.' + m.amplification.surHypothese.condition + '`' };    
+        }    
+        const a = amplification(p, cible, null, null, options);    
+        const d = a.detail.find(x => x.objet === o.nom);    
+        brut = d ? d.pourcent : 0;    
+        detail.push({ part: 'amplification', valeur: brut });    
+      } else if (m.multiplicateursStat) {    
+        /* Passif multiplicateur : traité par `multiplicateursStat()` et intégré au profil.    
+           On renvoie ici le montant de stat gagné, pour que l'objet ne passe pas pour    
+           « non évaluable » alors qu'il est modélisé. */    
+        const r = multiplicateursStat({ ...p, objets: [id] }, m.phase || 'apres',    
+                                      { fenetre: options.fenetre });    
+        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };    
+        brut = Object.values(r.gains).reduce((s, v) => s + v, 0);    
+        r.detail.forEach(d => detail.push({ part: d.stat + ' ×' + (1 + d.pourcent), valeur: d.valeur }));    
+      } else if (m.amplification) {    
+        /* Passif d'amplification : il n'a pas de montant propre, il multiplie ce que les    
+           autres calculent. On renvoie ici le POURCENTAGE applicable dans le contexte    
+           demandé — zéro quand la condition n'est pas remplie (la Flamme-ombre contre une    
+           cible à pleine vie), ce qui est la réponse juste et non un refus. */    
+        const r = amplification({ ...p, objets: [id] }, cible,    
+                                (m.amplification.types || [])[0] || null, null,    
+                                { fenetre: options.fenetre });    
+        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };    
+        brut = r.total;    
+        r.detail.forEach(d => detail.push({ part: 'amplification', valeur: d.pourcent }));    
+      } else if (m.reduction) {    
+        /* Passif de réduction : il n'a pas de montant de dégâts, il abaisse une résistance.    
+           On renvoie le montant retiré — un pourcentage ou des points selon le mode. */    
+        const r = reductionResistances({ ...p, objets: [id] },    
+                                       { ultimeLance: true });   // inspection : condition supposée    
+        if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };    
+        brut = r.detail.reduce((s, d) => s + d.valeur, 0);    
+        r.detail.forEach(d => detail.push({ part: d.resistance + ' (' + d.mode + ')', valeur: d.valeur }));    
+      } else {    
+        return { ok: false, raison: 'modèle sans calcul ni valeur', nom: o.nom };    
+      }    
+        
+      /* Le pourcentage devient un montant. Sans cible, on refuse : afficher « 0,09 » là    
+         où le jeu inflige 145 serait pire que ne rien afficher. */    
+      const fc = facteurCible(m.surCible, cible);    
+      if (!fc) return { ok: false, nom: o.nom,    
+                        raison: 'pourcentage porté par la cible, mais aucune cible fournie' };    
+      if (fc.f !== 1) {    
+        brut *= fc.f;    
+        detail.push({ part: '× ' + fc.libelle + ' (' + Math.round(fc.f) + ')', valeur: null });    
+      }    
+        
+      // Plafond contre monstres — sans effet sur un champion, mais on le transporte    
+      let plafond = null;    
+      if (m.plafond && o.valeurs[m.plafond.cle] != null) plafond = o.valeurs[m.plafond.cle];    
+      if (plafond != null && options.contre === 'monstres') brut = Math.min(brut, plafond);    
+        
+      return {    
+        ok: true, applique: true, id, objet: o.nom, nom: m.nom,    
+        effet: m.effet, typeDegats: m.typeDegats,    
+        declencheur: m.declencheur,    
+        brut: Math.round(brut * 100) / 100,    
+        parSeconde: !!m.parSeconde,    
+        plafondMonstres: plafond,    
+        detail, note: m.note || null    
+      };    
+    }    
+        
+    /* Somme des passifs de coup à l'impact d'un build : ce qui s'ajoute à CHAQUE attaque    
+       de base. C'est le chiffre qui manquait au comparateur, et qui décide les builds à    
+       vitesse d'attaque. */    
+    function coupsAImpact(p, cible, options = {}) {    
+      const lignes = []; const refus = [];    
+      let subisTotal = 0;    
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || !m.declencheur) return;    
+        const type = m.declencheur.type;    
+        /* Deux cadences entrent dans les dégâts par seconde :    
+             — « à chaque attaque » : le montant entier ;    
+             — « un coup sur n » : le montant AMORTI sur n attaques.    
+           Amortir est exact sur la durée, et bien plus juste que d'exclure l'objet : le    
+           Tueur de krakens frappe un coup sur trois, il vaut donc un tiers de son montant    
+           par attaque. L'ajouter en entier le triplerait ; l'exclure l'effacerait. */    
+        let part = 1;    
+        if (type === 'toutesNAttaques') part = 1 / Math.max(1, m.declencheur.n || 1);    
+        else if (type !== 'coupAImpact') return;    
+        
+        const e = evaluerPassif(id, p, cible, options);    
+        if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }    
+        /* Source « objet » : la Lance de Shojin amplifie les procs d'objet, les Lunettes    
+           Hextech non. Passer la source évite d'appliquer l'une pour l'autre. */    
+        const mit = options.mitiger ? options.mitiger(e.brut, e.typeDegats, cible, p, 'objet') : null;    
+        const subis = (mit ? mit.subis : e.brut) * part;    
+        subisTotal += subis;    
+        lignes.push({ objet: e.objet, nom: e.nom, type: e.typeDegats,    
+                      brut: e.brut, subis: Math.round(subis * 100) / 100,    
+                      cadence: part === 1 ? 'chaque attaque'    
+                             : '1 attaque sur ' + m.declencheur.n + ' (amorti)',    
+                      note: e.note });    
+      });    
+      return { subis: subisTotal, lignes, refus };    
+    }    
+        
+    /* Stats accordées par les passifs d'objet (Manamune : 2 % du mana max en dégâts    
+       d'attaque ; Gage de Sterak : 50 % de l'AD de base).    
+        
+       Elles ne s'ajoutent pas aux dégâts, elles modifient le PROFIL — donc tous les ratios    
+       de sorts et toutes les attaques qui suivent. Les ignorer, c'est perdre plus de 30    
+       dégâts d'attaque sur un Ryze au Manamune, silencieusement.    
+        
+       ⚠ Les CHAÎNES de dépendance existent bel et bien, contrairement à ce que je croyais    
+       au départ : l'Approche de l'hiver convertit le mana en PV, l'Armure sanguine convertit    
+       les PV bonus en dégâts d'attaque. Additionner les deux sur un même profil figé ferait    
+       perdre à la seconde tout ce que la première a accordé.    
+        
+       D'où l'application INCRÉMENTALE sur une copie du profil, dans l'ordre déclaré par le    
+       champ `ordre` : chaque passif voit le résultat de ceux qui le précèdent. Les gains    
+       totaux sont renvoyés à l'appelant, qui les applique une seule fois au vrai profil —    
+       une seule voie d'application, donc un seul endroit où se tromper. */    
+    function appliquerGain(p, stat, v) {    
+      /* Stats DÉRIVÉES : on incrémente le bonus brut, pas la valeur calculée. Ajouter    
+         « +10 % » à une vitesse d'attaque de 0,83 donnerait 10,83 attaques par seconde. */    
+      if (stat === 'vitesseAttaque') { p.bonusVitesseAttaque = (p.bonusVitesseAttaque || 0) + v; return; }    
+      if (stat === 'ad') { p.adBonus += v; p.adTotal += v; }    
+      else if (stat === 'ap') p.ap += v;    
+      else if (stat === 'pv') { p.pvBonus += v; p.pvMax += v; }    
+      else if (stat === 'armure') { p.armure += v; p.armureBonus += v; }    
+      else if (stat === 'rm') { p.rm += v; p.rmBonus += v; }    
+      /* `|| 0` et non `if (p[stat] != null)` : une rune peut apporter une stat qu'AUCUN    
+         objet du build ne porte (vitesse de déplacement en %, ténacité, vol de vie). La    
+         version prudente laissait alors tomber le gain sans un mot — c'est exactement la    
+         fuite qu'on vient de boucher dans `profil()`. */    
+      else p[stat] = (p[stat] || 0) + v;    
+    }    
+        
+    function statsAccordees(profilInitial) {    
+      const gains = {}; const detail = []; const refus = [];    
+      const p = { ...profilInitial };            // copie de travail, l'original est intact    
+      const ordonnes = (p.objets || []).slice().sort(    
+        (a, b) => ((MODELES[a] || {}).ordre || 0) - ((MODELES[b] || {}).ordre || 0));    
+      ordonnes.forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || !m.statsAccordees) return;    
+        const o = parId[id];    
+        m.statsAccordees.forEach(({ stat, calcul, valeur, base, cumuls, baseSiAbsente }) => {    
+          let v = 0;    
+          if (calcul) {    
+            const c = o.calculs[calcul];    
+            if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + calcul); return; }    
+            let ok = true;    
+            c.termes.forEach(t => {    
+              const x = valeurTerme(t, p, null);    
+              if (x == null) { ok = false; return; }    
+              v += x;    
+            });    
+            if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }    
+          } else {    
+            /* Second cas : le fichier ne porte qu'un pourcentage nu, sans formule. La base    
+               est alors déclarée dans le modèle, d'après la description en jeu, et lue sur    
+               le profil — jamais devinée. Un pourcentage sans base est refusé. */    
+            const brut = o.valeurs[valeur];    
+            if (brut == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }    
+            /* Sans `base`, la clé porte un montant PLAT (30 d'accélération d'ultime) et non    
+               un pourcentage : on la sert telle quelle. Avec `base`, c'est une proportion    
+               d'une stat du profil, qui doit exister — un pourcentage sans base est refusé. */    
+            if (base == null) v = brut;    
+            else if (p[base] == null) {    
+              /* Base absente du profil. Refuser est le bon réflexe par défaut — c'est ce    
+                 qui empêche de servir « 2 % du mana » à un champion à énergie, où zéro    
+                 serait faux et non incomplet. Mais certaines bases valent LÉGITIMEMENT    
+                 zéro quand aucun objet ne les porte : sans régénération de mana bonus, la    
+                 Première lumière n'accorde rien, et c'est exact. Le cas s'ouvre donc    
+                 objet par objet, jamais globalement. */    
+              if (baseSiAbsente == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }    
+              v = brut * baseSiAbsente;    
+            }    
+            else v = brut * p[base];    
+          }    
+          /* Gain PAR CUMUL. Le Bâton séculaire accorde 10 PV, 30 mana et 3 puissance par    
+             minute, dix fois : servir la valeur unitaire aurait sous-estimé l'objet d'un    
+             facteur dix. Le nombre de cumuls est LU dans le fichier (`MaxStacks`), pas    
+             écrit ici, et l'hypothèse — cumuls au maximum — est dite dans la note de    
+             l'objet, comme pour la Lance de Shojin. */    
+          if (cumuls) {    
+            const n = o.valeurs[cumuls];    
+            if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent (' + cumuls + ')'); return; }    
+            v *= n;    
+          }    
+          gains[stat] = (gains[stat] || 0) + v;    
+          appliquerGain(p, stat, v);            // le passif suivant verra ce gain    
+          detail.push({ objet: o.nom, nom: m.nom, stat, valeur: Math.round(v * 100) / 100 });    
+        });    
+      });    
+      return { gains, detail, refus };    
+    }    
+        
+    /* Passifs qui MULTIPLIENT une stat (Coiffe de Rabadon : +30 % de puissance totale).    
+        
+       Ils ne s'ajoutent pas, ils amplifient — c'est pourquoi ils ne peuvent pas cohabiter    
+       avec `statsAccordees` dans la même passe. Deux phases :    
+         'avant' — base issue des seuls objets ; doit précéder les stats accordées, qui la    
+                   lisent (l'Armure sanguine convertit les PV bonus, Warmog compris) ;    
+         'apres' — base = la stat TOTALE ; doit englober ce que les autres ont accordé.    
+        
+       `fenetre` (durée du combat, en secondes) sert aux passifs conditionnels : Jak'Sho ne    
+       s'arme qu'après 5 s de combat. Fenêtre inconnue → le passif est refusé, pas supposé.    
+        
+       Renvoie des GAINS ABSOLUS (et non un facteur) pour que l'appelant les ajoute comme    
+       ceux de `statsAccordees` : une seule voie d'application, donc un seul endroit où se    
+       tromper. */    
+    const BASES = {    
+      ap:     { total: p => p.ap },    
+      ad:     { total: p => p.adTotal, bonus: p => p.adBonus, base: p => p.adBase },    
+      pv:     { total: p => p.pvMax, bonus: p => p.pvBonus, objets: p => p.pvObjets },    
+      armure: { total: p => p.armure, bonus: p => p.armureBonus },    
+      rm:     { total: p => p.rm,     bonus: p => p.rmBonus }    
+    };    
+        
+    function multiplicateursStat(p, phase, options = {}) {    
+      const gains = {}; const detail = []; const refus = [];    
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || !m.multiplicateursStat) return;    
+        if ((m.phase || 'apres') !== phase) return;    
+        const o = parId[id];    
+        
+        if (m.condition && m.condition.apresSecondes != null) {    
+          const f = options.fenetre;    
+          if (f == null) { refus.push(o.nom + ' : ' + m.condition.libelle + ', durée de combat non fournie'); return; }    
+          if (f < m.condition.apresSecondes) { refus.push(o.nom + ' : ' + m.condition.libelle + ' (fenêtre de ' + f + ' s)'); return; }    
+        }    
+        
+        m.multiplicateursStat.forEach(({ stat, portee, valeur }) => {    
+          const pct = o.valeurs[valeur];    
+          if (pct == null) { refus.push(o.nom + ' : valeur absente ' + valeur); return; }    
+          const lire = (BASES[stat] || {})[portee];    
+          if (!lire) { refus.push(o.nom + ' : portée non gérée ' + stat + '/' + portee); return; }    
+          const socle = lire(p);    
+          if (socle == null) { refus.push(o.nom + ' : base ' + stat + '/' + portee + ' indisponible'); return; }    
+          const v = pct * socle;    
+          gains[stat] = (gains[stat] || 0) + v;    
+          detail.push({ objet: o.nom, nom: m.nom, stat,    
+                        socle: Math.round(socle * 100) / 100,    
+                        pourcent: pct, valeur: Math.round(v * 100) / 100 });    
+        });    
+      });    
+      return { gains, detail, refus };    
+    }    
+        
+    /* ── AMPLIFICATION DES DÉGÂTS ──────────────────────────────────────────────────    
+       Dernière des quatre catégories de passifs, et la seule qui ne produise ni dégâts ni    
+       stat : elle multiplie ce que les autres ont calculé.    
+        
+       Deux règles vérifiées sur le wiki officiel avant d'écrire cette fonction, aucune des    
+       deux devinable :    
+        
+       1. Les modificateurs de dégâts INFLIGÉS se cumulent ADDITIVEMENT — « Modifiers to    
+          damage dealt now stack additively instead of multiplicatively ». C'est l'inverse    
+          exact des pénétrations en pourcentage, qui se multiplient. Deux amplifications de    
+          10 % donnent +20 %, pas +21 %. Raisonner par symétrie avec les pénétrations aurait    
+          donné un chiffre faux, et plausible.    
+       2. L'amplification porte sur les dégâts AVANT mitigation ; la réduction par les    
+          résistances reste un facteur séparé.    
+        
+       Une amplification ne s'applique pas à n'importe quoi :    
+         `portee` — la SOURCE des dégâts (compétence, attaque de base, passif d'objet) ;    
+         `types`  — le TYPE des dégâts (la Flamme-ombre ne touche pas le physique).    
+       Une amplification dont la condition n'est pas vérifiable est REFUSÉE avec son motif,    
+       jamais servie à sa valeur maximale : ce serait offrir un bonus permanent à l'objet    
+       qui le porte, précisément dans une comparaison de builds. */    
+    const PORTEES = {    
+      /* `competences` couvre aussi les passifs d'objet : le wiki range explicitement les    
+         « proc damage » avec les dégâts de compétence pour la Lance de Shojin. */    
+      tous:        () => true,    
+      competences: src => src === 'competence' || src === 'objet',    
+      attaques:    src => src === 'attaque'    
+    };    
+        
+    function amplification(p, cible, type, source, options = {}) {    
+      let total = 0; const detail = []; const refus = [];    
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || !m.amplification) return;    
+        const a = m.amplification;    
+        const o = parId[id];    
+        
+        const portee = PORTEES[a.portee];    
+        if (!portee) { refus.push(o.nom + ' : portée non gérée ' + a.portee); return; }    
+        if (source && !portee(source)) return;                 // hors champ : silencieux    
+        if (a.types && type && !a.types.includes(type)) return;    
+        
+        let pct = null;    
+        if (a.montee) {    
+          /* Montée en combat (Créateur de failles : 2 % par seconde, plafond 8 %). Sans    
+             durée de combat, on refuse — la servir au plafond offrirait +8 % permanents. */    
+          const f = options.fenetre != null ? options.fenetre : p.fenetre;    
+          if (f == null) { refus.push(o.nom + ' : montée en combat, durée non fournie'); return; }    
+          const parSec = o.valeurs[a.montee.parSeconde], plafond = o.valeurs[a.montee.plafond];    
+          if (parSec == null || plafond == null) { refus.push(o.nom + ' : clés de montée absentes'); return; }    
+          pct = Math.min(plafond, parSec * f);    
+        } else if (a.selonPVbonusCible) {    
+          /* Tueur de géants : dépend des PV BONUS de la cible, pas du porteur. Contre une    
+             cible sans PV bonus, l'amplification est nulle — et doit l'être. */    
+          if (!cible || cible.pvBonus == null) { refus.push(o.nom + ' : PV bonus de la cible inconnus'); return; }    
+          const max = o.valeurs[a.selonPVbonusCible.max], seuil = o.valeurs[a.selonPVbonusCible.plafondPV];    
+          if (max == null || !seuil) { refus.push(o.nom + ' : clés absentes'); return; }    
+          pct = max * Math.min(1, cible.pvBonus / seuil);    
+        } else if (a.calcul) {    
+          /* Cumuls (Lance de Shojin) : le fichier exprime le pas en POINTS de pourcentage    
+             (3 = 3 %), d'où la division. Version à distance quand le fichier en porte une. */    
+          const nom = (p.distance && a.distance && a.distance.calcul) ? a.distance.calcul : a.calcul;    
+          const c = o.calculs[nom];    
+          if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + nom); return; }    
+          let v = 0; let ok = true;    
+          c.termes.forEach(t => { const x = valeurTerme(t, p, cible); if (x == null) ok = false; else v += x; });    
+          if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }    
+          if (a.unite === 'pourcent') v /= 100;    
+          if (a.cumuls) {    
+            const n = o.valeurs[a.cumuls];    
+            if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }    
+            v *= n;    
+          }    
+          pct = v;    
+        } else if (a.surHypothese) {    
+          /* Amplification conditionnée à un fait que le fichier ne porte pas — la DISTANCE    
+             à la cible, une immobilisation infligée. Trois objets sont dans ce cas, et ils    
+             étaient jusqu'ici purement refusés.    
+        
+             Le modèle continue de ne rien supposer : sans hypothèse fournie par l'appelant,    
+             le refus tient, et il NOMME désormais la donnée qui le lèverait. Avec une    
+             hypothèse, le chiffre est servi et porte la mention de ce sur quoi il repose.    
+             Servir ces objets à leur maximum, comme le ferait un comparateur pressé,    
+             gonflerait de 10 % tout build qui les porte. */    
+          const h = (options.hypotheses || {})[a.surHypothese.condition];    
+          if (h == null) {    
+            refus.push(o.nom + ' : ' + a.surHypothese.quoi +    
+                       ' — fournissez `hypotheses.' + a.surHypothese.condition + '` pour la chiffrer');    
+            return;    
+          }    
+          const max = o.valeurs[a.surHypothese.valeur];    
+          if (max == null) { refus.push(o.nom + ' : valeur absente ' + a.surHypothese.valeur); return; }    
+          if (a.surHypothese.portee) {    
+            /* Montée PROPORTIONNELLE à la distance, bornée par la portée maximale du    
+               fichier : au-delà, l'amplification ne croît plus. En deçà, elle décroît —    
+               servir le plafond à bout portant aurait été le contresens exact. */    
+            const p0 = o.valeurs[a.surHypothese.portee];    
+            if (!p0) { refus.push(o.nom + ' : portée absente ' + a.surHypothese.portee); return; }    
+            pct = max * Math.min(1, Math.max(0, h) / p0);    
+            detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000,    
+                          hypothese: h + ' unités de distance à la cible, sur ' + p0 + ' au maximum' });    
+            total += pct;    
+            return;    
+          }    
+          /* Condition tout-ou-rien : l'hypothèse vaut un nombre d'occurrences ; une seule    
+             suffit à armer l'amplification pendant la fenêtre. */    
+          pct = h > 0 ? max : 0;    
+          detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000,    
+                        hypothese: h + ' × ' + a.surHypothese.quoi + ', fourni par l\'appelant' });    
+          total += pct;    
+          return;    
+        } else if (a.valeur) {    
+          pct = o.valeurs[a.valeur];    
+          if (pct == null) { refus.push(o.nom + ' : valeur absente ' + a.valeur); return; }    
+        } else { refus.push(o.nom + ' : amplification sans source de valeur'); return; }    
+        
+        /* Seuil de PV de la cible (Flamme-ombre : sous 40 %). La cible est supposée à    
+           pleine vie par défaut : l'amplification vaut alors zéro, et c'est un plancher    
+           assumé — le contraire d'une moyenne inventée. */    
+        if (a.seuilPVCible) {    
+          const seuil = o.valeurs[a.seuilPVCible];    
+          if (!cible || cible.pvMax == null) { refus.push(o.nom + ' : PV de la cible inconnus'); return; }    
+          const part = (cible.pvActuels != null ? cible.pvActuels : cible.pvMax) / cible.pvMax;    
+          if (part >= seuil) return;                 // condition non remplie : aucun apport    
+        }    
+        
+        total += pct;    
+        detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000 });    
+      });    
+      return { facteur: 1 + total, total, detail, refus };    
+    }    
+        
+    /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ────────────────────────────────────    
+       Cinquième et dernière catégorie. Elle n'ajoute rien et n'amplifie rien : elle abaisse    
+       l'armure ou la résistance magique de l'adversaire.    
+        
+       ⚠ Réduction n'est PAS pénétration. La séquence officielle, déjà codée dans    
+       `resistEffective`, est : réduction plate → réduction en % → pénétration en % →    
+       pénétration plate. La réduction passe donc AVANT, et les confondre change le    
+       résultat dès qu'un build porte les deux — le cas courant (Couperet noir +    
+       Salutations de Dominik).    
+        
+       Les réductions en pourcentage se composent MULTIPLICATIVEMENT entre elles (deux fois    
+       20 % laissent 0,8 × 0,8 = 64 % de la résistance), comme les pénétrations et à    
+       l'inverse des amplifications de dégâts. */    
+    function reductionResistances(p, options = {}) {    
+      const restant = { armure: 1, rm: 1 };    
+      const plat = { armure: 0, rm: 0 };    
+      const detail = []; const refus = [];    
+        
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || !m.reduction) return;    
+        const r = m.reduction; const o = parId[id];    
+        
+        if (r.condition && r.condition.apresUltime && !options.ultimeLance) {    
+          refus.push(o.nom + ' : ' + r.condition.libelle + ' — non déclaré'); return;    
+        }    
+        
+        let v;    
+        if (r.calcul) {    
+          const c = o.calculs[r.calcul];    
+          if (!c || !c.termes) { refus.push(o.nom + ' : calcul absent ' + r.calcul); return; }    
+          v = 0; let ok = true;    
+          c.termes.forEach(t => { const x = valeurTerme(t, p, null); if (x == null) ok = false; else v += x; });    
+          if (!ok) { refus.push(o.nom + ' : terme non modélisé'); return; }    
+        } else {    
+          v = o.valeurs[r.valeur];    
+          if (v == null) { refus.push(o.nom + ' : valeur absente ' + r.valeur); return; }    
+          if (r.cumuls) {    
+            const n = o.valeurs[r.cumuls];    
+            if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent'); return; }    
+            v *= n;    
+          }    
+        }    
+        
+        if (r.mode === 'pourcent') restant[r.resistance] *= (1 - v);    
+        else plat[r.resistance] += v;    
+        detail.push({ objet: o.nom, nom: m.nom, resistance: r.resistance,    
+                      mode: r.mode, valeur: Math.round(v * 10000) / 10000 });    
+      });    
+        
+      return {    
+        armurePct: Math.round((1 - restant.armure) * 100000) / 100000,    
+        rmPct: Math.round((1 - restant.rm) * 100000) / 100000,    
+        armurePlate: plat.armure, rmPlate: plat.rm,    
+        detail, refus    
+      };    
+    }    
+        
+    /* État de la modélisation, sans arrondi flatteur : combien d'objets finis portent un    
+       passif chiffré, et combien sont réellement appliqués aux dégâts. */    
+    function couverture() {    
+      const finis = items.filter(o => o.fini && o.prix >= 1800);    
+      const avecPassif = finis.filter(o => Object.keys(o.calculs).length || Object.keys(o.valeurs).length);    
+      const modelises = avecPassif.filter(o => MODELES[o.id] && !MODELES[o.id].nonApplique);    
+      const ecartes = avecPassif.filter(o => MODELES[o.id] && MODELES[o.id].nonApplique);    
+      const sansModele = avecPassif.filter(o => !MODELES[o.id]);    
+      return { finis, avecPassif, modelises, ecartes, sansModele };    
+    }    
+        
+    /* `valeurTerme` est exporté pour le modèle de survie : les défenses conditionnelles    
+       (Harnais protoplasmique) évaluent un calcul d'OBJET, et il existe deux résolveurs de    
+       termes — celui des sorts, dans 26_modele_degats, et celui-ci. Employer le mauvais    
+       rendrait des termes propres aux objets non résolus, en silence. */    
+    module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,    
+                       appliquerGain, amplification, reductionResistances,    
+                       couverture, valeurTerme, MODELES, parId };    
     
   };
   d["./30_moteur_items.js"] = d["./30_moteur_items"];
@@ -20185,6 +20518,116 @@
         /* Rendement du prochain point : sert à dire POURQUOI un objet est le bon achat. */    
         gainParArmure: Math.round(p.pvMax / 100 * 100) / 100,    
         gainParPV: Math.round((1 + p.armure / 100) * 100) / 100    
+      };    
+    }    
+        
+    /* ── 1 bis. DÉFENSES QUI NE SONT NI PV NI RÉSISTANCE ────────────────────────────    
+       Trois objets réduisent les dégâts reçus sans toucher aux deux stats que `pvEffectifs`    
+       connaît, et un quatrième soigne une fois par combat. Les compter dans les PV effectifs    
+       aurait été faux : ils sont CONDITIONNELS (à un coup critique, à une attaque de base,    
+       à un seuil de PV) et ne s'appliquent donc pas à tous les dégâts. Les taire aurait été    
+       pire — le Présage de Randuin serait ressorti comme un simple objet d'armure.    
+        
+       Ils sont donc rendus SÉPARÉMENT, chacun avec la part du combat qu'il couvre. Le    
+       lecteur compose ; le modèle ne compose pas à sa place sur une hypothèse qu'il    
+       n'a pas. */    
+    function defenses(p, options = {}) {    
+      const { MODELES, parId, valeurTerme } = require('./30_moteur_items');    
+      const lignes = [];    
+        
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m) return;    
+        const o = parId[id];    
+        const lire = cle => (o.valeurs || {})[cle];    
+        
+        if (m.effet === 'reductionCrit') {    
+          const v = lire(m.reductionCrit.valeur);    
+          if (v == null) return;    
+          lignes.push({    
+            objet: o.nom, nom: m.nom, axe: 'dégâts critiques reçus',    
+            facteur: 1 - v,    
+            /* Le contre-test qui dit que la lecture est la bonne : un coup critique    
+               ordinaire vaut 200 % de l'AD ; à −30 % du TOTAL il en vaut 140, pas 170. */    
+            exemple: 'un coup critique ordinaire passe de 200 % à ' +    
+                     Math.round(200 * (1 - v)) + ' % des dégâts d\'attaque',    
+            portee: 'les seuls coups critiques', note: m.note    
+          });    
+        }    
+        
+        if (m.effet === 'ralentAttaqueCible') {    
+          /* La clé est NÉGATIVE dans le fichier (−0,2) : c'est un malus appliqué à    
+             l'adversaire. On la sert telle quelle plutôt que d'en changer le signe —    
+             inverser un signe « pour que ce soit plus lisible » est la meilleure façon    
+             de ne plus savoir, six mois plus tard, dans quel sens il allait. */    
+          const v = lire(m.ralentAttaqueCible.valeur);    
+          if (v == null) return;    
+          lignes.push({    
+            objet: o.nom, nom: m.nom, axe: 'vitesse d\'attaque de l\'adversaire',    
+            facteur: 1 + v,    
+            exemple: 'les champions ennemis à ' + lire(m.ralentAttaqueCible.rayon) +    
+                     ' unités attaquent ' + Math.round(-v * 100) + ' % moins vite',    
+            portee: 'les seuls dégâts d\'ATTAQUE des ennemis proches', note: m.note    
+          });    
+        }    
+        
+        if (m.effet === 'soinsRecus') {    
+          const v = lire(m.soinsRecus.valeur);    
+          if (v == null) return;    
+          lignes.push({    
+            objet: o.nom, nom: m.nom, axe: 'soins et boucliers reçus',    
+            facteur: 1 + v,    
+            /* `regenPVtotal` porte DÉJÀ l'amplification (appliquée dans `profil`) : la    
+               remultiplier ici afficherait 1,5625 fois la base au lieu de 1,25. */    
+            exemple: 'un soin de 100 en rend ' + Math.round(100 * (1 + v)) +    
+                     (m.soinsRecus.porteRegen    
+                       ? ' ; la régénération de vie est comprise (' +    
+                         Math.round((p.regenPVtotal || 0) * 100) / 100 + ' PV/s)'    
+                       : ''),    
+            portee: 'tout soin ou bouclier reçu, régénération comprise', note: m.note    
+          });    
+        }    
+        
+        if (m.effet === 'soin' && m.soin && m.soin.seuilPV) {    
+          /* Lien vital : un SURSIS, pas une régénération. On le chiffre — c'est un    
+             montant, contrairement à une stase — mais on refuse de l'additionner aux PV    
+             effectifs : il ne sert qu'une fois par 90 s et seulement sous le seuil. */    
+          const c = (o.calculs || {})[m.soin.calcul];    
+          if (!c || !c.termes) return;    
+          let montant = 0, ok = true;    
+          c.termes.forEach(t => {    
+            const x = valeurTerme(t, p, null);    
+            if (x == null) { ok = false; return; }    
+            montant += x;    
+          });    
+          if (!ok) return;    
+          const pvBonus = (o.calculs || {})[m.soin.pvBonus];    
+          let bonus = 0;    
+          if (pvBonus && pvBonus.termes) {    
+            pvBonus.termes.forEach(t => {    
+              const x = valeurTerme(t, p, null);    
+              if (x != null) bonus += x;    
+            });    
+          }    
+          lignes.push({    
+            objet: o.nom, nom: m.nom, axe: 'sursis sous ' +    
+              Math.round(lire(m.soin.seuilPV) * 100) + ' % des PV',    
+            montant: Math.round(montant), pvTemporaires: Math.round(bonus),    
+            facteur: null,    
+            exemple: Math.round(montant) + ' PV rendus en ' + lire(m.soin.duree) +    
+                     ' s, plus ' + Math.round(bonus) + ' PV temporaires, toutes les ' +    
+                     lire(m.soin.recharge) + ' s',    
+            portee: 'une fois par recharge, sous le seuil', note: m.note    
+          });    
+        }    
+      });    
+        
+      return {    
+        lignes,    
+        note: lignes.length    
+          ? 'ces effets ne sont PAS fondus dans les PV effectifs : chacun ne couvre ' +    
+            'qu\'une part du combat, et la part dépend de l\'adversaire'    
+          : 'aucun objet du build ne porte de défense conditionnelle modélisée'    
       };    
     }    
         
@@ -20258,11 +20701,34 @@
         
        ⚠ Elle amplifie les soins que le porteur PRODUIT et les boucliers qu'il pose, pas les    
        soins qu'il reçoit d'autrui — d'où le nom du champ et cette note. */    
+    /* Amplification des soins REÇUS apportée par l'équipement. Séparée de l'efficacité des    
+       soins et boucliers pour la raison dite plus bas : ce n'est pas la même stat, et les    
+       deux ne se composent pas de la même manière. */    
+    function tauxSoinsRecus(p) {    
+      const { MODELES, parId } = require('./30_moteur_items');    
+      let t = 0;    
+      (p.objets || []).forEach(id => {    
+        const m = MODELES[id];    
+        if (!m || m.effet !== 'soinsRecus') return;    
+        const v = ((parId[id].valeurs) || {})[m.soinsRecus.valeur];    
+        if (v != null) t += v;    
+      });    
+      return t;    
+    }    
+        
     function soinsDuChampion(champId, touche, rang, p, partPhysique = 0.5) {    
       const c = M.champions[champId];    
       const sort = c && c.sorts[touche];    
       if (!sort) return { ok: false, raison: 'compétence absente' };    
-      const amp = 1 + (p.soinsEtBoucliers || 0);    
+      /* Deux amplifications DISTINCTES, et qui ne se composent pas de la même façon :    
+           — l'efficacité des soins et boucliers (`soinsEtBoucliers`) porte sur ce que le    
+             champion PRODUIT, et les sources s'y additionnent ;    
+           — Vitalité sans bornes (Visage spirituel) porte sur ce qu'il REÇOIT — soins    
+             propres compris — et le wiki précise qu'elle se compose MULTIPLICATIVEMENT.    
+         Un soin qu'on se lance à soi-même passe par les deux ; un bouclier posé sur un    
+         allié n'en profite pas. Les additionner aurait sous-estimé le cumul des deux. */    
+      const recu = 1 + tauxSoinsRecus(p);    
+      const amp = (1 + (p.soinsEtBoucliers || 0)) * recu;    
         
       /* Un bouclier vaut PLUS que sa valeur affichée, et c'est ce que la confusion    
          soin/bouclier masquait. Le wiki officiel est explicite : « resistances will still    
@@ -20397,6 +20863,7 @@
       const survie = pvEffectifs(p, options.partPhysique != null ? options.partPhysique : 0.5);    
       const aa = M.degatsAttaque(p, options.cible || null);    
       const bou = boucliers(p, options);    
+      const def = defenses(p, options);    
         
       return {    
         champion: p.nom, niveau, or: p.or,    
@@ -20421,7 +20888,12 @@
              conditionnels et temporaires. Les fondre dans le chiffre principal ferait    
              passer un build à boucliers pour durablement plus résistant qu'il n'est. */    
           boucliers: bou,    
-          pvEffectifsAvecBoucliers: survie.mixte + bou.absorbe    
+          pvEffectifsAvecBoucliers: survie.mixte + bou.absorbe,    
+          /* Défenses CONDITIONNELLES, hors des PV effectifs et hors des boucliers : elles    
+             ne couvrent qu'une part du combat (les coups critiques, les attaques de base    
+             des ennemis proches, un seuil de PV). Les fondre dans le chiffre principal    
+             ferait passer un Présage de Randuin pour une armure inconditionnelle. */    
+          conditionnelles: def    
         },    
         
         utilitaire: {    
@@ -20453,7 +20925,7 @@
       };    
     }    
         
-    module.exports = { pvEffectifs, gainSurvie, controle, drain, boucliers,    
+    module.exports = { pvEffectifs, defenses, gainSurvie, controle, drain, boucliers,    
                        soinsDuChampion, autonomieMana, ficheBuild };    
     
   };
@@ -20785,6 +21257,42 @@
       8465: 'Gardien : bouclier accordé en protégeant un allié'    
     };    
         
+    /* ── SOUS HYPOTHÈSE EXPLICITE ────────────────────────────────────────────────────    
+       Neuf des seize refusées ne manquaient pas d'un chiffre : elles manquaient d'un FAIT.    
+       « Combien de fois immobilisez-vous la cible en dix secondes ? » n'a pas de réponse    
+       dans le fichier de jeu — mais elle en a une chez le coach, qui connaît son champion.    
+        
+       Le modèle ne la devine donc pas : il la DEMANDE. Sans hypothèse fournie, la rune    
+       reste refusée exactement comme avant, et le refus dit désormais quelle donnée    
+       débloquerait le calcul. Avec une hypothèse, le chiffre est servi ET porte la mention    
+       de ce qu'il suppose — un lecteur qui juge l'hypothèse fausse sait immédiatement quoi    
+       corriger, ce qu'un chiffre moyenné inventé ne permet jamais.    
+        
+       `plafond` : la recharge propre à la rune borne le nombre de déclenchements. Une    
+       Après-coup a beau suivre dix immobilisations, sa recharge de 20 s n'en laisse passer    
+       qu'une par 20 s. Sans ce plafond, une hypothèse généreuse produirait un chiffre que    
+       le jeu ne permet pas. */    
+    const SOUS_HYPOTHESE = {    
+      8126: { condition: 'immobilisations', genre: 'degats', plafond: 'Cooldown',    
+              quoi: 'immobilisation(s) ou ralentissement(s) infligés par votre kit' },    
+      8439: { condition: 'immobilisations', genre: 'degats', plafond: 'Cooldown',    
+              quoi: 'immobilisation(s) infligées par votre kit' },    
+      8463: { condition: 'immobilisations', genre: 'soin', plafond: 'Cooldown',    
+              quoi: 'immobilisation(s) infligées par votre kit' },    
+      8143: { condition: 'ruees', genre: 'degats', plafond: 'Cooldown',    
+              quoi: 'ruée(s), saut(s) ou téléportation(s) de votre kit' },    
+      9923: { condition: 'ouverturesCombat', genre: 'degats', plafond: 'Cooldown',    
+              quoi: 'ouverture(s) de combat (première attaque après 10 s hors combat)' },    
+      8128: { condition: 'ciblesSousSeuil', genre: 'degats', plafond: 'Cooldown',    
+              quoi: 'passage(s) de la cible sous 50 % de ses PV' },    
+      8401: { condition: 'boucliersPoses', genre: 'degats',    
+              quoi: 'bouclier(s) posés sur vous-même' },    
+      9111: { condition: 'eliminations', genre: 'soin',    
+              quoi: 'participation(s) à une élimination' },    
+      9101: { condition: 'eliminations', genre: 'soin',    
+              quoi: 'élimination(s), sbires compris' }    
+    };    
+        
     /* Le TYPE des dégâts adaptatifs suit la même règle que la force adaptative : magique du    
        côté puissance, physique du côté dégâts d'attaque. Le confondre changerait la    
        résistance qui les mitige — donc le résultat, pas seulement l'étiquette. */    
@@ -20827,15 +21335,50 @@
       const lignes = []; const refus = [];    
       let degatsSubis = 0, degatsBruts = 0, soins = 0;    
         
+      const hyp = options.hypotheses || {};    
+        
       (p.runes || []).forEach(id => {    
-        if (SANS_CADENCE[id]) { refus.push(SANS_CADENCE[id]); return; }    
-        const regle = CADENCES[id];    
-        if (!regle) return;                       // rune de stat ou d'amplification : ailleurs    
+        let regle = CADENCES[id];    
+        let sousHypothese = null;    
+        
+        /* Rune conditionnée à un fait de partie. Si l'appelant a fourni ce fait, on le sert    
+           en le plafonnant par la recharge ; sinon on refuse, en NOMMANT la donnée    
+           manquante. Un refus qui dit quoi fournir vaut infiniment mieux qu'un refus muet :    
+           le premier se lève, le second se subit. */    
+        const sh = SOUS_HYPOTHESE[id];    
+        if (sh && !regle) {    
+          const fourni = hyp[sh.condition];    
+          if (fourni == null) {    
+            /* `SANS_CADENCE[id]` porte DÉJÀ le nom de la rune : le préfixer à nouveau    
+               donnait « Après-coup : Après-coup : exige… ». */    
+            refus.push(SANS_CADENCE[id] +    
+                       ' — fournissez `hypotheses.' + sh.condition + '` (' + sh.quoi + ') pour la chiffrer');    
+            return;    
+          }    
+          const valeurs = (R.parId[id] || {}).valeurs || {};    
+          const cd = sh.plafond ? valeurs[sh.plafond] : null;    
+          const max = cd ? 1 + Math.floor(secondes / cd) : Infinity;    
+          const n = Math.max(0, Math.min(Math.floor(fourni), max));    
+          sousHypothese = {    
+            n, cd,    
+            texte: fourni + ' ' + sh.quoi + ' fournis par l\'appelant' +    
+                   (cd && fourni > max    
+                     ? ' — ramenés à ' + n + ' par la recharge de ' + cd + ' s'    
+                     : '')    
+          };    
+          regle = { cadence: 'fournie', genre: sh.genre };    
+        }    
+        if (!regle) {    
+          if (SANS_CADENCE[id]) refus.push(SANS_CADENCE[id]);    
+          return;                                 // rune de stat ou d'amplification : ailleurs    
+        }    
         
         const e = R.evaluerRune(id, ctx);    
         if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }    
         const valeurs = (R.parId[id] || {}).valeurs || {};    
-        const cad = nombreDeDeclenchements(regle, valeurs, secondes);    
+        const cad = sousHypothese    
+          ? { n: sousHypothese.n, cd: sousHypothese.cd }    
+          : nombreDeDeclenchements(regle, valeurs, secondes);    
         if (!cad) { refus.push(e.nom + ' : cadence absente du fichier'); return; }    
         
         /* Dégâts adaptatifs : on sert la face qui correspond au champion, et le type qui    
@@ -20851,7 +21394,8 @@
           soins += montant * cad.n;    
           lignes.push({ rune: e.nom, genre: 'soin', parDeclenchement: Math.round(montant),    
                         declenchements: cad.n, total: Math.round(montant * cad.n),    
-                        cadence: cad.cd + ' s', hypothese: regle.hypothese || null });    
+                        cadence: cad.cd ? cad.cd + ' s' : 'sur hypothèse',    
+                        hypothese: sousHypothese ? sousHypothese.texte : (regle.hypothese || null) });    
           return;    
         }    
         
@@ -20865,7 +21409,8 @@
                       parDeclenchement: Math.round(montant),    
                       declenchements: cad.n,    
                       brut: Math.round(brut), subis: Math.round(subis),    
-                      cadence: cad.cd + ' s', hypothese: regle.hypothese || null });    
+                      cadence: cad.cd ? cad.cd + ' s' : 'sur hypothèse',    
+                      hypothese: sousHypothese ? sousHypothese.texte : (regle.hypothese || null) });    
         
         /* La Poigne de l'immortel soigne en plus de blesser : deux effets, une seule    
            cadence. Les séparer évite de compter le soin comme des dégâts. */    
@@ -20896,7 +21441,7 @@
       };    
     }    
         
-    module.exports = { surFenetre, typeAdaptatif, CADENCES, SANS_CADENCE };    
+    module.exports = { surFenetre, typeAdaptatif, CADENCES, SANS_CADENCE, SOUS_HYPOTHESE };    
     
   };
   d["./38_runes_combat.js"] = d["./38_runes_combat"];

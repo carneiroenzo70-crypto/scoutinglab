@@ -5461,6 +5461,38 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 La part physique sert aux PV effectifs mixtes : un tank ne se juge pas
                 pareil face à une composition à dégâts magiques.</p>
             </div>
+
+            <!-- Hypothèses de combat. Neuf runes et trois amplifications d'objet ne
+                 manquent pas d'un chiffre mais d'un FAIT que le fichier de jeu ne porte
+                 pas. Le moteur refuse de le supposer ; c'est au coach de le dire, parce
+                 qu'il connaît son champion. À zéro, rien n'est compté — et le bloc
+                 « Non compté, et pourquoi » nomme précisément ce qui manque. -->
+            <div class="card tc-bloc">
+              <div class="tc-titre">Hypothèses de combat
+                <span class="tc-compte" id="tc-hyp-compte">aucune</span></div>
+              <label class="tc-ligne-niv">
+                <span>Immobilisations</span>
+                <input type="range" id="tc-hyp-immo" min="0" max="5" step="1" value="0"
+                       oninput="tcMajHypothese('immobilisations', this.value)" class="tc-range"/>
+                <b id="tc-hyp-immo-v" class="tc-num">0</b>
+              </label>
+              <label class="tc-ligne-niv">
+                <span>Éliminations</span>
+                <input type="range" id="tc-hyp-elim" min="0" max="3" step="1" value="0"
+                       oninput="tcMajHypothese('eliminations', this.value)" class="tc-range"/>
+                <b id="tc-hyp-elim-v" class="tc-num">0</b>
+              </label>
+              <label class="tc-ligne-niv">
+                <span>Distance à la cible</span>
+                <input type="range" id="tc-hyp-dist" min="0" max="600" step="50" value="0"
+                       oninput="tcMajHypothese('distanceCible', this.value)" class="tc-range"/>
+                <b id="tc-hyp-dist-v" class="tc-num">0</b>
+              </label>
+              <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
+                Certaines runes et amplifications dépendent du déroulé, pas du build. Le
+                moteur ne les invente pas : à zéro il les refuse en le disant, et ne les
+                chiffre qu'une fois l'hypothèse posée.</p>
+            </div>
           </aside>
 
           <!-- ── Résultats ────────────────────────────────────────────── -->
@@ -20893,7 +20925,12 @@ function vsdApplyCursor(){
    Le moteur pèse ~1 Mo : il est chargé À LA DEMANDE, à la première ouverture du panneau,
    jamais au démarrage de l'application. */
 var tcEtat = { champion:'Ryze', niveau:18, objets:[], runes:[], cible:'Sion',
-               fenetre:20, partPhys:0.5, arbre:'Sorcellerie' };
+               fenetre:20, partPhys:0.5, arbre:'Sorcellerie',
+               /* Hypothèses de combat : ce que le fichier de jeu ne peut pas savoir.
+                  Toutes à ZÉRO par défaut, et ce zéro est un choix — les runes et
+                  amplifications concernées restent alors refusées, avec leur motif,
+                  plutôt que servies à une valeur moyenne inventée. */
+               hypotheses: { immobilisations:0, eliminations:0, distanceCible:0 } };
 var tcPret = false, tcEnCours = null;
 
 function tcCharger(){
@@ -20965,6 +21002,21 @@ function tcOuvrir(){
 
 function tcMajNiveau(v){ tcEtat.niveau = +v; document.getElementById('tc-niveau-v').textContent = v; tcRendre(); }
 function tcMajFenetre(v){ tcEtat.fenetre = +v; document.getElementById('tc-fenetre-v').textContent = v + ' s'; tcRendre(); }
+/* Une hypothèse posée à ZÉRO n'est pas la même chose qu'une hypothèse absente : le
+   moteur sert zéro dans le premier cas et refuse dans le second. L'interface envoie donc
+   l'objet en entier, toujours. Le compteur du bloc dit d'un coup d'œil combien de
+   suppositions soutiennent le chiffre affiché — un lecteur qui les juge fausses sait
+   immédiatement quel curseur bouger. */
+function tcMajHypothese(cle, v){
+  tcEtat.hypotheses[cle] = +v;
+  var champs = { immobilisations:'tc-hyp-immo', eliminations:'tc-hyp-elim', distanceCible:'tc-hyp-dist' };
+  var el = document.getElementById(champs[cle] + '-v');
+  if (el) el.textContent = (cle === 'distanceCible' && +v) ? v + ' u' : v;
+  var n = Object.keys(tcEtat.hypotheses).filter(function(k){ return tcEtat.hypotheses[k] > 0; }).length;
+  var c = document.getElementById('tc-hyp-compte');
+  if (c) c.textContent = n ? n + ' posée' + (n > 1 ? 's' : '') : 'aucune';
+  tcRendre();
+}
 function tcMajPart(v){ tcEtat.partPhys = +v/100; document.getElementById('tc-partphys-v').textContent = v + ' %'; tcRendre(); }
 
 /* Liste des objets FINIS : proposer les composants noierait le choix sous 218 entrées. */
@@ -21064,7 +21116,18 @@ function tcRendre(){
       }).join('')
     : '<span class="tc-vide">Aucune rune.</span>';
 
-  var opts = { fenetre:tcEtat.fenetre, runes:tcEtat.runes, partPhysique:tcEtat.partPhys };
+  /* Le moteur distingue une hypothèse POSÉE à zéro (« je n'immobilise jamais » → on sert
+     zéro, sans un mot) d'une hypothèse ABSENTE (« je n'ai rien dit » → on refuse en
+     nommant la donnée manquante). Un curseur, lui, part forcément d'une valeur : laissé
+     à 0, il aurait fait passer l'inaction de l'utilisateur pour une affirmation, et les
+     runes concernées auraient disparu du bloc des refus sans que personne ait rien dit.
+     On ne transmet donc que les curseurs effectivement déplacés. */
+  var hyp = {};
+  Object.keys(tcEtat.hypotheses).forEach(function(k){
+    if (tcEtat.hypotheses[k] > 0) hyp[k] = tcEtat.hypotheses[k];
+  });
+  var opts = { fenetre:tcEtat.fenetre, runes:tcEtat.runes, partPhysique:tcEtat.partPhys,
+               hypotheses:hyp };
   var cible = T.cibleChampion(tcEtat.cible, tcEtat.niveau, []);
   var f = T.ficheBuild(tcEtat.champion, tcEtat.niveau, tcEtat.objets,
                        Object.assign({ cible:cible }, opts));
@@ -21093,6 +21156,27 @@ function tcRendre(){
       ' — comptés à part, car conditionnels.</p>';
   html += '</div>';
 
+  /* ── Défenses qui ne sont ni PV ni résistance ──
+     Quatre objets réduisent les dégâts reçus sans toucher aux deux stats que les PV
+     effectifs connaissent. Les fondre dans le chiffre principal ferait passer un Présage
+     de Randuin pour une armure inconditionnelle ; les taire le ferait passer pour un
+     simple objet de PV. Ils ont donc leur propre bloc, chacun avec sa PORTÉE — la part
+     du combat qu'il couvre réellement. */
+  var cond = (f.defensif.conditionnelles || {}).lignes || [];
+  if (cond.length){
+    html += '<div class="card tc-bloc"><div class="tc-titre">Défenses conditionnelles' +
+      '<span class="tc-compte">hors PV effectifs</span></div>' +
+      '<div class="tc-scroll"><table class="tc-tab"><thead><tr><th>Objet</th><th>Effet</th>' +
+      '<th>Ce que ça couvre</th></tr></thead><tbody>' +
+      cond.map(function(l){
+        return '<tr><td><b>' + anEsc(l.objet) + '</b> <span class="s">' + anEsc(l.nom) + '</span></td>' +
+          '<td class="s">' + anEsc(l.exemple) + '</td>' +
+          '<td class="s">' + anEsc(l.portee) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">' +
+      anEsc(f.defensif.conditionnelles.note) + '</p></div>';
+  }
+
   /* ── Dégâts par sort ── */
   var lignes = [], refus = [];
   ['Q','W','E','R'].forEach(function(t){
@@ -21102,7 +21186,12 @@ function tcRendre(){
     var noms = Object.keys(s.calculs).filter(function(n){ return s.calculs[n].genre === 'degats'; });
     if (!noms.length) return;
     var rang = t === 'R' ? 3 : 5;
-    var r = T.evaluerCalcul(tcEtat.champion, t, noms[0], rang, p, cible);
+    /* Le CONTEXTE doit suivre jusqu'ici. Sans lui, les amplifications conditionnées à
+       une hypothèse (Mandat impérial, Lunettes Hextech) restaient muettes sur les dégâts
+       de sort alors que le curseur était posé : le coach voyait son hypothèse prise en
+       compte sur les runes et ignorée sur les compétences, sans savoir pourquoi. */
+    var r = T.evaluerCalcul(tcEtat.champion, t, noms[0], rang, p, cible,
+                            { hypotheses:hyp, fenetre:tcEtat.fenetre });
     if (!r.ok){ refus.push(t + ' — ' + r.raison); return; }
     lignes.push({ t:t, nom:noms[0], type:r.type, brut:r.brut, subis:r.subis,
                   amp:r.amplification ? Math.round(r.amplification.total * 100) : 0 });
@@ -21123,7 +21212,8 @@ function tcRendre(){
 
   /* ── Runes sur la fenêtre ── */
   if (tcEtat.runes.length){
-    var rc = T.runesSurFenetre(tcEtat.champion, p, cible, tcEtat.fenetre, {});
+    var rc = T.runesSurFenetre(tcEtat.champion, p, cible, tcEtat.fenetre,
+                               { hypotheses:hyp });
     if (rc.lignes.length){
       html += '<div class="card tc-bloc"><div class="tc-titre">Runes sur ' + tcEtat.fenetre + ' s' +
         '<span class="tc-compte">' + rc.degatsSubis + ' subis · ' + rc.soins + ' soignés</span></div>' +

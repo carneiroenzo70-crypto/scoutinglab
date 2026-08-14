@@ -286,5 +286,64 @@ vrai('un build peut gagner sur un axe et perdre sur l\'autre',
      fTank.defensif.pvEffectifsMixte > fMage.defensif.pvEffectifsMixte &&
      fMage.offensif.ap > fTank.offensif.ap);
 
+
+console.log('\n── Défenses qui ne sont ni PV ni résistance');
+/* Trois objets réduisent les dégâts reçus sans toucher aux deux stats que les PV
+   effectifs connaissent, et un quatrième soigne une fois par combat. Ce qu'on vérifie
+   ici n'est pas seulement qu'ils sont chiffrés, mais qu'ils ne sont PAS fondus dans le
+   chiffre principal : chacun ne couvre qu'une part du combat, et la part dépend de
+   l'adversaire. */
+const pDef = M.profil('Sion', 18, [3143, 3110, 3065, 2525], { fenetre: 10 });
+const def = S.defenses(pDef, {});
+verifie('les quatre défenses conditionnelles sont chiffrées', def.lignes.length, 4, 0);
+const parNom = n => def.lignes.find(l => l.objet === n);
+
+/* Vigueur porte sur le TOTAL du coup critique, pas sur son seul bonus. Le wiki fournit
+   le contre-test tout fait : un critique ordinaire passe de 200 % à 140 % des dégâts
+   d'attaque. Lire « −30 % du bonus » aurait donné 170 % — une erreur de moitié. */
+verifie('Vigueur : les critiques passent à 70 % de leur valeur',
+        parNom('Présage de Randuin').facteur, 0.7);
+vrai('  et l\'exemple annonce bien 140 %, pas 170',
+     parNom('Présage de Randuin').exemple.indexOf('140 %') >= 0,
+     parNom('Présage de Randuin').exemple);
+verifie('Caresse de l\'hiver : l\'adversaire attaque à 80 % de sa vitesse',
+        parNom('Cœur gelé').facteur, 0.8);
+
+/* Vitalité intarissable n'est PAS l'efficacité des soins et boucliers : elle porte sur
+   ce qu'on REÇOIT, et le wiki précise qu'elle se compose MULTIPLICATIVEMENT. */
+verifie('Vitalité intarissable : +25 % sur les soins reçus',
+        parNom('Visage spirituel').facteur, 1.25);
+const sansVS = M.profil('Sion', 18, [], { fenetre: 10 });
+const avecVS = M.profil('Sion', 18, [3065], { fenetre: 10 });
+verifie('  et la régénération de vie la reçoit aussi (×2 boutique, puis ×1,25)',
+        avecVS.regenPVtotal, sansVS.regenPVtotal * 2 * 1.25, 0.01);
+/* Le même chiffre annoncé à deux endroits différents de la même fiche est pire qu'un
+   chiffre faux : il se contredit. */
+vrai('  la fiche et la ligne de défense annoncent la MÊME régénération',
+     S.ficheBuild('Sion', 18, [3065], { fenetre: 10 }).soutien.regenPVparSeconde ===
+     Math.round(avecVS.regenPVtotal * 100) / 100,
+     S.ficheBuild('Sion', 18, [3065], { fenetre: 10 }).soutien.regenPVparSeconde + ' PV/s');
+
+/* Le Lien vital est un SURSIS : un montant réel, mais une fois par 90 s et sous un
+   seuil. Il doit être chiffré ET tenu hors des PV effectifs. */
+const lien = parNom('Harnais protoplasmique');
+vrai('le Lien vital est chiffré', lien.montant > 0 && lien.pvTemporaires > 0,
+     lien.montant + ' PV rendus, ' + lien.pvTemporaires + ' temporaires');
+verifie('  et il vaut la base au niveau 18 plus 175 % des résistances BONUS',
+        lien.montant, 400 + 1.75 * (pDef.armureBonus + pDef.rmBonus), 1);
+
+const fDef = S.ficheBuild('Sion', 18, [3143, 3110, 3065, 2525], { fenetre: 10 });
+const attendu = Math.round(1 / (0.5 / (pDef.pvMax / M.multiplicateur(pDef.armure)) +
+                                0.5 / (pDef.pvMax / M.multiplicateur(pDef.rm))));
+vrai('aucune de ces défenses n\'est fondue dans les PV effectifs',
+     fDef.defensif.pvEffectifsMixte === attendu,
+     fDef.defensif.pvEffectifsMixte + ' PV effectifs, exactement PV ÷ résistances');
+vrai('  mais elles sont rendues à part, chacune avec sa portée',
+     fDef.defensif.conditionnelles.lignes.length === 4 &&
+     fDef.defensif.conditionnelles.lignes.every(l => l.portee),
+     fDef.defensif.conditionnelles.lignes.map(l => l.portee).join(' | ').slice(0, 110));
+vrai('un build sans ces objets ne remonte aucune ligne, et le dit',
+     S.defenses(M.profil('Sion', 18, [3068], { fenetre: 10 }), {}).lignes.length === 0);
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══\n');
 process.exit(ko ? 1 : 0);

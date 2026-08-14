@@ -32,8 +32,15 @@ function valeurTerme(t, p, cible) {
     case 'AP':  return t.valeur * p.ap;
     case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);
     case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;
-    case 'Armure': return t.valeur * p.armure;
-    case 'RM':     return t.valeur * p.rm;
+    /* ⚠ Le MODE était ignoré sur ces deux stats : `p.armure` (le total) était servi là
+       où la formule demande l'armure BONUS. Les PV et l'AD, juste au-dessus, le
+       respectaient depuis toujours — l'oubli ne portait que sur les résistances.
+       Le Lien vital du Harnais protoplasmique rend « 175 % de l'armure bonus + 175 %
+       de la RM bonus » : sur un Sion équipé, le total au lieu du bonus donnait 1 055 PV
+       au lieu de 750, soit 40 % de trop. La base du champion était comptée comme si
+       elle venait de l'équipement. */
+    case 'Armure': return t.valeur * (t.mode === 'bonus' ? p.armureBonus : p.armure);
+    case 'RM':     return t.valeur * (t.mode === 'bonus' ? p.rmBonus : p.rm);
     /* Mana maximum. `null` sur un champion à énergie ou à fureur : on refuse plutôt
        que de compter zéro, sinon le Manamune paraîtrait ne rien donner alors qu'il
        est simplement inapplicable. */
@@ -141,6 +148,42 @@ function evaluerPassif(id, p, cible, options = {}) {
     if (r.refus.length) return { ok: false, nom: o.nom, raison: r.refus[0] };
     brut = Object.values(r.gains).reduce((s, v) => s + v, 0);
     r.detail.forEach(d => detail.push({ part: d.stat, valeur: d.valeur }));
+  } else if (m.effet === 'reductionCrit' || m.effet === 'ralentAttaqueCible' ||
+             m.effet === 'soinsRecus') {
+    /* Défenses conditionnelles : elles ne produisent NI dégâts NI montant de soin, mais
+       un FACTEUR appliqué ailleurs (`34_modele_survie.defenses`). Sans ce cas, elles
+       remontaient « modèle sans calcul ni valeur » — un objet parfaitement modélisé
+       passait pour inévaluable, ce qui est le plus mauvais des deux mondes : compté
+       comme couvert dans l'audit, refusé à l'usage. */
+    const cle = m[m.effet].valeur;
+    const v = o.valeurs[cle];
+    if (v == null) return { ok: false, nom: o.nom, raison: 'valeur absente : ' + cle };
+    brut = v;
+    detail.push({ part: cle, valeur: v });
+  } else if (m.effet === 'soin' && m.soin && m.soin.calcul) {
+    const c = o.calculs[m.soin.calcul];
+    if (!c || !c.termes) return { ok: false, nom: o.nom, raison: 'calcul absent : ' + m.soin.calcul };
+    brut = 0;
+    for (const t of c.termes) {
+      const v = valeurTerme(t, p, cible);
+      if (v == null) return { ok: false, nom: o.nom, raison: 'terme non modélisé : ' + t.stat };
+      brut += v;
+      detail.push({ part: t.stat === 'flat' ? 'base' : t.stat, valeur: Math.round(v * 100) / 100 });
+    }
+  } else if (m.amplification && m.amplification.surHypothese) {
+    /* Amplification conditionnée à une hypothèse : sans elle, ce n'est pas un échec du
+       modèle mais un refus DÉLIBÉRÉ, au même titre que `nonApplique`. On le dit avec la
+       même forme, pour que l'audit ne le compte pas comme une panne. */
+    const h = (options.hypotheses || {})[m.amplification.surHypothese.condition];
+    if (h == null) {
+      return { ok: true, nom: o.nom, applique: false,
+               raison: m.amplification.surHypothese.quoi +
+                       ' — fournissez `hypotheses.' + m.amplification.surHypothese.condition + '`' };
+    }
+    const a = amplification(p, cible, null, null, options);
+    const d = a.detail.find(x => x.objet === o.nom);
+    brut = d ? d.pourcent : 0;
+    detail.push({ part: 'amplification', valeur: brut });
   } else if (m.multiplicateursStat) {
     /* Passif multiplicateur : traité par `multiplicateursStat()` et intégré au profil.
        On renvoie ici le montant de stat gagné, pour que l'objet ne passe pas pour
@@ -276,7 +319,7 @@ function statsAccordees(profilInitial) {
     const m = MODELES[id];
     if (!m || !m.statsAccordees) return;
     const o = parId[id];
-    m.statsAccordees.forEach(({ stat, calcul, valeur, base }) => {
+    m.statsAccordees.forEach(({ stat, calcul, valeur, base, cumuls, baseSiAbsente }) => {
       let v = 0;
       if (calcul) {
         const c = o.calculs[calcul];
@@ -298,8 +341,27 @@ function statsAccordees(profilInitial) {
            un pourcentage : on la sert telle quelle. Avec `base`, c'est une proportion
            d'une stat du profil, qui doit exister — un pourcentage sans base est refusé. */
         if (base == null) v = brut;
-        else if (p[base] == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
+        else if (p[base] == null) {
+          /* Base absente du profil. Refuser est le bon réflexe par défaut — c'est ce
+             qui empêche de servir « 2 % du mana » à un champion à énergie, où zéro
+             serait faux et non incomplet. Mais certaines bases valent LÉGITIMEMENT
+             zéro quand aucun objet ne les porte : sans régénération de mana bonus, la
+             Première lumière n'accorde rien, et c'est exact. Le cas s'ouvre donc
+             objet par objet, jamais globalement. */
+          if (baseSiAbsente == null) { refus.push(o.nom + ' : base absente du profil (' + base + ')'); return; }
+          v = brut * baseSiAbsente;
+        }
         else v = brut * p[base];
+      }
+      /* Gain PAR CUMUL. Le Bâton séculaire accorde 10 PV, 30 mana et 3 puissance par
+         minute, dix fois : servir la valeur unitaire aurait sous-estimé l'objet d'un
+         facteur dix. Le nombre de cumuls est LU dans le fichier (`MaxStacks`), pas
+         écrit ici, et l'hypothèse — cumuls au maximum — est dite dans la note de
+         l'objet, comme pour la Lance de Shojin. */
+      if (cumuls) {
+        const n = o.valeurs[cumuls];
+        if (n == null) { refus.push(o.nom + ' : nombre de cumuls absent (' + cumuls + ')'); return; }
+        v *= n;
       }
       gains[stat] = (gains[stat] || 0) + v;
       appliquerGain(p, stat, v);            // le passif suivant verra ce gain
@@ -436,6 +498,43 @@ function amplification(p, cible, type, source, options = {}) {
         v *= n;
       }
       pct = v;
+    } else if (a.surHypothese) {
+      /* Amplification conditionnée à un fait que le fichier ne porte pas — la DISTANCE
+         à la cible, une immobilisation infligée. Trois objets sont dans ce cas, et ils
+         étaient jusqu'ici purement refusés.
+
+         Le modèle continue de ne rien supposer : sans hypothèse fournie par l'appelant,
+         le refus tient, et il NOMME désormais la donnée qui le lèverait. Avec une
+         hypothèse, le chiffre est servi et porte la mention de ce sur quoi il repose.
+         Servir ces objets à leur maximum, comme le ferait un comparateur pressé,
+         gonflerait de 10 % tout build qui les porte. */
+      const h = (options.hypotheses || {})[a.surHypothese.condition];
+      if (h == null) {
+        refus.push(o.nom + ' : ' + a.surHypothese.quoi +
+                   ' — fournissez `hypotheses.' + a.surHypothese.condition + '` pour la chiffrer');
+        return;
+      }
+      const max = o.valeurs[a.surHypothese.valeur];
+      if (max == null) { refus.push(o.nom + ' : valeur absente ' + a.surHypothese.valeur); return; }
+      if (a.surHypothese.portee) {
+        /* Montée PROPORTIONNELLE à la distance, bornée par la portée maximale du
+           fichier : au-delà, l'amplification ne croît plus. En deçà, elle décroît —
+           servir le plafond à bout portant aurait été le contresens exact. */
+        const p0 = o.valeurs[a.surHypothese.portee];
+        if (!p0) { refus.push(o.nom + ' : portée absente ' + a.surHypothese.portee); return; }
+        pct = max * Math.min(1, Math.max(0, h) / p0);
+        detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000,
+                      hypothese: h + ' unités de distance à la cible, sur ' + p0 + ' au maximum' });
+        total += pct;
+        return;
+      }
+      /* Condition tout-ou-rien : l'hypothèse vaut un nombre d'occurrences ; une seule
+         suffit à armer l'amplification pendant la fenêtre. */
+      pct = h > 0 ? max : 0;
+      detail.push({ objet: o.nom, nom: m.nom, pourcent: Math.round(pct * 10000) / 10000,
+                    hypothese: h + ' × ' + a.surHypothese.quoi + ', fourni par l\'appelant' });
+      total += pct;
+      return;
     } else if (a.valeur) {
       pct = o.valeurs[a.valeur];
       if (pct == null) { refus.push(o.nom + ' : valeur absente ' + a.valeur); return; }
@@ -526,6 +625,10 @@ function couverture() {
   return { finis, avecPassif, modelises, ecartes, sansModele };
 }
 
+/* `valeurTerme` est exporté pour le modèle de survie : les défenses conditionnelles
+   (Harnais protoplasmique) évaluent un calcul d'OBJET, et il existe deux résolveurs de
+   termes — celui des sorts, dans 26_modele_degats, et celui-ci. Employer le mauvais
+   rendrait des termes propres aux objets non résolus, en silence. */
 module.exports = { evaluerPassif, coupsAImpact, statsAccordees, multiplicateursStat,
                    appliquerGain, amplification, reductionResistances,
-                   couverture, MODELES, parId };
+                   couverture, valeurTerme, MODELES, parId };

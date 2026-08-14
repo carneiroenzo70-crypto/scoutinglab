@@ -514,17 +514,50 @@ module.exports = {
     }
   },
 
-  /* Amplifications réelles mais non déterminables ici : elles dépendent d'un état que
-     le modèle ne connaît pas (position, contrôle appliqué, élimination récente).
-     Les servir à leur valeur maximale gonflerait les builds qui les portent. */
-  2523: { nonApplique: 'jusqu\'à +10 % selon la DISTANCE à la cible : dépend du ' +
-                       'placement, que le modèle ne connaît pas' },
-  4628: { nonApplique: '+10 % après avoir touché à 600 unités au moins : dépend du ' +
-                       'placement et d\'une recharge de 30 s' },
-  4005: { nonApplique: '+7 % de vulnérabilité après avoir immobilisé la cible : ' +
-                       'dépend du kit du champion, hors du modèle d\'objets' },
+  /* Amplifications réelles, conditionnées à un fait que le fichier ne porte pas : la
+     DISTANCE à la cible, une immobilisation infligée. Elles étaient purement refusées ;
+     elles le restent tant que l'appelant ne fournit pas ce fait — mais le refus dit
+     désormais lequel, et une hypothèse explicite les débloque. Le modèle ne devine
+     toujours rien : il demande. */
+
+  2523: { // Lunettes Hextech C44 — Ligne de mire
+    nom: 'Grossissement', effet: 'amplification',
+    amplification: {
+      portee: 'attaques',
+      /* PROPORTIONNELLE à la distance : le maximum n'est atteint qu'à 500 unités.
+         Le servir à bout portant aurait été le contresens exact de l'objet. */
+      surHypothese: { condition: 'distanceCible', valeur: 'MaxDamageAmp',
+                      portee: 'MaxRange', quoi: 'jusqu\'à +10 % selon la DISTANCE à la cible' }
+    },
+    note: 'les 100 unités de portée d\'attaque supplémentaires sont une stat, pas une ' +
+          'amplification : elles ne sont pas comptées ici'
+  },
+
+  4628: { // Concentration lointaine — Tir de précision
+    nom: 'Tir hyperprécis', effet: 'amplification',
+    amplification: {
+      portee: 'tous',
+      surHypothese: { condition: 'touchesLointaines', valeur: 'DamageAmp',
+                      quoi: 'coup(s) porté(s) à 600 unités ou plus' }
+    },
+    note: 'recharge de 30 s : au-delà d\'un déclenchement par 30 s, l\'hypothèse ' +
+          'surestime — le modèle ne la borne pas, faute de savoir quand ils tombent'
+  },
+
+  4005: { // Mandat impérial — Coordination
+    nom: 'Commande', effet: 'amplification',
+    amplification: {
+      portee: 'tous',
+      surHypothese: { condition: 'immobilisations', valeur: 'DamageAmp',
+                      quoi: 'immobilisation(s) ou ralentissement(s) infligés par votre kit' }
+    },
+    note: 'c\'est un affaiblissement porté PAR LA CIBLE : il profite aussi aux alliés ' +
+          'qui la frappent, ce qu\'un calcul en cible unique ne compte pas'
+  },
+
   6697: { nonApplique: 'AD gagnés à l\'élimination d\'un champion : dépend du déroulé ' +
-                       'de la partie (SpellMaxAmp vaut 0 dans le fichier)' },
+                       'de la partie. `SpellMaxAmp` vaut ZÉRO dans le fichier — vestige, ' +
+                       'comme le PenCalc de Serylda : le servir ressusciterait un effet mort' },
 
   /* ── RÉDUCTION DES RÉSISTANCES DE LA CIBLE ──────────────────────────────────
      Cinquième catégorie. Elle n'ajoute aucun dégât et n'amplifie rien : elle abaisse
@@ -583,5 +616,183 @@ module.exports = {
   3033: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3165: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
   3085: { nonApplique: 'les projectiles touchent des cibles SUPPLÉMENTAIRES : ' +
-                       'aucun gain en cible unique' }
+                       'aucun gain en cible unique' },
+
+  /* ═══ LES 40 PASSIFS RESTANTS ═══════════════════════════════════════════════════
+     Jusqu'ici ils étaient comptés « pas encore modélisés » — un chiffre honnête mais
+     muet : il ne disait pas lesquels manquaient par oubli et lesquels par impossibilité.
+     Chacun porte désormais soit un modèle, soit un motif. Aucun ne reste sans réponse.
+
+     Neuf entrent dans des axes que le modèle possède déjà (stats accordées, soins,
+     survie, vitesse de déplacement). Les autres sont refusés, et le motif dit lequel
+     des trois obstacles s'applique : un état de partie inconnu (élimination, placement),
+     une cible qui n'est pas le porteur (alliés), ou un effet qui ne se chiffre pas en
+     points (stase, dissipation, exécution). ─────────────────────────────────────── */
+
+  /* ── Stats accordées ────────────────────────────────────────────────────────── */
+
+  6657: { // Bâton séculaire — Intemporel
+    nom: 'Intemporel',
+    statsAccordees: [
+      { stat: 'pv',   valeur: 'HealthPerStack', cumuls: 'MaxStacks' },
+      { stat: 'mana', valeur: 'ManaPerStack',   cumuls: 'MaxStacks' },
+      { stat: 'ap',   valeur: 'APPerStack',     cumuls: 'MaxStacks' }
+    ],
+    note: 'cumuls supposés au MAXIMUM (10, soit dix minutes de partie) : +100 PV, ' +
+          '+300 mana, +30 puissance. Éternité (mana rendu par les dégâts subis, soin ' +
+          'par lancer) n\'est pas modélisé.'
+  },
+
+  4401: { // Force de la nature — Inébranlable
+    nom: 'Immuable',
+    /* ⚠ `DamageReduction` vaut ZÉRO dans le fichier. Ce n'est pas une donnée manquante :
+       le wiki dit que la réduction de dégâts magiques a été RETIRÉE en V14.1, remplacée
+       par le cumul actuel. La clé est résiduelle, comme `SiphonDamage` en son temps.
+       La servir aurait été inventer un effet mort. */
+    statsAccordees: [
+      { stat: 'rm', valeur: 'BonusMagicResist' },
+      { stat: 'vd', valeur: 'MoveSpeed' }
+    ],
+    note: 'cumuls supposés au MAXIMUM (8) : +70 de résistance magique et +6 % de ' +
+          'vitesse de déplacement. La clé DamageReduction du fichier vaut zéro — ' +
+          'vestige du passif retiré en V14.1, non appliquée.'
+  },
+
+  6621: { // Cœur de l'aube — Aube
+    nom: 'Première lumière',
+    /* « 2 % d'efficacité des soins et boucliers et 10 points de puissance pour chaque
+       tranche de 100 % de régénération de mana de base supplémentaire. » La base est
+       donc `regenManapct`, le cumul de tous les objets à % de régénération de mana —
+       Cœur de l'aube compris, qui en porte 100 % à lui seul. */
+    statsAccordees: [
+      { stat: 'ap',               valeur: 'APPerManaRegen',      base: 'regenManapct', baseSiAbsente: 0 },
+      { stat: 'soinsEtBoucliers', valeur: 'HSPowerPerManaRegen', base: 'regenManapct', baseSiAbsente: 0 }
+    ],
+    /* Doit passer APRÈS les objets qui apportent de la régénération de mana : sa base
+       est leur somme. `ordre` élevé le place en fin de chaîne. */
+    ordre: 50,
+    note: 'la base est la régénération de mana en POURCENTAGE apportée par l\'équipement'
+  },
+
+  4629: { // Volonté cosmique — Danse enchantée
+    nom: 'Danse des sorts',
+    statsAccordees: [{ stat: 'vdPlate', calcul: 'MoveSpeedAmount' }],
+    /* Désaccord partiel assumé : le fichier porte `MaxStacks: 3` et
+       `MaxMovespeedTooltip: 0,15`, quand le wiki décrit un bonus PLAT de 20 sans cumul.
+       Les deux sources s'accordent sur le 20 (`MoveSpeedAmount`), et sur rien d'autre.
+       On sert donc ce sur quoi elles s'accordent : trois fois 20 serait un chiffre
+       qu'aucune des deux ne donne. */
+    note: 'bonus plat de 20, actif seulement après avoir blessé un champion. Les clés ' +
+          'MaxStacks (3) et MaxMovespeedTooltip (15 %) du fichier ne sont corroborées ' +
+          'par aucune autre source : non appliquées.'
+  },
+
+  /* ── Soins et boucliers REÇUS ───────────────────────────────────────────────── */
+
+  3065: { // Visage spirituel — Vitalité sans bornes
+    nom: 'Vitalité intarissable', effet: 'soinsRecus',
+    soinsRecus: { valeur: 'HealingIncrease', porteRegen: true },
+    /* ⚠ Ce n'est PAS l'efficacité des soins et boucliers (`soinsEtBoucliers`), et les
+       confondre serait une faute de sens autant que de calcul : celle-ci amplifie ce
+       que le porteur PRODUIT pour autrui, celle-là ce qu'il REÇOIT — soins propres
+       compris. Le wiki précise en outre qu'elle se compose MULTIPLICATIVEMENT avec les
+       autres modificateurs de soin, là où l'efficacité s'additionne. Deux stats
+       distinctes, deux règles de composition distinctes. */
+    note: 'amplifie aussi la régénération de vie ; sans effet sur le vol de vie et ' +
+          'l\'omnivampirisme, que le wiki exclut explicitement'
+  },
+
+  /* ── Survie : ce qui réduit les dégâts REÇUS ────────────────────────────────── */
+
+  3143: { // Présage de Randuin — Résilience
+    nom: 'Vigueur', effet: 'reductionCrit',
+    reductionCrit: { valeur: 'PercentCritDamageReduction' },
+    /* Porte sur le TOTAL du coup critique, pas sur son seul bonus — le wiki tranche :
+       « un coup critique ordinaire inflige 140 % de l'AD au lieu de 200 % ». Lire
+       « −30 % du bonus » aurait donné 170 %, une erreur de moitié. */
+    note: 'l\'actif (ralentissement de zone) n\'est pas modélisé'
+  },
+
+  3110: { // Cœur gelé — Gel
+    nom: 'Caresse de l\'hiver', effet: 'ralentAttaqueCible',
+    ralentAttaqueCible: { valeur: 'ASPDSlow', rayon: 'AuraRadius' },
+    note: 'n\'affecte que les CHAMPIONS ennemis depuis la V14.19 ; l\'aura est ' +
+          'permanente, sans recharge'
+  },
+
+  2525: { // Harnais protoplasmique — Bouée de sauvetage
+    nom: 'Lien vital', effet: 'soin',
+    soin: { calcul: 'TotalHealthRegen', pvBonus: 'MaxHealthGain',
+            seuilPV: 'LowHealthThreshold', duree: 'Duration', recharge: 'Cooldown' },
+    note: 'ne se déclenche qu\'une fois par 90 s, sous 30 % des PV : c\'est un SURSIS, ' +
+          'pas une régénération continue — il ne se compare pas aux PV effectifs'
+  },
+
+  /* ── Refusés : l'état de partie n'est pas connu ─────────────────────────────── */
+
+  6333: { nonApplique: 'Ignorer la douleur REPORTE 30 % (mêlée) / 10 % (distance) des ' +
+                       'dégâts subis en saignement, il ne les réduit pas : le total ' +
+                       'encaissé est identique. Défi (soin de 75 % de l\'AD bonus) ' +
+                       'exige une élimination dans les 3 s.' },
+  2517: { nonApplique: 'omnivampirisme accordé à l\'ÉLIMINATION : dépend du déroulé de ' +
+                       'la partie, pas du build' },
+  3137: { nonApplique: 'soin accordé à l\'ÉLIMINATION (fenêtre de 3 s) : même raison' },
+  6610: { nonApplique: 'soin conditionné aux PV manquants ET à un coup critique : ' +
+                       'servir le maximum flatterait l\'objet, servir zéro le condamnerait' },
+  2520: { nonApplique: 'dégâts déclenchés par une immobilisation puis une fenêtre ' +
+                       'd\'élimination : dépend du kit du champion et du déroulé' },
+  6676: { nonApplique: 'exécution sous 5 % des PV et or à l\'élimination : ni dégâts ' +
+                       'ni statistique — l\'objet gagne des parties, pas des points' },
+  3742: { nonApplique: 'cumuls gagnés en SE DÉPLAÇANT vers l\'ennemi : dépend du ' +
+                       'trajet, que le modèle ne connaît pas' },
+  3142: { nonApplique: 'Hâte fantôme : vitesse de déplacement HORS COMBAT, et un actif ' +
+                       'de 6 s à déclencher — aucun des deux ne se chiffre en combat continu' },
+  3179: { nonApplique: 'les dégâts du Glaive exigent d\'être sorti de la vision de la ' +
+                       'cible : condition de partie, pas de build' },
+  4646: { nonApplique: 'Bourrasque : décharge après un seuil de dégâts cumulés en 4 s, ' +
+                       'puis 20 s de recharge — la cadence dépend du combat' },
+  6696: { nonApplique: 'remboursement de l\'ULTIME après une élimination : agit sur la ' +
+                       'rotation, pas sur un chiffre de combat' },
+  6699: { nonApplique: 'létalité gagnée à l\'ÉLIMINATION ; les dégâts en % des PV ' +
+                       'actuels sont plafonnés hors champions' },
+  3032: { nonApplique: 'cumuls de dégâts critiques gagnés en attaquant, remis à zéro ' +
+                       'hors combat : la valeur dépend de la durée d\'engagement' },
+  6675: { nonApplique: 'réduit de 15 % la recharge RESTANTE des compétences de base à ' +
+                       'chaque coup critique : agit sur la rotation, que ce modèle ne simule pas' },
+  6616: { nonApplique: 'puissance et accélération gagnées après un soin ou un bouclier ' +
+                       'posé sur un ALLIÉ : hors d\'un calcul en cible unique' },
+  6694: { nonApplique: 'ne reste qu\'un ralentissement sous 50 % des PV. `PenCalc` est ' +
+                       'un VESTIGE du passif Rancœur, retiré en V14.1 : ses deux ' +
+                       'coefficients valent zéro dans le fichier — le servir aurait ' +
+                       'ressuscité un effet mort' },
+
+  /* ── Refusés : l'effet ne se chiffre pas en points ──────────────────────────── */
+
+  3157: { nonApplique: 'STASE : invulnérabilité totale de 2,5 s, mais immobilité et ' +
+                       'silence — sa valeur est tactique, pas numérique' },
+  3026: { nonApplique: 'RÉSURRECTION : ne réduit aucun dégât, elle rejoue le combat. ' +
+                       'L\'ajouter aux PV effectifs les doublerait à tort' },
+  3139: { nonApplique: 'DISSIPATION d\'un contrôle : sa valeur dépend du sort dissipé' },
+  3116: { nonApplique: 'ralentissement à chaque sort : un contrôle, pas des dégâts' },
+  6609: { nonApplique: 'Hémorragie : réduit les soins de la cible, aucun dégât' },
+  3075: { nonApplique: 'Épines : 20 + 10 % de l\'armure bonus en dégâts MAGIQUES à ' +
+                       'l\'attaquant, à chaque attaque SUBIE. Le montant dépend donc ' +
+                       'de la cadence d\'attaque de l\'adversaire, que le modèle ne ' +
+                       'simule pas — il chiffre ce que le porteur inflige, pas ce ' +
+                       'qu\'on lui inflige' },
+  2522: { nonApplique: 'rend du mana et augmente le coût des sorts : agit sur ' +
+                       'l\'autonomie, déjà mesurée à part' },
+
+  /* ── Refusés : l'effet porte sur un ALLIÉ ───────────────────────────────────── */
+
+  3107: { nonApplique: 'soin de zone posé sur les ALLIÉS, plus des dégâts aux champions ' +
+                       'ennemis dans la zone : hors d\'un calcul en cible unique' },
+  3109: { nonApplique: 'redirige vers le porteur une part des dégâts subis par un ALLIÉ' },
+  3222: { nonApplique: 'dissipe et soigne un ALLIÉ' },
+  2065: { nonApplique: 'vitesse de déplacement de zone pour les ALLIÉS' },
+  3050: { nonApplique: 'zone créée avec un ALLIÉ lié : exige un second champion' },
+  3504: { nonApplique: 'vitesse d\'attaque accordée aux ALLIÉS soignés ou protégés' },
+  6617: { nonApplique: 'soins et boucliers en chaîne sur les ALLIÉS proches' },
+  6620: { nonApplique: 'soin de zone posé sur les ALLIÉS, chargé par les dégâts subis' },
+  2524: { nonApplique: 'aura de vitesse d\'attaque pour les ALLIÉS proches' }
 };

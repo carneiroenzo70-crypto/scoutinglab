@@ -43,7 +43,13 @@ const ampsRunes = require('./36_runes_profil');
 ligne('  entrant dans les stats du profil', Object.keys(ampsRunes.PERMANENTES).length);
 ligne('  écartées du profil avec un motif', Object.keys(ampsRunes.HORS_PROFIL).length);
 ligne('  avec une cadence de combat', Object.keys(C.CADENCES).length);
-ligne('  sans cadence déterminable', Object.keys(C.SANS_CADENCE).length);
+ligne('  sans cadence dans le fichier', Object.keys(C.SANS_CADENCE).length);
+/* Le total ci-dessus mêlait deux situations très différentes : celles qu'une hypothèse
+   explicite débloque, et celles que rien ne débloquera dans un modèle en cible unique.
+   Les compter ensemble faisait passer les premières pour un trou définitif. */
+ligne('    dont chiffrables sur hypothèse fournie', Object.keys(C.SOUS_HYPOTHESE).length);
+ligne('    dont hors de portée du modèle', Object.keys(C.SANS_CADENCE).length -
+      Object.keys(C.SOUS_HYPOTHESE).length);
 
 console.log('\n══ CHAMPIONS');
 const tous = Object.values(champions);
@@ -89,16 +95,33 @@ if (sansDegats.length) sansDegats.forEach(x => console.log('      ' + x));
 const pct = Math.round((1 - (sansType.length + sansCalcul.length) / totalSorts) * 1000) / 10;
 ligne('couverture exploitable des sorts', pct + ' %');
 
+/* Neuf runes et trois amplifications ne manquaient pas d'un chiffre mais d'un FAIT :
+   « combien de fois immobilisez-vous la cible ? », « à quelle distance frappez-vous ? ».
+   Le modèle ne le devine pas — il le DEMANDE, et sert le chiffre dès qu'on le lui donne.
+   Ce ne sont donc plus des lacunes mais des paramètres, et cette section-ci existe pour
+   qu'on ne les confonde plus avec la suivante. */
+console.log('\n══ CE QU\'IL FAUT LUI DIRE POUR QU\'IL CHIFFRE');
+[
+  Object.keys(C.SOUS_HYPOTHESE).length + ' runes servies dès qu\'on fournit l\'hypothèse ' +
+    '(immobilisations, éliminations, ruées, boucliers posés, ouvertures de combat)',
+  '3 amplifications d\'objet de même : distance à la cible, immobilisation infligée',
+  'sans hypothèse, elles restent refusées — et le refus NOMME la donnée manquante'
+].forEach(x => console.log('  · ' + x));
+
 console.log('\n══ CE QUE LE MODÈLE NE SAIT TOUJOURS PAS');
 [
-  cv.sansModele.length + ' passifs d\'objet non modélisés (boucliers, soins, dissipations)',
-  Object.keys(C.SANS_CADENCE).length + ' runes sans cadence déterminable (élimination, immobilisation)',
+  cv.sansModele.length
+    ? cv.sansModele.length + ' passifs d\'objet non modélisés'
+    : 'aucun passif d\'objet sans réponse : ' + cv.modelises.length + ' appliqués, ' +
+      cv.ecartes.length + ' écartés avec un motif écrit',
+  (Object.keys(C.SANS_CADENCE).length - Object.keys(C.SOUS_HYPOTHESE).length) +
+    ' runes sans cadence ET sans hypothèse possible (alliés, tourelles, hors combat)',
   (sansType.length + sansCalcul.length)
     ? (sansType.length + sansCalcul.length) + ' sorts encore incomplets'
     : 'aucune lacune de sort — les 11 du panel de 90, puis les 27 ouvertes par ' +
       'l\'élargissement à 173, sont corrigées',
   declaresHorsPortee.length + ' sorts déclarés hors portée, motif écrit',
-  'les amplifications conditionnelles au placement ou au contrôle (4 objets)',
-  'les boucliers antisorts et ceux posés sur un ALLIÉ, dont la valeur ne se chiffre pas en points'
+  'les boucliers antisorts et ceux posés sur un ALLIÉ, dont la valeur ne se chiffre pas en points',
+  'les dégâts RENVOYÉS (Cotte épineuse) : ils dépendent de la cadence d\'attaque adverse'
 ].forEach(x => console.log('  · ' + x));
 console.log('');

@@ -51,6 +51,116 @@ function pvEffectifs(p, partPhysique = 0.5) {
   };
 }
 
+/* ── 1 bis. DÉFENSES QUI NE SONT NI PV NI RÉSISTANCE ────────────────────────────
+   Trois objets réduisent les dégâts reçus sans toucher aux deux stats que `pvEffectifs`
+   connaît, et un quatrième soigne une fois par combat. Les compter dans les PV effectifs
+   aurait été faux : ils sont CONDITIONNELS (à un coup critique, à une attaque de base,
+   à un seuil de PV) et ne s'appliquent donc pas à tous les dégâts. Les taire aurait été
+   pire — le Présage de Randuin serait ressorti comme un simple objet d'armure.
+
+   Ils sont donc rendus SÉPARÉMENT, chacun avec la part du combat qu'il couvre. Le
+   lecteur compose ; le modèle ne compose pas à sa place sur une hypothèse qu'il
+   n'a pas. */
+function defenses(p, options = {}) {
+  const { MODELES, parId, valeurTerme } = require('./30_moteur_items');
+  const lignes = [];
+
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m) return;
+    const o = parId[id];
+    const lire = cle => (o.valeurs || {})[cle];
+
+    if (m.effet === 'reductionCrit') {
+      const v = lire(m.reductionCrit.valeur);
+      if (v == null) return;
+      lignes.push({
+        objet: o.nom, nom: m.nom, axe: 'dégâts critiques reçus',
+        facteur: 1 - v,
+        /* Le contre-test qui dit que la lecture est la bonne : un coup critique
+           ordinaire vaut 200 % de l'AD ; à −30 % du TOTAL il en vaut 140, pas 170. */
+        exemple: 'un coup critique ordinaire passe de 200 % à ' +
+                 Math.round(200 * (1 - v)) + ' % des dégâts d\'attaque',
+        portee: 'les seuls coups critiques', note: m.note
+      });
+    }
+
+    if (m.effet === 'ralentAttaqueCible') {
+      /* La clé est NÉGATIVE dans le fichier (−0,2) : c'est un malus appliqué à
+         l'adversaire. On la sert telle quelle plutôt que d'en changer le signe —
+         inverser un signe « pour que ce soit plus lisible » est la meilleure façon
+         de ne plus savoir, six mois plus tard, dans quel sens il allait. */
+      const v = lire(m.ralentAttaqueCible.valeur);
+      if (v == null) return;
+      lignes.push({
+        objet: o.nom, nom: m.nom, axe: 'vitesse d\'attaque de l\'adversaire',
+        facteur: 1 + v,
+        exemple: 'les champions ennemis à ' + lire(m.ralentAttaqueCible.rayon) +
+                 ' unités attaquent ' + Math.round(-v * 100) + ' % moins vite',
+        portee: 'les seuls dégâts d\'ATTAQUE des ennemis proches', note: m.note
+      });
+    }
+
+    if (m.effet === 'soinsRecus') {
+      const v = lire(m.soinsRecus.valeur);
+      if (v == null) return;
+      lignes.push({
+        objet: o.nom, nom: m.nom, axe: 'soins et boucliers reçus',
+        facteur: 1 + v,
+        /* `regenPVtotal` porte DÉJÀ l'amplification (appliquée dans `profil`) : la
+           remultiplier ici afficherait 1,5625 fois la base au lieu de 1,25. */
+        exemple: 'un soin de 100 en rend ' + Math.round(100 * (1 + v)) +
+                 (m.soinsRecus.porteRegen
+                   ? ' ; la régénération de vie est comprise (' +
+                     Math.round((p.regenPVtotal || 0) * 100) / 100 + ' PV/s)'
+                   : ''),
+        portee: 'tout soin ou bouclier reçu, régénération comprise', note: m.note
+      });
+    }
+
+    if (m.effet === 'soin' && m.soin && m.soin.seuilPV) {
+      /* Lien vital : un SURSIS, pas une régénération. On le chiffre — c'est un
+         montant, contrairement à une stase — mais on refuse de l'additionner aux PV
+         effectifs : il ne sert qu'une fois par 90 s et seulement sous le seuil. */
+      const c = (o.calculs || {})[m.soin.calcul];
+      if (!c || !c.termes) return;
+      let montant = 0, ok = true;
+      c.termes.forEach(t => {
+        const x = valeurTerme(t, p, null);
+        if (x == null) { ok = false; return; }
+        montant += x;
+      });
+      if (!ok) return;
+      const pvBonus = (o.calculs || {})[m.soin.pvBonus];
+      let bonus = 0;
+      if (pvBonus && pvBonus.termes) {
+        pvBonus.termes.forEach(t => {
+          const x = valeurTerme(t, p, null);
+          if (x != null) bonus += x;
+        });
+      }
+      lignes.push({
+        objet: o.nom, nom: m.nom, axe: 'sursis sous ' +
+          Math.round(lire(m.soin.seuilPV) * 100) + ' % des PV',
+        montant: Math.round(montant), pvTemporaires: Math.round(bonus),
+        facteur: null,
+        exemple: Math.round(montant) + ' PV rendus en ' + lire(m.soin.duree) +
+                 ' s, plus ' + Math.round(bonus) + ' PV temporaires, toutes les ' +
+                 lire(m.soin.recharge) + ' s',
+        portee: 'une fois par recharge, sous le seuil', note: m.note
+      });
+    }
+  });
+
+  return {
+    lignes,
+    note: lignes.length
+      ? 'ces effets ne sont PAS fondus dans les PV effectifs : chacun ne couvre ' +
+        'qu\'une part du combat, et la part dépend de l\'adversaire'
+      : 'aucun objet du build ne porte de défense conditionnelle modélisée'
+  };
+}
+
 /* Ce que l'objet suivant apporterait vraiment en survie, en PV effectifs et par pièce
    d'or. Le seul moyen honnête de dire « prends de l'armure plutôt que des PV » : la
    réponse dépend de ce qu'on a déjà, elle n'est jamais absolue. */
@@ -121,11 +231,34 @@ function drain(p, degatsAttaqueParSeconde = 0, degatsCompetenceParSeconde = 0) {
 
    ⚠ Elle amplifie les soins que le porteur PRODUIT et les boucliers qu'il pose, pas les
    soins qu'il reçoit d'autrui — d'où le nom du champ et cette note. */
+/* Amplification des soins REÇUS apportée par l'équipement. Séparée de l'efficacité des
+   soins et boucliers pour la raison dite plus bas : ce n'est pas la même stat, et les
+   deux ne se composent pas de la même manière. */
+function tauxSoinsRecus(p) {
+  const { MODELES, parId } = require('./30_moteur_items');
+  let t = 0;
+  (p.objets || []).forEach(id => {
+    const m = MODELES[id];
+    if (!m || m.effet !== 'soinsRecus') return;
+    const v = ((parId[id].valeurs) || {})[m.soinsRecus.valeur];
+    if (v != null) t += v;
+  });
+  return t;
+}
+
 function soinsDuChampion(champId, touche, rang, p, partPhysique = 0.5) {
   const c = M.champions[champId];
   const sort = c && c.sorts[touche];
   if (!sort) return { ok: false, raison: 'compétence absente' };
-  const amp = 1 + (p.soinsEtBoucliers || 0);
+  /* Deux amplifications DISTINCTES, et qui ne se composent pas de la même façon :
+       — l'efficacité des soins et boucliers (`soinsEtBoucliers`) porte sur ce que le
+         champion PRODUIT, et les sources s'y additionnent ;
+       — Vitalité sans bornes (Visage spirituel) porte sur ce qu'il REÇOIT — soins
+         propres compris — et le wiki précise qu'elle se compose MULTIPLICATIVEMENT.
+     Un soin qu'on se lance à soi-même passe par les deux ; un bouclier posé sur un
+     allié n'en profite pas. Les additionner aurait sous-estimé le cumul des deux. */
+  const recu = 1 + tauxSoinsRecus(p);
+  const amp = (1 + (p.soinsEtBoucliers || 0)) * recu;
 
   /* Un bouclier vaut PLUS que sa valeur affichée, et c'est ce que la confusion
      soin/bouclier masquait. Le wiki officiel est explicite : « resistances will still
@@ -260,6 +393,7 @@ function ficheBuild(champId, niveau, objets, options = {}) {
   const survie = pvEffectifs(p, options.partPhysique != null ? options.partPhysique : 0.5);
   const aa = M.degatsAttaque(p, options.cible || null);
   const bou = boucliers(p, options);
+  const def = defenses(p, options);
 
   return {
     champion: p.nom, niveau, or: p.or,
@@ -284,7 +418,12 @@ function ficheBuild(champId, niveau, objets, options = {}) {
          conditionnels et temporaires. Les fondre dans le chiffre principal ferait
          passer un build à boucliers pour durablement plus résistant qu'il n'est. */
       boucliers: bou,
-      pvEffectifsAvecBoucliers: survie.mixte + bou.absorbe
+      pvEffectifsAvecBoucliers: survie.mixte + bou.absorbe,
+      /* Défenses CONDITIONNELLES, hors des PV effectifs et hors des boucliers : elles
+         ne couvrent qu'une part du combat (les coups critiques, les attaques de base
+         des ennemis proches, un seuil de PV). Les fondre dans le chiffre principal
+         ferait passer un Présage de Randuin pour une armure inconditionnelle. */
+      conditionnelles: def
     },
 
     utilitaire: {
@@ -316,5 +455,5 @@ function ficheBuild(champId, niveau, objets, options = {}) {
   };
 }
 
-module.exports = { pvEffectifs, gainSurvie, controle, drain, boucliers,
+module.exports = { pvEffectifs, defenses, gainSurvie, controle, drain, boucliers,
                    soinsDuChampion, autonomieMana, ficheBuild };

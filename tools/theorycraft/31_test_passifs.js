@@ -436,7 +436,7 @@ function phraseDuPassif(id, nomPassif) {
    Le garde-fou strict est ailleurs, et il est plus fort : tout passif modélisé doit
    porter un NOM qui existe dans la boutique. C'est exactement ce qui aurait bloqué
    `SiphonDamage` — une clé résiduelle du fichier de jeu, sans nom affiché nulle part. */
-let confirmes = 0, fantomes = [], sansNombre = [], echecs = [];
+let confirmes = 0, fantomes = [], sansNombre = [], echecs = [], sansMotif = [];
 Object.keys(I.MODELES).map(Number).forEach(id => {
   const m = I.MODELES[id];
   if (m.nonApplique) return;
@@ -446,6 +446,15 @@ Object.keys(I.MODELES).map(Number).forEach(id => {
      compterait comme des échecs de modélisation. */
   const e = I.evaluerPassif(id, ref, cible, { fenetre: 10 });
   if (!e.ok) { echecs.push(o.nom + ' : ' + e.raison); return; }
+  /* Non-application DELIBEREE : les amplifications conditionnees a une hypothese
+     (distance a la cible, immobilisation infligee) refusent tant que l'appelant ne
+     fournit pas le fait manquant. Ce n'est pas une panne de modelisation — mais pour
+     que cette porte ne devienne pas une echappatoire, on exige que le refus porte un
+     MOTIF. Un `applique: false` muet serait pire qu'un echec : invisible. */
+  if (e.applique === false) {
+    if (!e.raison) sansMotif.push(o.nom);
+    return;
+  }
 
   const phrase = phraseDuPassif(id, m.nom);
   if (phrase == null) { fantomes.push(o.nom + ' → « ' + m.nom +' »'); return; }
@@ -466,6 +475,31 @@ vrai('aucun passif modélisé n\'est un fantôme (nom absent de la boutique)',
      fantomes.length === 0, fantomes.join(' | '));
 vrai('aucun passif modélisé n\'échoue à l\'évaluation', echecs.length === 0,
      echecs.join(' | '));
+vrai('  et toute non-application délibérée porte son motif', sansMotif.length === 0,
+     sansMotif.join(' | '));
+
+/* Les amplifications SOUS HYPOTHÈSE refusent sans hypothèse et servent avec : il faut
+   vérifier les DEUX moitiés, sinon « refuse toujours » passerait le contrôle ci-dessus
+   sans rien faire du tout. */
+const ampliCible = M.cibleChampion('Sion', 18, []);
+const pAmpli = M.profil('Caitlyn', 18, [2523, 4005], { fenetre: 10 });
+const sansHyp = I.amplification(pAmpli, ampliCible, 'physique', 'attaque', { fenetre: 10 });
+verifie('sans hypothèse, aucune amplification conditionnelle n\'est servie', sansHyp.total, 0);
+vrai('  et le refus NOMME la donnée qui la débloquerait',
+     sansHyp.refus.length > 0 && sansHyp.refus.every(r => r.indexOf('hypotheses.') >= 0),
+     sansHyp.refus[0] || '');
+
+const avecHyp = I.amplification(pAmpli, ampliCible, 'physique', 'attaque',
+  { fenetre: 10, hypotheses: { distanceCible: 500, immobilisations: 1 } });
+/* Grossissement au MAXIMUM de portée (500 unités) : 10 %. Commande : 7 %. Les
+   amplifications se cumulent ADDITIVEMENT — 17 %, et non 1,10 × 1,07 = 17,7 %. */
+verifie('à 500 unités et avec une immobilisation : +17 % (additif)', avecHyp.total, 0.17, 0.001);
+/* Contre-test : la même paire à bout portant. Grossissement est PROPORTIONNEL à la
+   distance — le servir au plafond quelle que soit la position aurait donné 17 % ici
+   aussi, et c'est exactement l'erreur que l'hypothèse évite. */
+const bout = I.amplification(pAmpli, ampliCible, 'physique', 'attaque',
+  { fenetre: 10, hypotheses: { distanceCible: 100, immobilisations: 1 } });
+verifie('  à 100 unités, Grossissement ne vaut plus que 2 % : total +9 %', bout.total, 0.09, 0.001);
 console.log('       ' + confirmes + ' confirmés chiffre en main ; ' + sansNombre.length +
             ' dont la boutique n\'imprime pas la valeur (gabarit non résolu) :');
 console.log('       ' + sansNombre.join(', '));

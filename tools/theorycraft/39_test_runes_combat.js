@@ -138,5 +138,42 @@ vrai('la condition est calculée, pas déclarée à la main',
      Math.floor(longue.vitesseAttaque * 20) + ' frappes possibles pour ' +
      val(8005, 'HitsRequired') + ' requises');
 
+console.log('\n── Runes conditionnées à un FAIT de partie : refus, puis service sur hypothèse');
+/* Neuf runes ne manquaient pas d'un chiffre mais d'un fait : « combien de fois
+   immobilisez-vous la cible ? ». Le modèle ne le devine pas, il le demande. Les deux
+   moitiés doivent être vérifiées — « refuse toujours » passerait le premier controle
+   sans jamais rien servir. */
+const pLeona = M.profil('Leona', 18, [], { fenetre: 10, runes: [8439, 8126] });
+const cibleH = M.cibleChampion('Ryze', 18, []);
+const sansH = C.surFenetre('Leona', pLeona, cibleH, 10, {});
+verifie('sans hypothèse, ces runes n\'apportent rien', sansH.degatsSubis, 0);
+vrai('  et chaque refus NOMME la donnée qui le lèverait',
+     sansH.refus.length === 2 && sansH.refus.every(r => r.indexOf('hypotheses.') >= 0),
+     sansH.refus[0] || '');
+vrai('  le refus ne répète pas le nom de la rune',
+     sansH.refus.every(r => r.indexOf(r.split(' :')[0] + ' : ' + r.split(' :')[0]) < 0),
+     sansH.refus.join(' | ').slice(0, 90));
+
+const avecH = C.surFenetre('Leona', pLeona, cibleH, 10, { hypotheses: { immobilisations: 2 } });
+vrai('avec 2 immobilisations, les deux runes sont servies',
+     avecH.lignes.length === 2 && avecH.degatsSubis > 0,
+     avecH.degatsSubis + ' dégâts subis');
+/* La RECHARGE borne l'hypothèse. Après-coup a 20 s de recharge : sur une fenêtre de
+   10 s, deux immobilisations ne peuvent en déclencher qu'UNE. Sans ce plafond, une
+   hypothèse généreuse produirait un chiffre que le jeu ne permet pas. */
+const apresCoup = avecH.lignes.find(l => l.rune.indexOf('coup') >= 0);
+verifie('  mais la recharge de 20 s ramène Après-coup à 1 déclenchement',
+        apresCoup.declenchements, 1);
+const coupBas = avecH.lignes.find(l => l.rune.indexOf('Coup bas') >= 0);
+verifie('  tandis que Coup bas, à 4 s de recharge, en garde 2', coupBas.declenchements, 2);
+vrai('  et chaque ligne servie porte l\'hypothèse qui la fonde',
+     avecH.lignes.every(l => l.hypothese && l.hypothese.indexOf('fournis par l') >= 0),
+     apresCoup.hypothese);
+/* Contre-test : zéro immobilisation est une hypothèse VALIDE, et elle donne zéro —
+   ce n'est pas la même chose qu'un refus. */
+const zeroH = C.surFenetre('Leona', pLeona, cibleH, 10, { hypotheses: { immobilisations: 0 } });
+verifie('zéro immobilisation fournie : zéro dégât, sans refus', zeroH.degatsSubis, 0);
+vrai('  et c\'est bien un SERVICE à zéro, pas un refus', zeroH.refus.length === 0);
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══\n');
 process.exit(ko ? 1 : 0);

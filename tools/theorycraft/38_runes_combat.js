@@ -64,6 +64,42 @@ const SANS_CADENCE = {
   8465: 'Gardien : bouclier accordé en protégeant un allié'
 };
 
+/* ── SOUS HYPOTHÈSE EXPLICITE ────────────────────────────────────────────────────
+   Neuf des seize refusées ne manquaient pas d'un chiffre : elles manquaient d'un FAIT.
+   « Combien de fois immobilisez-vous la cible en dix secondes ? » n'a pas de réponse
+   dans le fichier de jeu — mais elle en a une chez le coach, qui connaît son champion.
+
+   Le modèle ne la devine donc pas : il la DEMANDE. Sans hypothèse fournie, la rune
+   reste refusée exactement comme avant, et le refus dit désormais quelle donnée
+   débloquerait le calcul. Avec une hypothèse, le chiffre est servi ET porte la mention
+   de ce qu'il suppose — un lecteur qui juge l'hypothèse fausse sait immédiatement quoi
+   corriger, ce qu'un chiffre moyenné inventé ne permet jamais.
+
+   `plafond` : la recharge propre à la rune borne le nombre de déclenchements. Une
+   Après-coup a beau suivre dix immobilisations, sa recharge de 20 s n'en laisse passer
+   qu'une par 20 s. Sans ce plafond, une hypothèse généreuse produirait un chiffre que
+   le jeu ne permet pas. */
+const SOUS_HYPOTHESE = {
+  8126: { condition: 'immobilisations', genre: 'degats', plafond: 'Cooldown',
+          quoi: 'immobilisation(s) ou ralentissement(s) infligés par votre kit' },
+  8439: { condition: 'immobilisations', genre: 'degats', plafond: 'Cooldown',
+          quoi: 'immobilisation(s) infligées par votre kit' },
+  8463: { condition: 'immobilisations', genre: 'soin', plafond: 'Cooldown',
+          quoi: 'immobilisation(s) infligées par votre kit' },
+  8143: { condition: 'ruees', genre: 'degats', plafond: 'Cooldown',
+          quoi: 'ruée(s), saut(s) ou téléportation(s) de votre kit' },
+  9923: { condition: 'ouverturesCombat', genre: 'degats', plafond: 'Cooldown',
+          quoi: 'ouverture(s) de combat (première attaque après 10 s hors combat)' },
+  8128: { condition: 'ciblesSousSeuil', genre: 'degats', plafond: 'Cooldown',
+          quoi: 'passage(s) de la cible sous 50 % de ses PV' },
+  8401: { condition: 'boucliersPoses', genre: 'degats',
+          quoi: 'bouclier(s) posés sur vous-même' },
+  9111: { condition: 'eliminations', genre: 'soin',
+          quoi: 'participation(s) à une élimination' },
+  9101: { condition: 'eliminations', genre: 'soin',
+          quoi: 'élimination(s), sbires compris' }
+};
+
 /* Le TYPE des dégâts adaptatifs suit la même règle que la force adaptative : magique du
    côté puissance, physique du côté dégâts d'attaque. Le confondre changerait la
    résistance qui les mitige — donc le résultat, pas seulement l'étiquette. */
@@ -106,15 +142,50 @@ function surFenetre(champId, p, cible, secondes, options = {}) {
   const lignes = []; const refus = [];
   let degatsSubis = 0, degatsBruts = 0, soins = 0;
 
+  const hyp = options.hypotheses || {};
+
   (p.runes || []).forEach(id => {
-    if (SANS_CADENCE[id]) { refus.push(SANS_CADENCE[id]); return; }
-    const regle = CADENCES[id];
-    if (!regle) return;                       // rune de stat ou d'amplification : ailleurs
+    let regle = CADENCES[id];
+    let sousHypothese = null;
+
+    /* Rune conditionnée à un fait de partie. Si l'appelant a fourni ce fait, on le sert
+       en le plafonnant par la recharge ; sinon on refuse, en NOMMANT la donnée
+       manquante. Un refus qui dit quoi fournir vaut infiniment mieux qu'un refus muet :
+       le premier se lève, le second se subit. */
+    const sh = SOUS_HYPOTHESE[id];
+    if (sh && !regle) {
+      const fourni = hyp[sh.condition];
+      if (fourni == null) {
+        /* `SANS_CADENCE[id]` porte DÉJÀ le nom de la rune : le préfixer à nouveau
+           donnait « Après-coup : Après-coup : exige… ». */
+        refus.push(SANS_CADENCE[id] +
+                   ' — fournissez `hypotheses.' + sh.condition + '` (' + sh.quoi + ') pour la chiffrer');
+        return;
+      }
+      const valeurs = (R.parId[id] || {}).valeurs || {};
+      const cd = sh.plafond ? valeurs[sh.plafond] : null;
+      const max = cd ? 1 + Math.floor(secondes / cd) : Infinity;
+      const n = Math.max(0, Math.min(Math.floor(fourni), max));
+      sousHypothese = {
+        n, cd,
+        texte: fourni + ' ' + sh.quoi + ' fournis par l\'appelant' +
+               (cd && fourni > max
+                 ? ' — ramenés à ' + n + ' par la recharge de ' + cd + ' s'
+                 : '')
+      };
+      regle = { cadence: 'fournie', genre: sh.genre };
+    }
+    if (!regle) {
+      if (SANS_CADENCE[id]) refus.push(SANS_CADENCE[id]);
+      return;                                 // rune de stat ou d'amplification : ailleurs
+    }
 
     const e = R.evaluerRune(id, ctx);
     if (!e.ok) { refus.push((e.nom || id) + ' : ' + e.raison); return; }
     const valeurs = (R.parId[id] || {}).valeurs || {};
-    const cad = nombreDeDeclenchements(regle, valeurs, secondes);
+    const cad = sousHypothese
+      ? { n: sousHypothese.n, cd: sousHypothese.cd }
+      : nombreDeDeclenchements(regle, valeurs, secondes);
     if (!cad) { refus.push(e.nom + ' : cadence absente du fichier'); return; }
 
     /* Dégâts adaptatifs : on sert la face qui correspond au champion, et le type qui
@@ -130,7 +201,8 @@ function surFenetre(champId, p, cible, secondes, options = {}) {
       soins += montant * cad.n;
       lignes.push({ rune: e.nom, genre: 'soin', parDeclenchement: Math.round(montant),
                     declenchements: cad.n, total: Math.round(montant * cad.n),
-                    cadence: cad.cd + ' s', hypothese: regle.hypothese || null });
+                    cadence: cad.cd ? cad.cd + ' s' : 'sur hypothèse',
+                    hypothese: sousHypothese ? sousHypothese.texte : (regle.hypothese || null) });
       return;
     }
 
@@ -144,7 +216,8 @@ function surFenetre(champId, p, cible, secondes, options = {}) {
                   parDeclenchement: Math.round(montant),
                   declenchements: cad.n,
                   brut: Math.round(brut), subis: Math.round(subis),
-                  cadence: cad.cd + ' s', hypothese: regle.hypothese || null });
+                  cadence: cad.cd ? cad.cd + ' s' : 'sur hypothèse',
+                  hypothese: sousHypothese ? sousHypothese.texte : (regle.hypothese || null) });
 
     /* La Poigne de l'immortel soigne en plus de blesser : deux effets, une seule
        cadence. Les séparer évite de compter le soin comme des dégâts. */
@@ -175,4 +248,4 @@ function surFenetre(champId, p, cible, secondes, options = {}) {
   };
 }
 
-module.exports = { surFenetre, typeAdaptatif, CADENCES, SANS_CADENCE };
+module.exports = { surFenetre, typeAdaptatif, CADENCES, SANS_CADENCE, SOUS_HYPOTHESE };

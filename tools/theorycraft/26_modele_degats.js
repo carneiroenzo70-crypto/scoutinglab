@@ -275,6 +275,25 @@ function profil(id, niveau, idsObjets, extras = {}) {
      boutique : le Bouclier de Doran est extrait à 0,8 et annonce « 4 PV toutes les
      5 sec » ; la Corne du gardien à 4 pour « 20 PV toutes les 5 sec ». */
   p.regenPVtotal = p.regenPVbase * (1 + (p.regenPVpct || 0)) + (p.regenPV || 0);
+  /* Vitalité sans bornes (Visage spirituel) amplifie « tout soin et bouclier REÇU,
+     ainsi que la régénération de vie ». Elle se compose MULTIPLICATIVEMENT, après le
+     pourcentage de régénération : ce sont deux stats distinctes, et le wiki est
+     explicite sur les deux points.
+     Appliqué ICI, dans le profil, et non seulement dans l'affichage des défenses —
+     sinon la même fiche annonçait deux régénérations différentes selon l'endroit où
+     on la lisait, ce qui est pire qu'un chiffre faux : c'est un chiffre qui se
+     contredit. */
+  if (!extras.sansPassifs && p.regenPVtotal != null) {
+    const { MODELES, parId } = require('./30_moteur_items');
+    let recu = 0;
+    (p.objets || []).forEach(id => {
+      const m = MODELES[id];
+      if (!m || m.effet !== 'soinsRecus' || !m.soinsRecus.porteRegen) return;
+      const v = ((parId[id].valeurs) || {})[m.soinsRecus.valeur];
+      if (v != null) recu += v;
+    });
+    if (recu) { p.soinsRecus = recu; p.regenPVtotal *= 1 + recu; }
+  }
   p.regenManaTotal = p.regenManaBase == null ? null
     : p.regenManaBase * (1 + (p.regenManapct || 0)) + (p.regenMana || 0);
   return p;
