@@ -269,6 +269,22 @@ function profil(id, niveau, idsObjets, extras = {}) {
      vitesse de déplacement. */
   recalculerDerivees(p, (champions[id] || {}).base, niveau);
 
+  /* PV ACTUELS du champion, en FRACTION de ses PV max (0 à 1). Ils ne viennent ni du
+     champion ni du build : c'est un état de partie, au même titre que les hypothèses de
+     combat. Par défaut, pleine vie — l'hypothèse qui ne suppose rien.
+
+     Sans eux, les formules « pourcentage de MES PV manquants » valent zéro pour
+     toujours : le bouclier du W d'Olaf resterait bloqué sur sa base, alors que c'est
+     précisément à bas PV qu'on le lance.
+
+     ⚠ Calculé ICI, après les runes et les passifs, et non au moment de composer `p` :
+     Croissance et les objets à PV font monter `pvMax` entre-temps. Posé trop tôt,
+     « 50 % de PV » désignait la moitié des PV NUS — sur un tank runé, plusieurs
+     centaines de points d'écart, et un bouclier faux dans le sens rassurant. */
+  p.pvActuels = extras.partPV != null
+    ? Math.max(0, Math.min(1, extras.partPV)) * p.pvMax
+    : p.pvMax;
+
   /* Régénérations totales, PAR SECONDE. Les objets en pourcentage multiplient la base du
      champion ; les objets à valeur plate s'y ajoutent.
      ⚠ Les deux sources sont bien dans la même unité, vérifié par concordance avec la
@@ -392,6 +408,10 @@ function mitiger(brut, type, cible, attaquant, source, ctx = {}) {
 }
 
 /* ── 5. Évaluation d'un sort ────────────────────────────────────────────────────── */
+/* PV manquants du LANCEUR, jamais négatifs (un profil surchargé en PV temporaires
+   donnerait sinon un bouclier négatif). */
+const pvManquants = p => Math.max(0, p.pvMax - (p.pvActuels != null ? p.pvActuels : p.pvMax));
+
 function valeurTerme(t, p, cible) {
   /* Terme PRODUIT : la stat multiplie une somme de sous-termes, au lieu d'un simple
      coefficient. Le W de Twisted Fate est le cas type — chance de critique × (base +
@@ -441,6 +461,18 @@ function valeurTerme(t, p, cible) {
     case 'AD':  return t.valeur * (t.mode === 'bonus' ? p.adBonus : t.mode === 'base' ? p.adBase : p.adTotal);
     case 'AP':  return t.valeur * p.ap;
     case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);
+    /* PV du LANCEUR, pas de la cible : le bouclier du W d'Olaf (17,5 % de SES PV
+       manquants), les soins d'Illaoi et de Gangplank. Le profil décrit un champion à
+       pleine vie — c'est l'hypothèse par défaut, et elle rend ces trois formules
+       nulles, ce qui est honnête mais inutile. `p.pvActuels`, quand on le fournit,
+       leur redonne leur sens. On ne l'invente pas : à défaut, pleine vie. */
+    case 'PVactuels':   return t.valeur * (p.pvActuels != null ? p.pvActuels : p.pvMax);
+    case 'PVmanquants': return t.valeur * pvManquants(p);
+    /* FRACTION de PV manquants (0 à 1), et non des points : diviser par les PV max est
+       ce qui distingue mStat 16 de mStat 15. Confondre les deux ferait ressortir le
+       bouclier d'Olaf en milliers de points au lieu de centaines. */
+    case 'FractionPVmanquants':
+      return p.pvMax ? t.valeur * pvManquants(p) / p.pvMax : null;
     case 'Armure': return t.valeur * p.armure;
     case 'RM':  return t.valeur * p.rm;
     /* Mana maximum — indispensable à Ryze, dont les quatre sorts en dépendent.
@@ -479,12 +511,27 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible, ctx = {}) {
                   valeur: Math.round(v * 100) / 100 });
   }
 
+  /* PLAFOND déclaré, porté par un calcul jumeau (cf. `plafonds` dans `sorts_modeles.js`).
+     On borne AVANT la mitigation : le jeu plafonne le bouclier, pas les dégâts réduits.
+     Si le calcul jumeau ne se résout pas, on ne borne pas — mais on le dit, plutôt que
+     de laisser croire à une valeur plafonnée qui ne l'est pas. */
+  let noteplafond = null;
+  const nomPlafond = (sort.plafonds || {})[nomCalcul];
+  if (nomPlafond && nomPlafond !== nomCalcul) {
+    const max = evaluerCalcul(champId, touche, nomPlafond, rang, p, cible, ctx);
+    if (max.ok && max.brut != null) {
+      if (brut > max.brut) { brut = max.brut; noteplafond = 'plafonné (' + nomPlafond + ')'; }
+    } else noteplafond = 'plafond ' + nomPlafond + ' non résolu : valeur NON bornée';
+  }
+
   const type = sort.typeDegats;
   if (calc.genre !== 'degats' || !type || /^mixte/.test(type)) {
     return { ok: true, genre: calc.genre, brut: Math.round(brut * 100) / 100,
              subis: null, type: type || null, detail,
-             note: calc.genre !== 'degats' ? 'ce calcul n\'est pas des dégâts'
-                   : 'type de dégâts non tranché (' + (type || 'absent') + ') : mitigation non appliquée' };
+             note: [noteplafond,
+                    calc.genre !== 'degats' ? 'ce calcul n\'est pas des dégâts'
+                    : 'type de dégâts non tranché (' + (type || 'absent') + ') : mitigation non appliquée'
+                   ].filter(Boolean).join(' · ') };
   }
   // La touche voyage jusqu'à l'amplification : l'Arcaniste axiomatique ne vaut que sur R
   const m = cible ? mitiger(brut, type, cible, p, 'competence', { touche, ...ctx }) : null;
@@ -498,6 +545,7 @@ function evaluerCalcul(champId, touche, nomCalcul, rang, p, cible, ctx = {}) {
        le plus utile : « Premier coup n'a pas été compté, et voici pourquoi ». */
     amplification: m && m.amplification &&
                    (m.amplification.total || m.amplification.refus.length) ? m.amplification : null,
+    note: noteplafond,
     detail
   };
 }

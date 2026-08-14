@@ -36,7 +36,25 @@ const STATS = {
   8:  'Crit',                // CritRatio, CritChanceMultiplier, CritChanceAmp
   9:  'DegatsCrit',          // CritDamage, TotalDamageCrit, HeadShotBonusDamage
   12: 'PV',                  // BonusHealthRatio, ShieldHealthRatio, MaxStackDamageHPRatio
-  13: 'PVactuelsCible',      // Lame du roi déchu : % des PV ACTUELS de la cible (wiki : « current health »)
+  13: 'PVactuels',           // Lame du roi déchu : % des PV ACTUELS (wiki : « current health »)
+  /* PV MANQUANTS, en points. Preuve par concordance sur six champions dont le wiki est
+     sans ambiguïté : le R de Garen (`ExecuteDamage`), le Q d'Elise, l'amplification de
+     Nidalee (`TakedownDamageAmp`), le passif du W d'Ekko — tous décrits comme « en
+     fonction des PV manquants » — le portent avec le drapeau CIBLE ; le soin d'Illaoi
+     (`MissingHPPercentHeal`) et celui de Gangplank (`PercentHeal`) le portent SANS le
+     drapeau, et soignent bien un pourcentage des PV manquants du LANCEUR. Même index,
+     deux propriétaires : c'est le drapeau qui tranche, pas l'index. */
+  15: 'PVmanquants',
+  /* FRACTION de PV manquants (0 à 1), et non des points. La preuve est interne au
+     fichier, et elle est décisive : le W d'Olaf porte DEUX formules jumelles —
+         ShieldCalc    = BaseShield + [mStat 16] × (PVmax × ShieldPercMissingHP)
+         MaxShieldCalc = BaseShield +  PVmax × (ShieldPercMissingHP × (1 − ThresholdForMax))
+     La seconde est la première où mStat 16 a été remplacé par la constante
+     (1 − ThresholdForMax). Un index qu'on peut substituer par un nombre entre 0 et 1
+     EST une fraction. Concordance numérique avec le wiki par-dessus le marché :
+     ShieldPercMissingHP = 0,175 (« 17,5 % des PV manquants ») et
+     BaseShield = [-20, 10, 40, 70, 100, 130] contre 10/40/70/100/130 annoncés. */
+  16: 'FractionPVmanquants',
   18: 'VolVie',              // Omnivamp_LifeStealScaling
   /* Létalité. N'apparaît que sur des objets à létalité (Arc axiomatique, Glaive
      d'ombre, Briseur de bastion, Rancune de Serylda) et toujours dans un passif que
@@ -49,9 +67,41 @@ const STATS = {
   31: 'Portee',
   34: 'Accel'                // ASPerHS (vitesse d'attaque par point d'accélération)
   /* Non mappés, faute de preuve — chacun n'apparaît qu'une ou deux fois, sans nom de
-     DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14, 15, 16 (Olaf), 19, 20,
-     21, 30. Le résolveur les signale plutôt que de les supposer. */
+     DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14 (coûts en PV de Zac),
+     19, 20, 21, 30. Le résolveur les signale plutôt que de les supposer. */
 };
+
+/* Drapeau « cette stat est celle de la CIBLE, pas du lanceur ».
+   C'est la clé hachée `{a8cb9c14}`, posée à `true` sur la part de calcul elle-même.
+
+   ⚠ Elle était purement et simplement IGNORÉE : un « x % des PV max de la cible » se
+   calculait sur les PV du LANCEUR, ce qui, sur un tank, gonfle le chiffre d'un facteur
+   deux sans la moindre alerte.
+
+   PORTÉE RÉELLE, mesurée et non supposée : sur les 173 champions, la correction ne
+   change AUCUN calcul extrait — non parce que le modèle était juste, mais parce que
+   les sorts concernés étaient déjà rattrapés à la main dans `sorts_modeles.js`, et que
+   les autres parts porteuses du drapeau vivent dans des blocs qu'on n'extrait pas
+   (passifs de Zed, de Camille, d'Ornn…). Côté OBJETS en revanche elle corrige l'Atlas,
+   dont l'exécution portait sur les PV du porteur au lieu de ceux de la cible.
+   Le vrai gain est ailleurs : ce que treize corrections manuelles obtenaient au prix
+   d'une lecture d'infobulle, le fichier le dit désormais tout seul.
+
+   La preuve du sens du drapeau est massive et vient des données seules : les 30 parts
+   qui le portent sont TOUTES des stats de PV (index 12, 13, 15) et TOUTES nommées
+   comme visant l'adversaire — `OuterConeMaxHPDamage` (Camille), `MaxHPDamage` (Zed),
+   `TotalHealthDamage` (Kog'Maw), `ExecutePercent` (objets), `ExecuteDamage` (Garen).
+   Symétriquement, les seules parts de PV manquants SANS le drapeau sont deux SOINS sur
+   soi (Illaoi, Gangplank). Aucune contre-exemple dans les 173 champions ni les objets.
+
+   Confirmation indépendante : une dizaine de sorts corrigés À LA MAIN dans
+   `sorts_modeles.js`, à partir du texte français de l'infobulle, portent exactement ce
+   drapeau — deux chemins sans rapport qui désignent la même liste. */
+const DRAPEAU_CIBLE = '{a8cb9c14}';
+/* Traduction vers le vocabulaire du modèle. Le mode (base/bonus/total) n'a pas de sens
+   sur une cible dont on ne connaît que le total : on le laisse tomber ici. */
+const STATS_CIBLE = { PV: 'PVmaxCible', PVactuels: 'PVactuelsCible',
+                      PVmanquants: 'PVmanquantsCible' };
 /* Base, bonus ou total ? Cette table-ci était PERMUTÉE — la même erreur que STATS, et
    au moins aussi coûteuse : le Fléau de liche ressortait à « 75 % de l'AD bonus » quand
    le wiki dit « 75 % de l'AD de BASE ». Sur un mage sans dégâts d'attaque bonus, la
@@ -155,9 +205,22 @@ function evalPart(p, ctx, rang, prof, alertes) {
 
       /* Index non prouvé = refus. Le mapper au hasard produirait un chiffre plausible
          et faux — c'est exactement ce qui est arrivé avec mStat 9. */
-      const stat = STATS[p.mStat || 0];
+      let stat = STATS[p.mStat || 0];
       if (!stat) { alertes.add('mStat non identifié : ' + p.mStat); return null; }
-      const mode = MODES[p.mStatFormula || 0] || 'base';
+      let mode = MODES[p.mStatFormula || 0] || 'base';
+
+      /* Stat de la CIBLE. Seules les stats de PV sont traduisibles : c'est tout ce que
+         le modèle connaît d'un adversaire. Une autre stat portant le drapeau serait une
+         nouveauté du fichier — on refuse en la nommant plutôt que de la servir comme
+         celle du lanceur, ce qui est précisément l'erreur qu'on vient de réparer. */
+      if (p[DRAPEAU_CIBLE]) {
+        if (!STATS_CIBLE[stat]) {
+          alertes.add('stat de la cible non traduisible : ' + stat);
+          return null;
+        }
+        stat = STATS_CIBLE[stat];
+        mode = 'total';
+      }
 
       /* Coefficient SCALAIRE : le cas courant, « 0,8 × puissance ». */
       if (coef.n != null) return { termes: [{ stat, mode, valeur: coef.n }] };

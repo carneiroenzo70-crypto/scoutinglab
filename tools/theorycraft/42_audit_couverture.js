@@ -4,6 +4,34 @@
    flatteur. Un calculateur dont on ignore les trous est plus dangereux qu'un calculateur
    incomplet dont on les connaît. */
 
+/* FRAÎCHEUR DES EXTRACTIONS — à faire AVANT tout `require`, sinon on audite les vieux
+   fichiers qu'on vient de charger en mémoire.
+
+   Ce contrôle vient d'une dérive réelle et coûteuse : `items.json` avait été commité
+   AVANT la correction du multiplicateur porté par le calcul, puis jamais régénéré. Sept
+   objets partaient donc en production avec un chiffre faux d'un facteur 0,25 à 100 —
+   et deux avec le SIGNE inversé — alors que le code, lui, était juste. Rien ne le
+   signalait : les tests interrogent le moteur, le moteur lit le JSON, et le JSON était
+   périmé. Un correctif non régénéré est un correctif non livré.
+
+   On régénère donc systématiquement, et on DIT si le contenu a bougé. */
+(function verifierFraicheur() {
+  const fs = require('fs'), path = require('path'), { execFileSync } = require('child_process');
+  const cibles = { './champions.json': '04_extraire.js', './items.json': '22_extraire_items.js' };
+  const perimes = [];
+  Object.entries(cibles).forEach(([json, script]) => {
+    const f = path.join(__dirname, json);
+    const avant = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
+    execFileSync(process.execPath, [path.join(__dirname, script)], { stdio: 'ignore' });
+    if (avant !== fs.readFileSync(f, 'utf8')) perimes.push(json.replace('./', ''));
+  });
+  if (perimes.length) {
+    console.log('\n⚠ EXTRACTION PÉRIMÉE : ' + perimes.join(', ') + ' ne correspondai(en)t plus au ' +
+                'code d\'extraction.\n  Les fichiers viennent d\'être régénérés — RECOMMITEZ-LES, ' +
+                'et relancez le bundle navigateur.\n  L\'audit ci-dessous porte sur la version à jour.');
+  }
+})();
+
 const champions = require('./champions.json');
 const items = require('./items.json');
 const groupes = require('./groupes_objets.json');

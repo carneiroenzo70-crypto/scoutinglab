@@ -32,6 +32,13 @@ function valeurTerme(t, p, cible) {
     case 'AP':  return t.valeur * p.ap;
     case 'PV':  return t.valeur * (t.mode === 'bonus' ? p.pvBonus : p.pvMax);
     case 'PVactuelsCible': return cible ? t.valeur * pvActuels(cible) : null;
+    /* Les deux autres formes de PV de la cible. Le résolveur ne les produisait pas
+       encore : le drapeau qui marque « stat de la CIBLE » était ignoré, si bien que
+       l'exécution de l'Atlas se calculait sur les PV du PORTEUR — d'autant plus faux
+       que le porteur est justement un tank. */
+    case 'PVmaxCible':       return cible && cible.pvMax != null ? t.valeur * cible.pvMax : null;
+    case 'PVmanquantsCible': return cible && cible.pvMax != null
+                                    ? t.valeur * Math.max(0, cible.pvMax - pvActuels(cible)) : null;
     /* ⚠ Le MODE était ignoré sur ces deux stats : `p.armure` (le total) était servi là
        où la formule demande l'armure BONUS. Les PV et l'AD, juste au-dessus, le
        respectaient depuis toujours — l'oubli ne portait que sur les résistances.

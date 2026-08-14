@@ -319,5 +319,60 @@ const garenBlesse = M.evaluerCalcul('Garen', 'R', 'DegatsExecution', 3, pGaren, 
 verifie('Garen R à pleine vie : la base seule (275)', garenPlein.brut, 275, 1);
 verifie('  cible à 1 000/5 000 PV : 275 + 35 % de 4 000', garenBlesse.brut, 275 + 1400, 1);
 
+/* ── PV manquants du LANCEUR : mStat 15 et 16 ─────────────────────────────────────
+   Deux index qui restaient refusés faute de preuve. Celle d'Olaf est interne au
+   fichier : `MaxShieldCalc` est `ShieldCalc` où mStat 16 a été remplacé par la
+   constante (1 − ThresholdForMax) = 0,70. Un index substituable par un nombre entre
+   0 et 1 est une FRACTION, pas des points — et le bouclier d'Olaf est le seul endroit
+   du jeu où les deux formes cohabitent, donc la seule où la démonstration est possible.
+
+   Le wiki confirme les valeurs indépendamment : 10/40/70/100/130 de base et 17,5 %
+   des PV manquants. On teste au rang 4 (100 de base). */
+console.log('\n── PV manquants du lanceur (mStat 15 et 16) ──');
+const pOlaf = M.profil('Olaf', 18, [], { fenetre: 10 });
+const olafPlein = M.evaluerCalcul('Olaf', 'W', 'ShieldCalc', 4, pOlaf, cible5000);
+verifie('Olaf W rang 4, à pleine vie : la base seule (100)', olafPlein.brut, 100, 1);
+/* À la moitié de ses PV : 100 + 0,50 × (PVmax × 0,175) = 100 + 8,75 % des PV max.
+   Si mStat 16 était lu comme des POINTS, on obtiendrait 100 + (PVmax/2) × 0,175 × PVmax
+   — un nombre à six chiffres. Le contre-test est donc énorme, pas subtil. */
+const olafBlesse = M.evaluerCalcul('Olaf', 'W', 'ShieldCalc', 4,
+                                   { ...pOlaf, pvActuels: pOlaf.pvMax / 2 }, cible5000);
+verifie('  à mi-vie : 100 + 8,75 % de ses PV max',
+        olafBlesse.brut, 100 + pOlaf.pvMax * 0.0875, 1);
+vrai('  la fraction n\'est jamais servie comme des points',
+     olafBlesse.brut < 100 + pOlaf.pvMax * 0.18);
+/* Le PLAFOND. Le jeu arrête de faire croître le bouclier à 70 % de PV manquants ;
+   la borne vit dans le calcul jumeau `MaxShieldCalc`, que rien ne relie au premier
+   dans le fichier. Sans la déclaration, un Olaf à 5 % de PV ressortait à 543 au lieu
+   de 427 — 27 % de trop, et pile dans la situation où l'on consulte le chiffre. */
+const olafMourant = M.evaluerCalcul('Olaf', 'W', 'ShieldCalc', 4,
+                                    { ...pOlaf, pvActuels: pOlaf.pvMax * 0.05 }, cible5000);
+verifie('  à 5 % de PV : plafonné à 100 + 12,25 % des PV max',
+        olafMourant.brut, 100 + pOlaf.pvMax * 0.1225, 1);
+vrai('  et le plafond est DIT, pas appliqué en douce',
+     /plafonné/.test(olafMourant.note || ''));
+/* Contre-test : à 30 % de PV pile, le plafond ne mord pas encore — il ne doit donc
+   pas être annoncé. Un plafond qui s'annonce toujours ne renseigne sur rien. */
+vrai('  à 30 % de PV le plafond ne mord pas encore',
+     !/plafonné/.test((M.evaluerCalcul('Olaf', 'W', 'ShieldCalc', 4,
+                       { ...pOlaf, pvActuels: pOlaf.pvMax * 0.3 }, cible5000).note) || ''));
+/* Les PV du profil se posent en FRACTION, et elle est bornée : « 150 % de PV » ne
+   doit pas produire de PV manquants négatifs, donc pas de bouclier sous sa base. */
+vrai('  une fraction de PV aberrante est ramenée dans [0, 1]',
+     M.profil('Olaf', 18, [], { partPV: 1.5 }).pvActuels === M.profil('Olaf', 18, []).pvMax);
+/* La fraction porte sur les PV FINAUX, runes et objets compris. Posée avant eux, elle
+   aurait désigné la moitié des PV nus — plusieurs centaines de points d'écart. */
+const olafRune = M.profil('Olaf', 18, [3068], { partPV: 0.5, runes: [8446] });
+vrai('  la fraction porte sur les PV finaux, objets et runes compris',
+     Math.abs(olafRune.pvActuels - olafRune.pvMax / 2) < 0.01 &&
+     olafRune.pvMax > M.profil('Olaf', 18, []).pvMax);
+
+/* ── Le drapeau « stat de la CIBLE » ──────────────────────────────────────────────
+   L'exécution de l'Atlas portait sur les PV du PORTEUR. Un tank en porte deux fois
+   plus qu'une cible fragile : l'erreur doublait le chiffre. */
+const atlas = require('./items.json').find(o => o.id === 3865);
+vrai('Atlas : l\'exécution vise les PV de la CIBLE, pas ceux du porteur',
+     JSON.stringify(atlas.calculs.ExecuteDamage.termes).includes('PVmaxCible'));
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

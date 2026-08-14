@@ -308,6 +308,26 @@ module.exports = {
     W: { sansDegats: 'soin et bouclier ; le Diminuendo RÉDUIT les dégâts infligés par la cible' }
   },
 
+  /* Le bouclier d'Olaf croît avec SES PV manquants (17,5 %) — mais le jeu le plafonne
+     à 70 % de PV manquants, et range ce plafond dans un calcul JUMEAU au lieu d'une
+     clause : `MaxShieldCalc` est `ShieldCalc` où la fraction de PV manquants a été
+     remplacée par (1 − ThresholdForMax) = 0,70. Le fichier ne dit nulle part que les
+     deux sont liés ; sans cette déclaration, le modèle continuait de faire monter le
+     bouclier sous 30 % de PV, là où le jeu ne le fait plus.
+
+     C'est aussi ce couple de formules qui a PROUVÉ que mStat 16 est une fraction et non
+     des points (cf. `03_resolveur.js`) : le seul endroit du jeu où la même formule
+     existe avec et sans l'index. */
+  Olaf: {
+    W: {
+      plafonds: { ShieldCalc: 'MaxShieldCalc' },
+      source: 'fichier de jeu — `ShieldPercMissingHP` = 0,175 et `ThresholdForMax` = 0,30, ' +
+              'plafond effectif à 12,25 % des PV max ; `BaseShield` 10/40/70/100/130 ' +
+              'concorde avec le wiki',
+      note: 'le bouclier dure 2,5 s (`ShieldDuration`) et se recharge à chaque attaque reçue'
+    }
+  },
+
   /* ═══ LES DOUZE POURCENTAGES DE PV RÉVÉLÉS PAR LE RECLASSEMENT ═══════════════════
      Ces sorts n'étaient PAS absents du modèle : ils y entraient avec une valeur fausse.
      Leur calcul porte `mDisplayAsPercent` — c'est un RATIO — et un nom contenant

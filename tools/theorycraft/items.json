@@ -1119,7 +1119,7 @@
    "ExecuteDamage": {
     "termes": [
      {
-      "stat": "PV",
+      "stat": "PVmaxCible",
       "mode": "total",
       "valeur": 1
      },
@@ -1136,7 +1136,7 @@
     "defaut": null,
     "siCondition": [
      {
-      "stat": "PV",
+      "stat": "PVmaxCible",
       "mode": "total",
       "valeur": 1
      },
@@ -1150,7 +1150,8 @@
   },
   "alertes": [
    "DataValue absent: {d4217cda}",
-   "DataValue absent: {9f631779}"
+   "DataValue absent: {9f631779}",
+   "coefficient non évaluable pour PVmaxCible"
   ]
  },
  {
@@ -7331,12 +7332,12 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 60
+      "valeur": 15
      },
      {
       "stat": "AP",
       "mode": "total",
-      "valeur": 0.05000000074505806
+      "valeur": 0.012500000186264515
      }
     ]
    },
@@ -7667,7 +7668,7 @@
      {
       "stat": "PV",
       "mode": "bonus",
-      "valeur": 0.029999999329447746
+      "valeur": 0.07499999832361937
      }
     ]
    }
@@ -7803,12 +7804,12 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 15
+      "valeur": 0.14999999664723873
      },
      {
       "stat": "Mana",
       "mode": "total",
-      "valeur": 0.004999999888241291
+      "valeur": 0.000049999997764825846
      }
     ]
    }
@@ -9811,7 +9812,7 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 0.5
+      "valeur": 3
      }
     ]
    },
@@ -10030,7 +10031,7 @@
      {
       "stat": "NbObjets",
       "mode": "total",
-      "valeur": 1,
+      "valeur": 0,
       "rarete": 5
      }
     ]
@@ -10040,7 +10041,7 @@
      {
       "stat": "NbObjets",
       "mode": "total",
-      "valeur": 1,
+      "valeur": 0,
       "rarete": 5
      }
     ]
@@ -12130,7 +12131,7 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": -0.30000001192092896
+      "valeur": 0.30000001192092896
      }
     ]
    },
@@ -12139,7 +12140,7 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": -0.15000000596046448
+      "valeur": 0.15000000596046448
      }
     ]
    },
@@ -12189,7 +12190,9 @@
     ]
    }
   },
-  "alertes": []
+  "alertes": [
+   "multiplicateur non scalaire (non appliqué)"
+  ]
  },
  {
   "id": 4645,
@@ -12371,12 +12374,12 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": -1
+      "valeur": 1
      },
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 0.699999988079071
+      "valeur": -0.699999988079071
      }
     ]
    }

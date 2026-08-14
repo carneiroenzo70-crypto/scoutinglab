@@ -281,6 +281,15 @@ cibles.forEach(cible => {
          déclaration, la détection par mots-clés les compte comme des lacunes, et un
          chiffre d'incomplétude qu'on ne peut pas faire baisser finit par être ignoré. */
       sansDegats: corr.sansDegats || null,
+      /* PLAFONDS déclarés : « ce calcul ne peut pas dépasser cet autre calcul ». Le
+         fichier de jeu range souvent la borne dans un calcul JUMEAU plutôt que dans une
+         clause — le W d'Olaf porte `ShieldCalc` et `MaxShieldCalc` côte à côte, le
+         second étant le premier avec la fraction de PV manquants remplacée par sa
+         valeur maximale. Rien dans la structure ne dit qu'ils sont liés : il faut le
+         déclarer. Sans ce lien, le bouclier d'Olaf continuait de croître sous 30 % de
+         PV alors que le jeu l'a déjà plafonné — un sur-chiffrage, exactement ce qu'on
+         reproche aux calculateurs approximatifs. */
+      plafonds: corr.plafonds || null,
       noteCorrection: corr.note || null,
       cooldown: spell.cooldownTime || spell.Cooldown || null,
       /* Compétences à charges. Sans ces deux champs, le E de Rumble passe pour une

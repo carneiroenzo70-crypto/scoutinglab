@@ -5488,6 +5488,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                        oninput="tcMajHypothese('distanceCible', this.value)" class="tc-range"/>
                 <b id="tc-hyp-dist-v" class="tc-num">0</b>
               </label>
+              <!-- Vos PV. Contrairement aux trois curseurs ci-dessus, le neutre est ici
+                   100 % et non zéro : un champion est à pleine vie par défaut. Sans ce
+                   réglage, les formules « pourcentage de MES PV manquants » — dont le
+                   bouclier du W d'Olaf — restent bloquées sur leur base. -->
+              <label class="tc-ligne-niv">
+                <span>Vos PV</span>
+                <input type="range" id="tc-hyp-pv" min="5" max="100" step="5" value="100"
+                       oninput="tcMajPV(this.value)" class="tc-range"/>
+                <b id="tc-hyp-pv-v" class="tc-num">100 %</b>
+              </label>
               <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
                 Certaines runes et amplifications dépendent du déroulé, pas du build. Le
                 moteur ne les invente pas : à zéro il les refuse en le disant, et ne les
@@ -20926,6 +20936,9 @@ function vsdApplyCursor(){
    jamais au démarrage de l'application. */
 var tcEtat = { champion:'Ryze', niveau:18, objets:[], runes:[], cible:'Sion',
                fenetre:20, partPhys:0.5, arbre:'Sorcellerie',
+               /* Vos PV, en fraction : 1 = pleine vie. Le neutre est ici 1 et non 0,
+                  d'où le rangement hors de `hypotheses` juste en dessous. */
+               partPV:1,
                /* Hypothèses de combat : ce que le fichier de jeu ne peut pas savoir.
                   Toutes à ZÉRO par défaut, et ce zéro est un choix — les runes et
                   amplifications concernées restent alors refusées, avec leur motif,
@@ -21018,6 +21031,14 @@ function tcMajHypothese(cle, v){
   tcRendre();
 }
 function tcMajPart(v){ tcEtat.partPhys = +v/100; document.getElementById('tc-partphys-v').textContent = v + ' %'; tcRendre(); }
+/* Vos PV, en fraction. Séparé de `tcEtat.hypotheses` À DESSEIN : le compteur
+   « n posées » y compte les curseurs non nuls, et 100 % de PV — le neutre — y
+   apparaîtrait comme une hypothèse posée alors qu'on n'a rien supposé du tout. */
+function tcMajPV(v){
+  tcEtat.partPV = +v/100;
+  document.getElementById('tc-hyp-pv-v').textContent = v + ' %';
+  tcRendre();
+}
 
 /* Liste des objets FINIS : proposer les composants noierait le choix sous 218 entrées. */
 function tcListerObjets(){
@@ -21127,7 +21148,7 @@ function tcRendre(){
     if (tcEtat.hypotheses[k] > 0) hyp[k] = tcEtat.hypotheses[k];
   });
   var opts = { fenetre:tcEtat.fenetre, runes:tcEtat.runes, partPhysique:tcEtat.partPhys,
-               hypotheses:hyp };
+               hypotheses:hyp, partPV:tcEtat.partPV };
   var cible = T.cibleChampion(tcEtat.cible, tcEtat.niveau, []);
   var f = T.ficheBuild(tcEtat.champion, tcEtat.niveau, tcEtat.objets,
                        Object.assign({ cible:cible }, opts));
@@ -21368,6 +21389,7 @@ function tcEnregistrer(){
     nom: nom, champion: tcEtat.champion, niveau: tcEtat.niveau,
     objets: tcEtat.objets.slice(), runes: tcEtat.runes.slice(),
     cible: tcEtat.cible, fenetre: tcEtat.fenetre, partPhys: tcEtat.partPhys,
+    partPV: tcEtat.partPV,
     maj: Date.now()
   });
   tcBuildsEcrire(liste);
@@ -21383,6 +21405,9 @@ function tcAppliquer(id){
   tcEtat.objets = (b.objets || []).slice(); tcEtat.runes = (b.runes || []).slice();
   tcEtat.cible = b.cible || tcEtat.cible; tcEtat.fenetre = b.fenetre || tcEtat.fenetre;
   tcEtat.partPhys = b.partPhys != null ? b.partPhys : tcEtat.partPhys;
+  /* Repli à pleine vie et non à la valeur courante : un build enregistré avant
+     l'arrivée du curseur ne doit pas hériter des PV du build précédent. */
+  tcEtat.partPV = b.partPV != null ? b.partPV : 1;
   document.getElementById('tc-champion').value = b.champion;
   document.getElementById('tc-cible').value = tcEtat.cible;
   document.getElementById('tc-niveau').value = tcEtat.niveau;
@@ -21391,6 +21416,8 @@ function tcAppliquer(id){
   document.getElementById('tc-fenetre-v').textContent = tcEtat.fenetre + ' s';
   document.getElementById('tc-partphys').value = Math.round(tcEtat.partPhys * 100);
   document.getElementById('tc-partphys-v').textContent = Math.round(tcEtat.partPhys * 100) + ' %';
+  document.getElementById('tc-hyp-pv').value = Math.round(tcEtat.partPV * 100);
+  document.getElementById('tc-hyp-pv-v').textContent = Math.round(tcEtat.partPV * 100) + ' %';
   tcListerObjets(); tcListerRunes(); tcRendre();
 }
 
