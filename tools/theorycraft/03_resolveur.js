@@ -125,17 +125,61 @@ function creerContexte(spell) {
     if (v && v.name) dv[String(v.name).toLowerCase()] = v.values || [];
   });
   const eff = (spell.mEffectAmount || []).map(e => (e && e.value) || []);
-  return { dv, eff, calc: spell.mSpellCalculations || {} };
+  return { dv: indexerDV(dv), eff, calc: spell.mSpellCalculations || {} };
 }
 /* Une DataValue peut être PRÉSENTE mais VIDE (`[]`) — le cas du Bushwhack de Nidalee,
    apparu en élargissant le panel. Elle passait alors le test d'existence, puis
    `a[a.length - 1]` valait `undefined` et le calcul remontait `{ n: undefined }`, qui
    faisait planter la boucle d'assemblage. Un tableau vide est traité comme absent :
    c'est ce qu'il est. */
+/* Empreinte FNV-1a 32 bits d'un nom en minuscules — c'est ainsi que le moteur du jeu
+   référence une DataValue quand l'outil d'extraction n'a pas retrouvé son nom en clair.
+
+   Ce n'est pas une hypothèse : la démonstration est arithmétique. L'Éclipse liste ses
+   huit DataValues en clair (`RangedShieldMult`, `MeleeBonusADShieldRatio`,
+   `RangedPercMaxHPMult`, `MeleePercMaxHP`…) et ses calculs en réclament quatre sous les
+   clés `{51df2a01}`, `{e367e801}`, `{4b5548be}`, `{b1f09313}` — soit exactement, dans
+   l'ordre, l'empreinte des quatre premières. Quatre concordances sur 32 bits dans un
+   seul objet : le hasard est exclu.
+
+   Le nom en clair et l'empreinte désignent donc la MÊME valeur, déjà présente dans le
+   fichier. Les sept objets qui « manquaient » d'une DataValue ne manquaient de rien :
+   on cherchait leur valeur sous un nom qu'on refusait de traduire. */
+const empreinteFNV = s => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return '{' + h.toString(16).padStart(8, '0') + '}';
+};
+
+/* Indexe les DataValues sous leur nom ET sous leur empreinte. Une collision de deux
+   noms sur la même empreinte rendrait le second silencieusement faux : on refuse
+   alors d'indexer les deux, plutôt que d'en servir un au hasard. */
+function indexerDV(dv) {
+  const parEmpreinte = {}, collisions = new Set();
+  Object.keys(dv).forEach(nom => {
+    const e = empreinteFNV(nom);
+    if (parEmpreinte[e] !== undefined) collisions.add(e); else parEmpreinte[e] = nom;
+  });
+  collisions.forEach(e => { delete parEmpreinte[e]; });
+  Object.entries(parEmpreinte).forEach(([e, nom]) => { if (dv[e] === undefined) dv[e] = dv[nom]; });
+  return dv;
+}
+
 const lireDV = (ctx, nom) => {
   const a = ctx.dv[String(nom).toLowerCase()];
   return (Array.isArray(a) && a.length) ? a : null;
 };
+
+/* Pourquoi une DataValue manque : l'alerte disait « absente » dans les deux cas, ce qui
+   envoyait chercher au mauvais endroit. Le seul cas restant après la résolution des
+   empreintes est le E d'Aurélion Sol : `GravityIncPerBreakpoint` FIGURE bien dans la
+   liste du sort, mais sans clé `values` du tout. On pourrait lire ce silence comme un
+   zéro — c'est probablement ce que fait le moteur du jeu — mais un seul exemple ne
+   fonde pas une règle, et il s'agit d'une force de gravité, pas d'un dégât : rien
+   n'est servi de travers en refusant. On refuse donc, en le DISANT précisément. */
+const motifDV = (ctx, nom) => (ctx.dv[String(nom).toLowerCase()] !== undefined
+  ? 'DataValue sans valeurs (présente mais vide) : ' + nom
+  : 'DataValue absent: ' + nom);
 
 /* Valeur d'une croissance par paliers au niveau demandé.
    Chaque niveau franchi ajoute le gain du palier en vigueur à ce niveau-là
@@ -161,7 +205,7 @@ function evalPart(p, ctx, rang, prof, alertes) {
 
     case 'NamedDataValueCalculationPart': {
       const a = lireDV(ctx, p.mDataValue);
-      if (!a) { alertes.add('DataValue absent: ' + p.mDataValue); return null; }
+      if (!a) { alertes.add(motifDV(ctx, p.mDataValue)); return null; }
       return { n: a[rang] != null ? a[rang] : a[a.length - 1] };
     }
 
@@ -198,7 +242,7 @@ function evalPart(p, ctx, rang, prof, alertes) {
       if (t === 'StatByCoefficientCalculationPart') coef = { n: p.mCoefficient || 0 };
       else if (t === 'StatByNamedDataValueCalculationPart') {
         const a = lireDV(ctx, p.mDataValue);
-        if (!a) { alertes.add('DataValue absent: ' + p.mDataValue); return null; }
+        if (!a) { alertes.add(motifDV(ctx, p.mDataValue)); return null; }
         coef = { n: a[rang] != null ? a[rang] : a[a.length - 1] };
       } else coef = evalPart(p.mSubpart, ctx, rang, prof + 1, alertes);
       if (!coef) return null;
@@ -293,7 +337,7 @@ function evalPart(p, ctx, rang, prof, alertes) {
       if (t === 'BuffCounterByCoefficientCalculationPart') c = p.mCoefficient || 0;
       else {
         const a = lireDV(ctx, p.mDataValue);
-        if (!a) { alertes.add('DataValue absent: ' + p.mDataValue); return null; }
+        if (!a) { alertes.add(motifDV(ctx, p.mDataValue)); return null; }
         c = a[rang] != null ? a[rang] : a[a.length - 1];
       }
       return { termes: [{ stat: 'Cumuls', mode: 'total', valeur: c, buff: p.mBuffName || null }] };
@@ -430,9 +474,10 @@ function creerContexteObjet(item) {
     if (v && v.mName) dv[String(v.mName).toLowerCase()] = [v.mValue || 0];
   });
   const eff = (item.mEffectAmount || []).map(v => [typeof v === 'number' ? v : 0]);
-  return { dv, eff, calc: item.mItemCalculations || {} };
+  return { dv: indexerDV(dv), eff, calc: item.mItemCalculations || {} };
 }
 
-module.exports = { creerContexte, creerContexteObjet, resoudreCalcul, resoudreConditionnel,
+module.exports = { empreinteFNV,
+                   creerContexte, creerContexteObjet, resoudreCalcul, resoudreConditionnel,
                    valeurParPaliers,
                    evalPart, STATS, MODES, RANGS, rangsDe };

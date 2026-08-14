@@ -517,6 +517,42 @@ vrai('l\'Hydre titanesque annonce toucher aussi les ennemis derrière la cible',
      /derrière la cible/i.test(phraseHydre),
      '→ justifie d\'exclure les dégâts de cône du calcul en cible unique');
 
+/* ── Les variantes « à distance », déclarées puis recoupées ───────────────────────
+   Le facteur qui réduit un passif sur un champion à distance était DÉCLARÉ à la main,
+   par lecture de la boutique. Le fichier le porte aussi, sur le calcul lui-même
+   (`mRangedMultiplier`) — mais il le référençait souvent par une empreinte hachée, que
+   le résolveur refusait de traduire ; les deux sources ne pouvaient donc pas se
+   confronter. Depuis que les empreintes se résolvent, elles le peuvent : ce test-ci
+   exige qu'elles disent le MÊME nombre.
+
+   Ce n'est pas une redondance : deux chemins sans rapport (le texte de la boutique et
+   la formule du moteur de jeu) qui tombent sur la même valeur, c'est une preuve ; et
+   le jour où Riot change l'un des deux, le désaccord se voit ici au lieu de passer. */
+console.log('\n── Facteurs « à distance » : déclaration contre fichier');
+let recoupes = 0;
+Object.entries(I.MODELES).forEach(([id, m]) => {
+  if (!m || !m.distance || !m.distance.facteur || !m.calcul) return;
+  const o = I.parId[id]; if (!o) return;
+  const declare = (o.valeurs || {})[m.distance.facteur];
+  const c0 = (o.calculs[m.calcul] || {}).termes || [];
+  const fichier = c0.length ? c0[0].facteurDistance : null;
+  if (declare == null || fichier == null) return;
+  recoupes++;
+  verifie(o.nom + ' : le facteur déclaré (' + m.distance.facteur + ') est celui du fichier',
+          fichier, declare, 1e-6);
+});
+vrai('  au moins un facteur « à distance » a pu être recoupé', recoupes >= 1);
+
+/* Contre-test de l'empreinte elle-même. Si `empreinteFNV` dérivait, les DataValues
+   hachées redeviendraient introuvables sans que rien d'autre ne le signale — les
+   objets concernés retomberaient simplement sur « valeur absente ». */
+const eclipse = I.parId[6692];
+vrai('l\'Éclipse résout ses quatre DataValues référencées par empreinte',
+     ['{d02ea590}', 'MaxHealthDamageCalc'].every(k => (eclipse.calculs[k] || {}).termes),
+     '→ RangedShieldMult, MeleeBonusADShieldRatio, RangedPercMaxHPMult, MeleePercMaxHP');
+vrai('  et plus aucun objet ne se plaint d\'une DataValue absente',
+     !require('./items.json').some(o => o.alertes.some(a => /DataValue absent/.test(a))));
+
 console.log('\n── Couverture, sans arrondi flatteur');
 const c = I.couverture();
 console.log('   objets finis (≥ 1800 po)        : ' + c.finis.length);

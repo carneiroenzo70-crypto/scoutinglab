@@ -142,5 +142,31 @@ const prixIncoherent = items.filter(o => o.composeDe.length &&
   o.prix < o.composeDe.reduce((s, i) => s + ((dd[String(i)] || { gold: {} }).gold.total || 0), 0) * 0.5);
 vrai('le prix total dépasse toujours la moitié des composants', prixIncoherent.length === 0);
 
+/* ── L'empreinte des noms de DataValues ──────────────────────────────────────────
+   Quand l'outil d'extraction ne retrouve pas le nom d'une DataValue, le fichier la
+   référence par son empreinte FNV-1a 32 bits, calculée sur le nom en MINUSCULES.
+
+   Ce n'est pas une convention supposée : l'Éclipse liste ses DataValues en clair et
+   les réclame sous quatre empreintes. Les quatre concordent, dans le même objet. Une
+   collision fortuite sur 32 bits a une chance sur quatre milliards ; quatre d'affilée,
+   aucune. Ce test fige l'algorithme — variante, casse ou graine comprises — parce
+   qu'une empreinte qui dérive ne casse rien bruyamment : elle fait simplement
+   redisparaître les valeurs, comme avant.
+
+   Le contre-test compte autant que le test : la MAJUSCULE ne doit PAS donner la même
+   empreinte, sinon on ne prouverait rien sur la casse. */
+console.log('\n── Empreinte FNV-1a des noms de DataValues');
+const { empreinteFNV } = require('./03_resolveur');
+[['rangedshieldmult', '{51df2a01}'],
+ ['melebonusadshieldratio_faux', null],
+ ['meleebonusadshieldratio', '{e367e801}'],
+ ['rangedpercmaxhpmult', '{4b5548be}'],
+ ['meleepercmaxhp', '{b1f09313}']].forEach(([nom, attendu]) => {
+  if (!attendu) return;
+  vrai('« ' + nom +' » → ' + attendu, empreinteFNV(nom) === attendu, empreinteFNV(nom));
+});
+vrai('  la casse compte : la majuscule donne une AUTRE empreinte',
+     empreinteFNV('MeleePercMaxHP') !== '{b1f09313}');
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

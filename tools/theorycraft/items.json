@@ -1116,6 +1116,42 @@
      }
     ]
    },
+   "{bdd8f3f7}": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.5
+     }
+    ]
+   },
+   "{1755c90e}": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.3330000042915344
+     }
+    ]
+   },
+   "ExecutePercent": {
+    "conditionnel": true,
+    "condition": "IsRangedCastRequirement",
+    "defaut": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.5
+     }
+    ],
+    "siCondition": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.3330000042915344
+     }
+    ]
+   },
    "ExecuteDamage": {
     "termes": [
      {
@@ -1149,8 +1185,6 @@
    }
   },
   "alertes": [
-   "DataValue absent: {d4217cda}",
-   "DataValue absent: {9f631779}",
    "coefficient non évaluable pour PVmaxCible"
   ]
  },
@@ -6128,12 +6162,19 @@
       "facteurDistance": 0.5
      }
     ]
+   },
+   "AuraAttackSpeed": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.30000001192092896,
+      "facteurDistance": 0.6669999957084656
+     }
+    ]
    }
   },
-  "alertes": [
-   "DataValue absent: {ca6deae2}",
-   "DataValue absent: {eb8d750f}"
-  ]
+  "alertes": []
  },
  {
   "id": 3107,
@@ -7742,13 +7783,37 @@
       "valeur": 0.019999999552965164
      }
     ]
+   },
+   "MinionBurnCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 20
+     },
+     {
+      "stat": "AP",
+      "mode": "total",
+      "valeur": 0.019999999552965164
+     }
+    ]
+   },
+   "MonsterBurnCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 40
+     },
+     {
+      "stat": "AP",
+      "mode": "total",
+      "valeur": 0.019999999552965164
+     }
+    ]
    }
   },
-  "alertes": [
-   "DataValue absent: {9adc0c64}",
-   "DataValue absent: {afd69c5a}",
-   "DataValue absent: {434396e0}"
-  ]
+  "alertes": []
  },
  {
   "id": 2522,
@@ -8116,11 +8181,19 @@
       "facteurDistance": 0.6669999957084656
      }
     ]
+   },
+   "OOCMS": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 20,
+      "facteurDistance": 0.5
+     }
+    ]
    }
   },
-  "alertes": [
-   "DataValue absent: {74ac7847}"
-  ]
+  "alertes": []
  },
  {
   "id": 3179,
@@ -9356,13 +9429,35 @@
    "MeleeBonusADShieldRatio": 0.4,
    "RangedShieldMult": 0.5
   },
-  "calculs": {},
-  "alertes": [
-   "DataValue absent: {51df2a01}",
-   "DataValue absent: {e367e801}",
-   "DataValue absent: {4b5548be}",
-   "DataValue absent: {b1f09313}"
-  ]
+  "calculs": {
+   "{d02ea590}": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 150,
+      "facteurDistance": 0.5
+     },
+     {
+      "stat": "AD",
+      "mode": "bonus",
+      "valeur": 0.4000000059604645,
+      "facteurDistance": 0.5
+     }
+    ]
+   },
+   "MaxHealthDamageCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.07999999821186066,
+      "facteurDistance": 0.625
+     }
+    ]
+   }
+  },
+  "alertes": []
  },
  {
   "id": 8010,
@@ -9470,12 +9565,14 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 300
+      "valeur": 300,
+      "facteurDistance": 0.800000011920929
      },
      {
       "stat": "Letalite",
       "mode": "total",
-      "valeur": 25
+      "valeur": 25,
+      "facteurDistance": 0.800000011920929
      }
     ]
    },
@@ -9484,20 +9581,19 @@
      {
       "stat": "flat",
       "mode": "flat",
-      "valeur": 50
+      "valeur": 50,
+      "facteurDistance": 0.5
      },
      {
       "stat": "Letalite",
       "mode": "total",
-      "valeur": 1.5
+      "valeur": 1.5,
+      "facteurDistance": 0.5
      }
     ]
    }
   },
-  "alertes": [
-   "DataValue absent: {a99340ef}",
-   "DataValue absent: {d62bdfef}"
-  ]
+  "alertes": []
  },
  {
   "id": 3032,
@@ -9546,11 +9642,19 @@
    "CritPerStackMelee": 0.4,
    "StackRangedMultiplier": 0.5
   },
-  "calculs": {},
-  "alertes": [
-   "DataValue absent: {1eea3407}",
-   "DataValue absent: {52d90ad0}"
-  ]
+  "calculs": {
+   "CritPerStackCalc": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 0.4000000059604645,
+      "facteurDistance": 0.5
+     }
+    ]
+   }
+  },
+  "alertes": []
  },
  {
   "id": 3033,
