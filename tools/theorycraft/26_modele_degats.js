@@ -176,6 +176,12 @@ function profil(id, niveau, idsObjets, extras = {}) {
     fenetre: extras.fenetre != null ? extras.fenetre : null,
     crit: Math.min(1, g('crit')),
     degatsCrit: g('degatsCrit'),
+    /* Multiplicateur de coup critique du CHAMPION : 2 partout, 1 sur Ashe (ses coups
+       critiques n'infligent aucun bonus). Porté par le profil parce que les formules de
+       sort en ont besoin autant que les attaques de base — cf. `DegatsCrit` dans
+       `valeurTermeSeule`, où le mode « total » vaut ce multiplicateur et non le bonus. */
+    critMult: (((champions[id] || {}).base || {}).critMult != null
+                 ? champions[id].base.critMult : 2),
     /* Le BONUS en pourcentage est conservé à part de la vitesse d'attaque calculée.
        Sans cette séparation, un gain de rune (+10 %) s'ajouterait à un nombre
        d'attaques par seconde (0,83) : on obtiendrait 10,83. La vitesse d'attaque et la
@@ -412,7 +418,24 @@ function mitiger(brut, type, cible, attaquant, source, ctx = {}) {
    donnerait sinon un bouclier négatif). */
 const pvManquants = p => Math.max(0, p.pvMax - (p.pvActuels != null ? p.pvActuels : p.pvMax));
 
+/* Multiplicateur porté par le calcul et qui dépend du PROFIL — presque toujours le
+   coup moyen, « 1 + crit × (dégâts crit − 1) ». Résolu ici et pas à l'extraction, où la
+   chance de critique n'existe pas encore. Un multiplicateur dont un terme se refuse
+   annule le calcul entier : mieux vaut un sort absent qu'un sort amputé de sa part de
+   critique sans le dire. */
 function valeurTerme(t, p, cible) {
+  const v = valeurTermeSeule(t, p, cible);
+  if (v == null || !t.multTermes) return v;
+  let m = 0;
+  for (const s of t.multTermes) {
+    const x = valeurTermeSeule(s, p, cible);
+    if (x == null) return null;
+    m += x;
+  }
+  return v * m;
+}
+
+function valeurTermeSeule(t, p, cible) {
   /* Terme PRODUIT : la stat multiplie une somme de sous-termes, au lieu d'un simple
      coefficient. Le W de Twisted Fate est le cas type — chance de critique × (base +
      AD + AP). Ces formules ne sont pas linéaires ; les six calculs de sa Carte bleue
@@ -467,6 +490,10 @@ function valeurTerme(t, p, cible) {
        nulles, ce qui est honnête mais inutile. `p.pvActuels`, quand on le fournit,
        leur redonne leur sens. On ne l'invente pas : à défaut, pleine vie. */
     case 'PVactuels':   return t.valeur * (p.pvActuels != null ? p.pvActuels : p.pvMax);
+    /* Fraction de PV actuels : 1 à pleine vie. Sert au coût en PV des sorts de Zac,
+       « 4 % des PV actuels », que le fichier écrit `PVmax × cette fraction`. */
+    case 'FractionPVactuels':
+      return p.pvMax ? t.valeur * (p.pvActuels != null ? p.pvActuels : p.pvMax) / p.pvMax : null;
     case 'PVmanquants': return t.valeur * pvManquants(p);
     /* FRACTION de PV manquants (0 à 1), et non des points : diviser par les PV max est
        ce qui distingue mStat 16 de mStat 15. Confondre les deux ferait ressortir le
@@ -483,7 +510,31 @@ function valeurTerme(t, p, cible) {
        moteur d'objets les servait déjà ; les refuser ici privait le calculateur de
        sorts entiers, sans que rien ne le signale. */
     case 'Crit':              return t.valeur * (p.crit || 0);
-    case 'DegatsCrit':        return t.valeur * (p.degatsCrit || 0);
+    /* DÉGÂTS CRITIQUES — et le mode change TOUT.
+
+       ⚠ Cette stat était servie comme le seul BONUS d'objet, quel que soit le mode.
+       En mode « total » le fichier attend le MULTIPLICATEUR COMPLET, et la preuve tient
+       en deux calculs jumeaux du Q de Yasuo :
+           TotalDamage     = 20 + 1,05 × AD
+           TotalDamageCrit = 20 + AD × (mStat 9 total × 1,05)
+       Même formule, la seconde multipliée par mStat 9. Le wiki annonce « 105 % de l'AD »
+       pour le coup normal : mStat 9 total ne peut donc être que le ×2 du critique.
+       Servi comme un bonus, il valait 0 sans Lame d'infini — le Q critique de Yasuo, de
+       Yone et le Q de Zeri ressortaient amputés de TOUTE leur part d'attaque, en
+       silence. Le E de Vi allait plus loin : « mStat 9 − 1 » rendait −1.
+
+       Le mode « bonus » désigne bien le seul apport des objets — le E de Kindred
+       l'écrit noir sur blanc : `1,5 + mStat 9 bonus`, une base en dur plus le bonus.
+
+       Règle d'Ashe conservée : un champion dont le critique n'ajoute rien ne profite pas
+       non plus du bonus de dégâts critiques (le wiki est explicite). */
+    case 'DegatsCrit': {
+      const mult = p.critMult != null ? p.critMult : 2;
+      if (mult <= 1) return t.valeur * (t.mode === 'bonus' ? 0 : mult);
+      if (t.mode === 'bonus') return t.valeur * (p.degatsCrit || 0);
+      if (t.mode === 'base')  return t.valeur * mult;
+      return t.valeur * (mult + (p.degatsCrit || 0));
+    }
     case 'Letalite':          return t.valeur * (p.letalite || 0);
     case 'VitesseAttaque':    return t.valeur * (p.vitesseAttaque || 0);
     case 'VitesseDeplacement': return t.valeur * (p.ms || 0);

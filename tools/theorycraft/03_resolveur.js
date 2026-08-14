@@ -44,6 +44,20 @@ const STATS = {
      (`MissingHPPercentHeal`) et celui de Gangplank (`PercentHeal`) le portent SANS le
      drapeau, et soignent bien un pourcentage des PV manquants du LANCEUR. Même index,
      deux propriétaires : c'est le drapeau qui tranche, pas l'index. */
+  /* FRACTION de PV actuels (0 à 1). Prouvé par le coût des sorts de Zac, et la preuve
+     vient de deux sources indépendantes qui se recoupent :
+       · le fichier écrit  `HealthCostTooltip = HPCost × (PVmax × mStat 14)`
+         avec HPCost = 0,04 (Q et E) et 0,08 (W) ;
+       · l'infobulle française de Data Dragon écrit, mot pour mot,
+         « Coûte {{ hpcost*100 }} % des PV ACTUELS ».
+     Pour que `HPCost × PVmax × X` vaille « HPCost × PV actuels », X ne peut être que
+     PVactuels / PVmax. La lecture est forcée, pas choisie.
+
+     Elle referme aussi la symétrie de la famille, qui devient sa propre corroboration :
+       12 = PV max
+       13 = PV actuels (points)     ·  14 = PV actuels (fraction)
+       15 = PV manquants (points)   ·  16 = PV manquants (fraction) */
+  14: 'FractionPVactuels',
   15: 'PVmanquants',
   /* FRACTION de PV manquants (0 à 1), et non des points. La preuve est interne au
      fichier, et elle est décisive : le W d'Olaf porte DEUX formules jumelles —
@@ -66,9 +80,27 @@ const STATS = {
      0,01 × portée entre 2 et 3 (125 → 2 en mêlée, 550 → 3 à distance). */
   31: 'Portee',
   34: 'Accel'                // ASPerHS (vitesse d'attaque par point d'accélération)
-  /* Non mappés, faute de preuve — chacun n'apparaît qu'une ou deux fois, sans nom de
-     DataValue pour les identifier : 3, 5, 10 (Jhin), 11, 14 (coûts en PV de Zac),
-     19, 20, 21, 30. Le résolveur les signale plutôt que de les supposer. */
+  /* LES INDEX QUI RESTENT NON MAPPÉS, et pourquoi — la liste était vague, elle est
+     maintenant sondée. Aucun d'eux n'entre dans un chiffre servi ; ce ne sont donc pas
+     des lacunes du calculateur, mais des index hors de son périmètre.
+
+       3, 5          ZÉRO occurrence. Ni dans les 173 champions, ni dans les objets, ni
+                     dans les runes. Ils figuraient dans cette liste sans y avoir jamais
+                     eu leur place — un index qui n'existe nulle part n'est pas un trou.
+
+       11, 19,       N'apparaissent que sur des blocs d'objets ABSENTS de Data Dragon
+       20, 21, 30    (447103, 443079, un doublon de l'Actualisateur) : des objets hors
+                     Faille, que l'extraction ne retient jamais. Le résolveur ne les
+                     rencontre pas ; aucune alerte n'est émise pour eux.
+
+       10            Une seule occurrence : `AmmoRechargeRateTooltip` de Jhin, où le
+                     fichier écrit `Base × (1 + mStat 10)` — la vitesse de rechargement
+                     de son chargeur. Ce n'est ni un dégât, ni une défense, ni une durée
+                     de recharge de sort : rien que le modèle serve. Et une seule
+                     formule, sans seconde source, ne prouve rien. On refuse en le
+                     nommant, plutôt que de deviner « vitesse d'attaque bonus » parce
+                     que ça semblerait raisonnable — c'est exactement l'erreur qui a
+                     coûté six index faux à cette table. */
 };
 
 /* Drapeau « cette stat est celle de la CIBLE, pas du lanceur ».
@@ -221,9 +253,31 @@ function evalPart(p, ctx, rang, prof, alertes) {
       if (!a || !b) return null;
       if (a.n != null && b.n != null) return { n: a.n * b.n };
       // produit d'un scalaire par des termes : on met à l'échelle
-      const [sc, tr] = a.n != null ? [a.n, b] : [b.n, a];
-      if (sc == null || !tr.termes) return null;
-      return { termes: tr.termes.map(x => ({ ...x, valeur: x.valeur * sc })) };
+      if (a.n != null || b.n != null) {
+        const [sc, tr] = a.n != null ? [a.n, b] : [b.n, a];
+        if (!tr.termes) return null;
+        return { termes: tr.termes.map(x => ({ ...x, valeur: x.valeur * sc })) };
+      }
+
+      /* PRODUIT DE DEUX SOMMES DE TERMES. Ce cas retournait `null` — et c'est lui qui
+         faisait tomber les multiplicateurs de coup critique, dont la forme est toujours
+             chance de critique × (dégâts critiques − 1)
+         soit un terme unique multiplié par une somme. La représentation existait déjà :
+         c'est exactement `facteurTermes`, « cette stat multiplie cette somme », qui sert
+         depuis longtemps au W de Twisted Fate. Le produit ne s'en servait simplement pas.
+
+         On ne le fait QUE si l'un des deux côtés tient en un seul terme. Une vraie somme
+         multipliée par une vraie somme (deux termes de chaque côté) ne se représente pas
+         dans un modèle additif : on continue de refuser, plutôt que de développer un
+         produit et de perdre la trace de ce qu'on a fait. */
+      const [un, autre] = (a.termes || []).length === 1 ? [a, b]
+                        : (b.termes || []).length === 1 ? [b, a] : [null, null];
+      if (!un || !autre.termes || !autre.termes.length) return null;
+      const t1 = un.termes[0];
+      /* Un terme qui porte DÉJÀ un facteur ne peut pas en porter un second sans qu'on
+         perde l'un des deux : on refuse. */
+      if (t1.facteurTermes) return null;
+      return { termes: [{ ...t1, facteurTermes: autre.termes }] };
     }
 
     case 'SumOfSubPartsCalculationPart': {
@@ -440,7 +494,28 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
     if (ok && c.mMultiplier) {
       const m = evalPart(c.mMultiplier, ctx, r, 0, alertes);
       if (m && m.n != null) termes.forEach(t => { t.valeur *= m.n; });
-      else alertes.add('multiplicateur non scalaire (non appliqué)');
+      /* MULTIPLICATEUR QUI PORTE DES STATS. Il était abandonné avec une alerte, faute
+         de savoir le représenter. C'était un renoncement de trop : sur les vingt
+         calculs concernés, DIX-SEPT portent la même formule —
+
+             1 + chance de critique × (dégâts critiques − 1 + bonus de critique)
+
+         — c'est-à-dire le coup MOYEN, exactement ce que le modèle calcule déjà pour les
+         attaques de base. Le R de Caitlyn, le Q de Sivir, le E de Xayah, le W de Miss
+         Fortune, le E de Zeri, le E de Tristana, les quatre calculs d'Akshan, ceux de
+         Kindred, Nilah, Smolder et Viego : tous des sorts qui PEUVENT critiquer, tous
+         servis sans leur part de critique.
+
+         Il n'est pas « non scalaire » — il est non scalaire À L'EXTRACTION, où aucun
+         profil n'existe encore. Une fois la chance de critique connue, c'est un nombre.
+         On transporte donc le multiplicateur sous forme de termes, comme `facteurTermes`
+         le fait déjà pour un coefficient, et on le résout au moment de l'évaluation.
+
+         Sur un Xayah à 100 % de critique et +40 % de dégâts critiques, la différence est
+         de 1 à 1,65 : le E ressortait à 60 % de sa valeur réelle. */
+      else if (m && m.termes && m.termes.length)
+        termes.forEach(t => { t.multTermes = m.termes; });
+      else alertes.add('multiplicateur non résolu (non appliqué)');
     }
 
     if (ok && facteurDistance != null) termes.forEach(t => { t.facteurDistance = facteurDistance; });

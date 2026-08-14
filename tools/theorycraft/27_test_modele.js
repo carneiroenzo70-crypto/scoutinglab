@@ -374,5 +374,90 @@ const atlas = require('./items.json').find(o => o.id === 3865);
 vrai('Atlas : l\'exécution vise les PV de la CIBLE, pas ceux du porteur',
      JSON.stringify(atlas.calculs.ExecuteDamage.termes).includes('PVmaxCible'));
 
+/* ── Les dégâts critiques : le MODE change tout ───────────────────────────────────
+   Le Q de Yasuo porte deux calculs jumeaux, et c'est ce couple qui prouve la lecture :
+       TotalDamage     = base + 1,05 × AD
+       TotalDamageCrit = base + AD × (mStat 9 total × 1,05)
+   Le wiki annonce « 105 % de l'AD » pour le coup normal — mStat 9 « total » ne peut donc
+   être que le multiplicateur de critique complet. Servi comme le seul bonus d'objet, il
+   valait 0 sans Lame d'infini, et le Q critique perdait TOUTE sa part d'attaque. */
+console.log('\n── Dégâts critiques : mode total contre mode bonus ──');
+const objCrit = [3031, 3036];                       // Lame d'infini + Assoiffeur de sang
+const pYasuo = M.profil('Yasuo', 18, objCrit, { fenetre: 10 });
+const yasNorm = M.evaluerCalcul('Yasuo', 'Q', 'TotalDamage', 3, pYasuo, cible5000);
+const yasCrit = M.evaluerCalcul('Yasuo', 'Q', 'TotalDamageCrit', 3, pYasuo, cible5000);
+const baseQ = 70;                                   // rang 3, part plate du fichier
+verifie('Yasuo Q critique = base + part d\'AD × (multiplicateur + bonus)',
+        yasCrit.brut, baseQ + (yasNorm.brut - baseQ) * (pYasuo.critMult + pYasuo.degatsCrit), 0.1);
+/* Contre-test : lu comme un bonus, la part d'AD serait multipliée par 0,3 — le coup
+   critique infligerait donc MOINS que le coup normal. Absurde, et pourtant servi. */
+vrai('  un coup critique ne peut pas infliger moins qu\'un coup normal',
+     yasCrit.brut > yasNorm.brut);
+/* Le mode « bonus » désigne bien le seul apport des objets. Sans objet, il vaut zéro. */
+const pNu = M.profil('Yasuo', 18, [], { fenetre: 10 });
+verifie('  sans objet, le multiplicateur retombe à celui du champion',
+        M.evaluerCalcul('Yasuo', 'Q', 'TotalDamageCrit', 3, pNu, cible5000).brut,
+        baseQ + (M.evaluerCalcul('Yasuo', 'Q', 'TotalDamage', 3, pNu, cible5000).brut - baseQ) * 2,
+        0.1);
+/* Règle d'Ashe : ses coups critiques n'ajoutent rien, donc le bonus de dégâts critiques
+   des objets ne lui profite pas non plus — ni sur ses attaques, ni dans ses formules. */
+const pAshe = M.profil('Ashe', 18, objCrit, { fenetre: 10 });
+verifie('Ashe : multiplicateur de critique 1, malgré la Lame d\'infini',
+        pAshe.critMult, 1, 0);
+
+/* ── mStat 14 : la fraction de PV ACTUELS ─────────────────────────────────────────
+   Deux sources indépendantes se recoupent. Le fichier écrit le coût des sorts de Zac
+   `HPCost × (PVmax × mStat 14)` ; l'infobulle française de Data Dragon écrit « Coûte
+   {{ hpcost*100 }} % des PV ACTUELS ». Seul `PVactuels / PVmax` satisfait les deux.
+
+   ⚠ Les valeurs viennent du FICHIER, pas de la mémoire : il donne 0,08 au Q et 0,04 au
+   W et au E — et non 0,04 partout comme on pourrait le supposer. */
+console.log('\n── Coût en PV de Zac (mStat 14) ──');
+[['Q', 'HealthCostTooltip', 0.08], ['W', 'TooltipHealthCost', 0.04],
+ ['E', 'HealthCostTooltip', 0.04]].forEach(([touche, calc, hp]) => {
+  [1, 0.5].forEach(part => {
+    const pz = M.profil('Zac', 18, [], { fenetre: 10, partPV: part });
+    verifie('Zac ' + touche + ' à ' + (part * 100) + ' % de PV : ' + (hp * 100) + ' % des PV actuels',
+            M.evaluerCalcul('Zac', touche, calc, 3, pz, cible5000).brut, pz.pvActuels * hp, 0.01);
+  });
+});
+/* Contre-test : lu comme des POINTS de PV actuels au lieu d'une fraction, le coût
+   vaudrait `HPCost × PVmax × PVactuels` — plusieurs centaines de milliers. */
+vrai('  la fraction n\'est pas servie comme des points',
+     M.evaluerCalcul('Zac', 'Q', 'HealthCostTooltip', 3,
+                     M.profil('Zac', 18, [], { fenetre: 10 }), cible5000).brut < 1000);
+
+/* ── Le multiplicateur porté par le calcul, résolu au profil ──────────────────────
+   « 1 + chance de critique × (dégâts critiques − 1) » : un produit de deux sommes, que
+   le résolveur refusait de représenter. Vingt calculs partaient sans leur part de
+   critique, en silence. Le E de Xayah est le cas type. */
+console.log('\n── Multiplicateur de coup moyen ──');
+const pXayah = M.profil('Xayah', 18, objCrit, { fenetre: 10 });
+const xayah = M.evaluerCalcul('Xayah', 'E', 'FeatherDamage', 3, pXayah, cible5000);
+const xayahNu = M.evaluerCalcul('Xayah', 'E', 'FeatherDamage', 3,
+                                M.profil('Xayah', 18, [], { fenetre: 10 }), cible5000);
+vrai('le E de Xayah gagne sa part de critique avec la Lame d\'infini',
+     xayah.brut > xayahNu.brut, xayahNu.brut + ' → ' + xayah.brut);
+/* Contre-test : le multiplicateur est un coup MOYEN, jamais un coup garanti. Il doit
+   donc rester sous le multiplicateur plein — le confondre gonflerait ces vingt sorts
+   d'un facteur deux. */
+vrai('  et il reste un coup MOYEN, sous le multiplicateur plein',
+     xayah.brut < xayahNu.brut * (pXayah.critMult + pXayah.degatsCrit));
+/* À zéro chance de critique, le multiplicateur doit valoir EXACTEMENT 1. On compare donc
+   deux profils identiques à la chance de critique près — comparer deux BUILDS différents
+   ne prouverait rien, l'écart d'AD suffirait à masquer un multiplicateur faux. */
+verifie('  à 0 % de critique, le multiplicateur vaut exactement 1',
+        M.evaluerCalcul('Xayah', 'E', 'FeatherDamage', 3,
+                        { ...pXayah, crit: 0 }, cible5000).brut,
+        M.evaluerCalcul('Xayah', 'E', 'FeatherDamage', 3,
+                        { ...pXayah, crit: 0, degatsCrit: 0 }, cible5000).brut, 0.01);
+/* Et la progression est bien LINÉAIRE en chance de critique : à 50 %, exactement la
+   moitié du chemin entre 0 % et 100 %. Un multiplicateur appliqué deux fois, ou appliqué
+   à la mauvaise part, casserait cette linéarité sans changer les bornes. */
+const auCrit = c => M.evaluerCalcul('Xayah', 'E', 'FeatherDamage', 3,
+                                    { ...pXayah, crit: c }, cible5000).brut;
+verifie('  et la valeur est linéaire en chance de critique',
+        auCrit(0.5), (auCrit(0) + auCrit(1)) / 2, 0.01);
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

@@ -123,6 +123,19 @@ if (sansDegats.length) sansDegats.forEach(x => console.log('      ' + x));
 const pct = Math.round((1 - (sansType.length + sansCalcul.length) / totalSorts) * 1000) / 10;
 ligne('couverture exploitable des sorts', pct + ' %');
 
+/* Les alertes d'extraction, côté sorts. Elles n'étaient comptées que pour les objets —
+   or c'est ici qu'elles disent ce que le résolveur a REFUSÉ de traduire. Les taire
+   revenait à laisser croire que 100 % de couverture veut dire 100 % de formules lues :
+   un sort peut être servi et l'un de ses calculs secondaires refusé. */
+const alertes = {};
+tous.forEach(x => ['Q', 'W', 'E', 'R'].forEach(t => {
+  ((x.sorts[t] || {}).alertes || []).forEach(a => { alertes[a] = (alertes[a] || 0) + 1; });
+}));
+const totalAlertes = Object.values(alertes).reduce((s, n) => s + n, 0);
+ligne('alertes d\'extraction sur les sorts', totalAlertes);
+Object.entries(alertes).sort((a, b) => b[1] - a[1])
+  .forEach(([a, n]) => console.log('      ' + String(n).padStart(3) + '  ' + a));
+
 /* Neuf runes et trois amplifications ne manquaient pas d'un chiffre mais d'un FAIT :
    « combien de fois immobilisez-vous la cible ? », « à quelle distance frappez-vous ? ».
    Le modèle ne le devine pas — il le DEMANDE, et sert le chiffre dès qu'on le lui donne.

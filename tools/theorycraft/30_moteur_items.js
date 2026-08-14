@@ -18,7 +18,22 @@ items.forEach(o => { parId[o.id] = o; });
 /* Valeur d'un terme résolu, dans le contexte du porteur et de la cible.
    `surCible` détourne les termes de PV vers la cible : c'est le seul cas où une
    formule d'objet ne parle pas du porteur. */
+/* Multiplicateur porté par le calcul et dépendant du profil (cf. `mMultiplier` dans
+   `03_resolveur.js`). Même traitement que côté sorts : résolu à l'évaluation, et un
+   terme refusé annule le calcul plutôt que de le servir sans son multiplicateur. */
 function valeurTerme(t, p, cible) {
+  const v = valeurTermeSeule(t, p, cible);
+  if (v == null || !t.multTermes) return v;
+  let m = 0;
+  for (const s of t.multTermes) {
+    const x = valeurTermeSeule(s, p, cible);
+    if (x == null) return null;
+    m += x;
+  }
+  return v * m;
+}
+
+function valeurTermeSeule(t, p, cible) {
   const n = p.niveau || 18;
   switch (t.stat) {
     case 'flat':
@@ -56,7 +71,18 @@ function valeurTerme(t, p, cible) {
        50 × la chance de critique, le Glaive d'ombre 1,5 × la létalité. Les refuser
        privait le calculateur d'objets entiers. */
     case 'Crit':       return t.valeur * (p.crit || 0);
-    case 'DegatsCrit': return t.valeur * (p.degatsCrit || 0);
+    /* Même règle de mode que côté sorts (cf. `26_modele_degats.js`) : « total » vaut le
+       multiplicateur complet, « bonus » le seul apport des objets. Aucun passif d'objet
+       ne l'utilise en mode total aujourd'hui — mais les deux moteurs doivent répondre la
+       même chose à la même question, sinon la prochaine formule qui l'utilisera sera
+       fausse d'un côté seulement, et invisible. */
+    case 'DegatsCrit': {
+      const mult = p.critMult != null ? p.critMult : 2;
+      if (mult <= 1) return t.valeur * (t.mode === 'bonus' ? 0 : mult);
+      if (t.mode === 'bonus') return t.valeur * (p.degatsCrit || 0);
+      if (t.mode === 'base')  return t.valeur * mult;
+      return t.valeur * (mult + (p.degatsCrit || 0));
+    }
     case 'Letalite':   return t.valeur * (p.letalite || 0);
     case 'Accel':      return t.valeur * (p.accel || 0);
     case 'VitesseAttaque': return t.valeur * (p.vitesseAttaque || 0);

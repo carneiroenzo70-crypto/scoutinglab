@@ -6234,7 +6234,30 @@
    "HPRegenIncrease": 0.25,
    "BaseManaRegen": 0.25
   },
-  "calculs": {},
+  "calculs": {
+   "HealAmount": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "parNiveau",
+      "valeur": 0,
+      "jusqua": 1,
+      "facteurTermes": [
+       {
+        "stat": "flat",
+        "mode": "flat",
+        "valeur": 200
+       }
+      ]
+     },
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 150
+     }
+    ]
+   }
+  },
   "alertes": []
  },
  {
@@ -6351,7 +6374,30 @@
    "HealAmountMax": 250,
    "Cooldown": 120
   },
-  "calculs": {},
+  "calculs": {
+   "AmountToHeal": {
+    "termes": [
+     {
+      "stat": "flat",
+      "mode": "parNiveau",
+      "valeur": 0,
+      "jusqua": 1,
+      "facteurTermes": [
+       {
+        "stat": "flat",
+        "mode": "flat",
+        "valeur": 150
+       }
+      ]
+     },
+     {
+      "stat": "flat",
+      "mode": "flat",
+      "valeur": 100
+     }
+    ]
+   }
+  },
   "alertes": []
  },
  {
@@ -12295,7 +12341,7 @@
    }
   },
   "alertes": [
-   "multiplicateur non scalaire (non appliqué)"
+   "multiplicateur non résolu (non appliqué)"
   ]
  },
  {
