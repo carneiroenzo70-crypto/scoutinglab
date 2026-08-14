@@ -13,6 +13,24 @@ const DIR = path.join(__dirname, 'bin');
 const DD = require('./champFull.json').data;
 const SORTS = require('./sorts_modeles');
 
+/* GARDE-FOU sur les doublons de `sorts_modeles.js`. Ce fichier est un objet littéral :
+   deux clés `Vayne:` et la seconde écrase la première SANS ERREUR, ni au chargement ni
+   à l'exécution. C'est arrivé en y ajoutant les corrections du panel élargi — la
+   correction du Q de Vayne, vérifiée et testée, aurait disparu en silence.
+   `require` ne peut pas le voir : à ce stade le doublon n'existe déjà plus. On relit
+   donc la SOURCE, où il est encore visible. */
+(function verifierDoublons() {
+  const src = fs.readFileSync(path.join(__dirname, 'sorts_modeles.js'), 'utf8');
+  const vus = new Set(), doubles = [];
+  for (const m of src.matchAll(/^ {2}([A-Za-z][A-Za-z0-9]*): \{/gm)) {
+    if (vus.has(m[1])) doubles.push(m[1]); else vus.add(m[1]);
+  }
+  if (doubles.length) {
+    throw new Error('sorts_modeles.js : clé(s) en double, la seconde écrase la première — ' +
+                    doubles.join(', '));
+  }
+})();
+
 const TOUCHES = ['Q', 'W', 'E', 'R'];
 const estDegats = n => /damage|dmg/i.test(n);
 /* Soin et bouclier étaient rangés sous la MÊME étiquette. Ce n'est pas un détail de
@@ -194,8 +212,19 @@ cibles.forEach(cible => {
       if (!r) return;
       const resolus = Object.keys(r).filter(x => r[x]);
       if (!resolus.length) return;
+      /* `mDisplayAsPercent` marque un calcul qui produit un RATIO, pas des points :
+         « 3,5 % des PV max », « 20 % de réduction ». Le nom contient souvent « damage »
+         (KogMaw `TotalHealthDamage`, Vi `TotalDamageTooltip`, Kayn `DarkinPercentDamage`) —
+         l'heuristique les rangeait donc en dégâts et servait 0,035 POINT de dégâts là où
+         le jeu en inflige des centaines. C'est l'erreur de la Lame du roi déchu, à
+         nouveau, mais côté sorts.
+         Un ratio n'est jamais un montant : il reste disponible comme FACTEUR (une
+         correction déclarée le multiplie par les PV de la cible, cf. Illaoi W), mais il
+         n'entre pas seul dans un total de dégâts. */
+      const ratio = !!(ctx.calc[nomCalc] || {}).mDisplayAsPercent;
       calculs[nomCalc] = {
-        genre: estDegats(nomCalc) ? 'degats'
+        genre: ratio ? 'ratio'
+             : estDegats(nomCalc) ? 'degats'
              : estBouclier(nomCalc) ? 'bouclier'
              : estSoin(nomCalc) ? 'soin' : 'autre',
         parRang: r
@@ -213,8 +242,23 @@ cibles.forEach(cible => {
       let complet = true;
       for (let r = 1; r <= nbRangs; r++) {
         const termes = def.termes.map(t => {
+          /* Terme adossé à un CALCUL déjà résolu. Plusieurs sorts multiplient les PV de
+             la cible par un facteur qui n'est PAS constant : le E d'Illaoi vaut
+             « 3 % + 3,5 % par 100 AD bonus des PV max », le E d'Evelynn « 3 % + 1,5 %
+             par 100 AP ». Ce facteur existe déjà dans le fichier, sous forme de calcul
+             (`HealthPercentTotal`, `PercentHealthBaseTOOLTIP`) — mais nommé sans le mot
+             « damage », donc rangé en « autre » et jamais appliqué. On le réutilise TEL
+             QUEL comme facteur du produit, plutôt que de recopier ses nombres ici :
+             recopier, c'est se condamner à diverger au premier équilibrage. */
+          if (t.calc) {
+            const src = calculs[t.calc];
+            const sous = src && src.parRang && src.parRang[r];
+            if (!sous || !sous.length) { complet = false; return null; }
+            return { stat: t.stat, mode: t.mode, valeur: t.echelle != null ? t.echelle : 1,
+                     facteurTermes: sous };
+          }
           const arr = t.dv ? ctx.dv[t.dv.toLowerCase()] : null;
-          if (t.dv && !arr) { complet = false; return null; }
+          if (t.dv && (!arr || !arr.length)) { complet = false; return null; }
           const v = arr ? (arr[r] != null ? arr[r] : arr[arr.length - 1]) : t.valeur;
           return { stat: t.stat, mode: t.mode, valeur: v * (t.echelle != null ? t.echelle : 1) };
         });
@@ -230,6 +274,13 @@ cibles.forEach(cible => {
       typeDegats: corr.type || typeDeDegats(ddSpell),
       sourceType: corr.type ? corr.source : (typeDeDegats(ddSpell) ? 'infobulle Data Dragon' : null),
       nonExploitable: corr.nonExploitable || null,
+      /* `sansDegats` : le sort N'INFLIGE RIEN, et son infobulle parle quand même de
+         dégâts. Quatre cas, tous légitimes — l'ultime de Fiora renvoie aux dégâts de
+         son PASSIF, le E de Morgana annonce ce que son bouclier BLOQUE, le W de Nilah
+         RÉDUIT les dégâts subis, le W de Sona ceux que la cible inflige. Sans cette
+         déclaration, la détection par mots-clés les compte comme des lacunes, et un
+         chiffre d'incomplétude qu'on ne peut pas faire baisser finit par être ignoré. */
+      sansDegats: corr.sansDegats || null,
       noteCorrection: corr.note || null,
       cooldown: spell.cooldownTime || spell.Cooldown || null,
       /* Compétences à charges. Sans ces deux champs, le E de Rumble passe pour une
@@ -250,7 +301,7 @@ cibles.forEach(cible => {
 
   // Un champion est « ok » si tous ses sorts ont au moins un calcul de dégâts ou de soin
   const utiles = Object.values(champ.sorts).filter(s =>
-    Object.values(s.calculs).some(c => c.genre !== 'autre'));
+    Object.values(s.calculs).some(c => c.genre !== 'autre' && c.genre !== 'ratio'));
   if (utiles.length >= 4) bilan.ok++;
   else if (utiles.length > 0) bilan.partiel++;
   else bilan.vide++;

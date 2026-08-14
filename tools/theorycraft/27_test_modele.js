@@ -288,8 +288,36 @@ verifie('Rek\'Sai W garde les valeurs du FICHIER, pas celles du wiki',
 vrai('les enveloppes d\'infobulle d\'Aphelios sont déclarées hors portée',
      !!M.champions.Aphelios.sorts.Q.nonExploitable,
      M.champions.Aphelios.sorts.Q.nonExploitable);
-vrai('chaque correction porte sa source', Object.values(SORTS).every(c =>
-     Object.values(c).every(s => s.source || s.nonExploitable)));
+/* Toute correction doit être MOTIVÉE, sous l'une des trois formes : une source pour ce
+   qu'elle affirme, un motif de refus, ou un motif de « ce sort n'inflige rien ». Une
+   correction sans justification est une valeur inventée qui a l'air d'être sourcée. */
+const sansMotif = [];
+Object.entries(SORTS).forEach(([champ, sorts]) => Object.entries(sorts).forEach(([t, s]) => {
+  if (!s.source && !s.nonExploitable && !s.sansDegats) sansMotif.push(champ + ' ' + t);
+}));
+vrai('chaque correction porte sa source ou son motif', sansMotif.length === 0,
+     sansMotif.length ? sansMotif.join(', ') : Object.keys(SORTS).length + ' champions corrigés');
+
+/* Les douze pourcentages de PV : ce qu'on vérifie n'est pas le chiffre (il vient du
+   fichier) mais l'ORDRE DE GRANDEUR. Avant correction, le W de Vayne valait 0,06 point
+   de dégâts ; il doit maintenant valoir 6 % des PV de la cible. */
+const cible5000 = { nom: 'test', niveau: 18, armure: 0, rm: 0, pvMax: 5000, pvBonus: 0, pvActuels: 5000 };
+const pVayne = M.profil('Vayne', 18, [], { fenetre: 10 });
+const vayneW = M.evaluerCalcul('Vayne', 'W', 'DegatsTroisiemeCoup', 5, pVayne, cible5000);
+verifie('Vayne W rang 5 : 10 % des 5 000 PV de la cible, et non 0,10 point',
+        vayneW.brut, 500, 1);
+/* Contre-test : sans cible, on REFUSE. Servir le ratio nu est précisément l'erreur
+   qui a valu douze sorts faux pendant tout le panel à 90 champions. */
+vrai('  sans cible, le pourcentage est refusé, pas servi nu',
+     M.evaluerCalcul('Vayne', 'W', 'DegatsTroisiemeCoup', 5, pVayne, null).brut == null);
+
+/* Les PV MANQUANTS valent zéro à pleine vie — et c'est exact, pas un bug. */
+const pGaren = M.profil('Garen', 18, [], { fenetre: 10 });
+const garenPlein = M.evaluerCalcul('Garen', 'R', 'DegatsExecution', 3, pGaren, cible5000);
+const cibleBlessee = { ...cible5000, pvActuels: 1000 };
+const garenBlesse = M.evaluerCalcul('Garen', 'R', 'DegatsExecution', 3, pGaren, cibleBlessee);
+verifie('Garen R à pleine vie : la base seule (275)', garenPlein.brut, 275, 1);
+verifie('  cible à 1 000/5 000 PV : 275 + 35 % de 4 000', garenBlesse.brut, 275 + 1400, 1);
 
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

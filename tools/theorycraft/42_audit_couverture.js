@@ -57,13 +57,17 @@ ligne('champions du panel', tous.length);
    (une ruée, un bouclier, un changement de posture) n'est pas une lacune : c'est un
    sort qui n'inflige rien. Les compter comme des trous gonflerait artificiellement
    le problème — et masquerait les vrais. */
-const sansType = [], sansCalcul = [], declaresHorsPortee = [];
+const sansType = [], sansCalcul = [], declaresHorsPortee = [], sansDegats = [];
 tous.forEach(x => ['Q', 'W', 'E', 'R'].forEach((t, i) => {
   const s = x.sorts[t]; if (!s) return;
   /* Un sort DÉCLARÉ non exploitable n'est pas une lacune : c'est un refus assumé et
      motivé (les deux « sorts » d'Aphelios sont des enveloppes d'infobulle). Le compter
      comme un trou entretiendrait un chiffre faussement inquiétant. */
   if (s.nonExploitable) { declaresHorsPortee.push(x.id + ' ' + t + ' — ' + s.nonExploitable); return; }
+  /* Faux positif de la détection par mots-clés : l'infobulle parle de dégâts, mais le
+     sort n'en inflige pas (bouclier de Morgana, réduction de Nilah, renvoi de Fiora
+     vers son passif). Déclaré, motivé, donc pas une lacune. */
+  if (s.sansDegats) { sansDegats.push(x.id + ' ' + t + ' — ' + s.sansDegats); return; }
   const aDegats = Object.values(s.calculs).some(c => c.genre === 'degats');
   if (aDegats && !s.typeDegats) { sansType.push(x.id + ' ' + t); return; }
   if (!aDegats) {
@@ -80,6 +84,8 @@ ligne('  dégâts annoncés, AUCUN calcul extrait', sansCalcul.length);
 if (sansCalcul.length) console.log('      ' + sansCalcul.join(', '));
 ligne('  déclarés hors portée, avec motif', declaresHorsPortee.length);
 if (declaresHorsPortee.length) declaresHorsPortee.forEach(x => console.log('      ' + x));
+ligne('  n\'infligent rien, déclaré et motivé', sansDegats.length);
+if (sansDegats.length) sansDegats.forEach(x => console.log('      ' + x));
 const pct = Math.round((1 - (sansType.length + sansCalcul.length) / totalSorts) * 1000) / 10;
 ligne('couverture exploitable des sorts', pct + ' %');
 
@@ -89,7 +95,8 @@ console.log('\n══ CE QUE LE MODÈLE NE SAIT TOUJOURS PAS');
   Object.keys(C.SANS_CADENCE).length + ' runes sans cadence déterminable (élimination, immobilisation)',
   (sansType.length + sansCalcul.length)
     ? (sansType.length + sansCalcul.length) + ' sorts encore incomplets'
-    : 'aucune lacune de sort — les 11 de l\'audit précédent sont corrigées',
+    : 'aucune lacune de sort — les 11 du panel de 90, puis les 27 ouvertes par ' +
+      'l\'élargissement à 173, sont corrigées',
   declaresHorsPortee.length + ' sorts déclarés hors portée, motif écrit',
   'les amplifications conditionnelles au placement ou au contrôle (4 objets)',
   'les boucliers antisorts et ceux posés sur un ALLIÉ, dont la valeur ne se chiffre pas en points'

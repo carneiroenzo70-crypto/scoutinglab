@@ -20925,13 +20925,30 @@ function tcOuvrir(){
     var selC = document.getElementById('tc-champion'), selT = document.getElementById('tc-cible');
     if (!selC.options.length){
       /* Champions triés par nom, avec leur poste : un coach cherche « Ryze », pas un
-         identifiant interne. */
+         identifiant interne.
+
+         Le moteur couvre désormais le ROSTER COMPLET (173) et non plus le seul panel
+         pro (90). Une liste plate de 173 entrées aurait noyé les champions qu'un coach
+         ouvre dix fois par jour au milieu de ceux qu'il n'ouvrira jamais. Deux groupes,
+         donc : le panel pro d'abord — ce sont les seuls dont on connaisse le poste, et
+         c'est le poste qui fait la différence à la lecture. Les autres suivent, sans
+         poste inventé. */
       var liste = Object.keys(T.champions).map(function(id){
         return { id:id, nom:T.champions[id].nom || id, role:T.champions[id].role || '' };
       }).sort(function(a,b){ return a.nom.localeCompare(b.nom,'fr'); });
-      liste.forEach(function(c){
-        selC.appendChild(new Option(c.nom + (c.role ? ' · ' + c.role : ''), c.id));
-        selT.appendChild(new Option(c.nom + (c.role ? ' · ' + c.role : ''), c.id));
+      var pro = liste.filter(function(c){ return c.role; });
+      var reste = liste.filter(function(c){ return !c.role; });
+      [selC, selT].forEach(function(sel){
+        [[pro, 'Vus en compétition (' + pro.length + ')'],
+         [reste, 'Reste du roster (' + reste.length + ')']].forEach(function(g){
+          if (!g[0].length) return;
+          var og = document.createElement('optgroup');
+          og.label = g[1];
+          g[0].forEach(function(c){
+            og.appendChild(new Option(c.nom + (c.role ? ' · ' + c.role : ''), c.id));
+          });
+          sel.appendChild(og);
+        });
       });
       selC.value = tcEtat.champion; selT.value = tcEtat.cible;
 
@@ -21193,10 +21210,13 @@ function ssTesterBuild(mid, role){
     var manques = [];
 
     var mien = tcTrouverChampion(pl.champ);
-    /* « pas reconnu » aurait laissé croire à une faute de frappe : le moteur ne couvre
-       que les 90 champions du panel pro, et Teemo — bien réel — n'en fait pas partie.
-       Le message ne tranche pas entre les deux causes, il dit ce qui est vrai. */
-    if (pl.champ && !mien) manques.push('« ' + pl.champ + ' » ne correspond à aucun des 90 champions du panel');
+    /* Le moteur couvre maintenant le ROSTER COMPLET : un nom qui ne tombe pas est donc
+       une graphie, plus une lacune de couverture. Le compte est LU dans le moteur et
+       non écrit ici — il a déjà changé une fois (90 → 173), et un nombre en dur dans
+       un message est exactement ce qu'on oublie de mettre à jour. */
+    var nbChamps = Object.keys((window.vsTheorycraft || {}).champions || {}).length;
+    if (pl.champ && !mien) manques.push('« ' + pl.champ + ' » ne correspond à aucun des ' +
+                                        nbChamps + ' champions du moteur');
     else if (!pl.champ) manques.push('notre champion n\'est pas renseigné');
 
     /* Cible : le champion le plus joué / au meilleur ratio de l'adversaire, tel que

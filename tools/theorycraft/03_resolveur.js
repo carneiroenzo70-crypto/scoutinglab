@@ -77,7 +77,15 @@ function creerContexte(spell) {
   const eff = (spell.mEffectAmount || []).map(e => (e && e.value) || []);
   return { dv, eff, calc: spell.mSpellCalculations || {} };
 }
-const lireDV = (ctx, nom) => ctx.dv[String(nom).toLowerCase()];
+/* Une DataValue peut être PRÉSENTE mais VIDE (`[]`) — le cas du Bushwhack de Nidalee,
+   apparu en élargissant le panel. Elle passait alors le test d'existence, puis
+   `a[a.length - 1]` valait `undefined` et le calcul remontait `{ n: undefined }`, qui
+   faisait planter la boucle d'assemblage. Un tableau vide est traité comme absent :
+   c'est ce qu'il est. */
+const lireDV = (ctx, nom) => {
+  const a = ctx.dv[String(nom).toLowerCase()];
+  return (Array.isArray(a) && a.length) ? a : null;
+};
 
 /* Valeur d'une croissance par paliers au niveau demandé.
    Chaque niveau franchi ajoute le gain du palier en vigueur à ce niveau-là
@@ -308,6 +316,26 @@ function resoudreCalcul(nom, ctx, alertes, nbRangs = 5, prof = 0) {
       if (v.n != null) termes.push({ stat: 'flat', mode: 'flat', valeur: v.n });
       else termes.push(...v.termes);
     });
+
+    /* MULTIPLICATEUR porté par le calcul lui-même. Il n'était appliqué que sur les
+       `GameCalculationModified` ; sur une `GameCalculation` ordinaire il était IGNORÉ.
+       135 calculs en portent un, dont 53 nommés « damage » : le E de Fiddlesticks
+       ressortait 4 fois trop fort (multiplicateur 0,25), le Q d'Aurora 1,5 fois trop
+       faible, et toutes les formules « pourcentage des PV » 100 fois trop fortes
+       (multiplicateur 0,01). Aucune alerte n'était émise — le chiffre était simplement
+       faux. Le défaut existait avant l'élargissement du panel ; c'est en cherchant les
+       lacunes des 83 nouveaux champions qu'il est apparu.
+
+       Le multiplicateur peut lui-même porter des STATS (Caitlyn : « 1 + crit × (dégâts
+       critiques − 1) »). Une somme multipliée par une somme ne se représente pas dans
+       un modèle de termes additifs : on ne l'applique pas, mais on le SIGNALE. Le
+       silence était le vrai problème, pas l'approximation. */
+    if (ok && c.mMultiplier) {
+      const m = evalPart(c.mMultiplier, ctx, r, 0, alertes);
+      if (m && m.n != null) termes.forEach(t => { t.valeur *= m.n; });
+      else alertes.add('multiplicateur non scalaire (non appliqué)');
+    }
+
     if (ok && facteurDistance != null) termes.forEach(t => { t.facteurDistance = facteurDistance; });
     parRang[r] = ok ? termes : null;
   });

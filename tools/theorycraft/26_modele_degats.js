@@ -374,21 +374,16 @@ function mitiger(brut, type, cible, attaquant, source, ctx = {}) {
 
 /* ── 5. Évaluation d'un sort ────────────────────────────────────────────────────── */
 function valeurTerme(t, p, cible) {
-  /* Pourcentage porté par la CIBLE, et non par le porteur. Trois sorts en dépendent
-     entièrement (Dr Mundo Q, Kalista W, Camille R) : leurs dégâts sont un pourcentage
-     des PV adverses. Sans cible, on REFUSE — servir le pourcentage nu donnerait « 0,25
-     point de dégâts » là où le jeu en inflige des centaines, l'erreur exacte déjà
-     rencontrée sur la Lame du roi déchu. */
-  if (t.stat === 'PVactuelsCible' || t.stat === 'PVmaxCible') {
-    if (!cible || cible.pvMax == null) return null;
-    const base = t.stat === 'PVmaxCible' ? cible.pvMax
-               : (cible.pvActuels != null ? cible.pvActuels : cible.pvMax);
-    return t.valeur * base;
-  }
   /* Terme PRODUIT : la stat multiplie une somme de sous-termes, au lieu d'un simple
      coefficient. Le W de Twisted Fate est le cas type — chance de critique × (base +
      AD + AP). Ces formules ne sont pas linéaires ; les six calculs de sa Carte bleue
-     disparaissaient en silence faute de savoir les représenter. */
+     disparaissaient en silence faute de savoir les représenter.
+
+     ⚠ Ce test passe AVANT celui des PV de la cible, et pas après. Le E d'Illaoi vaut
+     « (3 % + 3,5 % par 100 AD bonus) des PV max de la cible » : stat de cible ET
+     facteur non constant à la fois. Dans l'autre ordre, la branche des PV rendait
+     `valeur × PV` en ignorant purement le facteur — soit 1 × 5 000 PV au lieu de
+     0,04 × 5 000, vingt-cinq fois trop, sans la moindre alerte. */
   if (t.facteurTermes) {
     let somme = 0;
     for (const st of t.facteurTermes) {
@@ -398,6 +393,23 @@ function valeurTerme(t, p, cible) {
     }
     const stat = valeurTerme({ stat: t.stat, mode: t.mode, valeur: 1 }, p, cible);
     return stat == null ? null : stat * somme * (t.valeur != null ? t.valeur : 1);
+  }
+  /* Pourcentage porté par la CIBLE, et non par le porteur. Sans cible, on REFUSE —
+     servir le pourcentage nu donnerait « 0,25 point de dégâts » là où le jeu en inflige
+     des centaines, l'erreur exacte déjà rencontrée sur la Lame du roi déchu.
+
+     PV MANQUANTS : l'ultime de Garen (25/30/35 % des PV manquants) et le passif du W
+     d'Ekko (3 % + 3 % par 100 AP) en dépendent entièrement. À pleine vie ils valent
+     ZÉRO — et c'est l'hypothèse par défaut de `cibleChampion`. Ce zéro est honnête, pas
+     un bug : il dit que l'exécution ne rapporte rien tant que la cible n'a rien perdu.
+     C'est en réglant les PV actuels de la cible que le chiffre prend son sens. */
+  if (t.stat === 'PVactuelsCible' || t.stat === 'PVmaxCible' || t.stat === 'PVmanquantsCible') {
+    if (!cible || cible.pvMax == null) return null;
+    const actuels = cible.pvActuels != null ? cible.pvActuels : cible.pvMax;
+    const base = t.stat === 'PVmaxCible' ? cible.pvMax
+               : t.stat === 'PVactuelsCible' ? actuels
+               : Math.max(0, cible.pvMax - actuels);
+    return t.valeur * base;
   }
   switch (t.stat) {
     case 'flat':

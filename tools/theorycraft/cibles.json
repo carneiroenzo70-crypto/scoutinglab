@@ -8,7 +8,7 @@
  },
  {
   "id": "KSante",
-  "nom": "K'Sante",
+  "nom": "K'Santé",
   "role": "Top",
   "rang": 2,
   "picks": 1332
@@ -547,7 +547,7 @@
  },
  {
   "id": "Seraphine",
-  "nom": "Seraphine",
+  "nom": "Séraphine",
   "role": "Support",
   "rang": 6,
   "picks": 862
@@ -628,5 +628,669 @@
   "role": "Support",
   "rang": 19,
   "picks": 146
+ },
+ {
+  "id": "Akshan",
+  "nom": "Akshan",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Amumu",
+  "nom": "Amumu",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "AurelionSol",
+  "nom": "Aurelion Sol",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Belveth",
+  "nom": "Bel'Veth",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Blitzcrank",
+  "nom": "Blitzcrank",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Brand",
+  "nom": "Brand",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Briar",
+  "nom": "Briar",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Chogath",
+  "nom": "Cho'Gath",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Darius",
+  "nom": "Darius",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Diana",
+  "nom": "Diana",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Draven",
+  "nom": "Draven",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Ekko",
+  "nom": "Ekko",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Elise",
+  "nom": "Elise",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Evelynn",
+  "nom": "Evelynn",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Fiddlesticks",
+  "nom": "Fiddlesticks",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Fiora",
+  "nom": "Fiora",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Fizz",
+  "nom": "Fizz",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Gangplank",
+  "nom": "Gangplank",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Garen",
+  "nom": "Garen",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Gragas",
+  "nom": "Gragas",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Graves",
+  "nom": "Graves",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Hecarim",
+  "nom": "Hecarim",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Heimerdinger",
+  "nom": "Heimerdinger",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Illaoi",
+  "nom": "Illaoi",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Irelia",
+  "nom": "Irelia",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Ivern",
+  "nom": "Ivern",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Janna",
+  "nom": "Janna",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Karthus",
+  "nom": "Karthus",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Kassadin",
+  "nom": "Kassadin",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Katarina",
+  "nom": "Katarina",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Kayle",
+  "nom": "Kayle",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Kayn",
+  "nom": "Kayn",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Khazix",
+  "nom": "Kha'Zix",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Kindred",
+  "nom": "Kindred",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Kled",
+  "nom": "Kled",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "KogMaw",
+  "nom": "Kog'Maw",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Lillia",
+  "nom": "Lillia",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Lissandra",
+  "nom": "Lissandra",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Lux",
+  "nom": "Lux",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "MasterYi",
+  "nom": "Maître Yi",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Malzahar",
+  "nom": "Malzahar",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Mordekaiser",
+  "nom": "Mordekaiser",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Morgana",
+  "nom": "Morgana",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Nasus",
+  "nom": "Nasus",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Nidalee",
+  "nom": "Nidalee",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Nilah",
+  "nom": "Nilah",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Nunu",
+  "nom": "Nunu et Willump",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Quinn",
+  "nom": "Quinn",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Rammus",
+  "nom": "Rammus",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Rengar",
+  "nom": "Rengar",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Riven",
+  "nom": "Riven",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Samira",
+  "nom": "Samira",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Sett",
+  "nom": "Sett",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Shaco",
+  "nom": "Shaco",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Shyvana",
+  "nom": "Shyvana",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Singed",
+  "nom": "Singed",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Smolder",
+  "nom": "Smolder",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Sona",
+  "nom": "Sona",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Soraka",
+  "nom": "Soraka",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Swain",
+  "nom": "Swain",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "TahmKench",
+  "nom": "Tahm Kench",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Talon",
+  "nom": "Talon",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Taric",
+  "nom": "Taric",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Teemo",
+  "nom": "Teemo",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Tryndamere",
+  "nom": "Tryndamere",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Twitch",
+  "nom": "Twitch",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Udyr",
+  "nom": "Udyr",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Urgot",
+  "nom": "Urgot",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Veigar",
+  "nom": "Veigar",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Velkoz",
+  "nom": "Vel'Koz",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Vex",
+  "nom": "Vex",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Viego",
+  "nom": "Viego",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Vladimir",
+  "nom": "Vladimir",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Volibear",
+  "nom": "Volibear",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Warwick",
+  "nom": "Warwick",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Xerath",
+  "nom": "Xerath",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Yasuo",
+  "nom": "Yasuo",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Yuumi",
+  "nom": "Yuumi",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Zac",
+  "nom": "Zac",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Zed",
+  "nom": "Zed",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Zilean",
+  "nom": "Zilean",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Zoe",
+  "nom": "Zoé",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
+ },
+ {
+  "id": "Zyra",
+  "nom": "Zyra",
+  "role": null,
+  "rang": null,
+  "picks": null,
+  "horsPanel": true
  }
 ]

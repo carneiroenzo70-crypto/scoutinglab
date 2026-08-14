@@ -152,8 +152,20 @@ verifie('  de même pour le mana', M.champions.Ryze.base.regenMana * 5, DD.Ryze.
 vrai('les trois champions sans la clé portent la mention de leur source',
      ['Maokai', 'Rakan', 'Milio'].every(c => /Data Dragon/.test(M.champions[c].base.sourceRegen)),
      M.champions.Maokai.base.sourceRegen);
-vrai('  et les 87 autres viennent du fichier de jeu',
-     Object.values(M.champions).filter(c => c.base.sourceRegen === 'fichier de jeu').length === 87);
+/* Le compte était écrit en dur (« 87 »), et l'élargissement du panel à 173 champions
+   l'a fait échouer — pour la bonne raison : cinq nouveaux champions (Kayle, Mordekaiser,
+   Nunu, Yuumi, Zac) sont aussi dépourvus de la clé. Ce qui doit être vérifié n'est pas
+   un total, c'est l'INVARIANT : chaque champion a une source de régénération, et une
+   seule des deux — jamais rien. Un nombre en dur aurait à être réécrit à chaque patch,
+   et se réécrit toujours dans le sens qui fait passer le test. */
+const sourcesRegen = Object.values(M.champions).map(c => c.base.sourceRegen);
+vrai('chaque champion porte la source de sa régénération, sans exception',
+     sourcesRegen.length === Object.keys(M.champions).length &&
+     sourcesRegen.every(s => s === 'fichier de jeu' || /Data Dragon/.test(s)),
+     sourcesRegen.filter(s => s === 'fichier de jeu').length + ' du fichier de jeu, ' +
+     sourcesRegen.filter(s => s !== 'fichier de jeu').length + ' repliés sur Data Dragon');
+vrai('  et le repli reste minoritaire (sinon la clé aurait changé de nom)',
+     sourcesRegen.filter(s => s !== 'fichier de jeu').length < sourcesRegen.length / 10);
 
 /* Concordance de l'unité des OBJETS, vérifiée sur la boutique : le Bouclier de Doran est
    extrait à 0,8 et annonce « 4 PV toutes les 5 sec ». Même unité que les champions. */

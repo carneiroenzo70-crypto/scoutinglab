@@ -22,9 +22,27 @@ roles.forEach(role => {
   });
 });
 
+/* ROSTER COMPLET. Le panel « top 20 par poste » suffisait à préparer les matchups les
+   plus fréquents, mais il refusait tout le reste : un adversaire qui sort un pick hors
+   panel ouvrait le calculateur sans cible. On ajoute donc les champions restants, à la
+   suite et par ordre alphabétique.
+
+   Ils gardent `role: null` : leur attribuer un poste serait une invention — un champion
+   hors du top 20 pro n'a pas de poste établi par la donnée dont on dispose. `horsPanel`
+   les distingue explicitement, pour que l'interface puisse trier sans deviner. */
+const restants = Object.values(dd)
+  .filter(c => !vus.has(c.id))
+  .sort((a, b) => a.name.localeCompare(b.name, 'fr'));
+restants.forEach(c => {
+  vus.add(c.id);
+  cibles.push({ id: c.id, nom: c.name, role: null, rang: null, picks: null, horsPanel: true });
+});
+
 fs.writeFileSync('./cibles.json', JSON.stringify(cibles, null, 1));
-console.log('Champions à traiter : ' + cibles.length + ' (top 20 x 5 rôles, doublons retirés)');
-roles.forEach(r => console.log('  ' + r.padEnd(8) + cibles.filter(c => c.role === r).length));
+console.log('Champions à traiter : ' + cibles.length + ' (roster complet)');
+console.log('  dont panel pro (top 20 x 5 rôles) : ' + cibles.filter(c => !c.horsPanel).length);
+roles.forEach(r => console.log('    ' + r.padEnd(8) + cibles.filter(c => c.role === r).length));
+console.log('  hors panel pro                    : ' + restants.length);
 if (introuvables.length) {
   console.log('\nNon reconnus dans Data Dragon ' + require('./champFull.json').version + ' :');
   introuvables.forEach(x => console.log('  ' + x));
