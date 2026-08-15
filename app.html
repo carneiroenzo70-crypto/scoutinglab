@@ -1352,6 +1352,34 @@ body.map-fullscreen .logo-bg{ display:none; }
    couleur ET à la forme (un liseré), jamais à la couleur seule. */
 .tc-grille{ display:grid; grid-template-columns:352px minmax(0,1fr); gap:16px; align-items:start; }
 .tc-col{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+/* ── Rubrique « Le moteur » : comment le calculateur obtient ses chiffres ──────
+   Page de confiance, pas de réglage : aucun contrôle, rien à cliquer. Elle réutilise
+   les jetons --vs-* et les cartes de l'app, pour qu'on ne la prenne pas pour une page
+   de vitrine glissée dans le produit. */
+.mo-chiffres{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.vsd .mo-ch{ padding:14px 16px; }
+.mo-ch-v{ font-family:var(--font-mono); font-size:26px; font-weight:600; letter-spacing:-.02em;
+  color:var(--vs-emerald-400); line-height:1; }
+.mo-ch-l{ color:var(--vs-fg-2); font-size:12.5px; line-height:1.45; margin-top:7px; }
+.mo-grille{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.mo-h{ display:flex; align-items:center; gap:9px; margin-bottom:6px; }
+.mo-ic{ width:30px; height:30px; border-radius:8px; background:rgba(45,212,167,.12);
+  color:var(--vs-emerald-400); display:grid; place-items:center; flex:none; }
+.mo-t{ font-weight:700; font-size:14.5px; color:var(--vs-fg-1); }
+.mo-d{ color:var(--vs-fg-2); font-size:12.8px; line-height:1.5; }
+/* Le bloc des refus : ambré, parce que ce n'est ni une réussite ni une erreur —
+   c'est une limite assumée, et elle doit se lire comme telle. */
+.vsd .mo-refus{ border-color:rgba(245,166,35,.45);
+  background:linear-gradient(180deg,rgba(245,166,35,.08),rgba(245,166,35,.02)); }
+.mo-refus .eyebrow{ color:#F5A623; }
+.mo-refus ul{ margin:10px 0 0; padding-left:18px; color:var(--vs-fg-2); font-size:12.8px; line-height:1.65; }
+.mo-refus li b{ color:var(--vs-fg-1); }
+.mo-cite{ font-family:var(--font-mono); font-size:12px; color:var(--vs-emerald-400);
+  background:var(--vs-bg-2); border-left:2px solid var(--vs-emerald-400);
+  border-radius:0 8px 8px 0; padding:11px 14px; margin-top:12px; line-height:1.55; }
+@media(max-width:900px){ .mo-chiffres{ grid-template-columns:repeat(2,minmax(0,1fr)); }
+                         .mo-grille{ grid-template-columns:1fr; } }
+
 .vsd .tc-bloc{ padding:16px; display:flex; flex-direction:column; gap:10px; }
 .tc-titre{ display:flex; align-items:center; justify-content:space-between; gap:8px;
   font-size:11px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--vs-fg-3); }
@@ -3651,6 +3679,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
     <button class="vsd-drawer-item" data-nav="theorycraft" onclick="vsdDrawerGo('theorycraft')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg><span>Calculateur</span></button>
+    <button class="vsd-drawer-item" data-nav="moteur" onclick="vsdDrawerGo('moteur')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg><span>Le moteur</span></button>
     <!-- Top 30 : accessible depuis les onglets du CRM Agent -->
     <div style="flex:1"></div>
     <div class="vsd-drawer-sep"></div>
@@ -5393,7 +5422,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <h2 class="h2">Calculateur de build</h2>
             <p class="muted">Chiffres calculés sur les scripts du jeu. Le moteur refuse
               d'afficher ce qu'il ne peut pas justifier — chaque refus porte son motif.
-              <a href="/moteur" target="_blank" rel="noopener" style="color:var(--vs-accent);text-decoration:none;white-space:nowrap">Comment il fonctionne →</a></p>
+              <a href="#" onclick="switchPanel('moteur');return false" style="color:var(--vs-emerald-400);text-decoration:none;white-space:nowrap">Comment il fonctionne →</a></p>
           </div>
           <div class="tc-patch" id="tc-patch">Chargement du moteur…</div>
         </div>
@@ -5513,6 +5542,57 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
       </div>
     </div><!-- /panel-theorycraft -->
+
+    <!-- ════ LE MOTEUR — pourquoi les chiffres du calculateur tiennent ════
+         Rubrique de confiance, pas de réglage. Les compteurs ne sont PAS écrits en dur :
+         ils sont comptés sur le moteur réellement chargé (`moRendre`). Un chiffre gravé
+         dans le HTML aurait vieilli au premier élargissement, sans que personne ne le
+         voie — exactement le défaut qu'on reproche aux sites communautaires. -->
+    <div id="panel-moteur" class="panel">
+      <div class="vsd vsd-wrap" style="max-width:1080px;margin:0 auto;padding:24px 8px 64px;gap:18px">
+
+        <div class="page-head">
+          <div class="eyebrow">Theorycraft</div>
+          <h2 class="h2">Comment le calculateur obtient ses chiffres</h2>
+          <p class="muted" style="max-width:70ch">Un coach qui hésite entre deux objets n'a
+            d'habitude que des sites où les valeurs sont recopiées à la main, et vieillissent
+            d'un patch à l'autre. Le calculateur prend le problème par l'autre bout : il lit
+            les formules du fichier de jeu et les résout sur votre champion, votre niveau,
+            votre build et votre cible. Quand une formule dépend d'une chose qu'il ne peut pas
+            savoir, il ne l'estime pas — il vous la demande.</p>
+        </div>
+
+        <div class="mo-chiffres" id="mo-chiffres">
+          <div class="card mo-ch"><div class="mo-ch-v">—</div><div class="mo-ch-l">Chargement du moteur…</div></div>
+        </div>
+
+        <div class="mo-grille">
+          <div class="card tc-bloc"><div class="mo-h"><span class="mo-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></span><span class="mo-t">Le combo, sort par sort</span></div><div class="mo-d">Dégâts bruts et dégâts réellement subis après armure, résistance magique, pénétration et amplifications — dans l'ordre du jeu, qui n'est pas commutatif.</div></div>
+          <div class="card tc-bloc"><div class="mo-h"><span class="mo-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="mo-t">La survie, pas que les dégâts</span></div><div class="mo-d">PV effectifs face à une composition physique ou magique, boucliers, soins, régénération — et les défenses conditionnelles, chacune avec sa condition écrite.</div></div>
+          <div class="card tc-bloc"><div class="mo-h"><span class="mo-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="mo-t">Un build que le jeu accepterait</span></div><div class="mo-d">Les familles d'objets qui ne se cumulent pas sont vérifiées : le calculateur refuse un build illégal au lieu d'en additionner tranquillement les effets.</div></div>
+          <div class="card tc-bloc"><div class="mo-h"><span class="mo-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg></span><span class="mo-t">Deux builds côte à côte</span></div><div class="mo-d">La comparaison tourne sur les mêmes hypothèses, pour que l'écart affiché soit celui du build et pas celui du réglage.</div></div>
+        </div>
+
+        <div class="card tc-bloc mo-refus">
+          <div class="eyebrow" style="margin-bottom:2px">Un chiffre manquant vaut mieux qu'un chiffre faux</div>
+          <div class="mo-t" style="font-size:17px">Ce que le calculateur refuse de chiffrer — et pourquoi il vous le dit</div>
+          <div class="mo-d" style="max-width:70ch">Une partie des passifs ne dépend pas du build mais du déroulé du match. Les deviner produirait un classement de builds plausible et faux. Ils sont donc mis de côté avec leur motif, et chiffrés dès que vous donnez le fait manquant.</div>
+          <ul id="mo-refus-liste"><li>Chargement du moteur…</li></ul>
+          <div class="mo-cite">Exemple de refus, tel qu'il s'affiche dans le calculateur :<br>« Non compté — fournissez le nombre d'immobilisations infligées pour le chiffrer. »</div>
+        </div>
+
+        <div class="mo-grille" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <div class="card tc-bloc"><div class="mo-t" style="color:var(--vs-emerald-400);font-size:13.5px">Le fichier de jeu, pas une recopie</div><div class="mo-d">Les valeurs sont relues dans les scripts du jeu à chaque patch. Aucune table écrite à la main, donc aucune table à oublier de mettre à jour.</div></div>
+          <div class="card tc-bloc"><div class="mo-t" style="color:var(--vs-emerald-400);font-size:13.5px">Deux sources, ou rien</div><div class="mo-d">Toute lecture ambiguë doit concorder avec une source indépendante — infobulle officielle ou wiki. Sans concordance, la formule est refusée, jamais approchée.</div></div>
+          <div class="card tc-bloc"><div class="mo-t" style="color:var(--vs-emerald-400);font-size:13.5px">Chaque règle a son contre-test</div><div class="mo-d">On vérifie aussi la valeur qu'on obtiendrait si on s'était trompé. C'est ce qui attrape les erreurs qui restent plausibles — les seules qui passent.</div></div>
+        </div>
+
+        <p class="muted" style="font-size:12px;margin:2px 0 0">Compteurs relevés sur le moteur
+          chargé dans cette page, <span id="mo-patch">patch en cours de lecture</span>.
+          <a href="/moteur" target="_blank" rel="noopener" style="color:var(--vs-emerald-400);text-decoration:none">Version imprimable à partager →</a></p>
+
+      </div>
+    </div><!-- /panel-moteur -->
 
   </main>
 </div><!-- /shell -->
@@ -10903,7 +10983,8 @@ function switchPanel(id) {
   // 'analyse' (Comparer) pointe sur nav-crm : l'outil vit désormais dans CRM Agent.
   const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-crm',
                     top50:'nav-crm', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics',
-                    theorycraft:'nav-analytics', graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
+                    theorycraft:'nav-analytics', moteur:'nav-analytics',
+                    graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
@@ -10912,6 +10993,8 @@ function switchPanel(id) {
   if (id === 'scrimlab' && typeof slOnEnterStudio === 'function') slOnEnterStudio();
   // Theorycraft : le moteur (~1 Mo) n'est chargé qu'ici, à la première ouverture
   if (id === 'theorycraft' && typeof tcOuvrir === 'function') tcOuvrir();
+  // « Le moteur » partage le même chargeur : ouvrir l'un puis l'autre ne télécharge rien deux fois.
+  if (id === 'moteur' && typeof moOuvrir === 'function') moOuvrir();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
@@ -20958,6 +21041,72 @@ function tcCharger(){
     document.head.appendChild(s);
   });
   return tcEnCours;
+}
+
+/* ══════════ RUBRIQUE « LE MOTEUR » ══════════
+   Elle explique pourquoi les chiffres du calculateur tiennent. Ses compteurs sont
+   COMPTÉS sur le moteur réellement chargé, jamais écrits en dur : une page qui promet
+   « les valeurs viennent du fichier de jeu » et affiche à côté un « 173 champions »
+   gravé dans le HTML se contredirait elle-même au premier élargissement. Ici, si le
+   moteur grossit, la page le dit toute seule ; s'il ne se charge pas, elle n'affiche
+   aucun chiffre plutôt qu'un chiffre périmé. */
+function moOuvrir(){
+  var grille = document.getElementById('mo-chiffres'),
+      liste  = document.getElementById('mo-refus-liste'),
+      patch  = document.getElementById('mo-patch');
+  tcCharger().then(function(ok){
+    if (!ok){
+      grille.innerHTML = '<div class="card mo-ch" style="grid-column:1/-1"><div class="mo-ch-l">' +
+        '<b>Moteur non chargé.</b> Le fichier /assets/theorycraft.js n\'a pas pu être ' +
+        'récupéré : aucun compteur n\'est affiché, plutôt qu\'un compteur périmé.</div></div>';
+      liste.innerHTML = '';
+      patch.textContent = 'patch indisponible';
+      return;
+    }
+    var T = window.vsTheorycraft;
+    var objets = Array.isArray(T.objets) ? T.objets : Object.values(T.objets);
+    var runes  = Array.isArray(T.runes)  ? T.runes  : Object.values(T.runes);
+    var modeles = T.modelesObjets || {};
+
+    var sorts = Object.keys(T.champions).reduce(function(s, id){
+      return s + Object.keys(T.champions[id].sorts).length; }, 0);
+    var finis = objets.filter(function(o){ return o.fini && o.prix >= 1800; });
+    /* « Porte un passif chiffré » = le fichier lui attache au moins un calcul ou une
+       valeur. C'est le dénominateur honnête : compter sur les 218 objets ferait passer
+       des bottes sans passif pour des lacunes. */
+    var avecPassif = finis.filter(function(o){
+      return Object.keys(o.calculs).length || Object.keys(o.valeurs).length; });
+    var appliques = 0, ecartes = 0;
+    avecPassif.forEach(function(o){
+      var m = modeles[o.id]; if (!m) return;
+      if (m.nonApplique) ecartes++; else appliques++;
+    });
+    var runesActives = runes.filter(function(r){ return r.active; }).length;
+
+    var compteurs = [
+      [Object.keys(T.champions).length, 'champions, soit le roster complet — ' + sorts + ' sorts lus'],
+      [objets.length, 'objets de la Faille, dont ' + finis.length + ' légendaires'],
+      [runesActives, 'runes actives, toutes modélisées'],
+      [Object.keys(T.groupes).length, 'familles d\'objets dont le cumul est vérifié']
+    ];
+    grille.innerHTML = compteurs.map(function(c){
+      return '<div class="card mo-ch"><div class="mo-ch-v">' + c[0] + '</div>' +
+             '<div class="mo-ch-l">' + c[1] + '</div></div>'; }).join('');
+
+    liste.innerHTML = [
+      '<b>' + appliques + ' passifs d\'objet appliqués</b>, <b>' + ecartes +
+        ' écartés avec un motif écrit</b> — aucun laissé sans réponse.',
+      'Neuf runes et trois amplifications attendent une <b>hypothèse de votre part</b> : ' +
+        'combien d\'immobilisations, quelle distance, combien d\'éliminations. Curseur à ' +
+        'zéro, elles restent refusées — le zéro n\'est pas une moyenne inventée.',
+      'Sept runes sont <b>hors de portée</b> : elles agissent sur les alliés, les tourelles ' +
+        'ou hors combat, rien qu\'un modèle en cible unique puisse chiffrer.',
+      'Les <b>dégâts renvoyés</b> et les <b>boucliers posés sur un allié</b> ne se chiffrent ' +
+        'pas en points : leur valeur dépend de l\'adversaire, pas de votre build.'
+    ].map(function(x){ return '<li>' + x + '</li>'; }).join('');
+
+    patch.textContent = 'patch ' + T.version;
+  });
 }
 
 function tcOuvrir(){
