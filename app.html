@@ -3700,6 +3700,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
+  <button class="more-menu-item" onclick="switchPanel('theorycraft');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg> Calculateur</button>
+  <button class="more-menu-item" onclick="switchPanel('moteur');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg> Le moteur</button>
 </div>
 
 <!-- ════ SHELL ════ -->
@@ -11755,6 +11757,21 @@ function shareByURL() {
   }
 }
 
+/* Ouvre directement une rubrique depuis l'URL : /app?vue=moteur
+
+   Les rubriques secondaires (Calculateur, Le moteur) ne vivaient que dans le menu
+   latéral : impossible d'envoyer un lien qui tombe dessus, et facile de ne pas les
+   trouver. Un paramètre suffit, et il sert autant en démonstration qu'au support.
+
+   La liste est FERMÉE : un `?vue=` arbitraire ouvrirait n'importe quel panneau, y
+   compris ceux qu'une offre ne couvre pas. `switchPanel` re-vérifie l'accès de toute
+   façon, mais on ne s'en remet pas à un seul garde-fou. */
+var VS_VUES_URL = ['moteur', 'theorycraft', 'seasons', 'analytics', 'scout', 'crm'];
+function ouvrirVueDepuisURL(){
+  var vue = new URLSearchParams(window.location.search).get('vue');
+  if (vue && VS_VUES_URL.indexOf(vue) >= 0 && typeof switchPanel === 'function') switchPanel(vue);
+}
+
 // Charge une fiche depuis un paramètre URL ?spes=...
 function loadFromURL() {
   const params = new URLSearchParams(window.location.search);
@@ -11803,6 +11820,7 @@ function loadFromURL() {
     updateRadar();
     buildStatsGrid();
 loadFromURL(); // Charge depuis URL si ?spes= présent
+ouvrirVueDepuisURL(); // Ouvre la rubrique demandée si ?vue= présent
 
     buildResults();
 
