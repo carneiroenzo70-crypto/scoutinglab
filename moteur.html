@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="/assets/logos/favicon.svg">
+<title>VisionScore — Le calculateur de build</title>
+<meta name="description" content="Le calculateur de build VisionScore lit les formules du fichier de jeu League of Legends : 173 champions, 218 objets, 69 runes. Il refuse de chiffrer ce qu'il ne peut pas savoir, et dit lequel.">
+<link rel="canonical" href="https://visionscore.gg/moteur">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="VisionScore">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:url" content="https://visionscore.gg/moteur">
+<meta property="og:title" content="VisionScore — Le calculateur de build">
+<meta property="og:description" content="Il lit les formules du jeu, il n'en invente aucune. 173 champions, 218 objets, 69 runes — et un refus motivé partout où la donnée manque.">
+<meta property="og:image" content="https://visionscore.gg/assets/og-cover.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VisionScore — Le calculateur de build">
+<meta name="twitter:description" content="Il lit les formules du jeu, il n'en invente aucune. 173 champions, 218 objets, 69 runes — et un refus motivé partout où la donnée manque.">
+<meta name="twitter:image" content="https://visionscore.gg/assets/og-cover.jpg">
+<style>
+  /* Mêmes jetons que /presentation : les deux pages publiques doivent se ressembler. */
+  :root{
+    --bg:#0B2F2A; --surf:#0F3A34; --surf2:#143F39; --line:#245C52; --line2:#2E6E62;
+    --fg:#F0F4F8; --fg2:#A9C4BD; --fg3:#6E8C85;
+    --em:#2DD4A7; --em3:#7BEBCF; --em-dim:rgba(45,212,167,.12);
+    --gold:#F5A623;
+    --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+    --sans:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:ui-monospace,'SF Mono','Cascadia Mono',Menlo,Consolas,monospace;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; }
+  body{ font-family:var(--sans); background:#071f1b; color:var(--fg); line-height:1.5;
+    background-image:radial-gradient(ellipse at 50% -10%, rgba(45,212,167,.10), transparent 55%); }
+  .sheet{ max-width:900px; margin:0 auto; background:var(--bg); position:relative; overflow:hidden;
+    box-shadow:0 30px 90px -30px rgba(0,0,0,.7); }
+  .sheet-in{ position:relative; z-index:1; padding:46px 54px 40px; }
+  .wm{ position:absolute; top:-6%; right:-8%; width:min(60%,520px); aspect-ratio:1/1; opacity:.06; z-index:0;
+    background:linear-gradient(150deg,#3DE7BC,rgba(45,212,167,.4));
+    -webkit-mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; mask:url('/assets/logos/logo-emblem.svg') center/contain no-repeat; }
+
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-bottom:20px; border-bottom:1px solid var(--line); }
+  .brand{ display:flex; align-items:center; gap:11px; }
+  .brand img.mark{ height:34px; } .brand img.word{ height:22px; }
+  .top-tag{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--em); font-weight:700; text-align:right; }
+
+  .eyebrow{ font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--em); font-weight:700; margin:26px 0 8px; }
+  h1{ font-family:var(--serif); font-weight:700; font-size:34px; line-height:1.1; margin:0 0 12px; letter-spacing:-.01em; }
+  h1 em{ color:var(--em3); font-style:normal; }
+  .lead{ color:var(--fg2); font-size:15px; max-width:660px; margin:0; }
+  .lead b{ color:var(--fg); }
+
+  .sec-t{ font-family:var(--serif); font-size:20px; font-weight:700; margin:30px 0 12px; }
+  .sec-d{ color:var(--fg2); font-size:13.5px; max-width:660px; margin:-6px 0 14px; }
+
+  /* Compteurs de couverture */
+  .chiffres{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:22px; }
+  .ch{ background:var(--surf); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .ch-v{ font-family:var(--mono); font-size:26px; font-weight:600; letter-spacing:-.02em; color:var(--em3); line-height:1; }
+  .ch-v small{ font-size:14px; color:var(--fg3); }
+  .ch-l{ color:var(--fg2); font-size:12.3px; line-height:1.4; margin-top:6px; }
+
+  /* Ce qu'il fait */
+  .grid2{ display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+  .mod{ background:var(--surf); border:1px solid var(--line); border-radius:12px; padding:15px 17px; }
+  .mod-h{ display:flex; align-items:center; gap:9px; margin-bottom:5px; }
+  .mod-ic{ width:30px; height:30px; border-radius:8px; background:var(--em-dim); color:var(--em); display:grid; place-items:center; flex:none; }
+  .mod-t{ font-weight:800; font-size:14.5px; }
+  .mod-d{ color:var(--fg2); font-size:12.7px; line-height:1.45; }
+
+  /* Le bloc « ce qu'il refuse » — le cœur de l'argument */
+  .refus{ background:linear-gradient(180deg,rgba(245,166,35,.09),rgba(245,166,35,.02));
+    border:1px solid rgba(245,166,35,.45); border-radius:14px; padding:20px 22px; margin-top:6px; }
+  .refus-e{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); font-weight:700; }
+  .refus-t{ font-family:var(--serif); font-size:20px; font-weight:700; margin:5px 0 8px; }
+  .refus-d{ color:var(--fg2); font-size:13px; max-width:660px; }
+  .refus ul{ margin:12px 0 0; padding-left:18px; color:var(--fg2); font-size:12.7px; line-height:1.6; }
+  .refus li b{ color:var(--fg); }
+
+  .cite{ font-family:var(--mono); font-size:12.2px; color:var(--em3); background:var(--surf2);
+    border-left:2px solid var(--em); border-radius:0 8px 8px 0; padding:11px 14px; margin-top:14px; line-height:1.5; }
+
+  .diffs{ display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:6px; }
+  .diff-t{ font-weight:800; font-size:13.5px; color:var(--em3); margin-bottom:4px; }
+  .diff-d{ color:var(--fg2); font-size:12.3px; line-height:1.45; }
+
+  .cta{ margin-top:26px; background:linear-gradient(180deg,rgba(45,212,167,.10),rgba(45,212,167,.03));
+    border:1px solid var(--em); border-radius:14px; padding:20px 22px; }
+  .cta-e{ font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--em); font-weight:700; }
+  .cta-t{ font-family:var(--serif); font-size:21px; font-weight:700; margin:5px 0 6px; }
+  .cta-d{ color:var(--fg2); font-size:13px; max-width:640px; }
+  .cta a{ color:var(--em3); }
+
+  .foot{ margin-top:28px; padding-top:18px; border-top:1px solid var(--line); display:flex; align-items:flex-end; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .foot-c{ font-size:13px; }
+  .foot-c b{ color:var(--fg); } .foot-c a{ color:var(--em3); text-decoration:none; }
+  .foot-c .l{ display:block; margin-top:3px; color:var(--fg2); }
+  .foot-note{ color:var(--fg3); font-size:10.5px; max-width:300px; text-align:right; }
+
+  .print-btn{ position:fixed; right:20px; bottom:20px; z-index:50; height:46px; padding:0 20px; border:0; border-radius:24px;
+    background:var(--em); color:#04231D; font-weight:800; font-size:14px; font-family:var(--sans); cursor:pointer;
+    box-shadow:0 12px 30px -8px rgba(45,212,167,.5); display:inline-flex; align-items:center; gap:8px; }
+  .print-btn:hover{ filter:brightness(1.06); }
+
+  @media print{
+    @page{ size:A4; margin:12mm; }
+    body{ background:#fff; }
+    .sheet{ box-shadow:none; max-width:none; }
+    .sheet-in{ padding:0; }
+    .print-btn{ display:none; }
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+  @media(max-width:640px){
+    .grid2,.diffs{ grid-template-columns:1fr; }
+    .chiffres{ grid-template-columns:repeat(2,1fr); }
+    .sheet-in{ padding:30px 22px; } h1{ font-size:27px; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+  <div class="wm" aria-hidden="true"></div>
+  <div class="sheet-in">
+
+    <div class="top">
+      <span class="brand"><img class="mark" src="/assets/logos/logo-mark.svg" alt=""><img class="word" src="/assets/logos/logo.svg" alt="VisionScore"></span>
+      <span class="top-tag">Le calculateur de build<br>Patch 16.16 · League of Legends</span>
+    </div>
+
+    <div class="eyebrow">Comparer deux builds, sans y croire sur parole</div>
+    <h1>Il lit les formules du jeu.<br>Il n'en <em>invente aucune.</em></h1>
+    <p class="lead">Un coach qui hésite entre deux objets n'a aujourd'hui que des sites communautaires, où les chiffres sont recopiés à la main et vieillissent d'un patch à l'autre. Le calculateur VisionScore prend le problème par l'autre bout : il lit <b>les formules du fichier de jeu lui-même</b> et les résout sur votre champion, votre niveau, votre build et votre cible. Quand une formule dépend d'une chose qu'il ne peut pas savoir, il ne l'estime pas — <b>il vous la demande</b>.</p>
+
+    <div class="chiffres">
+      <div class="ch"><div class="ch-v">173</div><div class="ch-l">champions, soit le roster complet — 691 sorts lus</div></div>
+      <div class="ch"><div class="ch-v">218</div><div class="ch-l">objets de la Faille, dont 105 légendaires</div></div>
+      <div class="ch"><div class="ch-v">69</div><div class="ch-l">runes actives, toutes modélisées</div></div>
+      <div class="ch"><div class="ch-v">493</div><div class="ch-l">vérifications automatiques à chaque mise à jour</div></div>
+    </div>
+
+    <div class="sec-t">Ce qu'il vous donne</div>
+    <div class="grid2">
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg></span><span class="mod-t">Le combo, sort par sort</span></div><div class="mod-d">Dégâts bruts et dégâts réellement subis après armure, résistance magique, pénétration et amplifications — dans le bon ordre, celui du jeu.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span><span class="mod-t">La survie, pas seulement les dégâts</span></div><div class="mod-d">PV effectifs face à une composition physique ou magique, boucliers, soins, régénération — et les défenses conditionnelles, avec leur condition écrite.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span class="mod-t">Un build légal</span></div><div class="mod-d">21 familles d'objets qui ne se cumulent pas sont vérifiées : le calculateur refuse un build que le jeu refuserait, au lieu d'en additionner les effets.</div></div>
+      <div class="mod"><div class="mod-h"><span class="mod-ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20V10M18 20V4"/></svg></span><span class="mod-t">Deux builds côte à côte</span></div><div class="mod-d">La comparaison est faite sur les mêmes hypothèses, à l'or près, pour que l'écart affiché soit celui du build et pas celui du réglage.</div></div>
+    </div>
+
+    <div class="sec-t">Ce qu'il refuse de chiffrer</div>
+    <p class="sec-d">C'est la partie dont les autres calculateurs ne parlent pas, et c'est celle qui décide si vous pouvez vous fier au reste.</p>
+    <div class="refus">
+      <div class="refus-e">Un chiffre manquant vaut mieux qu'un chiffre faux</div>
+      <div class="refus-t">Quand la donnée n'existe pas, il le dit — et il dit laquelle.</div>
+      <div class="refus-d">Une partie des passifs ne dépend pas du build mais du déroulé du match. Les inventer produirait un classement de builds plausible et faux. Le calculateur les met de côté <b style="color:var(--fg)">avec leur motif écrit</b>, et les chiffre dès que vous lui donnez le fait manquant.</div>
+      <ul>
+        <li><b>62 passifs d'objet appliqués</b>, <b>40 écartés avec un motif</b> — aucun laissé sans réponse.</li>
+        <li><b>9 runes et 3 amplifications</b> attendent une hypothèse de votre part : combien d'immobilisations, quelle distance, combien d'éliminations. Curseur à zéro, elles restent refusées.</li>
+        <li><b>7 runes hors de portée</b> : elles agissent sur les alliés, les tourelles ou hors combat — rien qu'un modèle en cible unique puisse chiffrer.</li>
+        <li>Les <b>dégâts renvoyés</b> et les <b>boucliers posés sur un allié</b> ne se chiffrent pas en points : ils dépendent de l'adversaire.</li>
+      </ul>
+      <div class="cite">Exemple de refus affiché tel quel dans l'outil :<br>« Non compté — fournissez le nombre d'immobilisations infligées pour le chiffrer. »</div>
+    </div>
+
+    <div class="sec-t">Pourquoi les chiffres tiennent</div>
+    <div class="diffs">
+      <div><div class="diff-t">Le fichier de jeu, pas une recopie</div><div class="diff-d">Les valeurs sont lues dans les scripts du jeu à chaque patch. Aucune table écrite à la main, donc aucune table à oublier de mettre à jour.</div></div>
+      <div><div class="diff-t">Deux sources ou rien</div><div class="diff-d">Chaque lecture ambiguë doit concorder avec une source indépendante — infobulle officielle ou wiki. Sans concordance, la formule est refusée, pas approchée.</div></div>
+      <div><div class="diff-t">493 vérifications</div><div class="diff-d">Chaque règle est testée avec son contre-test : la valeur qu'on obtiendrait si on s'était trompé. C'est ce qui attrape les erreurs qui restent plausibles.</div></div>
+    </div>
+
+    <div class="cta">
+      <div class="cta-e">Dans l'application · onglet Calculateur</div>
+      <div class="cta-t">Le calculateur est inclus dans VisionScore.</div>
+      <div class="cta-d">Aucun module à acheter en plus : il est dans l'application, à côté du scouting et du roster. Vous voulez le voir tourner sur un matchup de votre saison ? <a href="mailto:enzo.carneiro@visionscore.gg">Écrivez-nous</a> — on le fait en visio, en vingt minutes.</div>
+    </div>
+
+    <div class="foot">
+      <div class="foot-c">
+        <b>Réservez une démo — 20 min en visio.</b>
+        <span class="l">visionscore.gg · <a href="mailto:enzo.carneiro@visionscore.gg">enzo.carneiro@visionscore.gg</a> · <a href="mailto:mateo.dasilva@visionscore.gg">mateo.dasilva@visionscore.gg</a></span>
+      </div>
+      <div class="foot-note">Chiffres de couverture relevés sur le patch 16.16.1, régénérés à chaque mise à jour du moteur. Données via l'API officielle Riot Games. VisionScore n'est ni affilié ni soutenu par Riot Games.</div>
+    </div>
+
+  </div>
+</div>
+
+<button class="print-btn" onclick="window.print()">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg>
+  Imprimer / Enregistrer en PDF
+</button>
+</body>
+</html>
