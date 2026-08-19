@@ -21246,17 +21246,34 @@ function boChercher(cle, input){
     .sort(function(a,b){ return a.nom < b.nom ? -1 : 1; }).slice(0, 40);
   if (!liste.length){ boite.hidden = true; return; }
   boite.hidden = false;
+  /* ⚠ AUCUN bouton n'était cliquable. La version précédente écrivait l'appel dans un
+     attribut onclick en y injectant `JSON.stringify`, qui rend des GUILLEMETS DOUBLES —
+     à l'intérieur d'un attribut lui-même délimité par des guillemets doubles. Le
+     navigateur fermait donc l'attribut au premier, et l'appel devenait du code invalide,
+     silencieusement ignoré. La liste s'affichait parfaitement ; aucun nom ne répondait.
+
+     On ne rafistole pas l'échappement : attributs `data-` et un seul écouteur délégué.
+     Plus rien à échapper, et les noms à apostrophe — Bel'Veth, Kai'Sa, K'Santé, Cho'Gath
+     — cessent d'être un piège en attente. */
   boite.innerHTML = liste.map(function(c){
-    return '<button type="button" onclick="boChoisir(' + JSON.stringify(String(cle)) + ',' +
-      JSON.stringify(c.id) + ',' + JSON.stringify(c.nom) + ')">' + anEsc(c.nom) +
+    return '<button type="button" data-cle="' + anEsc(String(cle)) + '" data-id="' +
+      anEsc(c.id) + '" data-nom="' + anEsc(c.nom) + '">' + anEsc(c.nom) +
       (c.poste ? '<span class="r">' + anEsc(c.poste) + '</span>' : '') + '</button>';
   }).join('');
 }
-/* Refermer en cliquant ailleurs. Sans ça, la liste restait ouverte par-dessus les
+/* Un seul écouteur pour les deux besoins : choisir un champion, et refermer la liste
+   quand on clique ailleurs. Sans le second, la liste restait ouverte par-dessus les
    curseurs dès qu'on changeait d'avis — le seul moyen de la fermer était de choisir un
    champion, c'est-à-dire de faire ce qu'on ne voulait plus faire. */
 document.addEventListener('click', function(e){
-  if (e.target.closest && e.target.closest('.bo-slot')) return;
+  if (!e.target.closest) return;
+  var choix = e.target.closest('.bo-sugg button');
+  if (choix){
+    boChoisir(choix.getAttribute('data-cle'), choix.getAttribute('data-id'),
+              choix.getAttribute('data-nom'));
+    return;
+  }
+  if (e.target.closest('.bo-slot')) return;
   document.querySelectorAll('.bo-sugg').forEach(function(b){ b.hidden = true; });
 });
 function boChoisir(cle, id, nom){
