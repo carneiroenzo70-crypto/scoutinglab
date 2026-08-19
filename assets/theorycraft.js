@@ -1,7 +1,7 @@
 /* VisionScore — moteur de theorycraft, version navigateur.
    GÉNÉRÉ par tools/theorycraft/50_bundle_navigateur.js — ne pas éditer à la main.
    Toute correction se fait dans les modules source, puis on relance le script :
-   c'est ce qui garantit que le produit et les 493 vérifications parlent du même code.
+   c'est ce qui garantit que le produit et les 536 vérifications parlent du même code.
    Données Data Dragon 16.16.1. */
 (function (racine) {
   'use strict';
@@ -21346,7 +21346,18 @@
        afficher : un build ne se juge pas sur un chiffre unique, et le meilleur build en    
        dégâts n'est presque jamais le meilleur build tout court. */    
     function ficheBuild(champId, niveau, objets, options = {}) {    
-      const p = M.profil(champId, niveau, objets, { fenetre: options.fenetre || 10 });    
+      /* ⚠ Les RUNES étaient reçues puis jetées. `ficheBuild` construisait son profil avec le    
+         seul `fenetre`, si bien que tout le volet défensif — PV, armure, résistance magique,    
+         PV effectifs, boucliers — ignorait la page de runes, pendant que les dégâts de sort,    
+         eux, la prenaient en compte : la même page affichait deux profils différents sans    
+         le dire. Mesuré sur un Sion niveau 18 avec fragment de PV : 2 634 PV annoncés au    
+         lieu de 2 879, soit 245 PV escamotés, et des PV effectifs sous-estimés d'autant.    
+        
+         On transmet donc TOUTES les options au profil. Les clés qu'il n'utilise pas sont    
+         ignorées sans dommage ; celles qu'il utilise — runes, partPV, minutes — cessent    
+         d'être perdues en route. */    
+      const p = M.profil(champId, niveau, objets,    
+                         Object.assign({}, options, { fenetre: options.fenetre || 10 }));    
       if (!p) return null;    
       const survie = pvEffectifs(p, options.partPhysique != null ? options.partPhysique : 0.5);    
       const aa = M.degatsAttaque(p, options.cible || null);    
@@ -22156,8 +22167,12 @@
     const M = require('./26_modele_degats');
     const S = require('./34_modele_survie');
     const L = require('./40_legalite');
+    const C = require('./38_runes_combat');
     const items = require('./items.json');
     const champions = require('./champions.json');
+    const runesBrutes = require('./runes.json');
+    const RUNES = (Array.isArray(runesBrutes) ? runesBrutes : Object.values(runesBrutes))
+      .filter(r => r.active);
     
     /* Le vivier de candidats : objets FINIS et assez chers pour porter un effet notable.
        Le seuil de 1 800 po est celui qu'emploient déjà l'audit et les tests — le changer
@@ -22220,12 +22235,13 @@
        Deux axes, jamais fondus sans le dire : ce qu'on inflige, ce qu'on encaisse. */
     function valeurBuild(champId, niveau, objets, matchup, options = {}) {
       const fenetre = options.fenetre || 20;
+      const runes = options.runes || [];
       const fiche = S.ficheBuild(champId, niveau, objets, {
-        fenetre, partPhysique: matchup.partPhysique, cible: matchup.cibles[0]
+        fenetre, partPhysique: matchup.partPhysique, cible: matchup.cibles[0], runes
       });
       if (!fiche) return null;
     
-      const p = M.profil(champId, niveau, objets, { fenetre });
+      const p = M.profil(champId, niveau, objets, { fenetre, runes });
       if (!p) return null;
     
       /* DÉGÂTS : le combo complet, contre CHAQUE adversaire, puis la moyenne. Ne mesurer
@@ -22247,6 +22263,15 @@
            ses seules compétences. On prend la fenêtre de combat, pas un coup isolé. */
         const aa = M.degatsAttaque(p, cible);
         if (aa && aa.dps != null) total += aa.dps * fenetre;
+    
+        /* Les RUNES infligent aussi des dégâts, et pas qu'un peu — Électrocution ou Comète
+           pèsent plus qu'un objet entier en début de partie. Les omettre aurait fait choisir
+           la page de runes sur ses seules statistiques, c'est-à-dire à côté de la question. */
+        if (runes.length) {
+          const rc = C.surFenetre(champId, p, cible, fenetre,
+                                       { hypotheses: options.hypotheses || {} });
+          if (rc && rc.degatsSubis) total += rc.degatsSubis;
+        }
         somme += total;
       });
       const degats = somme / matchup.cibles.length;
@@ -22411,8 +22436,200 @@
       };
     }
     
-    module.exports = { CANDIDATS, matchupDepuisCompo, valeurBuild, score,
-                       chercherBuilds, comparerBuilds };
+    /* ── 5. La page de runes ──────────────────────────────────────────────────────────
+       Les règles du jeu découpent l'espace pour nous : une majeure, trois mineures de son
+       arbre (une par emplacement), deux mineures d'UN autre arbre (deux emplacements
+       différents), trois fragments (un par rangée).
+    
+       Le compte exact : 17 majeures × 27 trios principaux × 108 paires secondaires × les
+       fragments — de l'ordre du million de pages, soit plusieurs minutes. Exclu.
+    
+       On exploite donc la structure au lieu de la subir, en trois passes :
+         1. pour chaque majeure, le meilleur TRIO principal (27 combinaisons, exhaustif) ;
+         2. pour la meilleure majeure retenue, la meilleure PAIRE secondaire (108, exhaustif) ;
+         3. les fragments, un par rangée (exhaustif aussi).
+       Chaque passe est complète ; c'est leur enchaînement qui ne l'est pas. Comme pour les
+       objets, on annonce « la meilleure trouvée », pas « la meilleure ». */
+    const combinaisons = (groupes) => groupes.reduce(
+      (acc, g) => acc.length ? [].concat(...acc.map(a => g.map(x => a.concat([x])))) : g.map(x => [x]),
+      []);
+    const parSlot = (arbre, genre) => {
+      const slots = {};
+      RUNES.filter(r => r.arbre === arbre && r.genre === genre)
+           .forEach(r => { (slots[r.slot] = slots[r.slot] || []).push(r.id); });
+      return Object.keys(slots).sort().map(k => slots[k]);
+    };
+    const ARBRES = [...new Set(RUNES.map(r => r.arbre))];
+    /* Les fragments sont communs à tous les arbres (le fichier les range sous Inspiration),
+       une rangée = un emplacement. */
+    const FRAGMENTS = parSlot('Inspiration', 'fragment');
+    
+    function chercherRunes(champId, niveau, matchup, options = {}) {
+      if (!champions[champId] || !matchup) return null;
+      const objectif = options.objectif || 'equilibre';
+      const objets = options.objets || [];
+      const base = valeurBuild(champId, niveau, objets, matchup, options);
+      if (!base) return null;
+      let evaluations = 0;
+    
+      const noter = runes => {
+        const v = valeurBuild(champId, niveau, objets, matchup,
+                              Object.assign({}, options, { runes }));
+        evaluations++;
+        return { v, s: score(v, base, objectif) };
+      };
+    
+      /* Une page témoin pour juger une majeure sans que le reste ne pèse : le premier trio
+         de son arbre, une paire secondaire fixe, les premiers fragments. Ce n'est pas la
+         meilleure page — c'est la même pour toutes les majeures, donc la comparaison est
+         honnête. */
+      const fragmentsTemoin = FRAGMENTS.map(r => r[0]);
+    
+      let meilleur = null;
+      RUNES.filter(r => r.genre === 'majeure').forEach(maj => {
+        const trios = combinaisons(parSlot(maj.arbre, 'mineure'));
+        const arbreSec = ARBRES.filter(a => a !== maj.arbre)[0];
+        const paireTemoin = combinaisons(parSlot(arbreSec, 'mineure').slice(0, 2))[0];
+        trios.forEach(trio => {
+          const page = [maj.id].concat(trio, paireTemoin, fragmentsTemoin);
+          const r = noter(page);
+          if (!meilleur || r.s > meilleur.s) meilleur = { s: r.s, v: r.v, maj: maj, trio: trio };
+        });
+      });
+      if (!meilleur) return null;
+    
+      /* Passe 2 : la paire secondaire, tous arbres confondus, deux emplacements distincts. */
+      let paire = null;
+      ARBRES.filter(a => a !== meilleur.maj.arbre).forEach(arbre => {
+        const slots = parSlot(arbre, 'mineure');
+        for (let i = 0; i < slots.length; i++) {
+          for (let k = i + 1; k < slots.length; k++) {
+            combinaisons([slots[i], slots[k]]).forEach(p2 => {
+              const page = [meilleur.maj.id].concat(meilleur.trio, p2, fragmentsTemoin);
+              const r = noter(page);
+              if (!paire || r.s > paire.s) paire = { s: r.s, v: r.v, ids: p2, arbre };
+            });
+          }
+        }
+      });
+    
+      /* Passe 3 : les fragments, un par rangée. */
+      let frags = null;
+      combinaisons(FRAGMENTS).forEach(f => {
+        const page = [meilleur.maj.id].concat(meilleur.trio, paire.ids, f);
+        const r = noter(page);
+        if (!frags || r.s > frags.s) frags = { s: r.s, v: r.v, ids: f };
+      });
+    
+      const page = [meilleur.maj.id].concat(meilleur.trio, paire.ids, frags.ids);
+      const legale = L.pageLegale(page);
+      const nom = id => (RUNES.find(r => r.id === id) || {}).nom || id;
+    
+      /* Le POURQUOI, comme pour les objets : ce que la page apporte par rapport à AUCUNE
+         rune, et ce que la majeure apporte à elle seule. */
+      const sansMajeure = valeurBuild(champId, niveau, objets, matchup,
+        Object.assign({}, options, { runes: page.filter(i => i !== meilleur.maj.id) }));
+      evaluations++;
+    
+      return {
+        page,
+        majeure: { id: meilleur.maj.id, nom: meilleur.maj.nom, arbre: meilleur.maj.arbre },
+        principal: meilleur.trio.map(i => ({ id: i, nom: nom(i) })),
+        secondaire: { arbre: paire.arbre, runes: paire.ids.map(i => ({ id: i, nom: nom(i) })) },
+        fragments: frags.ids.map(i => ({ id: i, nom: nom(i) })),
+        degats: Math.round(frags.v.degats), survie: Math.round(frags.v.survie),
+        gainDegatsPct: Math.round((frags.v.degats / base.degats - 1) * 100),
+        gainSurviePct: Math.round((frags.v.survie / base.survie - 1) * 100),
+        apportMajeure: sansMajeure ? Math.round(frags.v.degats - sansMajeure.degats) : null,
+        legale: legale.legale,
+        /* Une page illégale ne doit jamais être conseillée en silence. Si les règles du jeu
+           changent et que la construction ci-dessus ne les respecte plus, ça se voit ici. */
+        infractions: legale.infractions,
+        evaluations,
+        methode: 'trois passes exhaustives enchaînées (majeure+trio, paire secondaire, ' +
+                 'fragments) — la meilleure TROUVÉE, pas la meilleure possible'
+      };
+    }
+    
+    /* ── 6. L'ordre d'achat ───────────────────────────────────────────────────────────
+       Ici, contrairement au reste, l'optimum est PROUVÉ — et il vaut la peine de dire
+       pourquoi la différence est possible.
+    
+       Un build fini compte au plus 6 objets, donc au plus 64 sous-ensembles. On peut donc
+       évaluer TOUTES les étapes intermédiaires possibles (64 évaluations, ~13 ms) puis
+       choisir l'ordre par programmation dynamique sur ces sous-ensembles. Aucune heuristique,
+       aucun faisceau : le meilleur ordre est le meilleur ordre.
+    
+       CE QU'ON MAXIMISE, et c'est un choix qu'il faut assumer : la puissance INTÉGRÉE SUR
+       L'OR, pas la puissance à la fin. On farme l'or à peu près linéairement ; après avoir
+       acheté l'objet k, on garde sa puissance le temps de farmer le prix de l'objet k+1.
+       L'aire vaut donc Σ puissance(k) × prix(k+1). C'est ce qui récompense un objet bon
+       marché et efficace en premier — exactement la question que se pose un coach.
+       Trier par « le plus fort d'abord » aurait ignoré le prix et conseillé de commencer par
+       l'objet le plus cher, ce qui est le contraire de ce qu'on veut. */
+    function ordreAchat(champId, niveau, objets, matchup, options = {}) {
+      const n = (objets || []).length;
+      if (!n) return null;
+      if (n > 6) return null;             // au-delà, 2^n cesse d'être négligeable
+    
+      const base = valeurBuild(champId, niveau, [], matchup, options);
+      const objectif = options.objectif || 'equilibre';
+      let evaluations = 0;
+    
+      /* Puissance de CHAQUE sous-ensemble, une fois pour toutes. */
+      const puissance = new Array(1 << n);
+      for (let masque = 0; masque < (1 << n); masque++) {
+        const sous = objets.filter((_, i) => masque & (1 << i));
+        const v = valeurBuild(champId, niveau, sous, matchup, options);
+        evaluations++;
+        puissance[masque] = score(v, base, objectif);
+      }
+    
+      /* f(masque) = meilleure aire pour avoir acheté exactement ces objets-là. */
+      const f = new Array(1 << n).fill(-Infinity);
+      const dernier = new Array(1 << n).fill(-1);
+      f[0] = 0;
+      for (let masque = 1; masque < (1 << n); masque++) {
+        for (let i = 0; i < n; i++) {
+          if (!(masque & (1 << i))) continue;
+          const avant = masque ^ (1 << i);
+          if (f[avant] === -Infinity) continue;
+          /* On tenait la puissance de `avant` pendant qu'on farmait le prix de l'objet i. */
+          const aire = f[avant] + puissance[avant] * (parId[objets[i]].prix || 0);
+          if (aire > f[masque]) { f[masque] = aire; dernier[masque] = i; }
+        }
+      }
+    
+      const ordre = [];
+      let masque = (1 << n) - 1;
+      while (masque) { const i = dernier[masque]; ordre.unshift(i); masque ^= (1 << i); }
+    
+      let cumul = 0;
+      const etapes = ordre.map((i, rang) => {
+        cumul += parId[objets[i]].prix || 0;
+        const jusquIci = ordre.slice(0, rang + 1).map(k => objets[k]);
+        const m = jusquIci.reduce((acc, id) => acc | (1 << objets.indexOf(id)), 0);
+        return {
+          rang: rang + 1, id: objets[i], nom: parId[objets[i]].nom,
+          prix: parId[objets[i]].prix, orCumule: cumul,
+          /* Ce que vaut le build À CE STADE, pas à la fin. C'est le chiffre qui manque
+             partout ailleurs : un build se joue en cours de partie, pas au coup de sifflet. */
+          puissance: Math.round(puissance[m] * 1000) / 1000
+        };
+      });
+    
+      return {
+        ordre: ordre.map(i => objets[i]),
+        etapes, evaluations,
+        methode: 'optimum PROUVÉ par programmation dynamique sur les ' + (1 << n) +
+                 ' sous-ensembles — ici, contrairement au choix des objets, aucune heuristique',
+        critere: 'puissance intégrée sur l\'or dépensé : un objet bon marché et efficace ' +
+                 'passe devant un objet plus fort mais plus cher'
+      };
+    }
+    
+    module.exports = { CANDIDATS, RUNES, matchupDepuisCompo, valeurBuild, score,
+                       chercherBuilds, comparerBuilds, chercherRunes, ordreAchat };
     
   };
   d["./44_optimiseur.js"] = d["./44_optimiseur"];
@@ -22459,6 +22676,8 @@
     matchupDepuisCompo: optimiseur.matchupDepuisCompo,
     chercherBuilds: optimiseur.chercherBuilds,
     comparerBuilds: optimiseur.comparerBuilds,
-    valeurBuild: optimiseur.valeurBuild
+    valeurBuild: optimiseur.valeurBuild,
+    chercherRunes: optimiseur.chercherRunes,
+    ordreAchat: optimiseur.ordreAchat
   };
 })(typeof window !== 'undefined' ? window : this);

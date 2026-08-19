@@ -1387,6 +1387,24 @@ body.map-fullscreen .logo-bg{ display:none; }
 .bo-ap b{ color:var(--vs-fg-1); font-weight:600; }
 .bo-ap .v{ font-family:var(--font-mono); font-size:11px; text-align:right; color:var(--vs-fg-2); line-height:1.35; }
 .bo-ecarte{ margin-top:9px; font-size:11.8px; color:#F5A623; line-height:1.45; }
+.bo-etapes{ display:flex; flex-direction:column; gap:3px; }
+.bo-et{ display:grid; grid-template-columns:22px minmax(0,1fr) 66px 92px; gap:8px;
+  align-items:center; font-size:12.3px; padding:5px 0;
+  border-bottom:1px solid var(--vs-line-soft,var(--vs-line)); }
+.bo-et:last-child{ border-bottom:0; }
+.bo-et .r{ font-family:var(--font-mono); color:var(--vs-emerald-400); font-weight:600; }
+.bo-et .nm{ color:var(--vs-fg-1); font-weight:600; }
+.bo-et .po,.bo-et .cu{ font-family:var(--font-mono); font-size:11.5px; color:var(--vs-fg-2); text-align:right; }
+.bo-runes{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.bo-runes > div{ background:var(--vs-bg-2); border:1px solid var(--vs-line-soft,var(--vs-line));
+  border-radius:9px; padding:9px 12px; font-size:12.5px; color:var(--vs-fg-2); line-height:1.45; }
+.bo-runes .t{ display:block; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--vs-fg-3); margin-bottom:3px; }
+.bo-runes b{ color:var(--vs-emerald-400); font-size:14px; }
+.bo-runes .a{ color:var(--vs-fg-3); margin-left:6px; font-size:11.5px; }
+@media(max-width:700px){ .bo-runes{ grid-template-columns:1fr; }
+                         .bo-et{ grid-template-columns:22px minmax(0,1fr) 66px; }
+                         .bo-et .cu{ display:none; } }
 @media(max-width:900px){ .bo-haut{ grid-template-columns:1fr; } }
 
 /* ── Rubrique « Le moteur » : comment le calculateur obtient ses chiffres ──────
@@ -21269,21 +21287,36 @@ function boChercherBuilds(){
 
   var niveau = +document.getElementById('bo-niveau').value || 18;
   var slots  = +document.getElementById('bo-slots').value || 5;
-  res.innerHTML = '<div class="card tc-bloc"><p class="muted" style="margin:0">' +
-    'Recherche en cours sur les 105 objets légendaires…</p></div>';
-
-  /* Rendu du message AVANT le calcul : la recherche bloque le fil principal ~1 s, et
-     sans cette respiration le navigateur n'aurait jamais peint le message d'attente. */
-  setTimeout(function(){
+  /* La recherche complète bloque le fil principal ~1,1 s (mesuré : 865 ms pour les
+     objets, 259 ms pour les runes, 9 ms pour l'ordre). On la découpe en deux temps avec
+     une respiration entre les deux : sans elle, le navigateur ne peindrait AUCUN des
+     messages d'attente et l'onglet passerait pour figé. Le message nomme l'étape en
+     cours, parce qu'« un instant… » pendant une seconde ressemble à un bug. */
+  var attendre = function(txt, suite){
+    res.innerHTML = '<div class="card tc-bloc"><p class="muted" style="margin:0">' + txt + '</p></div>';
+    setTimeout(suite, 40);
+  };
+  var t0 = Date.now();
+  attendre('Essai des combinaisons sur les 105 objets légendaires…', function(){
     var m = T.matchupDepuisCompo(compo, niveau);
-    var t0 = Date.now();
     var r = T.chercherBuilds(boEtat.champion, niveau, m, {
       objectif: boEtat.objectif, emplacements: slots, largeur: 8, combien: 4,
       orMax: boEtat.or || undefined
     });
     if (!r){ res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">Recherche impossible.</div></div>'; return; }
-    boAfficher(r, Date.now() - t0);
-  }, 40);
+    if (!r.builds.length){ boAfficher(r, Date.now() - t0); return; }
+
+    attendre('Builds trouvés. Ordre d\'achat et page de runes…', function(){
+      /* L'ordre d'achat du build retenu, puis la page de runes qui va avec CE build —
+         pas avec un build générique : une majeure de dégâts ne vaut pas la même chose
+         selon ce qu'on porte. */
+      r.builds[0].ordre = T.ordreAchat(boEtat.champion, niveau, r.builds[0].objets, m,
+                                       { objectif: boEtat.objectif });
+      r.runes = T.chercherRunes(boEtat.champion, niveau, m,
+                                { objectif: boEtat.objectif, objets: r.builds[0].objets });
+      boAfficher(r, Date.now() - t0);
+    });
+  });
 }
 
 function boAfficher(r, ms){
@@ -21325,8 +21358,53 @@ function boAfficher(r, ms){
         anEsc(b.inutiles.map(function(x){ return x.nom; }).join(', ')) +
         ' — n\'apporte rien à cet objectif, ' + b.orEconomise + ' po à dépenser ailleurs.</div>';
     }
+    /* ── L'ORDRE D'ACHAT, seulement pour le build retenu ──────────────────────────
+       Un build se joue en cours de partie, pas au coup de sifflet final : savoir quoi
+       acheter EN PREMIER vaut souvent plus que la composition finale. On ne le calcule
+       que pour le premier build — 64 sous-ensembles chacun, inutile de payer cinq fois
+       pour un chiffre qu'on ne lira pas. */
+    if (i === 0 && b.ordre){
+      html += '<div class="bo-ordre"><div class="tc-titre" style="margin-top:12px">Dans quel ordre l\'acheter</div>' +
+        '<div class="bo-etapes">' + b.ordre.etapes.map(function(e){
+          return '<div class="bo-et"><span class="r">' + e.rang + '</span>' +
+            '<span class="nm">' + anEsc(e.nom) + '</span>' +
+            '<span class="po">' + e.prix + ' po</span>' +
+            '<span class="cu">cumul ' + e.orCumule + '</span></div>';
+        }).join('') + '</div>' +
+        '<p class="faint" style="font-size:11.5px;margin:6px 0 0;line-height:1.45">' +
+        anEsc(b.ordre.critere) + '. ' + anEsc(b.ordre.methode) + '.</p></div>';
+    }
     html += '</div>';
   });
+
+  /* ── LA PAGE DE RUNES ─────────────────────────────────────────────────────────── */
+  if (r.runes){
+    var R = r.runes;
+    html += '<div class="card tc-bloc" style="margin-top:12px">' +
+      '<div class="tc-titre">Page de runes conseillée' +
+      '<span class="tc-compte">' + R.evaluations + ' pages essayées</span></div>' +
+      (R.legale === false
+        ? '<div class="tc-legalite"><b>Page refusée :</b> ' +
+          anEsc((R.infractions || []).map(function(x){ return x.regle; }).join(', ')) + '</div>'
+        : '') +
+      '<div class="bo-runes">' +
+      '<div><span class="t">Majeure</span><b>' + anEsc(R.majeure.nom) + '</b>' +
+        '<span class="a">' + anEsc(R.majeure.arbre) + '</span></div>' +
+      '<div><span class="t">Arbre principal</span>' +
+        anEsc(R.principal.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '<div><span class="t">Secondaire — ' + anEsc(R.secondaire.arbre) + '</span>' +
+        anEsc(R.secondaire.runes.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '<div><span class="t">Fragments</span>' +
+        anEsc(R.fragments.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '</div>' +
+      '<p class="faint" style="font-size:11.5px;margin:0;line-height:1.5">' +
+      'La page apporte +' + R.gainDegatsPct + ' % de dégâts et +' + R.gainSurviePct +
+      ' % de survie' + (R.apportMajeure ? ', dont ' + R.apportMajeure + ' dégâts pour la seule majeure' : '') +
+      '. ' + anEsc(R.methode) + '.<br>' +
+      'À noter : aucune rune du jeu ne donne de l\'armure sans résistance magique. Une page ' +
+      'défensive ne peut donc pas dépendre de la répartition des dégâts d\'en face — ' +
+      'contrairement aux objets, où l\'écart est net.</p></div>';
+  }
 
   /* Le POURQUOI demandé : ce qui sépare le premier du deuxième, objet par objet. Un
      classement sans cette ligne oblige à croire l'ordre sur parole. */

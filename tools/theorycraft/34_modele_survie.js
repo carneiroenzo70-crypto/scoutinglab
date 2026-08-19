@@ -388,7 +388,18 @@ function autonomieMana(champId, p) {
    afficher : un build ne se juge pas sur un chiffre unique, et le meilleur build en
    dégâts n'est presque jamais le meilleur build tout court. */
 function ficheBuild(champId, niveau, objets, options = {}) {
-  const p = M.profil(champId, niveau, objets, { fenetre: options.fenetre || 10 });
+  /* ⚠ Les RUNES étaient reçues puis jetées. `ficheBuild` construisait son profil avec le
+     seul `fenetre`, si bien que tout le volet défensif — PV, armure, résistance magique,
+     PV effectifs, boucliers — ignorait la page de runes, pendant que les dégâts de sort,
+     eux, la prenaient en compte : la même page affichait deux profils différents sans
+     le dire. Mesuré sur un Sion niveau 18 avec fragment de PV : 2 634 PV annoncés au
+     lieu de 2 879, soit 245 PV escamotés, et des PV effectifs sous-estimés d'autant.
+
+     On transmet donc TOUTES les options au profil. Les clés qu'il n'utilise pas sont
+     ignorées sans dommage ; celles qu'il utilise — runes, partPV, minutes — cessent
+     d'être perdues en route. */
+  const p = M.profil(champId, niveau, objets,
+                     Object.assign({}, options, { fenetre: options.fenetre || 10 }));
   if (!p) return null;
   const survie = pvEffectifs(p, options.partPhysique != null ? options.partPhysique : 0.5);
   const aa = M.degatsAttaque(p, options.cible || null);

@@ -144,5 +144,94 @@ vrai('les objets propres à chaque build sont isolés',
 verifie('  et l\'écart de dégâts est la différence des deux mesures',
         cmp.ecartDegats, cmp.b.degats - cmp.a.degats, 1);
 
+/* ── LA PAGE DE RUNES ──────────────────────────────────────────────────────────── */
+console.log('\n── La page de runes');
+const pr = O.chercherRunes('Jhin', 18, mMixte, { objectif: 'degats', objets: [3031, 3036] });
+vrai('la page trouvée respecte les règles du jeu', pr.legale === true,
+     pr.legale ? '' : JSON.stringify(pr.infractions));
+/* Une page illégale conseillée en silence serait le pire des résultats : injouable, et
+   crédible. Ce test vaut plus que tous les autres de cette section. */
+vrai('  une majeure, trois mineures principales, deux secondaires, trois fragments',
+     pr.principal.length === 3 && pr.secondaire.runes.length === 2 && pr.fragments.length === 3);
+vrai('  les trois mineures principales sont de l\'arbre de la majeure',
+     pr.principal.every(r => (O.RUNES.find(x => x.id === r.id) || {}).arbre === pr.majeure.arbre),
+     pr.majeure.arbre);
+vrai('  l\'arbre secondaire est un AUTRE arbre', pr.secondaire.arbre !== pr.majeure.arbre,
+     pr.majeure.arbre + ' puis ' + pr.secondaire.arbre);
+vrai('  aucune rune n\'apparaît deux fois', new Set(pr.page).size === pr.page.length);
+vrai('la page apporte quelque chose de mesurable', pr.gainDegatsPct > 0,
+     '+' + pr.gainDegatsPct + ' % de dégâts');
+vrai('  et la méthode annonce qu\'elle n\'est pas prouvée optimale',
+     /pas la meilleure possible/.test(pr.methode));
+/* ⚠ UNE LIMITE RÉELLE, constatée et non contournée.
+   J'avais écrit ici le pendant du test des objets : « la page change selon la
+   composition d'en face ». Il échouait — et il avait tort. Vérification faite sur les
+   69 runes actives, AUCUNE ne donne de l'armure sans résistance magique ni l'inverse :
+   les deux seules runes défensives de résistance (Conditionnement 8/8, Inébranlable
+   10/10) accordent les deux à parts égales.
+
+   Une page de runes défensive ne PEUT donc pas dépendre de la répartition physique /
+   magique adverse : le jeu n'offre pas le levier. Exiger qu'elle en dépende revenait à
+   demander au moteur d'inventer une différence qui n'existe pas.
+
+   Ce qui suit teste donc la vraie sensibilité disponible — l'objectif — et fige la
+   constatation, pour que le jour où Riot ajoute une rune d'armure pure, l'écart se voie. */
+const P36 = require('./36_runes_profil');
+const profilTest = require('./26_modele_degats').profil('Darius', 18, [], { fenetre: 20 });
+const asymetriques = O.RUNES.filter(r => {
+  const g = P36.statsDeRunes([r.id], profilTest, false, {}).gains || {};
+  return (g.armure || 0) !== (g.rm || 0);
+});
+vrai('aucune rune ne distingue l\'armure de la résistance magique',
+     asymetriques.length === 0,
+     asymetriques.length ? asymetriques.map(r => r.nom).join(', ') : 'constaté sur les 69 runes actives');
+const prDeg = O.chercherRunes('Darius', 18, mMixte, { objectif: 'degats', objets: [] });
+const prSur = O.chercherRunes('Darius', 18, mMixte, { objectif: 'survie', objets: [] });
+vrai('la page conseillée dépend en revanche de l\'objectif',
+     JSON.stringify(prDeg.page) !== JSON.stringify(prSur.page),
+     prDeg.majeure.nom + ' pour les dégâts, ' + prSur.majeure.nom + ' pour la survie');
+
+/* ── L'ORDRE D'ACHAT : le seul endroit où l'optimum est PROUVÉ ─────────────────── */
+console.log('\n── L\'ordre d\'achat, vérifié contre la force brute');
+const lot = [3031, 3036, 3072, 3033, 6676];
+const ord = O.ordreAchat('Jhin', 18, lot, mMixte, { objectif: 'degats' });
+vrai('l\'ordre contient exactement les objets du build, une fois chacun',
+     ord.ordre.length === lot.length && new Set(ord.ordre).size === lot.length &&
+     lot.every(i => ord.ordre.indexOf(i) >= 0));
+vrai('  et l\'or cumulé est croissant', ord.etapes.every((e, i) => i === 0 || e.orCumule > ord.etapes[i - 1].orCumule),
+     ord.etapes.map(e => e.orCumule).join(' → '));
+vrai('  la puissance ne recule jamais quand on ajoute un objet',
+     ord.etapes.every((e, i) => i === 0 || e.puissance >= ord.etapes[i - 1].puissance));
+
+/* LA vérification qui autorise le mot « prouvé ». On refait le calcul par la force
+   brute — les 120 permutations, le même critère, sans programmation dynamique — et on
+   exige la MÊME aire. Sans ce test, « optimum prouvé » ne serait qu'une affirmation de
+   plus, et la plus dangereuse du fichier puisqu'elle invite à ne pas vérifier. */
+const prixDe = id => (items.find(o => o.id === id) || {}).prix || 0;
+const baseJ = O.valeurBuild('Jhin', 18, [], mMixte, {});
+const memo = {};
+const puissanceDe = set => {
+  const k = set.slice().sort().join(',');
+  if (memo[k] == null) memo[k] = O.score(O.valeurBuild('Jhin', 18, set, mMixte, {}), baseJ, 'degats');
+  return memo[k];
+};
+const aireDe = p => p.reduce((a, _, k) => a + puissanceDe(p.slice(0, k)) * prixDe(p[k]), 0);
+const permutations = a => a.length <= 1 ? [a]
+  : [].concat(...a.map((x, i) => permutations(a.filter((_, j) => j !== i)).map(q => [x].concat(q))));
+let meilleureAire = -Infinity;
+permutations(lot).forEach(p => { const v = aireDe(p); if (v > meilleureAire) meilleureAire = v; });
+verifie('la programmation dynamique retrouve l\'optimum des 120 permutations',
+        Math.round(aireDe(ord.ordre)), Math.round(meilleureAire), 1);
+vrai('  et elle l\'annonce comme prouvé, à juste titre', /optimum PROUVÉ/.test(ord.methode));
+
+/* Le critère est un choix, et il doit se voir : c'est l'or qui pondère, pas le rang.
+   Sans cette pondération, l'ordre reviendrait à « le plus fort d'abord », ce qui
+   conseille de commencer par l'objet le plus cher — le contraire de ce qu'on veut. */
+vrai('le critère annoncé parle bien de l\'or dépensé', /intégrée sur l\'or/.test(ord.critere));
+vrai('un build d\'un seul objet donne un ordre d\'un seul objet',
+     O.ordreAchat('Jhin', 18, [3031], mMixte, {}).ordre.length === 1);
+vrai('un build vide est refusé plutôt que rendu vide',
+     O.ordreAchat('Jhin', 18, [], mMixte, {}) === null);
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);
