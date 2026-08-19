@@ -104,21 +104,64 @@ function valeurBuild(champId, niveau, objets, matchup, options = {}) {
      que sur une cible aurait récompensé les builds taillés contre un seul profil —
      exactement le travers qu'on veut corriger. */
   let somme = 0;
+  const sansMitigation = [];
+  let degatsAttaques = 0;
   matchup.cibles.forEach(cible => {
-    let total = 0;
-    ['Q', 'W', 'E', 'R'].forEach(t => {
-      const s = (champions[champId].sorts || {})[t];
-      if (!s || s.nonExploitable) return;
+    /* ⚠ DÉFAUT DE FOND, corrigé ici. Les compétences étaient comptées UNE FOIS chacune,
+       les attaques de base pendant toute la fenêtre : sur 20 secondes, un seul Q contre
+       vingt secondes d'attaques. Le score d'Aatrox venait alors à 94 % de ses attaques —
+       de quoi lui conseigner une panoplie de tireur (Lame d'infini, Danseur fantôme,
+       Lame tempête), alors qu'il inflige l'essentiel de ses dégâts par ses compétences
+       et se joue au corps à corps.
+
+       Ce n'était pas un arbitrage discutable, c'était une incohérence : deux sources
+       mesurées sur deux durées différentes. `degatsSurFenetre` compte les lancers par
+       les RECHARGES réelles, accélération comprise — sur 20 s, Aatrox lance 4 Q et
+       2 W. Les deux sources parlent enfin de la même fenêtre. */
+    const combo = M.degatsSurFenetre(champId, p, cible, fenetre, touche => {
+      const s = (champions[champId].sorts || {})[touche];
+      if (!s || s.nonExploitable) return null;
       const noms = Object.keys(s.calculs).filter(n => s.calculs[n].genre === 'degats');
-      if (!noms.length) return;
-      const r = M.evaluerCalcul(champId, t, noms[0], t === 'R' ? 3 : 5, p, cible,
+      if (!noms.length) return null;
+      const r = M.evaluerCalcul(champId, touche, noms[0], touche === 'R' ? 3 : 5, p, cible,
                                 { hypotheses: options.hypotheses || {}, fenetre });
-      if (r && r.ok && r.subis != null) total += r.subis;
+      if (!r || !r.ok) return null;
+      /* Un sort de type MIXTE (magiques + bruts, physiques + magiques…) n'est pas mitigé
+         par le modèle : il ne saurait pas quelle part passe par quelle résistance, et il
+         refuse d'inventer. `subis` vaut alors null — et mon premier rappel le traduisait
+         en ZÉRO, ce qui effaçait purement le sort du score.
+
+         Trente sorts sont dans ce cas, dont le Q d'AHRI, qui est son sort principal : le
+         conseil de build ignorait donc l'essentiel des dégâts d'Ahri. On retient les
+         dégâts BRUTS à défaut — surévalués puisque non mitigés, mais infiniment plus
+         proches de la vérité que zéro, et on le signale plutôt que de le taire. */
+      if (r.subis != null) return r.subis;
+      sansMitigation.push(touche + ' (' + r.type + ')');
+      return r.brut != null ? r.brut : null;
     });
+    let total = combo ? combo.total : 0;
     /* Les attaques de base comptent : un build de dégâts d'attaque ne se juge pas sur
        ses seules compétences. On prend la fenêtre de combat, pas un coup isolé. */
+    /* ── LA DISPONIBILITÉ DES ATTAQUES DE BASE, et pourquoi elle se DEMANDE ─────────
+       Le modèle comptait la fenêtre entière d'attaques de base, contre une cible qui ne
+       bouge pas, ne riposte pas et ne meurt jamais. Sur 20 s cela fait 26 coups pour une
+       Ahri — 8 945 dégâts, soit 88 % de son score — et le conseil devenait « prends une
+       Lame d'infini » pour un mage. Même cause pour l'Aatrox conseillé en tireur.
+
+       Aucun chiffre du fichier de jeu ne dit combien d'attaques on porte réellement : ça
+       dépend du poste, de la portée, de la composition, du déroulé. Le modèle ne le
+       DEVINE donc pas — il le demande, exactement comme pour les immobilisations et les
+       éliminations. Par défaut il garde le maximum théorique, qui est le comportement
+       d'avant et le seul qui ne suppose rien ; mais il annonce la part que les attaques
+       pèsent dans le score, pour qu'un 84 % saute aux yeux au lieu de se cacher dans un
+       classement d'objets. */
     const aa = M.degatsAttaque(p, cible);
-    if (aa && aa.dps != null) total += aa.dps * fenetre;
+    const partAA = options.partAttaques != null ? options.partAttaques : 1;
+    if (aa && aa.dps != null) {
+      const auto = aa.dps * fenetre * partAA;
+      degatsAttaques += auto;
+      total += auto;
+    }
 
     /* Les RUNES infligent aussi des dégâts, et pas qu'un peu — Électrocution ou Comète
        pèsent plus qu'un objet entier en début de partie. Les omettre aurait fait choisir
@@ -137,7 +180,10 @@ function valeurBuild(champId, niveau, objets, matchup, options = {}) {
      ici ferait passer un build à boucliers pour durablement plus solide. */
   const survie = fiche.defensif.pvEffectifsMixte;
 
-  return { degats, survie, or: fiche.or, refuses: fiche.refuses, fiche };
+  const partAttaques = somme ? degatsAttaques / somme : 0;
+  return { degats, survie, or: fiche.or, refuses: fiche.refuses, fiche,
+           sansMitigation: [...new Set(sansMitigation)],
+           partAttaques: Math.round(partAttaques * 100) / 100 };
 }
 
 /* ── 3. Le score, et l'aveu qu'il contient un choix ───────────────────────────────

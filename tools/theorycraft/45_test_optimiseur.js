@@ -233,5 +233,78 @@ vrai('un build d\'un seul objet donne un ordre d\'un seul objet',
 vrai('un build vide est refusé plutôt que rendu vide',
      O.ordreAchat('Jhin', 18, [], mMixte, {}) === null);
 
+/* ── LE DÉFAUT QU'UN COACH A VU AVANT MOI ─────────────────────────────────────────
+   Le site conseillait à AATROX — un combattant au corps à corps — une panoplie de
+   tireur : Lame d'infini, Danseur fantôme, Lame tempête. Deux causes, toutes deux
+   réelles, aucune n'étant un désaccord de goût. */
+console.log('\n── Sorts et attaques mesurés sur la MÊME fenêtre');
+/* 1. Les compétences étaient comptées UNE FOIS, les attaques pendant toute la fenêtre.
+      Sur 20 s, un seul Q contre vingt secondes d'attaques : 94 % du score d'Aatrox
+      venait de ses attaques de base. `degatsSurFenetre` compte désormais les lancers
+      par les recharges réelles. */
+const M26 = require('./26_modele_degats');
+const champs = require('./champions.json');
+const pAatrox = M26.profil('Aatrox', 18, [3031, 3036], { fenetre: 20 });
+const comboAatrox = M26.degatsSurFenetre('Aatrox', pAatrox, mMixte.cibles[0], 20, t => {
+  const s = champs.Aatrox.sorts[t]; if (!s || s.nonExploitable) return null;
+  const n = Object.keys(s.calculs).filter(x => s.calculs[x].genre === 'degats');
+  if (!n.length) return null;
+  const v = M26.evaluerCalcul('Aatrox', t, n[0], t === 'R' ? 3 : 5, pAatrox, mMixte.cibles[0], { fenetre: 20 });
+  return v && v.ok ? (v.subis != null ? v.subis : v.brut) : null;
+});
+const qAatrox = comboAatrox.lignes.filter(l => l.touche === 'Q')[0];
+vrai('le Q d\'Aatrox est compté plusieurs fois sur 20 s, pas une seule',
+     qAatrox && qAatrox.lancers > 1, qAatrox ? qAatrox.lancers + ' lancers' : 'absent');
+
+/* 2. Un sort de type MIXTE n'est pas mitigé : `subis` vaut null. Traduit en zéro, il
+      disparaissait du score — dont le Q d'AHRI, son sort principal. */
+console.log('\n── Les sorts de type mixte ne valent plus zéro');
+const rAhriQ = M26.evaluerCalcul('Ahri', 'Q', 'TotalDamage', 5,
+                                 M26.profil('Ahri', 18, [3031, 3036], { fenetre: 20 }),
+                                 mMixte.cibles[0], { fenetre: 20 });
+vrai('le Q d\'Ahri est bien de type mixte, donc non mitigé', rAhriQ.ok && rAhriQ.subis == null,
+     rAhriQ.type);
+vrai('  mais il porte des dégâts BRUTS exploitables', rAhriQ.brut > 0, rAhriQ.brut + ' bruts');
+const vAhri = O.valeurBuild('Ahri', 18, [6655, 3089], mMixte, { fenetre: 20, partAttaques: 1 });
+vrai('  et l\'optimiseur le signale au lieu de le taire',
+     vAhri.sansMitigation.some(x => /^Q/.test(x)), vAhri.sansMitigation.join(', '));
+
+/* ── LE SCÉNARIO : ce que le fichier de jeu ne dit pas ────────────────────────────
+   Combien d'attaques de base on porte vraiment ne se lit nulle part. Vérifié : les
+   champions extraits ne portent ni poste ni étiquette, et Ahri comme Jhin ont la même
+   portée de 550 — la donnée ne permet aucun défaut défendable. Le moteur le DEMANDE
+   donc, et la réponse change le conseil du tout au tout. */
+console.log('\n── Le scénario de combat change la recommandation');
+vrai('les données ne portent ni poste ni étiquette de rôle',
+     !champs.Ahri.postes && !champs.Ahri.tags,
+     'aucun défaut d\'attaques portées n\'est dérivable des données');
+vrai('  et la portée ne sépare pas un mage d\'un tireur',
+     champs.Ahri.base.portee === champs.Jhin.base.portee,
+     'Ahri et Jhin : ' + champs.Ahri.base.portee);
+const libre  = O.chercherBuilds('Ahri', 18, mMixte, { objectif: 'degats', emplacements: 4, largeur: 8, combien: 1, partAttaques: 1 });
+const serre  = O.chercherBuilds('Ahri', 18, mMixte, { objectif: 'degats', emplacements: 4, largeur: 8, combien: 1, partAttaques: 0.25 });
+console.log('     frappe libre        : ' + nomsDe(libre.builds[0]));
+console.log('     corps à corps serré : ' + nomsDe(serre.builds[0]));
+vrai('le conseil pour Ahri n\'est pas le même selon le scénario',
+     nomsDe(libre.builds[0]) !== nomsDe(serre.builds[0]));
+/* LE test qui compte : en combat serré, un mage doit sortir des objets de PUISSANCE.
+   C'est exactement ce qui manquait quand Ahri se voyait conseiller une Lame d'infini. */
+const apDe = id => (((items.find(o => o.id === id) || {}).stats || {}).ap || {}).valeur || 0;
+const critDe = id => (((items.find(o => o.id === id) || {}).stats || {}).crit || {}).valeur || 0;
+const sommeAP = serre.builds[0].objets.reduce((s, i) => s + apDe(i), 0);
+const sommeCrit = serre.builds[0].objets.reduce((s, i) => s + critDe(i), 0);
+vrai('  en combat serré, Ahri emporte de la puissance et pas du critique',
+     sommeAP > 0 && sommeCrit === 0, sommeAP + ' AP, ' + sommeCrit + ' crit');
+
+/* La part des attaques est REMONTÉE, pour que l'interface puisse avertir. Sans elle,
+   le coach ne peut pas savoir que le classement récompense surtout la vitesse d'attaque. */
+const vLibre = O.valeurBuild('Ahri', 18, libre.builds[0].objets, mMixte, { partAttaques: 1 });
+vrai('la part des attaques de base est mesurée et rendue', vLibre.partAttaques > 0.5,
+     Math.round(vLibre.partAttaques * 100) + ' % du score en frappe libre');
+const vSerre = O.valeurBuild('Ahri', 18, serre.builds[0].objets, mMixte, { partAttaques: 0.25 });
+vrai('  et elle chute quand le scénario se resserre',
+     vSerre.partAttaques < vLibre.partAttaques,
+     Math.round(vSerre.partAttaques * 100) + ' % contre ' + Math.round(vLibre.partAttaques * 100) + ' %');
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

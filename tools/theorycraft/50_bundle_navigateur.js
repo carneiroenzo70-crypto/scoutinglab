@@ -4,7 +4,7 @@
    dans un `require` minuscule, et y joint les données. Porter le modèle à la main aurait
    créé une seconde implémentation — et deux implémentations divergent toujours, en
    silence, au premier patch. Ici, `node 50_bundle_navigateur.js` suffit à remettre le
-   produit en phase avec les 536 vérifications du moteur.
+   produit en phase avec les 546 vérifications du moteur.
 
    Sortie : un seul fichier statique, chargé À LA DEMANDE par app.html (~1,6 Mo brut,
    nettement moins une fois compressé par Vercel). Il n'entre pas dans `api/` : la limite
@@ -71,7 +71,7 @@ const donnees = Object.entries(DONNEES).map(([cle, fichier]) =>
 const bundle = `/* VisionScore — moteur de theorycraft, version navigateur.
    GÉNÉRÉ par tools/theorycraft/50_bundle_navigateur.js — ne pas éditer à la main.
    Toute correction se fait dans les modules source, puis on relance le script :
-   c'est ce qui garantit que le produit et les 536 vérifications parlent du même code.
+   c'est ce qui garantit que le produit et les 546 vérifications parlent du même code.
    Données Data Dragon ${require('./champFull.json').version}. */
 (function (racine) {
   'use strict';
