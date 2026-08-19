@@ -4,7 +4,7 @@
    dans un `require` minuscule, et y joint les données. Porter le modèle à la main aurait
    créé une seconde implémentation — et deux implémentations divergent toujours, en
    silence, au premier patch. Ici, `node 50_bundle_navigateur.js` suffit à remettre le
-   produit en phase avec les 493 vérifications du moteur.
+   produit en phase avec les 519 vérifications du moteur.
 
    Sortie : un seul fichier statique, chargé À LA DEMANDE par app.html (~1,6 Mo brut,
    nettement moins une fois compressé par Vercel). Il n'entre pas dans `api/` : la limite
@@ -38,7 +38,8 @@ const MODULES = [
   '34_modele_survie.js',
   '36_runes_profil.js',
   '38_runes_combat.js',
-  '40_legalite.js'
+  '40_legalite.js',
+  '44_optimiseur.js'
 ];
 
 /* `champFull.json` pèse 2,3 Mo et ne sert QU'À L'EXTRACTION (infobulles, nombre de
@@ -99,6 +100,7 @@ ${source}
   var runesProfil = require('./36_runes_profil');
   var runesCombat = require('./38_runes_combat');
   var legalite = require('./40_legalite');
+  var optimiseur = require('./44_optimiseur');
 
   racine.vsTheorycraft = {
     version: ${JSON.stringify(require('./champFull.json').version)},
@@ -126,7 +128,13 @@ ${source}
     statsDeRunes: runesProfil.statsDeRunes,
     buildLegal: legalite.buildLegal,
     conflits: legalite.conflits,
-    pageLegale: legalite.pageLegale
+    pageLegale: legalite.pageLegale,
+    /* Optimiseur : la seule partie du moteur qui RÉPOND à « lequel prendre ? » plutôt
+       qu'à « combien vaut celui-ci ? ». */
+    matchupDepuisCompo: optimiseur.matchupDepuisCompo,
+    chercherBuilds: optimiseur.chercherBuilds,
+    comparerBuilds: optimiseur.comparerBuilds,
+    valeurBuild: optimiseur.valeurBuild
   };
 })(typeof window !== 'undefined' ? window : this);
 `;

@@ -1352,6 +1352,43 @@ body.map-fullscreen .logo-bg{ display:none; }
    couleur ET à la forme (un liseré), jamais à la couleur seule. */
 .tc-grille{ display:grid; grid-template-columns:352px minmax(0,1fr); gap:16px; align-items:start; }
 .tc-col{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+/* ── Rubrique « Builds conseillés » ───────────────────────────────────────────
+   L'outil qui répond à « lequel prendre ? ». Le calculateur savait déjà chiffrer un
+   build qu'on lui donnait ; encore fallait-il le connaître d'avance. */
+.bo-haut{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.6fr); gap:16px; align-items:start; }
+.bo-compo{ display:flex; flex-wrap:wrap; gap:6px; }
+.bo-slot{ position:relative; }
+.bo-slot input{ width:132px; }
+.bo-sugg{ position:absolute; z-index:30; left:0; right:0; top:calc(100% + 3px); max-height:210px;
+  overflow:auto; background:var(--vs-bg-2); border:1px solid var(--vs-line); border-radius:8px;
+  box-shadow:0 12px 30px -12px rgba(0,0,0,.7); }
+.bo-sugg button{ display:block; width:100%; text-align:left; padding:7px 10px; border:0; background:none;
+  color:var(--vs-fg-1); font:inherit; font-size:12.5px; cursor:pointer; }
+.bo-sugg button:hover{ background:rgba(45,212,167,.12); }
+.bo-sugg .r{ color:var(--vs-fg-3); font-size:11px; margin-left:6px; }
+.bo-obj{ display:flex; gap:6px; flex-wrap:wrap; }
+.bo-obj button{ padding:7px 12px; border-radius:8px; border:1px solid var(--vs-line);
+  background:none; color:var(--vs-fg-2); font:inherit; font-size:12.5px; cursor:pointer; }
+.bo-obj button.on{ border-color:var(--vs-emerald-400); color:var(--vs-emerald-400);
+  background:rgba(45,212,167,.10); }
+.vsd .bo-build{ padding:14px 16px; }
+.bo-rang{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.bo-rang .n{ font-family:var(--font-mono); font-size:20px; color:var(--vs-emerald-400); font-weight:600; }
+.bo-rang .or{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-2); }
+.bo-rang .g{ font-size:12.5px; color:var(--vs-fg-2); margin-left:auto; }
+.bo-items{ display:flex; flex-wrap:wrap; gap:5px; margin:9px 0 0; }
+.bo-items span{ padding:5px 9px; border-radius:7px; background:var(--vs-bg-2);
+  border:1px solid var(--vs-line-soft,var(--vs-line)); font-size:12px; }
+.bo-apports{ margin-top:10px; display:flex; flex-direction:column; gap:4px; }
+.bo-ap{ display:grid; grid-template-columns:minmax(0,1fr) 74px; gap:8px; align-items:center;
+  font-size:12px; color:var(--vs-fg-2); }
+.bo-jauge{ height:5px; border-radius:3px; background:var(--vs-bg-2); overflow:hidden; }
+.bo-jauge i{ display:block; height:100%; background:var(--vs-emerald-400); }
+.bo-ap b{ color:var(--vs-fg-1); font-weight:600; }
+.bo-ap .v{ font-family:var(--font-mono); font-size:11px; text-align:right; color:var(--vs-fg-2); line-height:1.35; }
+.bo-ecarte{ margin-top:9px; font-size:11.8px; color:#F5A623; line-height:1.45; }
+@media(max-width:900px){ .bo-haut{ grid-template-columns:1fr; } }
+
 /* ── Rubrique « Le moteur » : comment le calculateur obtient ses chiffres ──────
    Page de confiance, pas de réglage : aucun contrôle, rien à cliquer. Elle réutilise
    les jetons --vs-* et les cartes de l'app, pour qu'on ne la prenne pas pour une page
@@ -3679,6 +3716,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="vsd-drawer-item" data-nav="scout" onclick="vsdDrawerGo('scout')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg><span>Scouting</span></button>
     <button class="vsd-drawer-item" data-nav="crm" onclick="vsdDrawerGo('crm')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg><span>CRM Agent</span></button>
     <button class="vsd-drawer-item" data-nav="theorycraft" onclick="vsdDrawerGo('theorycraft')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg><span>Calculateur</span></button>
+    <button class="vsd-drawer-item" data-nav="builds" onclick="vsdDrawerGo('builds')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12v9M12 12 4 7.5M12 12l8-4.5"/></svg><span>Builds conseillés</span></button>
     <button class="vsd-drawer-item" data-nav="moteur" onclick="vsdDrawerGo('moteur')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg><span>Le moteur</span></button>
     <!-- Top 30 : accessible depuis les onglets du CRM Agent -->
     <div style="flex:1"></div>
@@ -3701,6 +3739,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
   <button class="more-menu-item" onclick="switchPanel('theorycraft');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg> Calculateur</button>
+  <button class="more-menu-item" onclick="switchPanel('builds');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12v9M12 12 4 7.5M12 12l8-4.5"/></svg> Builds conseillés</button>
   <button class="more-menu-item" onclick="switchPanel('moteur');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg> Le moteur</button>
 </div>
 
@@ -5544,6 +5583,77 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         </div>
       </div>
     </div><!-- /panel-theorycraft -->
+
+    <!-- ════ BUILDS CONSEILLÉS — « lequel prendre contre cette équipe ? » ════
+         Le calculateur répond à « combien vaut ce build ». Il fallait déjà connaître le
+         build pour s'en servir, ce qui est exactement l'inverse du besoin. Ici, on donne
+         un champion et la composition d'en face, et le moteur CHERCHE. -->
+    <div id="panel-builds" class="panel">
+      <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
+
+        <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
+          <div class="page-head" style="min-width:0">
+            <div class="eyebrow">Theorycraft</div>
+            <h2 class="h2">Quel build contre cette équipe</h2>
+            <p class="muted" style="max-width:74ch">Cherchez votre champion, saisissez la
+              composition adverse : le moteur essaie les combinaisons sur le patch courant
+              et vous rend les meilleures qu'il ait trouvées — avec, pour chaque objet, ce
+              qu'il apporte <b>contre ces cinq-là</b>.
+              <a href="#" onclick="switchPanel('theorycraft');return false" style="color:var(--vs-emerald-400);text-decoration:none;white-space:nowrap">Calculateur manuel →</a></p>
+          </div>
+          <div class="tc-patch" id="bo-patch">Chargement du moteur…</div>
+        </div>
+
+        <div class="bo-haut">
+          <div class="card tc-bloc">
+            <div class="tc-titre">Votre champion</div>
+            <div class="bo-slot">
+              <input id="bo-moi" class="tc-select" style="width:100%" placeholder="Chercher un champion…"
+                     autocomplete="off" oninput="boChercher('moi',this)" onfocus="boChercher('moi',this)"/>
+              <div class="bo-sugg" id="bo-sugg-moi" hidden></div>
+            </div>
+            <label class="tc-ligne-niv">
+              <span>Niveau</span>
+              <input type="range" id="bo-niveau" min="6" max="18" value="18" class="tc-range"
+                     oninput="document.getElementById('bo-niveau-v').textContent=this.value"/>
+              <b id="bo-niveau-v" class="tc-num">18</b>
+            </label>
+            <label class="tc-ligne-niv">
+              <span>Emplacements</span>
+              <input type="range" id="bo-slots" min="2" max="6" value="5" class="tc-range"
+                     oninput="document.getElementById('bo-slots-v').textContent=this.value"/>
+              <b id="bo-slots-v" class="tc-num">5</b>
+            </label>
+            <label class="tc-ligne-niv">
+              <span>Budget</span>
+              <input type="range" id="bo-or" min="3000" max="20000" step="500" value="20000" class="tc-range"
+                     oninput="boMajOr(this.value)"/>
+              <b id="bo-or-v" class="tc-num">libre</b>
+            </label>
+          </div>
+
+          <div class="card tc-bloc">
+            <div class="tc-titre">La composition d'en face
+              <span class="tc-compte" id="bo-part">part physique déduite : —</span></div>
+            <div class="bo-compo" id="bo-compo"></div>
+            <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
+              La part physique n'est pas un curseur à régler : elle est déduite du type de
+              dégâts des sorts de ces cinq champions. C'est elle qui décide si l'armure ou
+              la résistance magique vaut quelque chose dans ce match.</p>
+            <div class="tc-titre" style="margin-top:4px">Ce que vous cherchez</div>
+            <div class="bo-obj" id="bo-objectif">
+              <button type="button" data-o="degats" onclick="boSetObjectif('degats')">Faire des dégâts</button>
+              <button type="button" data-o="survie" onclick="boSetObjectif('survie')">Tenir debout</button>
+              <button type="button" class="on" data-o="equilibre" onclick="boSetObjectif('equilibre')">Les deux</button>
+            </div>
+            <button type="button" class="btn btn-cta" onclick="boChercherBuilds()"
+                    style="margin-top:4px">Chercher les meilleurs builds</button>
+          </div>
+        </div>
+
+        <section id="bo-resultats"></section>
+      </div>
+    </div><!-- /panel-builds -->
 
     <!-- ════ LE MOTEUR — pourquoi les chiffres du calculateur tiennent ════
          Rubrique de confiance, pas de réglage. Les compteurs ne sont PAS écrits en dur :
@@ -10985,7 +11095,7 @@ function switchPanel(id) {
   // 'analyse' (Comparer) pointe sur nav-crm : l'outil vit désormais dans CRM Agent.
   const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-crm',
                     top50:'nav-crm', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics',
-                    theorycraft:'nav-analytics', moteur:'nav-analytics',
+                    theorycraft:'nav-analytics', moteur:'nav-analytics', builds:'nav-analytics',
                     graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
@@ -10997,6 +11107,7 @@ function switchPanel(id) {
   if (id === 'theorycraft' && typeof tcOuvrir === 'function') tcOuvrir();
   // « Le moteur » partage le même chargeur : ouvrir l'un puis l'autre ne télécharge rien deux fois.
   if (id === 'moteur' && typeof moOuvrir === 'function') moOuvrir();
+  if (id === 'builds' && typeof boOuvrir === 'function') boOuvrir();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
   if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
@@ -11766,7 +11877,7 @@ function shareByURL() {
    La liste est FERMÉE : un `?vue=` arbitraire ouvrirait n'importe quel panneau, y
    compris ceux qu'une offre ne couvre pas. `switchPanel` re-vérifie l'accès de toute
    façon, mais on ne s'en remet pas à un seul garde-fou. */
-var VS_VUES_URL = ['moteur', 'theorycraft', 'seasons', 'analytics', 'scout', 'crm'];
+var VS_VUES_URL = ['builds', 'moteur', 'theorycraft', 'seasons', 'analytics', 'scout', 'crm'];
 function ouvrirVueDepuisURL(){
   var vue = new URLSearchParams(window.location.search).get('vue');
   if (vue && VS_VUES_URL.indexOf(vue) >= 0 && typeof switchPanel === 'function') switchPanel(vue);
@@ -21059,6 +21170,183 @@ function tcCharger(){
     document.head.appendChild(s);
   });
   return tcEnCours;
+}
+
+/* ══════════ RUBRIQUE « BUILDS CONSEILLÉS » ══════════
+   Aucune formule ici non plus : `T.chercherBuilds` fait tout le travail, cette page ne
+   fait que saisir la question et afficher la réponse. La recherche coûte ~700 ms, donc
+   elle est annoncée avant d'être lancée : un bouton qui gèle l'interface sans rien dire
+   passe pour un bug. */
+var boEtat = { champion:'', compo:['','','','',''], objectif:'equilibre', or:0 };
+
+function boOuvrir(){
+  tcCharger().then(function(ok){
+    var patch = document.getElementById('bo-patch');
+    if (!ok){
+      patch.textContent = 'moteur indisponible';
+      document.getElementById('bo-resultats').innerHTML =
+        '<div class="card tc-bloc"><div class="tc-legalite"><b>Moteur non chargé.</b> ' +
+        'Rien n\'est proposé plutôt qu\'un build approché.</div></div>';
+      return;
+    }
+    patch.textContent = 'données ' + window.vsTheorycraft.version;
+    boRendreCompo();
+  });
+}
+
+/* Cinq emplacements adverses, chacun avec sa recherche. On ne présélectionne personne :
+   une composition par défaut serait un matchup inventé, et tout le conseil en découle. */
+function boRendreCompo(){
+  document.getElementById('bo-compo').innerHTML = boEtat.compo.map(function(v, i){
+    return '<span class="bo-slot"><input class="tc-select" id="bo-adv' + i + '" value="' +
+      anEsc(v) + '" placeholder="Adversaire ' + (i + 1) + '…" autocomplete="off" ' +
+      'oninput="boChercher(' + i + ',this)" onfocus="boChercher(' + i + ',this)"/>' +
+      '<div class="bo-sugg" id="bo-sugg-' + i + '" hidden></div></span>';
+  }).join('');
+}
+
+/* Recherche par nom AFFICHÉ. Le sélecteur du calculateur est une liste de 173 entrées
+   qu'il faut faire défiler ; taper « jhi » est ce qu'on fait naturellement. */
+function boChercher(cle, input){
+  var T = window.vsTheorycraft; if (!T) return;
+  var q = (input.value || '').trim().toLowerCase();
+  var boite = document.getElementById('bo-sugg-' + cle);
+  var liste = Object.keys(T.champions).map(function(id){
+    return { id:id, nom:T.champions[id].nom || id, poste:(T.champions[id].postes || []).join('/') };
+  }).filter(function(c){ return !q || c.nom.toLowerCase().indexOf(q) >= 0; })
+    .sort(function(a,b){ return a.nom < b.nom ? -1 : 1; }).slice(0, 40);
+  if (!liste.length){ boite.hidden = true; return; }
+  boite.hidden = false;
+  boite.innerHTML = liste.map(function(c){
+    return '<button type="button" onclick="boChoisir(' + JSON.stringify(String(cle)) + ',' +
+      JSON.stringify(c.id) + ',' + JSON.stringify(c.nom) + ')">' + anEsc(c.nom) +
+      (c.poste ? '<span class="r">' + anEsc(c.poste) + '</span>' : '') + '</button>';
+  }).join('');
+}
+function boChoisir(cle, id, nom){
+  if (cle === 'moi'){ boEtat.champion = id; document.getElementById('bo-moi').value = nom; }
+  else { boEtat.compo[+cle] = id; document.getElementById('bo-adv' + cle).value = nom; }
+  document.getElementById('bo-sugg-' + cle).hidden = true;
+  boMajPart();
+}
+/* La part physique s'affiche dès qu'un adversaire est posé : le coach voit le matchup se
+   préciser au fur et à mesure, au lieu de découvrir le chiffre après coup. */
+function boMajPart(){
+  var T = window.vsTheorycraft; if (!T) return;
+  var compo = boEtat.compo.filter(Boolean);
+  var el = document.getElementById('bo-part');
+  if (!compo.length){ el.textContent = 'part physique déduite : —'; return; }
+  var m = T.matchupDepuisCompo(compo, +document.getElementById('bo-niveau').value || 18);
+  el.textContent = 'part physique déduite : ' + Math.round(m.partPhysique * 100) + ' % · ' +
+                   compo.length + '/5 adversaires';
+}
+function boSetObjectif(o){
+  boEtat.objectif = o;
+  document.querySelectorAll('#bo-objectif button').forEach(function(b){
+    b.classList.toggle('on', b.getAttribute('data-o') === o); });
+}
+function boMajOr(v){
+  boEtat.or = +v >= 20000 ? 0 : +v;
+  document.getElementById('bo-or-v').textContent = boEtat.or ? boEtat.or + ' po' : 'libre';
+}
+
+function boChercherBuilds(){
+  var T = window.vsTheorycraft; if (!T) return;
+  var res = document.getElementById('bo-resultats');
+  if (!boEtat.champion){
+    res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite"><b>Choisissez d\'abord votre champion.</b></div></div>';
+    return;
+  }
+  var compo = boEtat.compo.filter(Boolean);
+  if (!compo.length){
+    /* Refus explicite plutôt qu'une composition moyenne. Sans adversaire, « le meilleur
+       build » n'a pas de sens : c'est précisément ce que fait le reste du marché. */
+    res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">' +
+      '<b>Aucun adversaire saisi.</b><br>Le conseil dépend entièrement de la composition ' +
+      'd\'en face — sans elle, le moteur n\'a rien à optimiser contre.</div></div>';
+    return;
+  }
+
+  var niveau = +document.getElementById('bo-niveau').value || 18;
+  var slots  = +document.getElementById('bo-slots').value || 5;
+  res.innerHTML = '<div class="card tc-bloc"><p class="muted" style="margin:0">' +
+    'Recherche en cours sur les 105 objets légendaires…</p></div>';
+
+  /* Rendu du message AVANT le calcul : la recherche bloque le fil principal ~1 s, et
+     sans cette respiration le navigateur n'aurait jamais peint le message d'attente. */
+  setTimeout(function(){
+    var m = T.matchupDepuisCompo(compo, niveau);
+    var t0 = Date.now();
+    var r = T.chercherBuilds(boEtat.champion, niveau, m, {
+      objectif: boEtat.objectif, emplacements: slots, largeur: 8, combien: 4,
+      orMax: boEtat.or || undefined
+    });
+    if (!r){ res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">Recherche impossible.</div></div>'; return; }
+    boAfficher(r, Date.now() - t0);
+  }, 40);
+}
+
+function boAfficher(r, ms){
+  var html = '<div class="card tc-bloc"><div class="tc-titre">Contre ' + anEsc(r.matchup) +
+    '<span class="tc-compte">' + r.evaluations + ' builds essayés en ' + ms + ' ms</span></div>' +
+    '<p class="faint" style="font-size:11.5px;margin:0;line-height:1.5">' + anEsc(r.methode) +
+    '. Référence sans objets : ' + r.base.degats + ' dégâts, ' + r.base.survie +
+    ' PV effectifs — c\'est elle qui donne leur sens aux pourcentages ci-dessous.</p></div>';
+
+  r.builds.forEach(function(b, i){
+    /* La jauge est relative au PLUS GROS apport de CE build : elle compare des objets
+       entre eux, pas des builds entre eux. Une échelle commune écraserait les petits
+       builds et laisserait croire qu'ils n'apportent rien. */
+    var max = Math.max.apply(null, b.apports.map(function(a){ return Math.abs(a.partScore || 0); }).concat([1]));
+    html += '<div class="card bo-build" style="margin-top:12px">' +
+      '<div class="bo-rang"><span class="n">#' + (i + 1) + '</span>' +
+      '<span class="or">' + b.or + ' po</span>' +
+      '<span class="g">dégâts +' + b.gainDegatsPct + ' % · survie +' + b.gainSurviePct + ' %</span></div>' +
+      '<div class="bo-items">' + b.noms.map(function(n){ return '<span>' + anEsc(n) + '</span>'; }).join('') + '</div>' +
+      '<div class="bo-apports">' + b.apports.filter(function(a){
+        return b.objets.indexOf(a.id) >= 0;
+      }).map(function(a){
+        var pct = Math.max(2, Math.round(Math.abs(a.partScore || 0) / max * 100));
+        /* LES DEUX apports, toujours. N'afficher que les dégâts faisait mentir la
+           colonne : Jak'Sho ressortait deuxième du classement avec « +0 dg » à côté,
+           parce que tout son apport est défensif. Un chiffre qui contredit l'ordre où
+           il est rangé détruit la confiance dans le classement entier. */
+        var d = a.gainDegats != null ? Math.round(a.gainDegats) : null;
+        var s = a.gainSurvie != null ? Math.round(a.gainSurvie) : null;
+        var bouts = [];
+        if (d) bouts.push('+' + d + ' dg');
+        if (s) bouts.push('+' + s + ' PV');
+        return '<div class="bo-ap"><div><b>' + anEsc(a.nom) + '</b>' +
+          '<div class="bo-jauge"><i style="width:' + pct + '%"></i></div></div>' +
+          '<div class="v">' + (bouts.length ? bouts.join('<br>') : '—') + '</div></div>';
+      }).join('') + '</div>';
+    if (b.inutiles && b.inutiles.length){
+      html += '<div class="bo-ecarte">Écarté : ' +
+        anEsc(b.inutiles.map(function(x){ return x.nom; }).join(', ')) +
+        ' — n\'apporte rien à cet objectif, ' + b.orEconomise + ' po à dépenser ailleurs.</div>';
+    }
+    html += '</div>';
+  });
+
+  /* Le POURQUOI demandé : ce qui sépare le premier du deuxième, objet par objet. Un
+     classement sans cette ligne oblige à croire l'ordre sur parole. */
+  if (r.builds.length >= 2){
+    var a = r.builds[0], b2 = r.builds[1];
+    var propreA = a.noms.filter(function(n){ return b2.noms.indexOf(n) < 0; });
+    var propreB = b2.noms.filter(function(n){ return a.noms.indexOf(n) < 0; });
+    html += '<div class="card tc-bloc" style="margin-top:12px">' +
+      '<div class="tc-titre">Pourquoi le premier plutôt que le deuxième</div>' +
+      '<p class="muted" style="margin:0;font-size:13px">' +
+      (propreA.length
+        ? 'Ils partagent ' + (a.noms.length - propreA.length) + ' objets. Le premier prend <b>' +
+          anEsc(propreA.join(', ')) + '</b> là où le second prend <b>' + anEsc(propreB.join(', ')) +
+          '</b> : ' + Math.abs(a.degats - b2.degats) + ' dégâts et ' +
+          Math.abs(a.survie - b2.survie) + ' PV effectifs d\'écart, pour ' +
+          (a.or - b2.or >= 0 ? '+' : '') + (a.or - b2.or) + ' po.'
+        : 'Les deux builds portent les mêmes objets — seul l\'ordre de la recherche les sépare.') +
+      '</p></div>';
+  }
+  document.getElementById('bo-resultats').innerHTML = html;
 }
 
 /* ══════════ RUBRIQUE « LE MOTEUR » ══════════
