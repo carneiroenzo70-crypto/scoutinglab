@@ -269,15 +269,25 @@ const vAhri = O.valeurBuild('Ahri', 18, [6655, 3089], mMixte, { fenetre: 20, par
 vrai('  et l\'optimiseur le signale au lieu de le taire',
      vAhri.sansMitigation.some(x => /^Q/.test(x)), vAhri.sansMitigation.join(', '));
 
-/* ── LE SCÉNARIO : ce que le fichier de jeu ne dit pas ────────────────────────────
-   Combien d'attaques de base on porte vraiment ne se lit nulle part. Vérifié : les
-   champions extraits ne portent ni poste ni étiquette, et Ahri comme Jhin ont la même
-   portée de 550 — la donnée ne permet aucun défaut défendable. Le moteur le DEMANDE
-   donc, et la réponse change le conseil du tout au tout. */
+/* ── LE SCÉNARIO : ce que le fichier de jeu ne dit pas, et ce qu'il dit quand même ──
+   Ni poste ni étiquette de rôle dans les données, et Ahri comme Jhin ont la même portée
+   de 550 : les deux repères ÉVIDENTS sont bien absents. C'est ce qui a d'abord fait
+   poser la question au coach.
+
+   ⚠ DEUX ERREURS ONT ÉTÉ COMMISES ICI, et il vaut mieux les écrire que les effacer.
+
+   La première : « aucun défaut n'est dérivable ». Faux — la structure des ratios le
+   donne (section « Identité déduite » plus bas). Cette conclusion a coûté une rubrique
+   encombrée de deux rangées de boutons auxquelles personne ne pouvait répondre.
+
+   La seconde : « les champions ne portent AUCUN rôle ». Faux aussi, et généralisé
+   depuis un seul champion — Smolder, dont le rôle est nul. En réalité 90 des 173 en
+   portent un ; 83 n'en ont pas. C'est trop troué pour fonder le calcul, mais assez
+   pour VALIDER la déduction contre une donnée qu'elle n'a jamais regardée. */
 console.log('\n── Le scénario de combat change la recommandation');
-vrai('les données ne portent ni poste ni étiquette de rôle',
-     !champs.Ahri.postes && !champs.Ahri.tags,
-     'aucun défaut d\'attaques portées n\'est dérivable des données');
+vrai('la portée et le rôle ne suffisent pas : 83 champions sur 173 n\'ont pas de rôle',
+     Object.values(champs).filter(c => !c.role).length > 60,
+     Object.values(champs).filter(c => !c.role).length + ' sans rôle, dont Smolder');
 vrai('  et la portée ne sépare pas un mage d\'un tireur',
      champs.Ahri.base.portee === champs.Jhin.base.portee,
      'Ahri et Jhin : ' + champs.Ahri.base.portee);
@@ -305,6 +315,72 @@ const vSerre = O.valeurBuild('Ahri', 18, serre.builds[0].objets, mMixte, { partA
 vrai('  et elle chute quand le scénario se resserre',
      vSerre.partAttaques < vLibre.partAttaques,
      Math.round(vSerre.partAttaques * 100) + ' % contre ' + Math.round(vLibre.partAttaques * 100) + ' %');
+
+
+/* -- L'IDENTITE DEDUITE, qui remplace la question posee au coach --------------------
+   Le << scenario de combat >> etait un facteur de rattrapage deguise en reglage. Il se
+   deduit desormais de la STRUCTURE DES RATIOS des sorts. Ce qu'on verifie n'est pas
+   qu'un chiffre sort -- c'est qu'il SEPARE des champions que tout le monde sait
+   separer, a partir des donnees du jeu et non d'une table de roles ecrite a la main. */
+console.log('\n-- Identite deduite du champion --');
+
+const mages = ['Ahri', 'Lux', 'Veigar', 'Amumu', 'Malphite'];
+const tireurs = ['Caitlyn', 'Vayne', 'Kaisa', 'Ashe', 'Jhin', 'Smolder'];
+
+mages.forEach(id => {
+  const pr = O.profilChampion(id);
+  vrai('  ' + id + ' : kit sans le moindre ratio AD', pr.partAD === 0, 'partAD ' + pr.partAD);
+});
+tireurs.forEach(id => {
+  const pr = O.profilChampion(id);
+  vrai('  ' + id + ' : kit majoritairement AD', pr.partAD > 0.55, 'partAD ' + pr.partAD);
+});
+
+/* LE point qui compte : les deux familles ne doivent pas se RECOUVRIR. Si le plus
+   << auto >> des mages depassait le moins << auto >> des tireurs, la deduction ne
+   trancherait rien et vaudrait exactement la constante qu'elle remplace. */
+const hautMage = Math.max.apply(null, mages.map(id => O.profilChampion(id).partAttaques));
+const basTireur = Math.min.apply(null, tireurs.map(id => O.profilChampion(id).partAttaques));
+vrai('les deux familles ne se recouvrent pas', hautMage < basTireur,
+     'mage le plus haut ' + hautMage + ' < tireur le plus bas ' + basTireur);
+
+vrai('Smolder porte des ratios de CRIT dans ses sorts eux-memes',
+     O.profilChampion('Smolder').ratioCrit > 0,
+     'ratioCrit ' + O.profilChampion('Smolder').ratioCrit);
+
+vrai('a ratios AD comparables, le corps-a-corps compte moins d attaques',
+     O.profilChampion('Darius').partAttaques < O.profilChampion('Caitlyn').partAttaques,
+     'Darius ' + O.profilChampion('Darius').partAttaques +
+     ' < Caitlyn ' + O.profilChampion('Caitlyn').partAttaques);
+
+/* Sans consigne, valeurBuild doit EMPLOYER la deduction : c'est le defaut a 1 (frappe
+   libre permanente) qui conseillait une Lame d'infini a Ahri. */
+const mRef2 = O.matchupDepuisCompo(['Aatrox', 'Amumu', 'Fizz', 'Ashe', 'Alistar'], 18);
+vrai('sans consigne, la part deduite est employee et non 1',
+     Math.round(O.valeurBuild('Ahri', 18, [3031], mRef2, {}).degats) <
+     Math.round(O.valeurBuild('Ahri', 18, [3031], mRef2, { partAttaques: 1 }).degats));
+
+/* VALIDATION CROISEE, et c'est la verification la plus forte du lot : 90 champions
+   portent un `role` declare dans les donnees. La deduction ne le regarde JAMAIS -- elle
+   ne lit que les ratios des sorts. Si les deux concordent, c'est que la deduction
+   attrape quelque chose de reel et non un artefact de la formule. */
+const parRole = {};
+Object.entries(require('./champions.json')).forEach(([id, c]) => {
+  if (!c.role) return;
+  (parRole[c.role] = parRole[c.role] || []).push(O.profilChampion(id).partAD);
+});
+const moy = r => parRole[r].reduce((a, b) => a + b, 0) / parRole[r].length;
+vrai('validation croisee : les roles AD ressortent au-dessus des roles AP',
+     Math.min(moy('ADC'), moy('Top'), moy('Jungle')) > Math.max(moy('Mid'), moy('Support')) + 0.3,
+     'ADC ' + Math.round(moy('ADC') * 100) + '% / Top ' + Math.round(moy('Top') * 100) +
+     '% / Jungle ' + Math.round(moy('Jungle') * 100) + '%  contre  Mid ' +
+     Math.round(moy('Mid') * 100) + '% / Support ' + Math.round(moy('Support') * 100) + '%');
+
+/* Le resultat final, sans AUCUNE question posee : Ahri doit sortir un build de mage. */
+const sansQuestion = O.chercherBuilds('Ahri', 18, mRef2, { objectif: 'degats', emplacements: 5 });
+const nomsAhri = sansQuestion.builds[0].noms.join(' | ');
+vrai('sans aucune question posee, Ahri sort un build de mage',
+     !/Lame d'infini|Danseur/.test(nomsAhri), nomsAhri);
 
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);

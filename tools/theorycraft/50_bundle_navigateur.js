@@ -131,6 +131,7 @@ ${source}
     pageLegale: legalite.pageLegale,
     /* Optimiseur : la seule partie du moteur qui RÉPOND à « lequel prendre ? » plutôt
        qu'à « combien vaut celui-ci ? ». */
+    profilChampion: optimiseur.profilChampion,
     matchupDepuisCompo: optimiseur.matchupDepuisCompo,
     chercherBuilds: optimiseur.chercherBuilds,
     comparerBuilds: optimiseur.comparerBuilds,

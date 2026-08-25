@@ -22181,6 +22181,95 @@
     const parId = {};
     items.forEach(o => { parId[o.id] = o; });
     
+    /* ── 0. L'IDENTITÉ DU CHAMPION, déduite au lieu d'être demandée ───────────────────
+       Le modèle réclamait un « scénario de combat » : quelle part de vos attaques de base
+       portent réellement. C'était une question sans réponse honnête pour celui qui la lit,
+       et surtout : c'était un FACTEUR DE RATTRAPAGE déguisé en réglage. Sans lui, les
+       attaques de base écrasaient les sorts et Ahri repartait avec une Lame d'infini.
+    
+       Trois manières de le déduire ont été essayées et MESURÉES avant celle-ci :
+    
+       · Par le NIVEAU d'achat (un 1er objet s'achète niveau 8, pas 18) — réfuté : le
+         classement du premier objet est identique aux niveaux 8, 11, 13 et 18.
+       · Par les DÉGÂTS DU KIT NU (sorts contre attaques, sans objets) — réfuté : sans
+         objets, tout le monde a la même attaque de base et aucun ratio ne s'exprime. Ça
+         donnait Lux à 56 % d'attaques et Jhin à 32 %, soit l'inverse de la vérité.
+       · En SOMMANT tous les calculs de dégâts d'un sort — réfuté, et dangereusement :
+         sur 567 sorts, 224 portent plusieurs calculs, et ce sont presque toujours des
+         ALTERNATIVES, pas des composantes. Sion Q = Min/Max de la charge, Gnar = forme
+         Mini/Mega, Renekton = avec ou sans fureur. Les additionner doublerait à quadruplerait
+         leurs dégâts. Un seul calcul du jeu porte le marqueur `TooltipOnly` : aucune règle
+         mécanique ne sépare l'additif de l'alternatif. Prendre le premier reste le choix
+         prudent.
+    
+       Ce qui MARCHE est ailleurs : non pas dans les dégâts du kit, mais dans la STRUCTURE
+       DE SES RATIOS. Elle sépare nettement, et elle vient du fichier de jeu :
+    
+           Ahri, Lux, Amumu, Malphite, Veigar ..  0 % AD  → l'attaque de base n'est pas leur plan
+           Aatrox, Darius, Garen ............... 100 % AD, portée 175
+           Caitlyn 85 %, Vayne 83 %, Kaisa 74 %, Ashe 66 %, Jhin 63 %
+           Smolder ............................. 61 % AD, et 3,50 de ratios de CRIT dans ses sorts
+    
+       Reste UNE convention — la formule ci-dessous. Elle est inventée, comme toute
+       convention ; la différence avec le curseur d'avant est qu'elle s'applique
+       uniformément, se déduit de chiffres réels propres à chaque champion, et s'affiche
+       avec sa justification au lieu d'être réclamée à quelqu'un qui n'a pas les moyens d'y
+       répondre. */
+    function profilChampion(champId) {
+      const c = champions[champId];
+      if (!c) return null;
+      let ad = 0, ap = 0, crit = 0;
+      const parcourir = termes => (termes || []).forEach(t => {
+        const v = Math.abs(t.valeur || 0);
+        if (t.stat === 'AD') ad += v;
+        else if (t.stat === 'AP') ap += v;
+        else if (t.stat === 'Crit' || t.stat === 'DegatsCrit') crit += v;
+        parcourir(t.multTermes);
+        parcourir(t.facteurTermes);
+      });
+      Object.values(c.sorts || {}).forEach(s => {
+        Object.values(s.calculs || {}).forEach(cal => {
+          if (cal.genre !== 'degats') return;
+          const rangs = Object.keys(cal.parRang || {}).map(Number);
+          if (!rangs.length) return;
+          parcourir(cal.parRang[Math.max.apply(null, rangs)]);
+        });
+      });
+    
+      const somme = ad + ap;
+      /* Un kit sans le moindre ratio (rare, et souvent un champion mal extrait) : on ne
+         tranche pas, on prend le milieu plutôt que d'affirmer 0 % ou 100 %. */
+      const partAD = somme ? ad / somme : 0.5;
+      const portee = (c.base || {}).portee || 0;
+      const corpsACorps = portee < 300;
+    
+      /* La convention, en clair. Un kit tout en ratios AD frappe fort à l'attaque de base ;
+         un kit tout en AP ne le fait pas. Le corps-à-corps doit d'abord rejoindre sa cible
+         et se fait repousser : il ne frappe jamais librement. Des ratios de CRIT dans les
+         sorts eux-mêmes (Smolder, Caitlyn, Yasuo) signent un champion dont les objets de
+         critique servent AUSSI aux compétences. */
+      let part = 0.30 + 0.55 * partAD;
+      if (crit > 0) part += 0.05;
+      if (corpsACorps) part *= 0.6;
+      part = Math.max(0.15, Math.min(0.95, part));
+    
+      return {
+        nom: c.nom || champId,
+        partAD: Math.round(partAD * 100) / 100,
+        ratioAD: Math.round(ad * 100) / 100,
+        ratioAP: Math.round(ap * 100) / 100,
+        ratioCrit: Math.round(crit * 100) / 100,
+        portee, corpsACorps,
+        partAttaques: Math.round(part * 100) / 100,
+        /* La phrase que l'interface affiche : le conseil doit pouvoir se défendre tout seul. */
+        raison: (somme
+            ? 'ses sorts portent ' + Math.round(partAD * 100) + ' % de ratios AD'
+            : 'aucun ratio exploitable dans ses sorts') +
+          (crit > 0 ? ' et des ratios de coup critique' : '') +
+          ', portée ' + portee + (corpsACorps ? ' (corps à corps)' : ' (à distance)')
+      };
+    }
+    
     /* ── 1. Le matchup ────────────────────────────────────────────────────────────────
        « En fonction du matchup » veut dire quelque chose de précis : la composition d'en
        face décide à la fois de CE QU'ON SUBIT (donc de l'armure ou de la résistance magique
@@ -22300,7 +22389,13 @@
            pèsent dans le score, pour qu'un 84 % saute aux yeux au lieu de se cacher dans un
            classement d'objets. */
         const aa = M.degatsAttaque(p, cible);
-        const partAA = options.partAttaques != null ? options.partAttaques : 1;
+        /* Plus de valeur par défaut à 1 : le maximum théorique « ne suppose rien » sur le
+           papier, mais il suppose en réalité une cible qui ne bouge pas et ne meurt jamais,
+           et c'est lui qui conseillait une Lame d'infini à Ahri. À défaut de consigne, on
+           prend l'identité DÉDUITE du champion (§ 0) plutôt qu'une constante. */
+        const partAA = options.partAttaques != null
+          ? options.partAttaques
+          : (profilChampion(champId) || { partAttaques: 0.6 }).partAttaques;
         if (aa && aa.dps != null) {
           const auto = aa.dps * fenetre * partAA;
           degatsAttaques += auto;
@@ -22674,7 +22769,7 @@
       };
     }
     
-    module.exports = { CANDIDATS, RUNES, matchupDepuisCompo, valeurBuild, score,
+    module.exports = { CANDIDATS, RUNES, profilChampion, matchupDepuisCompo, valeurBuild, score,
                        chercherBuilds, comparerBuilds, chercherRunes, ordreAchat };
     
   };
@@ -22719,6 +22814,7 @@
     pageLegale: legalite.pageLegale,
     /* Optimiseur : la seule partie du moteur qui RÉPOND à « lequel prendre ? » plutôt
        qu'à « combien vaut celui-ci ? ». */
+    profilChampion: optimiseur.profilChampion,
     matchupDepuisCompo: optimiseur.matchupDepuisCompo,
     chercherBuilds: optimiseur.chercherBuilds,
     comparerBuilds: optimiseur.comparerBuilds,

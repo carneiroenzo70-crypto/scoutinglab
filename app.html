@@ -5675,34 +5675,31 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               La part physique n'est pas un curseur à régler : elle est déduite du type de
               dégâts des sorts de ces cinq champions. C'est elle qui décide si l'armure ou
               la résistance magique vaut quelque chose dans ce match.</p>
-            <div class="tc-titre" style="margin-top:4px">Ce que vous cherchez</div>
-            <div class="bo-obj" id="bo-objectif">
-              <button type="button" data-o="degats" onclick="boSetObjectif('degats')">Faire des dégâts</button>
-              <button type="button" data-o="survie" onclick="boSetObjectif('survie')">Tenir debout</button>
-              <button type="button" class="on" data-o="equilibre" onclick="boSetObjectif('equilibre')">Les deux</button>
-            </div>
-
-            <!-- Le SCÉNARIO. Sans lui, le moteur supposait qu'on frappe librement pendant
-                 toute la fenêtre : 26 attaques de base d'affilée sur une cible qui ne
-                 bouge pas. C'est ce qui conseillait une Lame d'infini à Ahri et une
-                 panoplie de tireur à Aatrox. Aucune donnée du jeu ne dit combien
-                 d'attaques on porte vraiment — ni poste ni rôle dans le fichier, et Ahri
-                 comme Jhin ont la même portée de 550. Le moteur ne le devine donc pas :
-                 il le demande, et refuse de chercher tant que ce n'est pas répondu. -->
-            <div class="tc-titre" style="margin-top:4px">Comment se passe le combat
-              <span class="tc-compte" id="bo-scenario-etat">à préciser</span></div>
-            <div class="bo-obj" id="bo-scenario">
-              <button type="button" data-s="0.25" onclick="boSetScenario(0.25)">Corps à corps disputé</button>
-              <button type="button" data-s="0.5" onclick="boSetScenario(0.5)">Échanges</button>
-              <button type="button" data-s="1" onclick="boSetScenario(1)">Frappe libre</button>
-            </div>
-            <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
-              Combien d'attaques de base vous portez réellement change tout le conseil.
-              Le fichier de jeu ne le dit pas — c'est à vous, qui connaissez le poste et
-              le style de jeu. Rien n'est présélectionné : un défaut serait un chiffre
-              inventé de plus.</p>
+            <!-- Deux rangées de boutons ont disparu d'ici, et c'est le point important.
+                 On demandait « comment se passe le combat » — quelle part de vos attaques
+                 de base portent vraiment. Personne ne peut répondre à ça par un chiffre,
+                 et c'était surtout un facteur de rattrapage déguisé en réglage : sans lui,
+                 les attaques de base écrasaient les sorts et Ahri repartait avec une Lame
+                 d'infini. Il se DÉDUIT maintenant de la structure des ratios du champion
+                 (voir § 0 de tools/theorycraft/44_optimiseur.js), et s'affiche avec sa
+                 justification dans les résultats. On ne demande plus que la composition
+                 d'en face — ce que le coach est le seul à connaître. -->
             <button type="button" class="btn btn-cta" onclick="boChercherBuilds()"
-                    style="margin-top:4px">Chercher les meilleurs builds</button>
+                    style="margin-top:8px">Chercher les meilleurs builds</button>
+            <details class="bo-details" style="margin-top:2px">
+              <summary>Chercher autre chose que le maximum de dégâts</summary>
+              <div class="bo-obj" id="bo-objectif" style="margin-top:6px">
+                <button type="button" class="on" data-o="degats" onclick="boSetObjectif('degats')">Faire des dégâts</button>
+                <button type="button" data-o="survie" onclick="boSetObjectif('survie')">Tenir debout</button>
+                <button type="button" data-o="equilibre" onclick="boSetObjectif('equilibre')">Les deux</button>
+              </div>
+              <p class="faint" style="font-size:11.5px;margin:6px 0 0;line-height:1.45">
+                « Les deux » prend la moyenne géométrique des deux progressions. Sur un
+                porteur de dégâts elle penche lourdement vers la défense — Caitlyn en
+                ressort avec Warmog et Jak'Sho — parce qu'un premier objet défensif double
+                presque les PV effectifs là où un quatrième objet offensif n'ajoute que
+                quelques pourcents. C'est pourquoi le défaut est « faire des dégâts ».</p>
+            </details>
           </div>
         </div>
 
@@ -21236,11 +21233,15 @@ function tcCharger(){
    fait que saisir la question et afficher la réponse. La recherche coûte ~700 ms, donc
    elle est annoncée avant d'être lancée : un bouton qui gèle l'interface sans rien dire
    passe pour un bug. */
-var boEtat = { champion:'', compo:['','','','',''], objectif:'equilibre', or:0,
-               /* null et non 1 : tant que le coach n'a pas dit comment se passe le
-                  combat, le moteur refuse de chercher. Un 1 par défaut aurait supposé
-                  une frappe libre permanente — l'hypothèse qui conseillait une Lame
-                  d'infini à Ahri. */
+var boEtat = { champion:'', compo:['','','','',''],
+               /* « degats » et non « equilibre ». La moyenne géométrique de l'équilibre
+                  penche lourdement vers la défense sur un porteur de dégâts : elle rendait
+                  Warmog et Jak'Sho à Caitlyn et à Ashe. Mesuré sur les deux objectifs,
+                  « degats » rend des builds qu'on reconnaît — Ahri : Rabadon, Créateur de
+                  failles, Bâton du vide ; Caitlyn : Salutations de Dominik, Lame d'infini. */
+               objectif:'degats', or:0,
+               /* null veut désormais dire « déduis-le », et non plus « refuse de chercher » :
+                  la part des attaques se calcule à partir des ratios du champion. */
                partAttaques:null };
 
 /* Icônes officielles Data Dragon, comme partout ailleurs dans l'application
@@ -21346,13 +21347,6 @@ function boSetObjectif(o){
   document.querySelectorAll('#bo-objectif button').forEach(function(b){
     b.classList.toggle('on', b.getAttribute('data-o') === o); });
 }
-function boSetScenario(v){
-  boEtat.partAttaques = v;
-  document.querySelectorAll('#bo-scenario button').forEach(function(b){
-    b.classList.toggle('on', +b.getAttribute('data-s') === v); });
-  document.getElementById('bo-scenario-etat').textContent =
-    Math.round(v * 100) + ' % des attaques portées';
-}
 function boMajOr(v){
   boEtat.or = +v >= 20000 ? 0 : +v;
   document.getElementById('bo-or-v').textContent = boEtat.or ? boEtat.or + ' po' : 'libre';
@@ -21363,14 +21357,6 @@ function boChercherBuilds(){
   var res = document.getElementById('bo-resultats');
   if (!boEtat.champion){
     res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite"><b>Choisissez d\'abord votre champion.</b></div></div>';
-    return;
-  }
-  if (boEtat.partAttaques == null){
-    /* Même refus que pour la composition, et pour la même raison : sans ce fait, le
-       conseil serait construit sur une hypothèse que personne n'a posée. */
-    res.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">' +
-      '<b>Dites comment se passe le combat.</b><br>Le nombre d\'attaques de base que vous ' +
-      'portez vraiment décide de tout le reste — et le fichier de jeu ne le dit pas.</div></div>';
     return;
   }
   var compo = boEtat.compo.filter(Boolean);
@@ -21407,6 +21393,8 @@ function boChercherBuilds(){
     var vRef = T.valeurBuild(boEtat.champion, niveau, r.builds[0].objets, m,
                              { partAttaques: boEtat.partAttaques });
     r.partAttaques = vRef ? vRef.partAttaques : null;
+    /* L'identité DÉDUITE du champion — ce qui remplace la question qu'on posait. */
+    r.profil = T.profilChampion(boEtat.champion);
     /* Les sorts que le modèle ne sait PAS mitiger (type mixte : il ignore quelle part
        passe par l'armure et quelle part par la résistance magique, et refuse d'inventer).
        Leur nombre décide d'un second avertissement — voir boAfficher. */
@@ -21447,16 +21435,30 @@ function boAfficher(r, ms){
      attaques de base, le classement d'objets ne dit plus grand-chose du champion : c'est
      ce qui a conseillé une Lame d'infini à Ahri et une panoplie de tireur à Aatrox. On
      le montre au lieu de le laisser deviner. */
-  if (r.partAttaques != null && r.partAttaques >= 0.6){
-    html += '<div class="card tc-bloc" style="border-color:rgba(245,166,35,.45);' +
-      'background:linear-gradient(180deg,rgba(245,166,35,.08),rgba(245,166,35,.02))">' +
-      '<div class="tc-titre" style="color:#F5A623">À lire avant de suivre ce conseil</div>' +
-      '<p class="mo-d" style="margin:0">Dans le scénario choisi, <b>' +
-      Math.round(r.partAttaques * 100) + ' %</b> des dégâts viennent des <b>attaques de ' +
-      'base</b>. Le classement récompense donc surtout la vitesse d\'attaque et les coups ' +
-      'critiques. Si votre champion ne peut pas frapper librement pendant tout le combat — ' +
-      'un corps-à-corps, un mage — choisissez un scénario plus serré : le conseil change ' +
-      'complètement.</p></div>';
+  /* CE QU'ON NE DEMANDE PLUS. La part des attaques de base était une question posée au
+     coach ; elle se déduit maintenant de la structure des ratios du champion. Puisque le
+     chiffre décide d'une bonne partie du conseil, il s'affiche avec sa justification —
+     déduire à la place de quelqu'un n'autorise pas à le faire dans son dos. */
+  if (r.profil){
+    html += '<div class="card tc-bloc"><div class="tc-titre">Ce que le moteur a déduit de ' +
+      anEsc(r.profil.nom || r.champion) + '</div>' +
+      '<p class="mo-d" style="margin:0"><b>' + Math.round(r.profil.partAttaques * 100) +
+      ' % de ses attaques de base</b> sont comptées, parce que ' + anEsc(r.profil.raison) +
+      '.' + (r.partAttaques != null
+        ? ' Dans le build retenu, elles pèsent <b>' + Math.round(r.partAttaques * 100) +
+          ' %</b> des dégâts.' : '') +
+      '</p><details class="bo-details"><summary>Pourquoi ce n\'est plus une question posée</summary>' +
+      '83 champions sur 173 n\'ont aucun rôle renseigné (dont Smolder), et Ahri comme ' +
+      'Jhin ont la même portée de 550 — on demandait donc au coach « comment se passe le ' +
+      'combat ». C\'était un ' +
+      'facteur de rattrapage déguisé en réglage. Ce qui sépare vraiment les champions est ' +
+      'la STRUCTURE DE LEURS RATIOS, elle bien présente : Ahri, Lux et Amumu portent 0 % ' +
+      'de ratios AD, Aatrox et Darius 100 %, Caitlyn 85 %, ' + anEsc(r.profil.nom || r.champion) +
+      ' ' + Math.round(r.profil.partAD * 100) + ' %' +
+      (r.profil.ratioCrit > 0 ? ' avec ' + r.profil.ratioCrit + ' de ratios de crit dans ses sorts' : '') +
+      '. Trois autres pistes ont été essayées et mesurées avant celle-ci — le niveau ' +
+      'd\'achat, les dégâts du kit sans objets, la somme des calculs de dégâts — et les ' +
+      'trois se sont révélées fausses.</details></div>';
   }
 
   /* ⚠ SECOND AVERTISSEMENT, et le plus grave quand il tombe. Un sort de type MIXTE

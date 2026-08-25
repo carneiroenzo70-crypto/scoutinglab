@@ -114,6 +114,9 @@ const resultat = (sup = {}) => Object.assign({
   matchup: 'Aatrox, Amumu', evaluations: 3209, methode: 'méthode',
   base: { degats: 2000, survie: 3000 },
   partAttaques: 0.3, sansMitigation: [], sortsDegats: 4,
+  champion: 'Smolder',
+  profil: { nom: 'Smolder', partAttaques: 0.69, partAD: 0.61, ratioCrit: 3.5,
+            raison: 'ses sorts portent 61 % de ratios AD' },
   runes: {
     evaluations: 27, legale: true, majeure: { nom: 'Comète', arbre: 'Sorcellerie' },
     principal: [{ nom: 'A' }], secondaire: { arbre: 'Précision', runes: [{ nom: 'B' }] },
@@ -132,6 +135,10 @@ test('la page de runes est rendue AVANT le premier build', () => {
   const build = html.indexOf('>#1<');
   assert.ok(runes > 0, 'le bloc de runes doit être rendu');
   assert.ok(build > 0, 'le premier build doit être rendu');
+  const profil = html.indexOf('Ce que le moteur a déduit');
+  assert.ok(profil > 0 && profil < runes,
+    'l\'identité déduite du champion doit ouvrir les résultats : elle conditionne tout ' +
+    'le reste du conseil, et remplace une question qu\'on posait au coach');
   assert.ok(runes < build,
     'la page de runes se choisit avant le premier achat : elle doit précéder les builds ' +
     '(runes à ' + runes + ', build #1 à ' + build + ')');
