@@ -21407,6 +21407,16 @@ function boChercherBuilds(){
     var vRef = T.valeurBuild(boEtat.champion, niveau, r.builds[0].objets, m,
                              { partAttaques: boEtat.partAttaques });
     r.partAttaques = vRef ? vRef.partAttaques : null;
+    /* Les sorts que le modèle ne sait PAS mitiger (type mixte : il ignore quelle part
+       passe par l'armure et quelle part par la résistance magique, et refuse d'inventer).
+       Leur nombre décide d'un second avertissement — voir boAfficher. */
+    r.sansMitigation = vRef ? vRef.sansMitigation : [];
+    r.sortsDegats = Object.keys((T.champions[boEtat.champion] || {}).sorts || {})
+      .filter(function(t){
+        var s = T.champions[boEtat.champion].sorts[t];
+        return s && !s.nonExploitable && Object.keys(s.calculs || {}).some(function(n){
+          return s.calculs[n].genre === 'degats'; });
+      }).length;
 
     attendre('Builds trouvés. Ordre d\'achat et page de runes…', function(){
       /* L'ordre d'achat du build retenu, puis la page de runes qui va avec CE build —
@@ -21447,6 +21457,64 @@ function boAfficher(r, ms){
       'critiques. Si votre champion ne peut pas frapper librement pendant tout le combat — ' +
       'un corps-à-corps, un mage — choisissez un scénario plus serré : le conseil change ' +
       'complètement.</p></div>';
+  }
+
+  /* ⚠ SECOND AVERTISSEMENT, et le plus grave quand il tombe. Un sort de type MIXTE
+     (physiques + magiques, parfois + bruts) n'est pas mitigé par le modèle : il ne sait
+     pas quelle part passe par l'armure et laquelle par la résistance magique, et refuse
+     d'inventer. On retient alors ses dégâts BRUTS, non réduits.
+
+     Tant que ça touche un sort sur quatre, c'est une approximation. Quand ça touche
+     l'essentiel du kit — SMOLDER : Q, W et E, soit trois sorts sur quatre — deux choses
+     se cassent d'un coup : les dégâts du champion sont surévalués, et surtout la
+     PÉNÉTRATION D'ARMURE ne peut plus rien lui apporter, puisque ces dégâts ne rencontrent
+     jamais d'armure. Le classement d'objets perd alors son sens pour ce champion-là. Il
+     faut le dire, pas le laisser deviner. */
+  if (r.sansMitigation && r.sansMitigation.length && r.sortsDegats &&
+      r.sansMitigation.length >= r.sortsDegats / 2){
+    html += '<div class="card tc-bloc" style="border-color:rgba(224,90,90,.45);' +
+      'background:linear-gradient(180deg,rgba(224,90,90,.08),rgba(224,90,90,.02))">' +
+      '<div class="tc-titre" style="color:#E05A5A">Ce champion est mal modélisé — conseil peu fiable</div>' +
+      '<p class="mo-d" style="margin:0"><b>' + r.sansMitigation.length + ' de ses ' +
+      r.sortsDegats + ' sorts</b> sont de type <b>mixte</b> (' +
+      anEsc(r.sansMitigation.join(', ')) + ') : le modèle ne sait pas quelle part passe ' +
+      'par l\'armure et laquelle par la résistance magique, il compte donc leurs dégâts ' +
+      '<b>bruts, non réduits</b>. Deux conséquences : ces dégâts sont <b>surévalués</b>, et ' +
+      'la <b>pénétration d\'armure ne leur sert à rien</b> dans le calcul. Le classement ' +
+      'ci-dessous vaut pour les statistiques pures ; ne le suivez pas contre l\'avis des ' +
+      'joueurs de ce champion.</p></div>';
+  }
+
+  /* ── LA PAGE DE RUNES, AVANT les objets ────────────────────────────────────────────
+     Elle se choisit en premier dans une partie — avant le moindre achat — et elle ne se
+     rachète pas. La placer après le build inversait l'ordre de la décision réelle. */
+  if (r.runes){
+    var R = r.runes;
+    html += '<div class="card tc-bloc" style="margin-top:12px">' +
+      '<div class="tc-titre">Page de runes conseillée' +
+      '<span class="tc-compte">' + R.evaluations + ' pages essayées</span></div>' +
+      (R.legale === false
+        ? '<div class="tc-legalite"><b>Page refusée :</b> ' +
+          anEsc((R.infractions || []).map(function(x){ return x.regle; }).join(', ')) + '</div>'
+        : '') +
+      '<div class="bo-runes">' +
+      '<div><span class="t">Majeure</span><b>' + anEsc(R.majeure.nom) + '</b>' +
+        '<span class="a">' + anEsc(R.majeure.arbre) + '</span></div>' +
+      '<div><span class="t">Arbre principal</span>' +
+        anEsc(R.principal.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '<div><span class="t">Secondaire — ' + anEsc(R.secondaire.arbre) + '</span>' +
+        anEsc(R.secondaire.runes.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '<div><span class="t">Fragments</span>' +
+        anEsc(R.fragments.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
+      '</div>' +
+      '<details class="bo-details"><summary>Comment cette page est choisie</summary>' +
+      'La page apporte +' + R.gainDegatsPct + ' % de dégâts et +' + R.gainSurviePct +
+      ' % de survie' + (R.apportMajeure ? ', dont ' + R.apportMajeure + ' dégâts pour la seule majeure' : '') +
+      '. ' + anEsc(R.methode) + '. Elle est évaluée AVEC le build retenu ci-dessous : une ' +
+      'majeure de dégâts ne vaut pas la même chose selon ce qu\'on porte.<br>' +
+      'À noter : aucune rune du jeu ne donne de l\'armure sans résistance magique. Une page ' +
+      'défensive ne peut donc pas dépendre de la répartition des dégâts d\'en face — ' +
+      'contrairement aux objets, où l\'écart est net.</details></div>';
   }
 
   r.builds.forEach(function(b, i){
@@ -21506,35 +21574,6 @@ function boAfficher(r, ms){
     }
     html += '</div>';
   });
-
-  /* ── LA PAGE DE RUNES ─────────────────────────────────────────────────────────── */
-  if (r.runes){
-    var R = r.runes;
-    html += '<div class="card tc-bloc" style="margin-top:12px">' +
-      '<div class="tc-titre">Page de runes conseillée' +
-      '<span class="tc-compte">' + R.evaluations + ' pages essayées</span></div>' +
-      (R.legale === false
-        ? '<div class="tc-legalite"><b>Page refusée :</b> ' +
-          anEsc((R.infractions || []).map(function(x){ return x.regle; }).join(', ')) + '</div>'
-        : '') +
-      '<div class="bo-runes">' +
-      '<div><span class="t">Majeure</span><b>' + anEsc(R.majeure.nom) + '</b>' +
-        '<span class="a">' + anEsc(R.majeure.arbre) + '</span></div>' +
-      '<div><span class="t">Arbre principal</span>' +
-        anEsc(R.principal.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
-      '<div><span class="t">Secondaire — ' + anEsc(R.secondaire.arbre) + '</span>' +
-        anEsc(R.secondaire.runes.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
-      '<div><span class="t">Fragments</span>' +
-        anEsc(R.fragments.map(function(x){ return x.nom; }).join(' · ')) + '</div>' +
-      '</div>' +
-      '<p class="faint" style="font-size:11.5px;margin:0;line-height:1.5">' +
-      'La page apporte +' + R.gainDegatsPct + ' % de dégâts et +' + R.gainSurviePct +
-      ' % de survie' + (R.apportMajeure ? ', dont ' + R.apportMajeure + ' dégâts pour la seule majeure' : '') +
-      '. ' + anEsc(R.methode) + '.<br>' +
-      'À noter : aucune rune du jeu ne donne de l\'armure sans résistance magique. Une page ' +
-      'défensive ne peut donc pas dépendre de la répartition des dégâts d\'en face — ' +
-      'contrairement aux objets, où l\'écart est net.</p></div>';
-  }
 
   /* Le POURQUOI demandé : ce qui sépare le premier du deuxième, objet par objet. Un
      classement sans cette ligne oblige à croire l'ordre sur parole. */
