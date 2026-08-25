@@ -207,15 +207,13 @@ vrai('  la puissance ne recule jamais quand on ajoute un objet',
    brute — les 120 permutations, le même critère, sans programmation dynamique — et on
    exige la MÊME aire. Sans ce test, « optimum prouvé » ne serait qu'une affirmation de
    plus, et la plus dangereuse du fichier puisqu'elle invite à ne pas vérifier. */
-const prixDe = id => (items.find(o => o.id === id) || {}).prix || 0;
-const baseJ = O.valeurBuild('Jhin', 18, [], mMixte, {});
-const memo = {};
-const puissanceDe = set => {
-  const k = set.slice().sort().join(',');
-  if (memo[k] == null) memo[k] = O.score(O.valeurBuild('Jhin', 18, set, mMixte, {}), baseJ, 'degats');
-  return memo[k];
-};
-const aireDe = p => p.reduce((a, _, k) => a + puissanceDe(p.slice(0, k)) * prixDe(p[k]), 0);
+/* ⚠ CE TEST A DEJA MENTI. Il refaisait la formule d'aire DE SON COTE. Quand le critere
+   a change dans le moteur (integration a travers les COMPOSANTS), la force brute est
+   restee sur l'ancienne formule : le test passait toujours, par coincidence, en
+   pretendant verifier un optimum qu'il ne verifiait plus. Un test qui duplique la
+   formule qu'il controle ne controle que lui-meme. Il appelle desormais le VRAI calcul,
+   extrait dans `moteurAire` exactement pour ca. */
+const aireDe = O.moteurAire('Jhin', 18, mMixte, { objectif: 'degats' }).aireOrdre;
 const permutations = a => a.length <= 1 ? [a]
   : [].concat(...a.map((x, i) => permutations(a.filter((_, j) => j !== i)).map(q => [x].concat(q))));
 let meilleureAire = -Infinity;

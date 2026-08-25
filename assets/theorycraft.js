@@ -22708,22 +22708,106 @@
        marché et efficace en premier — exactement la question que se pose un coach.
        Trier par « le plus fort d'abord » aurait ignoré le prix et conseillé de commencer par
        l'objet le plus cher, ce qui est le contraire de ce qu'on veut. */
+    /* ── LA COURBE DE CONSTRUCTION, et pourquoi elle manquait ──────────────────────────
+       Le critère ci-dessus tenait la puissance de l'étape k CONSTANTE pendant qu'on farmait
+       le prix de l'objet k+1. C'est faux, et le mensonge est précisément là où se joue la
+       règle que tout joueur connaît : on ne monte pas une Coiffe de Rabadon en premier.
+    
+       Mesuré : sur les 120 ordres possibles du build d'Ahri, Rabadon en 1er valait 99,02 %
+       de l'optimum et en 4e 98,23 %. Un écart de 1,8 %, et dans le MAUVAIS SENS. Le modèle
+       était donc incapable d'exprimer la règle — pas parce que le multiplicateur manquait
+       (`APAmp: 0.3` est bien là, et le moteur mesure +672 en 1er contre +1 618 en 4e), mais
+       parce qu'il supposait qu'on saute d'un objet fini au suivant.
+    
+       En réalité on farme À TRAVERS les composants, et on les porte. C'est là que les objets
+       se séparent, et c'est dans les données (`composeDe`, `prixRecette`, stats des
+       composants) :
+    
+           Coiffe de Rabadon   deux Baguettes trop grosses à 1 200 po — de l'AP brut, rien d'autre
+           Écho de Luden       Chapitre perdu à 1 200 po — 40 AP, 300 mana, 10 d'accélération
+           Torche noire        +314 dès 1 200 po, +448 à 2 100 po (Rabadon : +258 à 1 200 po)
+    
+       On intègre donc la puissance sur les PALIERS réels, composant par composant. Un objet
+       dont les composants ne donnent rien coûte cher en aire perdue pendant qu'on le monte.
+    
+       ⚠ DÉFAUT CONNU, non corrigé et qui biaise DANS LE SENS QUI M'ARRANGE — raison de plus
+       pour l'écrire : le moteur refuse les composants EN DOUBLE (règle « doublon », et
+       `profil` plafonne deux Baguettes trop grosses à 65 AP au lieu de 130). La règle est
+       juste pour les objets finis à passif unique, fausse pour les composants de base, qu'on
+       peut parfaitement porter en deux exemplaires. Le palier intermédiaire de la Coiffe est
+       donc sous-évalué. Corriger ça touche `profil` et la légalité, donc les 546
+       vérifications du moteur : ce n'est pas un correctif à glisser dans un coin. */
+    function paliersDeConstruction(id) {
+      const o = parId[id];
+      if (!o) return [];
+      /* Composants DISTINCTS : voir le défaut connu ci-dessus. */
+      return [...new Set(o.composeDe || [])].filter(c => parId[c]);
+    }
+    
+    /* Le calcul d'aire, EXTRAIT pour que la vérification puisse l'appeler au lieu de le
+       réécrire. La version précédente de ce fichier laissait la force brute du test refaire
+       la formule de son côté : quand le critère a changé ici, le test a continué à passer
+       avec l'ANCIEN — vert, et ne prouvant plus rien. Un test qui duplique la formule qu'il
+       vérifie ne vérifie que lui-même. */
+    function moteurAire(champId, niveau, matchup, options = {}) {
+      const base = valeurBuild(champId, niveau, [], matchup, options);
+      const objectif = options.objectif || 'equilibre';
+      let evaluations = 0;
+      const memo = {};
+      const puis = ens => {
+        const cle = ens.slice().sort().join(',');
+        if (memo[cle] === undefined) {
+          evaluations++;
+          memo[cle] = score(valeurBuild(champId, niveau, ens, matchup, options), base, objectif);
+        }
+        return memo[cle];
+      };
+    
+      /* L'aire gagnée en montant l'objet `id` depuis l'état `depuis`. On achète les
+         composants du plus rentable au moins rentable — ce que fait un joueur — puis la
+         recette. Chaque palier est tenu le temps de farmer le suivant. */
+      const rentabilite = {};
+      const aireDeMontage = (depuis, id) => {
+        const o = parId[id];
+        if (!o) return 0;
+        const comps = paliersDeConstruction(id).slice().sort((a, b) => {
+          if (rentabilite[a] === undefined) rentabilite[a] = puis([a]) / (parId[a].prix || 1);
+          if (rentabilite[b] === undefined) rentabilite[b] = puis([b]) / (parId[b].prix || 1);
+          return rentabilite[b] - rentabilite[a];
+        });
+        let aire = 0, porte = depuis.slice(), depense = 0;
+        comps.forEach(c => {
+          const prix = parId[c].prix || 0;
+          aire += puis(porte) * prix;          // on tient l'état courant en farmant ce composant
+          porte = porte.concat([c]);
+          depense += prix;
+        });
+        /* Le reste du prix : la recette, plus les composants en double que le modèle refuse. */
+        aire += puis(porte) * Math.max(0, (o.prix || 0) - depense);
+        return aire;
+      };
+    
+      const aireOrdre = ordre => {
+        let aire = 0, acquis = [];
+        (ordre || []).forEach(id => { aire += aireDeMontage(acquis, id); acquis = acquis.concat([id]); });
+        return aire;
+      };
+    
+      return { puis, aireDeMontage, aireOrdre, evaluations: () => evaluations };
+    }
+    
     function ordreAchat(champId, niveau, objets, matchup, options = {}) {
       const n = (objets || []).length;
       if (!n) return null;
       if (n > 6) return null;             // au-delà, 2^n cesse d'être négligeable
     
-      const base = valeurBuild(champId, niveau, [], matchup, options);
-      const objectif = options.objectif || 'equilibre';
-      let evaluations = 0;
+      const moteur = moteurAire(champId, niveau, matchup, options);
+      const puis = moteur.puis, aireDeMontage = moteur.aireDeMontage;
     
-      /* Puissance de CHAQUE sous-ensemble, une fois pour toutes. */
+      /* Puissance de CHAQUE sous-ensemble d'objets FINIS, une fois pour toutes. */
       const puissance = new Array(1 << n);
       for (let masque = 0; masque < (1 << n); masque++) {
-        const sous = objets.filter((_, i) => masque & (1 << i));
-        const v = valeurBuild(champId, niveau, sous, matchup, options);
-        evaluations++;
-        puissance[masque] = score(v, base, objectif);
+        puissance[masque] = puis(objets.filter((_, i) => masque & (1 << i)));
       }
     
       /* f(masque) = meilleure aire pour avoir acheté exactement ces objets-là. */
@@ -22735,8 +22819,10 @@
           if (!(masque & (1 << i))) continue;
           const avant = masque ^ (1 << i);
           if (f[avant] === -Infinity) continue;
-          /* On tenait la puissance de `avant` pendant qu'on farmait le prix de l'objet i. */
-          const aire = f[avant] + puissance[avant] * (parId[objets[i]].prix || 0);
+          /* On ne saute pas de `avant` à `avant + i` : on farme À TRAVERS les composants de
+             l'objet i, et on les porte pendant ce temps-là. C'est ce palier-là qui sépare un
+             objet qu'on peut monter tôt d'un multiplicateur qu'il faut garder pour la fin. */
+          const aire = f[avant] + aireDeMontage(objets.filter((_, k) => avant & (1 << k)), objets[i]);
           if (aire > f[masque]) { f[masque] = aire; dernier[masque] = i; }
         }
       }
@@ -22761,15 +22847,19 @@
     
       return {
         ordre: ordre.map(i => objets[i]),
-        etapes, evaluations,
+        etapes, evaluations: moteur.evaluations(),
         methode: 'optimum PROUVÉ par programmation dynamique sur les ' + (1 << n) +
-                 ' sous-ensembles — ici, contrairement au choix des objets, aucune heuristique',
-        critere: 'puissance intégrée sur l\'or dépensé : un objet bon marché et efficace ' +
-                 'passe devant un objet plus fort mais plus cher'
+                 ' sous-ensembles — l\'ordre des OBJETS est exact ; à l\'intérieur d\'un ' +
+                 'montage, l\'ordre des composants suit leur rentabilité par pièce d\'or, ' +
+                 'ce qui reste une heuristique',
+        critere: 'puissance intégrée sur l\'or dépensé, en tenant compte des COMPOSANTS : ' +
+                 'on farme à travers eux et on les porte, donc un objet dont les composants ' +
+                 'ne donnent rien coûte cher à monter tôt'
       };
     }
     
     module.exports = { CANDIDATS, RUNES, profilChampion, matchupDepuisCompo, valeurBuild, score,
+                       moteurAire, paliersDeConstruction,
                        chercherBuilds, comparerBuilds, chercherRunes, ordreAchat };
     
   };
