@@ -42,6 +42,23 @@ Vérifier le statut d'un build via l'API GitHub :
 Plafond dur. Un import de 100 parties **inédites** ne peut PAS être rapide tant que Riot
 n'accorde pas une clé Production (demande en cours).
 
+**⚠️ Le cron dépassait ce quota d'un facteur cinq (corrigé le 26/08/2026).** `cron-snapshot.js`
+émet une requête toutes les 220 ms, soit 4,5/s → **545 sur deux minutes** pour un quota de 100.
+Et il le faisait **en silence** : `if (!r.ok) return null` traite un 429 exactement comme une
+absence de données, donc le joueur était sauté sans laisser de trace. Arithmétique :
+**9 appels par joueur** (compte + league + liste + 6 matchs) = 45 pour un roster de cinq ;
+le budget de 100 partait en **11 joueurs**. Deux rosters passaient, trois non.
+Désormais :
+- **budget compté** (`CRON_BUDGET_RIOT`, défaut 90) — ⚠️ `compteur` vit au niveau du module,
+  il est **remis à zéro à chaque invocation** (sinon un démarrage à chaud repart épuisé en
+  répondant `ok:true`) ;
+- **mode `leger`** pour le vivier de scouting : **2 appels** au lieu de 9 (rang, LP et winrate
+  sortent de l'entrée de ligue — inutile de relire six matchs pour des chiffres déjà là) ;
+- **rotation** via `vs_track_curseur:<org>:<id>` : on reprend là où le budget s'est épuisé,
+  et le relevé du jour est **complété** et non écrasé ;
+- **rosters prioritaires** sur le vivier (le cœur payant ne doit pas être privé de budget) ;
+- le compte-rendu rend `appels`, `budget`, `budgetEpuise`, `refus429`.
+
 **Cache des matchs (2026-07-19)** : `api/riot.js` met en cache Upstash les ressources
 **immuables** (`/lol/match/v5/matches/<id>` et `/timeline` → clé `vs_match:<id>[:tl]`,
 TTL 30 j). Un match servi depuis le cache **ne consomme aucun quota Riot** → les

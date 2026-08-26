@@ -196,7 +196,23 @@ const vsStore = (function () {
            réseau occupé sans jamais converger. */
         const j = await r.json();
         versions[domain] = j.version;
-        const f = vsFusionDomaine(bases[domain], mien, j.data);
+        /* ⚠ GARDE-FOU. Fusionner contre un `null` reviendrait à considérer que l'autre
+           coach n'a rien — donc à réécrire mon seul état, donc à faire exactement ce
+           qu'on corrige. Or `data` peut légitimement manquer : la documentation d'Upstash
+           précise qu'un tableau de retour Lua « s'arrête au premier nil », et un domaine
+           jamais écrit vaut null pour de bon. On ne devine pas lequel des deux : on relit. */
+        let sien = j.data;
+        if (sien == null) {
+          try {
+            const g = await fetch('/api/store?domains=' + domain, { headers: vsAuthHeaders() });
+            if (g.ok) {
+              const gj = await g.json();
+              sien = gj[domain];
+              if (gj.__versions && gj.__versions[domain]) versions[domain] = gj.__versions[domain];
+            } else { return; }   // on ne sait pas : on garde le local et on retentera
+          } catch (_) { return; }
+        }
+        const f = vsFusionDomaine(bases[domain], mien, sien);
         unpack(domain, f.data);
         if (f.conflits.length && typeof showToast === 'function') {
           showToast('Modifications d\'un autre coach fusionnées. ' + f.conflits.length +
@@ -6124,6 +6140,26 @@ function rsSyncTrack() {   // pousse les rosters suivis au serveur (pour le cron
   _rsTrackTimer = setTimeout(function () {
     try {
       const rosters = rsAll().map(r => ({ rosterId: r.id, name: r.name, players: RS_ROLES.map(role => { const s = r.slots[role]; return (s && s.pseudo) ? { pseudo: s.pseudo, tag: s.tag || 'EUW', server: s.server || 'euw1', role } : null; }).filter(Boolean) }));
+      /* LE VIVIER DE SCOUTING, poussé comme un roster « léger ». Il partage le stockage
+         et la forme de relevé des rosters, donc le digest « Ce qui a changé » le lit
+         sans une ligne de plus — c'est tout l'intérêt de ne pas inventer un second
+         format. Le cron n'y fait que deux appels Riot par prospect et tourne d'un jour
+         sur l'autre : le budget est compté, il ne peut pas manger celui des rosters.
+
+         L'ORDRE compte, parce que le budget s'épuise : on suit d'abord ceux qu'on est en
+         train de négocier. Un prospect « Repéré » qu'on n'a jamais contacté vaut moins
+         qu'un joueur en essai, et un dossier « Signé » ou « Écarté » ne vaut plus rien
+         à suivre — il est exclu. */
+      const RANG_STAGE = { essai: 0, discussion: 1, contacter: 2, repere: 3 };
+      const vivier = (typeof crmPipeline !== 'undefined' ? crmPipeline : [])
+        .filter(p => p && p.playerName && RANG_STAGE[p.stage] !== undefined)
+        .sort((a, b) => (RANG_STAGE[a.stage] - RANG_STAGE[b.stage]) ||
+                        String(b.addedAt || '').localeCompare(String(a.addedAt || '')))
+        .map(p => ({ pseudo: p.playerName, tag: p.playerTag || 'EUW',
+                     server: p.server || 'euw1', role: p.role || '' }));
+      if (vivier.length) {
+        rosters.push({ rosterId: 'prospects', name: 'Vivier de scouting', leger: true, players: vivier });
+      }
       fetch('/api/roster-track', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()), body: JSON.stringify({ rosters }) }).catch(() => {});
     } catch (_) {}
   }, 800);
@@ -6386,8 +6422,13 @@ function vsdSignaux(snaps, options) {
      contenu les jours calmes apprend au coach à ne plus la lire. */
 var VSD_JOURS = 14;
 function vsdFmt(v, dec) { return (dec ? v.toFixed(dec) : Math.round(v)).toString().replace('.', ','); }
-function vsdHtml(roster) {
-  var snaps = rsSnapsGet(roster.id) || [];
+function vsdHtml(roster) { return vsdHtmlDe(roster.id); }
+/* Le même rendu sert au ROSTER et au VIVIER de scouting : les deux partagent le stockage
+   des relevés et leur forme. Les prospects n'ont que rang, LP et winrate (relevé léger,
+   deux appels Riot au lieu de neuf) — les mesures absentes sont simplement ignorées, il
+   n'y a donc rien de spécifique à écrire pour eux. */
+function vsdHtmlDe(id, sansRelevesTexte) {
+  var snaps = rsSnapsGet(id) || [];
   var r = vsdSignaux(snaps, { jours: VSD_JOURS });
   /* Le titre annonce la période RÉELLEMENT comparée, pas la fenêtre demandée. Quand
      l'historique est plus court que 14 jours, écrire « 14 derniers jours » ferait passer
@@ -6401,8 +6442,9 @@ function vsdHtml(roster) {
 
   if (!r.assez) {
     return h + '<div class="faint" style="font-size:.82rem;line-height:1.55">' +
-      anEsc(r.pourquoi || 'Pas assez de relevés.') +
-      ' Le relevé automatique tourne chaque matin ; cette section se remplira toute seule.' +
+      anEsc(r.pourquoi || 'Pas assez de relevés.') + ' ' +
+      anEsc(sansRelevesTexte ||
+        'Le relevé automatique tourne chaque matin ; cette section se remplira toute seule.') +
       '</div></div>';
   }
   if (!r.signaux.length) {
@@ -13706,6 +13748,10 @@ function crmSave() {
     localStorage.setItem('spes_crm_pipeline',   JSON.stringify(crmPipeline));
   } catch(e) {}
   if (typeof vsStore !== 'undefined') { vsStore.save('structures'); vsStore.save('crm'); }
+  /* Le vivier suivi par le cron est construit à partir du pipeline : sans cette ligne,
+     ajouter un prospect ne le ferait jamais entrer dans le suivi quotidien, et son
+     digest resterait désespérément vide sans qu'on comprenne pourquoi. */
+  if (typeof rsSyncTrack === 'function') rsSyncTrack();
 }
 
 function crmLoad() {
@@ -14070,6 +14116,29 @@ function crmRenderPipeline() {
     ['Score moyen', scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : '—'],
     ['Régions', regions.length],
   ].map(([k,v]) => '<div class="crm-kpi"><div class="k">' + k + '</div><div class="v">' + v + '</div></div>').join('');
+
+  /* ── CE QUI A CHANGÉ CHEZ LES PROSPECTS ────────────────────────────────────────
+     C'est ici que le suivi dans le temps vaut le plus cher : savoir qu'un joueur a pris
+     deux paliers PENDANT qu'on le négocie change la conversation, et aucun rapport
+     d'analyste ne le dira — il faudrait le redemander chaque matin. Le vivier est
+     poussé au cron par rsSyncTrack(), relevé en deux appels par prospect, en rotation. */
+  if (kp) {
+    var boite = document.getElementById('crm-digest');
+    if (!boite) {
+      boite = document.createElement('div');
+      boite.id = 'crm-digest';
+      kp.parentNode.insertBefore(boite, kp.nextSibling);
+    }
+    boite.innerHTML = vsdHtmlDe('prospects',
+      'Le vivier est relevé chaque matin, quelques prospects à la fois pour tenir dans le ' +
+      'quota de l\'API Riot : comptez deux ou trois jours avant les premiers écarts.');
+    if (_rsServerSnaps['prospects'] === undefined && typeof rsLoadSnaps === 'function') {
+      rsLoadSnaps('prospects').then(function () {
+        var b = document.getElementById('crm-digest');
+        if (b) b.innerHTML = vsdHtmlDe('prospects');
+      }).catch(function () {});
+    }
+  }
   // Table
   const list = crmFiltered();
   if (!list.length) {
