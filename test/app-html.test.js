@@ -620,3 +620,92 @@ test('l\'ancienne URL /api/roster-track est toujours servie par une réécriture
   assert.ok(!fs.existsSync(path.join(__dirname, '..', 'api', 'roster-track.js')),
     'le fichier doit avoir disparu, sinon la place n\'est pas rendue');
 });
+
+/* ── 14. Les builds joués en compétition ───────────────────────────────────────────
+   L'optimiseur INVENTAIT des builds et se trompait : sur son objectif par défaut il
+   donnait un build de tank à une ADC. Cette vue ne calcule rien — elle montre ce que les
+   professionnels ont réellement emporté. Ce qui doit être vérifié n'est donc pas un
+   modèle, c'est la FIDÉLITÉ de la lecture : ne rien perdre, ne rien inventer, et ne pas
+   faire passer trois parties pour une tendance. */
+function proFns() {
+  const debut = app.indexOf('var VSP_SEUIL_PRIX');
+  assert.ok(debut > 0, 'module des builds pro introuvable dans app.html');
+  const i = app.indexOf('function vspAgreger(', debut);
+  assert.ok(i > debut, 'vspAgreger introuvable');
+  const ferme = /\r?\n\}\r?\n/g; ferme.lastIndex = i;
+  const m = ferme.exec(app);
+  assert.ok(m, 'fin de vspAgreger introuvable');
+  return new Function(app.slice(debut, m.index + m[0].length) +
+    '\nreturn { vspAgreger: vspAgreger, vspCle: vspCle };')();
+}
+const P = proFns();
+const DICO = {
+  parNomEn: { "infinity edge": '3031', "lord dominik's regards": '3036',
+              "health potion": '2003', "blade of the ruined king": '3153' },
+  fr: { '3031': "Lame d'infini", '3036': 'Salutations de Dominik', '2003': 'Potion de soin',
+        '3153': 'Lame du roi déchu' },
+  prix: { '3031': 3500, '3036': 3300, '2003': 50, '3153': 3200 }
+};
+const partie = (items, sup) => Object.assign({
+  Link: 'Joueur', Team: 'T1', Items: items, KeystoneRune: 'Lethal Tempo',
+  'DateTime UTC': '2026-08-20 12:00:00', OverviewPage: 'LCK/2026 Season', PlayerWin: 'Yes'
+}, sup || {});
+
+test('les consommables sont écartés du classement des objets', () => {
+  /* La liste de Leaguepedia est l\'inventaire de FIN de partie : une Potion de soin y
+     figure. La compter parmi « les objets les plus emportés » serait exact et inutile. */
+  const a = P.vspAgreger([partie('Infinity Edge;Health Potion')], DICO);
+  const noms = a.objets.map(o => o.nom);
+  assert.ok(noms.indexOf("Lame d'infini") >= 0, 'l\'objet de build doit être compté');
+  assert.strictEqual(noms.indexOf('Potion de soin'), -1, 'le consommable ne doit pas l\'être');
+});
+
+test('un objet porté deux fois ne compte qu\'une partie', () => {
+  /* Sinon un objet empilable gonflerait son pourcentage au-delà de 100 %. */
+  const a = P.vspAgreger([partie("Infinity Edge;Infinity Edge")], DICO);
+  const ie = a.objets.find(o => o.id === '3031');
+  assert.strictEqual(ie.n, 1);
+  assert.strictEqual(ie.pct, 100);
+});
+
+test('un objet inconnu du dictionnaire est affiché, jamais supprimé', () => {
+  /* Le masquer donnerait un build incomplet qui aurait l\'air complet. */
+  const a = P.vspAgreger([partie('Infinity Edge;Objet Renommé Inconnu')], DICO);
+  const jeu = a.jeux[0];
+  assert.strictEqual(jeu.objets.length, 2, 'les deux objets doivent survivre à la lecture');
+  const inconnu = jeu.objets.find(o => !o.reconnu);
+  assert.ok(inconnu && inconnu.nom === 'Objet Renommé Inconnu', 'le nom brut est conservé');
+  assert.ok(a.nonReconnus >= 1, 'et leur nombre est remonté pour être affiché');
+});
+
+test('la casse et les apostrophes ne font pas rater un objet', () => {
+  /* Leaguepedia écrit « Blade of the Ruined King », Data Dragon « Blade of The Ruined
+     King ». Une majuscule suffisait à perdre l\'objet. */
+  const a = P.vspAgreger([partie('blade of the RUINED king')], DICO);
+  assert.strictEqual(a.objets[0].id, '3153');
+});
+
+test('un échantillon mince est signalé au lieu d\'être présenté comme une tendance', () => {
+  const mince = P.vspAgreger([partie('Infinity Edge'), partie('Infinity Edge')], DICO);
+  assert.strictEqual(mince.parties, 2);
+  assert.strictEqual(mince.assez, false, '2 parties ne font pas un consensus');
+  const large = P.vspAgreger(Array.from({ length: 10 }, () => partie('Infinity Edge')), DICO);
+  assert.strictEqual(large.assez, true, '10 parties suffisent à parler de tendance');
+});
+
+test('une partie sans inventaire relevé est ignorée, pas comptée à zéro', () => {
+  /* La compter fausserait tous les pourcentages vers le bas. */
+  const a = P.vspAgreger([partie('Infinity Edge'), partie(''), partie(null)], DICO);
+  assert.strictEqual(a.parties, 1, 'seule la partie avec inventaire compte');
+  assert.strictEqual(a.objets[0].pct, 100);
+});
+
+test('les dates et le taux de victoire sortent des données, pas d\'une estimation', () => {
+  const a = P.vspAgreger([
+    partie('Infinity Edge', { 'DateTime UTC': '2026-08-01 10:00:00', PlayerWin: 'Yes' }),
+    partie('Infinity Edge', { 'DateTime UTC': '2026-08-26 10:00:00', PlayerWin: 'No' })
+  ], DICO);
+  assert.strictEqual(a.depuis, '2026-08-01');
+  assert.strictEqual(a.jusqua, '2026-08-26');
+  assert.strictEqual(a.victoires, 1);
+});

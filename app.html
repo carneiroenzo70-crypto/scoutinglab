@@ -4039,6 +4039,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
+  <!-- Rouvert le 26/08/2026, mais sur un contenu qui a changé de nature : la rubrique
+       montre désormais les builds RÉELLEMENT joués par les professionnels (Leaguepedia),
+       au lieu de builds calculés par un optimiseur qui donnait un build de tank à une ADC. -->
+  <button class="more-menu-item" onclick="switchPanel('builds');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12v9M12 12 4 7.5M12 12l8-4.5"/></svg> Builds des pros</button>
   <!-- RETIRÉS DU MENU le 26/08/2026 : « Calculateur », « Builds conseillés », « Le moteur ».
        Le code et les panneaux restent en place et restent atteignables par switchPanel(),
        seules les ENTRÉES du menu disparaissent. Raison : l'optimiseur donne un build de
@@ -5974,6 +5978,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           </div>
         </div>
 
+        <!-- Les builds RÉELLEMENT joués passent devant tout le reste : ce sont des
+             faits, là où l'optimiseur en dessous produit une estimation. -->
+        <section id="bo-pro"></section>
         <section id="bo-resultats"></section>
       </div>
     </div><!-- /panel-builds -->
@@ -21864,7 +21871,13 @@ document.addEventListener('click', function(e){
   document.querySelectorAll('.bo-sugg').forEach(function(b){ b.hidden = true; });
 });
 function boChoisir(cle, id, nom){
-  if (cle === 'moi'){ boEtat.champion = id; document.getElementById('bo-moi').value = nom; }
+  if (cle === 'moi'){
+    boEtat.champion = id; document.getElementById('bo-moi').value = nom;
+    /* Les builds joués en compétition ne dépendent QUE du champion — ni de la composition
+       adverse, ni du niveau, ni d'un objectif. On les affiche donc tout de suite, sans
+       attendre que le coach remplisse cinq champs pour voir quelque chose. */
+    if (typeof vspAfficher === 'function') vspAfficher(id, nom);
+  }
   else { boEtat.compo[+cle] = id; document.getElementById('bo-adv' + cle).value = nom; }
   document.getElementById('bo-sugg-' + cle).hidden = true;
   boMajPart();
@@ -21961,6 +21974,234 @@ function boChercherBuilds(){
       boAfficher(r, Date.now() - t0);
     });
   });
+}
+
+/* ══════════ BUILDS JOUÉS EN COMPÉTITION ══════════
+   L'optimiseur INVENTAIT des builds, et se trompait : sur son objectif par défaut il
+   donnait un build de tank à une ADC. On arrête d'inventer. Cette vue ne calcule rien
+   et ne suppose rien — elle montre ce que les joueurs professionnels ont réellement
+   emporté sur ce champion, en match officiel, avec la date et le nom du joueur.
+
+   La source est Leaguepedia (table ScoreboardPlayers), qui publie `Items`, `KeystoneRune`
+   et les arbres de runes. Elle est déjà utilisée par le produit, déjà proxifiée par
+   /api/lp avec un cache Redis de 6 h — indispensable, l'API brute limite très vite (elle
+   m'a coupé trois fois pendant l'écriture de ce module).
+
+   Trois refus, dans l'esprit du reste du produit :
+   · on ne présente pas un échantillon mince comme une tendance : le nombre de parties est
+     affiché en grand, et un avertissement apparaît en dessous de VSP_MIN_PARTIES ;
+   · les CONSOMMABLES sont écartés du classement. La liste de Leaguepedia est l'inventaire
+     de FIN de partie : compter une Potion de soin parmi « les objets les plus emportés »
+     serait exact et parfaitement inutile ;
+   · un objet que le dictionnaire ne reconnaît pas est quand même AFFICHÉ, par son nom
+     anglais, sans icône. Le faire disparaître donnerait un build incomplet qui aurait
+     l'air complet. */
+var VSP_SEUIL_PRIX = 1000;     // en dessous : consommable, composant, balise
+var VSP_MIN_PARTIES = 8;       // en dessous : on prévient au lieu de conclure
+var VSP_LIMITE = 60;           // parties récentes demandées à Leaguepedia
+var _vspNoms = null;           // { version, parNomEn, fr, prix } — chargé une fois
+
+function vspCle(n) {
+  return String(n || '').toLowerCase().replace(/[‘’]/g, "'").replace(/\s+/g, ' ').trim();
+}
+async function vspNoms() {
+  if (_vspNoms) return _vspNoms;
+  try {
+    const r = await fetch('/assets/objets_noms.json');
+    if (r.ok) _vspNoms = await r.json();
+  } catch (_) {}
+  return _vspNoms;
+}
+function vspImg(id) {
+  const v = (_vspNoms && _vspNoms.version) || '';
+  return 'https://ddragon.leagueoflegends.com/cdn/' + v + '/img/item/' + id + '.png';
+}
+/* L'URL et son envoi vivent dans la MÊME fonction, et c'est délibéré. La première
+   version exposait un `vspUrl()` qui rendait l'adresse, appelée plus loin par pmCargo :
+   le test qui interdit les appels directs à Leaguepedia l'a signalée, à juste titre — il
+   ne pouvait pas voir que l'URL finissait bien dans le proxy. Plutôt qu'élargir la
+   détection, on rend le chemin sûr STRUCTUREL : il n'existe plus d'adresse Leaguepedia
+   qu'on puisse passer ailleurs qu'à pmCargo, qui apporte le cache Redis de 6 h et la
+   reprise sur rate-limit. */
+async function vspCargo(champion, limite) {
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers' +
+    '&fields=' + encodeURIComponent('Link,Champion,Items,KeystoneRune,PrimaryTree,SecondaryTree,Team,DateTime_UTC,OverviewPage,PlayerWin,Role') +
+    '&where=' + encodeURIComponent('Champion="' + String(champion).replace(/"/g, '') + '"') +
+    '&order_by=' + encodeURIComponent('DateTime_UTC DESC') +
+    '&limit=' + (limite || VSP_LIMITE) + '&format=json&origin=*';
+  return pmCargo(url);
+}
+
+/* `lignes` : les objets `title` rendus par Cargo. Aucun appel réseau ici — c'est ce qui
+   rend cette fonction vérifiable hors navigateur. */
+function vspAgreger(lignes, noms) {
+  const d = noms || _vspNoms || { parNomEn: {}, fr: {}, prix: {} };
+  const parties = [];
+  (lignes || []).forEach(function (t) {
+    const brut = String(t.Items || '').split(';').map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!brut.length) return;                    // partie sans inventaire relevé
+    const objets = brut.map(function (nom) {
+      const id = d.parNomEn[vspCle(nom)] || null;
+      return { id: id, nom: (id && d.fr[id]) || nom, prix: id ? (d.prix[id] || 0) : 0, reconnu: !!id };
+    });
+    parties.push({
+      joueur: t.Link || t.Name || '?',
+      equipe: t.Team || '',
+      role: t.Role || '',
+      date: String(t['DateTime UTC'] || t.DateTime_UTC || '').slice(0, 10),
+      tournoi: String(t.OverviewPage || '').split('/')[0],
+      victoire: t.PlayerWin === 'Yes',
+      majeure: t.KeystoneRune || '',
+      arbres: [t.PrimaryTree || '', t.SecondaryTree || ''].filter(Boolean).join(' / '),
+      objets: objets
+    });
+  });
+
+  if (!parties.length) return { parties: 0, objets: [], majeures: [], jeux: [], assez: false };
+
+  /* Fréquence par objet : dans COMBIEN de parties il apparaît, pas combien de fois au
+     total — un objet ne se porte qu'une fois, et compter les doublons d'inventaire
+     gonflerait les objets qu'on peut empiler. */
+  const compte = {};
+  parties.forEach(function (p) {
+    const vus = {};
+    p.objets.forEach(function (o) {
+      if (o.prix < VSP_SEUIL_PRIX) return;       // consommable / balise / composant
+      const k = o.id || ('?' + o.nom);
+      if (vus[k]) return;
+      vus[k] = 1;
+      compte[k] = compte[k] || { id: o.id, nom: o.nom, n: 0 };
+      compte[k].n++;
+    });
+  });
+  const objets = Object.keys(compte).map(function (k) {
+    return { id: compte[k].id, nom: compte[k].nom, n: compte[k].n,
+             pct: Math.round(compte[k].n / parties.length * 100) };
+  }).sort(function (a, b) { return b.n - a.n || String(a.nom).localeCompare(String(b.nom)); });
+
+  const parMajeure = {};
+  parties.forEach(function (p) { if (p.majeure) parMajeure[p.majeure] = (parMajeure[p.majeure] || 0) + 1; });
+  const majeures = Object.keys(parMajeure).map(function (m) {
+    return { nom: m, n: parMajeure[m], pct: Math.round(parMajeure[m] / parties.length * 100) };
+  }).sort(function (a, b) { return b.n - a.n; });
+
+  const dates = parties.map(function (p) { return p.date; }).filter(Boolean).sort();
+  return {
+    parties: parties.length,
+    assez: parties.length >= VSP_MIN_PARTIES,
+    depuis: dates[0] || '', jusqua: dates[dates.length - 1] || '',
+    victoires: parties.filter(function (p) { return p.victoire; }).length,
+    objets: objets, majeures: majeures, jeux: parties,
+    nonReconnus: parties.reduce(function (s, p) {
+      return s + p.objets.filter(function (o) { return !o.reconnu && o.nom; }).length; }, 0)
+  };
+}
+
+/* Le rendu. Deux partis pris d'affichage qui découlent de la nature des données :
+   · le NOMBRE DE PARTIES est mis en avant, pas caché en note de bas de page — c'est lui
+     qui dit si « 80 % » veut dire quelque chose ;
+   · les dates sont affichées telles quelles. « Instant T » n'a de sens que si on peut
+     vérifier de quand datent les parties : un champion peu joué peut n'avoir que des
+     matchs d'il y a trois mois, et le lecteur doit le voir sans avoir à le demander. */
+function vspHtml(a, champion) {
+  if (!a || !a.parties) {
+    return '<div class="card tc-bloc"><div class="tc-titre">Builds joués en compétition</div>' +
+      '<p class="muted" style="margin:0;font-size:.86rem">Aucune partie professionnelle relevée ' +
+      'pour <b>' + anEsc(champion) + '</b> avec un inventaire renseigné. C\'est le cas des ' +
+      'champions rarement joués en match officiel — et c\'est une information : personne ne ' +
+      'l\'a sorti récemment.</p></div>';
+  }
+
+  const wr = Math.round(a.victoires / a.parties * 100);
+  let h = '<div class="card tc-bloc">' +
+    '<div class="tc-titre">Builds joués en compétition' +
+    '<span class="tc-compte">' + a.parties + ' parties · ' + a.depuis + ' → ' + a.jusqua + '</span></div>' +
+    '<p class="muted" style="margin:0 0 12px;font-size:.84rem">Ce que les joueurs ' +
+    '<b>professionnels</b> ont réellement emporté sur <b>' + anEsc(champion) + '</b> en match ' +
+    'officiel. Rien n\'est calculé ni supposé : ce sont les inventaires de fin de partie ' +
+    'relevés par Leaguepedia. ' + wr + ' % de victoires sur ces parties.</p>';
+
+  if (!a.assez) {
+    h += '<div class="tc-legalite" style="margin-bottom:12px"><b>Échantillon mince : ' +
+      a.parties + ' partie(s).</b> Les pourcentages ci-dessous décrivent ces parties-là, ' +
+      'pas une tendance. À lire comme des exemples, pas comme un consensus.</div>';
+  }
+
+  h += '<div class="bo-apports">';
+  a.objets.slice(0, 10).forEach(function (o) {
+    const large = Math.max(2, o.pct);
+    h += '<div class="bo-ap">' +
+      (o.id ? '<img src="' + vspImg(o.id) + '" alt="" loading="lazy">' : '<span style="width:28px"></span>') +
+      '<div><b>' + anEsc(o.nom) + '</b>' +
+      '<div class="bo-jauge"><i style="width:' + large + '%"></i></div></div>' +
+      '<div class="v">' + o.pct + ' %<br><span class="faint">' + o.n + '/' + a.parties + '</span></div></div>';
+  });
+  h += '</div>';
+
+  if (a.majeures.length) {
+    h += '<div style="margin-top:14px"><div class="label" style="font-size:11px;margin-bottom:6px">' +
+      'Rune majeure</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+    a.majeures.slice(0, 4).forEach(function (m) {
+      h += '<span class="chip" style="padding:5px 11px">' + anEsc(m.nom) +
+           ' <b style="color:var(--vs-emerald-400)">' + m.pct + ' %</b></span>';
+    });
+    h += '</div></div>';
+  }
+
+  if (a.nonReconnus) {
+    h += '<p class="faint" style="font-size:.75rem;margin:10px 0 0">' + a.nonReconnus +
+      ' objet(s) affiché(s) par leur nom anglais : le dictionnaire ne les reconnaît pas ' +
+      '(objet renommé ou retiré depuis). Ils sont montrés quand même — les masquer ' +
+      'donnerait un build incomplet qui aurait l\'air complet.</p>';
+  }
+
+  /* Le détail partie par partie, replié. C'est ce qui rend le tableau vérifiable : un
+     coach peut retrouver la partie, le joueur et le tournoi. */
+  h += '<details class="bo-details" style="margin-top:12px"><summary>Les ' + a.parties +
+       ' parties, une par une</summary><div class="bo-etapes" style="margin-top:8px">';
+  a.jeux.forEach(function (p) {
+    h += '<div class="bo-et" style="align-items:center">' +
+      '<span class="r" style="color:' + (p.victoire ? 'var(--lime)' : '#E05A5A') + '">' +
+      (p.victoire ? 'V' : 'D') + '</span>' +
+      '<span class="nm"><b>' + anEsc(p.joueur) + '</b>' +
+      (p.equipe ? ' <span class="faint">' + anEsc(p.equipe) + '</span>' : '') + '</span>' +
+      '<span class="po" style="min-width:auto">' + anEsc(p.date) + '</span>' +
+      '<span class="cu" style="min-width:auto">' + anEsc(p.tournoi) + '</span>' +
+      '</div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;padding:0 0 8px 34px">' +
+      p.objets.map(function (o) {
+        return o.id ? '<img src="' + vspImg(o.id) + '" alt="' + anEsc(o.nom) +
+                      '" title="' + anEsc(o.nom) + '" loading="lazy" style="width:24px;height:24px;border-radius:5px">'
+                    : '<span class="faint" style="font-size:.7rem">' + anEsc(o.nom) + '</span>';
+      }).join('') + '</div>';
+  });
+  h += '</div></details></div>';
+  return h;
+}
+
+/* Point d'entrée : appelé quand un champion est choisi dans le sélecteur. */
+async function vspAfficher(champion, nomAffiche) {
+  const box = document.getElementById('bo-pro');
+  if (!box || !champion) return;
+  box.innerHTML = '<div class="card tc-bloc"><p class="muted" style="margin:0">' +
+    'Recherche des parties professionnelles sur ' + anEsc(nomAffiche || champion) + '…</p></div>';
+  const noms = await vspNoms();
+  if (!noms) {
+    box.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">Dictionnaire d\'objets ' +
+      'indisponible (/assets/objets_noms.json). Les builds ne peuvent pas être traduits.</div></div>';
+    return;
+  }
+  /* pmCargo passe par /api/lp : cache Redis 6 h et reprise sur rate-limit. L'API brute de
+     Leaguepedia coupe au bout de quelques requêtes — vérifié à mes dépens. */
+  const rows = await vspCargo(champion, VSP_LIMITE);
+  if (rows === null) {
+    box.innerHTML = '<div class="card tc-bloc"><div class="tc-legalite">Leaguepedia n\'a pas ' +
+      'répondu. Rien n\'est perdu : réessayez dans un instant, la réponse est mise en cache ' +
+      '6 h une fois obtenue.</div></div>';
+    return;
+  }
+  box.innerHTML = vspHtml(vspAgreger(rows.map(function (x) { return x.title; }), noms),
+                          nomAffiche || champion);
 }
 
 function boAfficher(r, ms){
