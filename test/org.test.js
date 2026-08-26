@@ -91,7 +91,7 @@ test('un compte sans org devient sa propre organisation dans le token', async ()
 });
 
 const snapshotsHandler = require('../api/snapshots');
-const trackHandler = require('../api/roster-track');
+const trackHandler = require('../api/snapshots');
 
 test('les snapshots de roster sont partages au sein d\'une structure', async () => {
   const store = {};

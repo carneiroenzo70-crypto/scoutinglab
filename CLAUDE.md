@@ -21,8 +21,12 @@ par Vercel sinon) → ils ne sont donc **pas dans le dépôt cloné**.
 `app.html` en revanche **EST** la source (fichier unique, versionné) → édition directe OK.
 
 ### 2. Limite de 12 Serverless Functions (Vercel Hobby)
-Chaque `.js` dans `api/` = 1 fonction. **On est actuellement à 12/12.** Ajouter un
-endpoint fait **échouer le build** (déjà arrivé). Solutions : fusionner dans un handler
+Chaque `.js` dans `api/` = 1 fonction. **On est à 11/12 depuis le 26/08/2026** (une place
+regagnée : `roster-track.js` a été fusionné dans `api/snapshots.js`, qui reconnaît la
+charge utile à sa forme — `body.rosters` est un tableau ; l'ancienne URL reste servie par
+une **réécriture** dans `vercel.json`, qui ne consomme aucune fonction). Ajouter un
+endpoint fait **échouer le build** (déjà arrivé) — un test compte les fichiers et refuse
+de dépasser 12. Solutions : fusionner dans un handler
 existant en branchant sur `req.method` (c'est ce qu'on a fait pour
 `candidates.js` = GET liste + POST ingestion). Les fichiers préfixés `_` (ex. `_auth.js`)
 ne comptent pas.

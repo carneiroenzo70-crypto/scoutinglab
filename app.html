@@ -6278,7 +6278,7 @@ function rsSyncTrack() {   // pousse les rosters suivis au serveur (pour le cron
       if (vivier.length) {
         rosters.push({ rosterId: 'prospects', name: 'Vivier de scouting', leger: true, players: vivier });
       }
-      fetch('/api/roster-track', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()), body: JSON.stringify({ rosters }) }).catch(() => {});
+      fetch('/api/snapshots', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()), body: JSON.stringify({ rosters }) }).catch(() => {});
     } catch (_) {}
   }, 800);
 }

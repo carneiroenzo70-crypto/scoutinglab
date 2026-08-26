@@ -588,3 +588,35 @@ test('un échec réseau ne se mémorise pas comme une absence de donnée', () =>
   assert.ok(!/ageCache\[[^\]]*\]\s*=\s*null/.test(bloc),
     'le catch ne doit PAS mémoriser null : on n\'a pas pu demander, ce n\'est pas une réponse');
 });
+
+/* ── 13. Le plafond des 12 fonctions serverless ────────────────────────────────────
+   Vercel Hobby plafonne à 12 Serverless Functions et chaque .js de api/ en consomme une
+   (sauf les fichiers préfixés `_`). On était à 12/12 : le prochain endpoint ne cassait
+   pas une fonctionnalité, il faisait ÉCHOUER LE BUILD ENTIER — c'est déjà arrivé.
+
+   Personne ne surveillait ce compte. On le surveille maintenant, avec une marge : passer
+   de 11 à 12 doit être une décision, pas une découverte au déploiement. */
+test('api/ reste sous le plafond de 12 fonctions serverless', () => {
+  const dir = path.join(__dirname, '..', 'api');
+  const fonctions = fs.readdirSync(dir)
+    .filter(f => f.endsWith('.js') && !f.startsWith('_'));
+  assert.ok(fonctions.length <= 12,
+    'Vercel Hobby refuse au-delà de 12 et le build échoue en entier. ' +
+    fonctions.length + ' trouvées : ' + fonctions.join(', ') +
+    '. Fusionner deux handlers plutôt qu\'en ajouter un (voir api/snapshots.js, qui a ' +
+    'absorbé roster-track avec une réécriture pour garder l\'ancienne URL vivante).');
+  /* Le compte exact est affiché à chaque exécution : c'est ce qui manquait pour voir
+     venir la saturation. */
+  assert.ok(fonctions.length > 0, 'aucune fonction trouvée : le test ne surveille plus rien');
+});
+
+/* L'ancienne URL doit rester servie, sinon un onglet ouvert avant le déploiement pousse
+   son suivi dans le vide — sans erreur visible, puisque l'appel est en best-effort. */
+test('l\'ancienne URL /api/roster-track est toujours servie par une réécriture', () => {
+  const conf = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
+  const r = (conf.rewrites || []).find(x => x.source === '/api/roster-track');
+  assert.ok(r, 'réécriture manquante : les onglets déjà ouverts tomberaient sur un 404');
+  assert.strictEqual(r.destination, '/api/snapshots');
+  assert.ok(!fs.existsSync(path.join(__dirname, '..', 'api', 'roster-track.js')),
+    'le fichier doit avoir disparu, sinon la place n\'est pas rendue');
+});
