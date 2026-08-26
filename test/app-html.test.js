@@ -348,3 +348,56 @@ test('un élément ajouté par l\'autre depuis ma lecture arrive bien chez moi',
   const r = F.vsFusionDomaine(base, mien, autre);
   assert.deepStrictEqual(r.data.spes_crm_pipeline, [{ id: 9, nom: 'Nouveau' }]);
 });
+
+/* ── 8. LES SCRIPTS TIERS DOIVENT ÊTRE SCELLÉS ────────────────────────────────────
+   Quatre bibliothèques (chart.js, jspdf, jspdf-autotable, pdf-lib) venaient de trois CDN
+   et s'exécutaient SANS AUCUN CONTRÔLE dans une page où les coachs sont authentifiés :
+   un seul CDN compromis, et du code arbitraire tournait avec accès au token de session.
+
+   Ce test ne vérifie pas les empreintes ACTUELLES — elles ont été calculées sur les
+   fichiers réellement servis et le navigateur les vérifie à chaque chargement. Il
+   empêche la RÉGRESSION : que quelqu'un ajoute demain un cinquième script tiers sans
+   protection, ou retire `crossorigin` (sans lequel le navigateur bloque un script tiers
+   porteur d'une empreinte — les graphiques et l'export PDF tomberaient). */
+test('tout script chargé depuis un domaine tiers porte une empreinte et crossorigin', () => {
+  const fautifs = [];
+  for (const m of app.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(https?:\/\/[^"]+)"[^>]*>/g)) {
+    const balise = m[0], url = m[1];
+    const manque = [];
+    if (!/\bintegrity\s*=\s*"sha(256|384|512)-/.test(balise)) manque.push('integrity');
+    if (!/\bcrossorigin\s*=/.test(balise)) manque.push('crossorigin');
+    if (manque.length) fautifs.push(url.split('/').pop() + ' → sans ' + manque.join(' ni '));
+  }
+  assert.deepStrictEqual(fautifs, [],
+    'un script tiers sans empreinte s\'exécute avec les droits de la page : si le CDN est ' +
+    'compromis, il lit le token de session. Calculer l\'empreinte :\n' +
+    '  node -e "fetch(URL).then(r=>r.arrayBuffer()).then(b=>console.log(\'sha384-\'+' +
+    'require(\'crypto\').createHash(\'sha384\').update(Buffer.from(b)).digest(\'base64\')))"');
+});
+
+test('la détection reconnaît bien un script tiers non protégé', () => {
+  /* Une vérification qui ne trouve jamais rien ne prouve rien. */
+  const cas = [
+    ['<script src="https://cdn.exemple.com/x.js"></script>', true],
+    ['<script defer src="https://cdn.exemple.com/x.js" integrity="sha384-AAA"></script>', true],
+    ['<script defer src="https://cdn.exemple.com/x.js" integrity="sha384-AAA" crossorigin="anonymous"></script>', false],
+    ['<script src="/draft-engine.js"></script>', false]   // même origine : rien à sceller
+  ];
+  cas.forEach(([balise, doitEtreFautif]) => {
+    let fautif = false;
+    for (const m of balise.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(https?:\/\/[^"]+)"[^>]*>/g)) {
+      if (!/\bintegrity\s*=\s*"sha(256|384|512)-/.test(m[0]) || !/\bcrossorigin\s*=/.test(m[0])) fautif = true;
+    }
+    assert.strictEqual(fautif, doitEtreFautif, 'mauvaise détection sur : ' + balise);
+  });
+});
+
+test('les quatre bibliothèques attendues sont bien celles qui sont scellées', () => {
+  /* Garde-fou de portée : si le test ne trouvait plus aucun script tiers (URL déplacée,
+     balises réécrites), il passerait au vert en ne surveillant plus rien. */
+  const scelles = [...app.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(https?:\/\/[^"]+)"[^>]*>/g)]
+    .map(m => m[1].split('/').pop());
+  assert.strictEqual(scelles.length, 4, 'attendu 4 scripts tiers, trouvé ' + scelles.length);
+  ['chart.umd.min.js', 'jspdf.umd.min.js', 'jspdf.plugin.autotable.min.js', 'pdf-lib.min.js']
+    .forEach(f => assert.ok(scelles.indexOf(f) >= 0, f + ' introuvable parmi les scripts scellés'));
+});

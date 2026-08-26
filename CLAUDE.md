@@ -185,6 +185,14 @@ parties passeront de ~2 min à quelques secondes.
 ## Conventions
 
 - Zéro dépendance npm côté API (crypto natif + `fetch`). Ne pas introduire de framework.
+- **Tout script chargé depuis un domaine tiers doit porter `integrity` + `crossorigin`**
+  (SRI, posé le 26/08/2026 sur chart.js, jspdf, jspdf-autotable et pdf-lib). Sans empreinte,
+  un CDN compromis exécute du code arbitraire dans une page authentifiée. `crossorigin` est
+  indispensable : sans lui le navigateur bloque un script tiers porteur d'une empreinte.
+  Un test (`test/app-html.test.js`) refuse tout nouveau script tiers non scellé.
+  ⚠️ **Monter une version ne se limite pas à changer l'URL** — il faut recalculer l'empreinte,
+  sinon le script est refusé et la fonctionnalité disparaît sans message clair :
+  `node -e "fetch(URL).then(r=>r.arrayBuffer()).then(b=>console.log('sha384-'+require('crypto').createHash('sha384').update(Buffer.from(b)).digest('base64')))"`
 - Commentaires et libellés UI **en français**.
 - Suivre les patterns existants (`rankIcon()`, `anScoreColor()`, `anEsc()`, tokens `--vs-*`)
   plutôt que réinventer.
