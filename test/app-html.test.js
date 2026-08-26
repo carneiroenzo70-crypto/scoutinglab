@@ -503,3 +503,43 @@ test('le cache immuable couvre bien les bibliothèques hébergées', () => {
   assert.ok(cc && /immutable/.test(cc.value) && /max-age=\d{7,}/.test(cc.value),
     'le cache doit être immuable et long : la version est dans le nom du fichier');
 });
+
+/* ── 10. La limite de taille doit être la MÊME des deux côtés ──────────────────────
+   Le client refuse désormais un domaine trop gros AVANT de l'envoyer, pour donner un
+   message utile (quel domaine, de combien ça dépasse) au lieu du 413 nu du serveur. Deux
+   constantes séparées qui doivent rester égales, c'est une divergence programmée : si
+   quelqu'un relève MAX_BYTES côté serveur, le client continuerait de refuser tout seul et
+   personne ne comprendrait pourquoi. */
+test('la limite de taille du client est la même que celle du serveur', () => {
+  const store = fs.readFileSync(path.join(__dirname, '..', 'api', 'store.js'), 'utf8');
+  const serveur = store.match(/MAX_BYTES\s*=\s*([0-9*\s]+);/);
+  const client = app.match(/VS_MAX_OCTETS\s*=\s*([0-9*\s]+);/);
+  assert.ok(serveur, 'MAX_BYTES introuvable dans api/store.js');
+  assert.ok(client, 'VS_MAX_OCTETS introuvable dans app.html');
+  const ev = s => Function('return (' + s + ')')();
+  assert.strictEqual(ev(client[1]), ev(serveur[1]),
+    'client et serveur doivent plafonner au même nombre d\'octets');
+});
+
+/* ── 11. Aucune sortie silencieuse dans l'enregistrement ───────────────────────────
+   C'est le défaut qu'on vient de corriger : seul le 409 était traité, et un 413, un 401,
+   un 400 ou un 500 terminaient la fonction sans un mot. Le coach continuait de
+   travailler, son travail ne quittait jamais son navigateur, et une purge du cache
+   l'effaçait. Ce test garde la structure : la réponse non-ok doit mener à `echouer`, et
+   le succès à `reussir`. */
+test('le chemin d\'enregistrement traite les échecs au lieu de les avaler', () => {
+  const debut = app.indexOf('async function put(domain, reessai)');
+  assert.ok(debut > 0, 'put() introuvable dans app.html');
+  const fin = app.indexOf('function save(domain)', debut);
+  assert.ok(fin > debut, 'fin de put() introuvable');
+  const src = app.slice(debut, fin);
+
+  assert.ok(/echouer\(domain, r\.status/.test(src),
+    'une réponse non-ok doit appeler echouer() : sans ça, un 413 ou un 401 disparaît');
+  assert.ok(/reussir\(domain\)/.test(src),
+    'un enregistrement réussi doit effacer l\'état d\'échec, sinon l\'alerte reste à vie');
+  assert.ok(/catch \(_\) \{[\s\S]{0,400}echouer\(domain, 0/.test(src),
+    'une coupure réseau doit être reprogrammée, pas simplement ignorée');
+  /* Contre-test de portée : si l'extraction ratait, `src` serait vide et tout passerait. */
+  assert.ok(src.length > 800, 'extraction de put() trop courte pour prouver quoi que ce soit');
+});

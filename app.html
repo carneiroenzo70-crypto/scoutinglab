@@ -184,8 +184,90 @@ const vsStore = (function () {
       body: JSON.stringify({ domain, data, version })
     });
   }
+  /* ══ QUAND L'ENREGISTREMENT ÉCHOUE ═══════════════════════════════════════════════
+     Le conflit entre deux coachs est traité (409). Tout le reste tombait dans le vide :
+     un domaine dépassant 1 Mo (413), une session expirée (401), un domaine refusé (400),
+     Upstash indisponible (500) — la fonction se terminait sans rien dire. Le coach
+     continuait de travailler, son travail ne quittait jamais son navigateur, et une purge
+     du cache l'effaçait. C'est exactement le défaut qu'on vient de corriger côté serveur,
+     du côté client cette fois : du travail qui a l'air enregistré et ne l'est pas.
+
+     Deux natures d'échec, deux traitements — les confondre serait aussi faux que de les
+     ignorer :
+     · DÉFINITIF (400, 413) : réessayer ne servira jamais à rien. On le dit tout de suite,
+       en nommant ce qui bloque, parce que seul le coach peut agir (alléger un domaine).
+     · PASSAGER (réseau, 5xx, 401) : on réessaie avec un délai qui double, et on ne dit
+       rien avant la troisième tentative — une coupure de trois secondes ne mérite pas
+       d'alarme, et une alarme qui se déclenche pour rien apprend à ne plus la lire. */
+  const enAttente = {};      // domaine → nombre d'échecs passagers consécutifs
+  const echecDur = {};       // domaine → raison d'un échec définitif
+  function vsdomaineEnEchec() { return Object.keys(enAttente).concat(Object.keys(echecDur)); }
+
+  function signaler(domain, texte, gravite) {
+    if (typeof showToast === 'function') showToast(texte, gravite || 'warning');
+  }
+
+  function echouer(domain, statut, detail) {
+    /* 400 et 413 ne guériront pas d'eux-mêmes : inutile de boucler dessus. */
+    if (statut === 400 || statut === 413) {
+      delete enAttente[domain];
+      echecDur[domain] = detail;
+      signaler(domain, 'Enregistrement impossible (' + domain + ') : ' + detail +
+               ' Vos modifications restent sur cet appareil mais ne sont PAS sauvegardées.', 'error');
+      return;
+    }
+    /* 401/403 : la session est morte. Le heartbeat s'en occupe ; on note juste que ce
+       domaine n'est pas à jour, pour ne pas le croire enregistré.
+
+       On efface d'abord un éventuel échec DÉFINITIF précédent : un domaine qui a buté sur
+       un 413 puis rencontre une coupure réseau n'est plus bloqué par sa taille, et laisser
+       l'ancien motif afficherait une cause fausse — le pire état pour un message d'erreur,
+       parce qu'il envoie chercher le problème au mauvais endroit. */
+    delete echecDur[domain];
+    const n = (enAttente[domain] || 0) + 1;
+    enAttente[domain] = n;
+    if (n === 3) {
+      signaler(domain, 'Impossible d\'enregistrer « ' + domain + ' » depuis ' + n +
+               ' tentatives. Vos modifications sont conservées sur cet appareil et seront ' +
+               'renvoyées automatiquement.', 'warning');
+    }
+    /* Délai qui double, plafonné : 2 s, 4 s, 8 s… jusqu'à 2 min. Réessayer toutes les
+       secondes contre un serveur en panne ne le répare pas et vide la batterie. */
+    const delai = Math.min(120000, 2000 * Math.pow(2, n - 1));
+    clearTimeout(timers['retry:' + domain]);
+    timers['retry:' + domain] = setTimeout(() => put(domain), delai);
+  }
+
+  function reussir(domain) {
+    delete enAttente[domain];
+    delete echecDur[domain];
+  }
+
+  /* Dernier filet : prévenir avant de fermer l'onglet s'il reste du travail non
+     enregistré. Le navigateur n'affiche ce message que si l'utilisateur a interagi avec
+     la page, et seulement quand il y a vraiment quelque chose à perdre — pas de
+     confirmation systématique, qu'on apprend à cliquer sans lire. */
+  window.addEventListener('beforeunload', function (e) {
+    if (window.VS_DEMO) return;
+    if (!vsdomaineEnEchec().length) return;
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  });
+
+  const VS_MAX_OCTETS = 1024 * 1024;   // doit rester égal au MAX_BYTES de api/store.js
   async function put(domain, reessai) {
     const mien = pack(domain);
+    /* Taille vérifiée AVANT l'envoi : le serveur refuserait par un 413, mais après avoir
+       transporté le mégaoctet pour rien, et avec un message bien plus pauvre que celui
+       qu'on peut donner ici — on sait quel domaine, on sait de combien ça dépasse. */
+    let octets = 0;
+    try { octets = JSON.stringify(mien).length; } catch (_) {}
+    if (octets > VS_MAX_OCTETS) {
+      echouer(domain, 413, 'le domaine pèse ' + Math.round(octets / 1024) + ' Ko pour un ' +
+              'maximum de ' + Math.round(VS_MAX_OCTETS / 1024) + ' Ko.');
+      return;
+    }
     try {
       const r = await envoyer(domain, mien, versions[domain]);
       if (r.status === 409) {
@@ -209,8 +291,8 @@ const vsStore = (function () {
               const gj = await g.json();
               sien = gj[domain];
               if (gj.__versions && gj.__versions[domain]) versions[domain] = gj.__versions[domain];
-            } else { return; }   // on ne sait pas : on garde le local et on retentera
-          } catch (_) { return; }
+            } else { echouer(domain, g.status, 'relecture impossible après conflit.'); return; }
+          } catch (_) { echouer(domain, 0, 'relecture impossible après conflit.'); return; }
         }
         const f = vsFusionDomaine(bases[domain], mien, sien);
         unpack(domain, f.data);
@@ -225,8 +307,20 @@ const vsStore = (function () {
         const j = await r.json().catch(() => ({}));
         if (j && j.version) versions[domain] = j.version;
         bases[domain] = mien;      // à partir d'ici, c'est ça notre référence commune
+        reussir(domain);
+        return;
       }
-    } catch (_) { /* réseau : le cache local garde la modif, repartira au prochain save */ }
+      /* TOUT LE RESTE. C'est ici que ça tombait dans le vide : 413 (domaine trop gros),
+         401 (session expirée), 400 (domaine refusé), 500 (Upstash indisponible) — la
+         fonction se terminait sans rien dire et le coach croyait son travail enregistré. */
+      let detail = 'erreur ' + r.status + '.';
+      try { const j = await r.json(); if (j && j.error) detail = j.error + '.'; } catch (_) {}
+      echouer(domain, r.status, detail);
+    } catch (_) {
+      /* Réseau coupé : passager par nature. Le cache local garde la modification et on
+         reprogramme, au lieu d'attendre que le coach refasse une action par hasard. */
+      echouer(domain, 0, 'réseau indisponible.');
+    }
   }
   function save(domain) {
     if (window.VS_DEMO || !VS_STORE_DOMAINS[domain]) return;
@@ -276,7 +370,13 @@ const vsStore = (function () {
     });
     if (migratedAny) { try { localStorage.setItem(migratedFlag, '1'); } catch (_) {} }
   }
-  return { save, loadAll, _pack: pack, _isEmpty: isEmpty };
+  /* `etat` est exposé pour que l'interface puisse un jour montrer « non enregistré »
+     autrement que par un toast qui disparaît. Un toast prévient ; il ne rappelle pas. */
+  function etat() {
+    return { enAttente: Object.assign({}, enAttente), echecDur: Object.assign({}, echecDur),
+             aDuTravailNonEnregistre: vsdomaineEnEchec().length > 0 };
+  }
+  return { save, loadAll, etat, _pack: pack, _isEmpty: isEmpty };
 })();
 /* ── Heartbeat de session : applique une désactivation de compte même si le token
    est encore valide. Ne déconnecte QUE sur un refus explicite (401/403), jamais
