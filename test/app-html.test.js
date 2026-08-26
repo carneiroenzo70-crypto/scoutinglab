@@ -460,3 +460,46 @@ test('la verification d\'empreinte reconnait un fichier modifie', () => {
   assert.notStrictEqual(h, EMPREINTES_VENDOR['chart-4.4.0.umd.min.js'],
     'trois octets ajoutes doivent suffire a faire changer l\'empreinte');
 });
+
+/* ── 9. vercel.json ne doit contenir QUE des clés que Vercel accepte ───────────────
+   Le déploiement du 26/08/2026 a ÉCHOUÉ pour une clé `_pourquoi` que j'avais glissée
+   dans une entrée `headers` en guise de commentaire — JSON n'en accepte pas, et Vercel
+   refuse les propriétés inconnues. Le site est resté en ligne (Vercel garde le
+   déploiement précédent), mais plus aucune mise à jour ne passait.
+
+   Un fichier de configuration invalide bloque TOUT le produit : ça vaut trois lignes de
+   vérification. Les explications vont dans CLAUDE.md et assets/vendor/LICENCES.md, pas
+   dans le JSON. */
+test('vercel.json n\'emploie que des clés reconnues', () => {
+  const conf = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
+  const RACINE = ['version', 'cleanUrls', 'trailingSlash', 'crons', 'headers', 'redirects',
+                  'rewrites', 'functions', 'buildCommand', 'outputDirectory', 'framework',
+                  'installCommand', 'devCommand', 'regions', 'github', 'images'];
+  const inconnues = Object.keys(conf).filter(k => RACINE.indexOf(k) < 0);
+  assert.deepStrictEqual(inconnues, [], 'clé(s) inconnue(s) à la racine de vercel.json');
+
+  (conf.headers || []).forEach((h, i) => {
+    const permis = ['source', 'headers', 'has', 'missing'];
+    const mauvaises = Object.keys(h).filter(k => permis.indexOf(k) < 0);
+    assert.deepStrictEqual(mauvaises, [],
+      'entrée headers[' + i + '] : ' + mauvaises.join(', ') + ' — Vercel refuse les ' +
+      'propriétés inconnues et le déploiement échoue en entier. Pas de commentaire en JSON.');
+    (h.headers || []).forEach(e => {
+      assert.ok(e && typeof e.key === 'string' && typeof e.value === 'string',
+        'chaque en-tête doit être { key, value } en chaînes');
+    });
+  });
+  (conf.crons || []).forEach(c => {
+    assert.ok(c.path && c.schedule, 'un cron doit porter path et schedule');
+  });
+});
+
+test('le cache immuable couvre bien les bibliothèques hébergées', () => {
+  /* Sans lui, on aurait échangé un risque de CDN contre 1,1 Mo rechargés à chaque visite. */
+  const conf = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'vercel.json'), 'utf8'));
+  const regle = (conf.headers || []).find(h => /assets\/vendor/.test(h.source || ''));
+  assert.ok(regle, 'aucune règle de cache sur /assets/vendor/');
+  const cc = (regle.headers || []).find(e => e.key.toLowerCase() === 'cache-control');
+  assert.ok(cc && /immutable/.test(cc.value) && /max-age=\d{7,}/.test(cc.value),
+    'le cache doit être immuable et long : la version est dans le nom du fichier');
+});

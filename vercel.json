@@ -6,7 +6,6 @@
   ],
   "headers": [
     {
-      "_pourquoi": "Bibliotheques tierces hebergees par nous depuis le 26/08/2026. Leur VERSION est dans le nom du fichier : leur contenu ne change donc JAMAIS a URL constante, et un cache immuable d'un an est sur. Sans lui, on aurait echange un risque de CDN contre 1,1 Mo rechargés a chaque visite. Corollaire : monter une version impose un NOUVEAU NOM de fichier, sinon les navigateurs serviront l'ancien pendant un an.",
       "source": "/assets/vendor/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
