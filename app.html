@@ -3632,10 +3632,15 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   outline-offset:2px;
 }
 </style>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<!-- `defer` AJOUTÉ le 26/08/2026. Ces quatre bibliothèques bloquaient l'analyse du HTML
+     dans le <head> : mesuré, elles démarraient à 372 ms et duraient de 1 597 à 1 877 ms,
+     soit ~1,9 s des 2,7 s avant que la page réagisse. Aucune n'est utilisée au niveau
+     supérieur d'un script (vérifié) — elles ne servent qu'aux graphiques et à l'export
+     PDF, après une action. `defer` conserve l'ordre et s'exécute avant DOMContentLoaded. -->
+  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<script defer src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 </head>
 
 <body class="landing-active">
@@ -3773,9 +3778,14 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   border:1px solid var(--border);border-radius:10px;padding:6px;
   z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
   <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
-  <button class="more-menu-item" onclick="switchPanel('theorycraft');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16"/><path d="M6 20V9l6-5 6 5v11"/><path d="M10 20v-5h4v5"/></svg> Calculateur</button>
-  <button class="more-menu-item" onclick="switchPanel('builds');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12v9M12 12 4 7.5M12 12l8-4.5"/></svg> Builds conseillés</button>
-  <button class="more-menu-item" onclick="switchPanel('moteur');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.2 2.2M16.9 16.9l2.2 2.2M19.1 4.9l-2.2 2.2M7.1 16.9l-2.2 2.2"/></svg> Le moteur</button>
+  <!-- RETIRÉS DU MENU le 26/08/2026 : « Calculateur », « Builds conseillés », « Le moteur ».
+       Le code et les panneaux restent en place et restent atteignables par switchPanel(),
+       seules les ENTRÉES du menu disparaissent. Raison : l'optimiseur donne un build de
+       tank à une ADC sur son objectif par défaut (Caitlyn repart avec Warmog et Jak'Sho),
+       parce que la survie croît sans limite face à des dégâts mesurés sur une fenêtre fixe.
+       Un onglet faux coûte plus cher qu'un onglet absent : il sert de preuve que le reste
+       n'est pas fiable non plus. À rouvrir quand l'optimiseur sera devenu un COMPARATEUR
+       de builds saisis par le coach — ce que le moteur sait faire et fait bien. -->
 </div>
 
 <!-- ════ SHELL ════ -->

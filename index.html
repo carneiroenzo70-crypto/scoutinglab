@@ -2602,7 +2602,11 @@ html{ scroll-behavior:smooth; }
     <div class="vs-modal-eyebrow">Démo VisionScore</div>
     <h2 id="vs-demo-title" class="vs-modal-title">Réservez une démo pour votre structure</h2>
     <p class="vs-modal-sub">20 minutes en visio — on vous montre la plateforme en direct sur les joueurs de votre choix : scouting, CRM, roster et avant-match.</p>
-    <div class="vs-cal-wrap"><iframe title="Réserver une démo VisionScore" src="https://calendly.com/carneiroenzo70/visionscore-presentation" loading="lazy"></iframe></div>
+    <!-- Le src est POSÉ À L'OUVERTURE du modal, pas au chargement de la page. loading="lazy"
+         ne suffisait pas : l'iframe partait quand même et pesait 2,38 s sur le chargement
+         complet de la page de vente — mesuré. Un visiteur qui ne demande pas de démo payait
+         donc le widget de réservation, et c'est le premier écran que voit un prospect. -->
+    <div class="vs-cal-wrap"><iframe title="Réserver une démo VisionScore" data-src="https://calendly.com/carneiroenzo70/visionscore-presentation" loading="lazy"></iframe></div>
     <div class="vs-demo-or"><span>ou écrivez-nous directement</span></div>
     <form id="vs-demo-form" class="vs-demo-form">
       <input type="hidden" name="access_key" value="a905b6e6-91c3-4ca6-842c-6ebe66820198">
@@ -2635,7 +2639,12 @@ html{ scroll-behavior:smooth; }
 
   function scrollToSignin(){ var f=document.getElementById('signin'); if(f){ f.scrollIntoView({behavior:'smooth',block:'center'}); var em=document.getElementById('vs-email'); if(em) setTimeout(function(){em.focus();},400); } }
   // ── Modal démo ──
-  function openDemo(){ var m=document.getElementById('vs-demo-modal'); if(m){ m.classList.add('open'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; } }
+  function openDemo(){ var m=document.getElementById('vs-demo-modal'); if(m){
+      /* Premier affichage : on branche enfin le Calendly. Une seule fois — remettre le src
+         à chaque ouverture rechargerait le widget et ferait perdre un créneau déjà choisi. */
+      var f=m.querySelector('.vs-cal-wrap iframe');
+      if(f && !f.getAttribute('src') && f.getAttribute('data-src')) f.setAttribute('src', f.getAttribute('data-src'));
+      m.classList.add('open'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; } }
   function closeDemo(){ var m=document.getElementById('vs-demo-modal'); if(m){ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); document.body.style.overflow=''; } }
   document.addEventListener('click', function(e){
     var go=e.target.closest('[data-go="signin"]'); if(go){ e.preventDefault(); scrollToSignin(); return; }
