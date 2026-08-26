@@ -87,11 +87,26 @@ peuvent être rattachés à la même structure et voient alors exactement les m�
   jamais du client.**
 - `api/session.js` refuse (401) un token dont l'`org` ne correspond plus à celle du compte,
   pour éviter de lire une structure et d'afficher le lien d'ingestion d'une autre.
-- ⚠️ **Limite connue** : `api/store.js` écrit le domaine **en bloc, dernier écrivain gagne**.
-  Deux coachs qui modifient le même domaine en même temps peuvent s'écraser. C'est ce que la
-  couche d'opérations granulaires de la salle de draft doit régler
-  (`docs/superpowers/specs/2026-07-28-salle-draft-collaborative-design.md` § 4.4).
-- Endpoint unique `api/store.js` : `GET ?domains=…` + `PUT {domain,data}`.
+- ✅ **Écriture concurrente (corrigé le 26/08/2026)** — c'était la « limite connue » la plus
+  coûteuse : le PUT écrivait le domaine **en bloc, dernier écrivain gagne**, et deux coachs
+  d'une même structure se détruisaient mutuellement du travail **sans le moindre signal**.
+  Chaque domaine porte maintenant une **version** dans une clé voisine `vs_data:<org>:<dom>:v` :
+  - `GET` rend les données **et** `__versions` dans le **même MGET** (deux appels séparés
+    laisseraient une écriture s'intercaler et fabriqueraient un faux conflit) ;
+  - `PUT {domain, data, version}` compare-et-écrit **atomiquement** (script Lua `EVAL`),
+    avec un repli non atomique annoncé dans la réponse (`atomique:false`) si l'exécution de
+    script n'était pas disponible — un repli silencieux ferait croire à une garantie
+    qu'on n'a pas ;
+  - version périmée → **409** `{conflit, version, data}`, l'état courant étant joint pour
+    que le client fusionne sans avoir à relire.
+  - **Transition** : un PUT **sans** `version` (onglet ouvert avant le déploiement) écrit
+    encore à l'aveugle et incrémente le compteur. À retirer quand plus aucun ancien onglet
+    ne tourne.
+  Côté client, `vsStore` garde `bases[domaine]` (l'état de la dernière synchro) et fusionne
+  à **trois sources** sur 409 (`vsFusionDomaine`), **par élément** grâce aux `id` : deux
+  coachs qui ajoutent chacun un prospect gardent les deux, sans question posée. Les cas
+  indécidables remontent en toast au lieu de rester dans le code.
+- Endpoint unique `api/store.js` : `GET ?domains=…` + `PUT {domain,data,version}`.
 - Client : module **`vsStore`** dans `app.html` (près de `vsLogout`) — le `localStorage`
   n'est qu'un **cache**, le serveur est la source de vérité. `vsStore.save(domain)` est
   débouncé ~1 s ; `loadAll()` tourne au boot. Migration douce au 1er login.

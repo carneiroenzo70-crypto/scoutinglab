@@ -61,6 +61,93 @@ const VS_STORE_DOMAINS = {
      silence — le cache local donnerait alors l'illusion que tout est enregistré. */
   builds:     ['vs_builds'],
 };
+/* ══════════ FUSION À TROIS SOURCES ══════════
+   Détecter un conflit ne suffit pas : si le coach A doit choisir « ma version » ou « la
+   sienne », l'un des deux perd son travail — on aurait remplacé une perte silencieuse
+   par une perte annoncée, ce qui est mieux mais pas bon.
+
+   Le vrai cas, celui qui arrive tous les jours dans une structure, n'est PAS deux coachs
+   qui modifient la même fiche : c'est deux coachs qui ajoutent chacun un prospect
+   différent. Ce cas-là se fusionne sans rien perdre, à condition de disposer des TROIS
+   états — celui d'origine (`base`, ce que j'avais lu), le mien, et le sien. Sans la base
+   on ne peut pas distinguer « il a ajouté » de « j'ai supprimé » : les deux se voient
+   comme un élément présent d'un côté et absent de l'autre.
+
+   Les collections du produit (rosters, pipeline CRM, structures, fiches) sont toutes des
+   tableaux d'objets portant un `id` — vérifié. La fusion se fait donc élément par
+   élément, et non domaine par domaine.
+
+   Arbitrages, dans l'ordre de priorité :
+   · ajouté d'un seul côté            → gardé (c'est le cas courant, et il est sans perte)
+   · modifié d'un seul côté           → la modification gagne
+   · supprimé d'un côté, intact ailleurs → la suppression gagne (elle était intentionnelle)
+   · supprimé d'un côté, MODIFIÉ de l'autre → on GARDE la version modifiée, et on le
+     signale. Entre supprimer le travail de quelqu'un et laisser une ligne en trop, la
+     ligne en trop se corrige d'un clic ; le travail perdu, non.
+   · modifié des deux côtés           → le plus récent (celui qui écrit) gagne, et on le
+     signale. C'est le seul cas réellement indécidable, et il doit se voir. */
+function vsMemeValeur(a, b) {
+  try { return JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b); }
+  catch (_) { return a === b; }
+}
+function vsListeAId(v) {
+  return Array.isArray(v) && v.length > 0 &&
+         v.every(function (x) { return x && typeof x === 'object' && !Array.isArray(x) && x.id != null; });
+}
+/* Fusionne une seule valeur. `conflits` est rempli au passage : ce que la fusion n'a pas
+   pu trancher toute seule doit remonter à l'écran, pas rester dans le code. */
+function vsFusionValeur(base, mien, autre, etiquette, conflits) {
+  if (vsMemeValeur(mien, autre)) return mien;
+  if (vsMemeValeur(mien, base)) return autre;      // je n'y ai pas touché
+  if (vsMemeValeur(autre, base)) return mien;      // personne d'autre n'y a touché
+
+  /* Les deux ont bougé. Si ce sont des collections identifiées, on descend d'un cran :
+     c'est là que la fusion cesse d'être un arbitrage et devient une addition. */
+  if (vsListeAId(mien) && vsListeAId(autre)) {
+    var parId = function (l) { var m = {}; (l || []).forEach(function (x) { m[String(x.id)] = x; }); return m; };
+    var B = parId(vsListeAId(base) ? base : []), M = parId(mien), A = parId(autre);
+    var ids = [];
+    [autre, mien].forEach(function (l) {
+      (l || []).forEach(function (x) { if (ids.indexOf(String(x.id)) < 0) ids.push(String(x.id)); });
+    });
+    var sortie = [];
+    ids.forEach(function (id) {
+      var b = B[id], m = M[id], a = A[id];
+      if (m && a) {
+        if (vsMemeValeur(m, a)) { sortie.push(m); return; }
+        if (vsMemeValeur(m, b)) { sortie.push(a); return; }
+        if (vsMemeValeur(a, b)) { sortie.push(m); return; }
+        conflits.push(etiquette + ' · élément ' + id + ' modifié des deux côtés');
+        sortie.push(m);                       // le dernier qui écrit garde la main
+      } else if (m && !a) {
+        if (b && vsMemeValeur(m, b)) return;  // l'autre l'a supprimé, je n'y ai pas touché
+        if (b) { conflits.push(etiquette + ' · élément ' + id + ' supprimé ailleurs mais modifié ici'); }
+        sortie.push(m);                       // je viens de l'ajouter, ou je l'ai modifié
+      } else if (!m && a) {
+        if (b && vsMemeValeur(a, b)) return;  // je l'ai supprimé, l'autre n'y a pas touché
+        if (b) { conflits.push(etiquette + ' · élément ' + id + ' supprimé ici mais modifié ailleurs'); }
+        sortie.push(a);                       // l'autre vient de l'ajouter, ou l'a modifié
+      }
+    });
+    return sortie;
+  }
+
+  conflits.push(etiquette + ' modifié des deux côtés');
+  return mien;
+}
+/* base / mien / autre : les objets rendus par pack(), c'est-à-dire { cléLocalStorage: valeur }. */
+function vsFusionDomaine(base, mien, autre) {
+  var conflits = [];
+  var sortie = {};
+  var cles = [];
+  [base, mien, autre].forEach(function (o) {
+    Object.keys(o || {}).forEach(function (k) { if (cles.indexOf(k) < 0) cles.push(k); });
+  });
+  cles.forEach(function (k) {
+    sortie[k] = vsFusionValeur((base || {})[k], (mien || {})[k], (autre || {})[k], k, conflits);
+  });
+  return { data: sortie, conflits: conflits };
+}
 const vsStore = (function () {
   const timers = {};
   function pack(domain) {
@@ -84,13 +171,45 @@ const vsStore = (function () {
       return v == null || v === '' || v === '[]' || v === '{}' || v === 'null';
     });
   }
-  async function put(domain) {
+  /* `bases` : l'état du domaine tel qu'il était la dernière fois qu'on s'est synchronisé
+     avec le serveur. C'est la TROISIÈME source de la fusion, et sans elle on ne saurait
+     pas distinguer « l'autre a ajouté » de « j'ai supprimé ». `versions` : le numéro lu
+     en même temps, que le serveur nous redemandera pour accepter l'écriture. */
+  const bases = {};
+  const versions = {};
+  async function envoyer(domain, data, version) {
+    return fetch('/api/store', {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
+      body: JSON.stringify({ domain, data, version })
+    });
+  }
+  async function put(domain, reessai) {
+    const mien = pack(domain);
     try {
-      await fetch('/api/store', {
-        method: 'PUT',
-        headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
-        body: JSON.stringify({ domain, data: pack(domain) })
-      });
+      const r = await envoyer(domain, mien, versions[domain]);
+      if (r.status === 409) {
+        /* Quelqu'un d'autre a écrit entre-temps. On NE perd rien et on NE demande rien :
+           on fusionne les trois états, on réécrit le résultat en local, et on repousse
+           une fois. Une seule fois — si ça reconflicte, c'est que les écritures
+           s'enchaînent plus vite que le débounce, et boucler indéfiniment tiendrait le
+           réseau occupé sans jamais converger. */
+        const j = await r.json();
+        versions[domain] = j.version;
+        const f = vsFusionDomaine(bases[domain], mien, j.data);
+        unpack(domain, f.data);
+        if (f.conflits.length && typeof showToast === 'function') {
+          showToast('Modifications d\'un autre coach fusionnées. ' + f.conflits.length +
+                    ' point(s) à revérifier : ' + f.conflits.slice(0, 2).join(' ; '), 'warning');
+        }
+        if (!reessai) return put(domain, true);
+        return;
+      }
+      if (r.ok) {
+        const j = await r.json().catch(() => ({}));
+        if (j && j.version) versions[domain] = j.version;
+        bases[domain] = mien;      // à partir d'ici, c'est ça notre référence commune
+      }
     } catch (_) { /* réseau : le cache local garde la modif, repartira au prochain save */ }
   }
   function save(domain) {
@@ -123,12 +242,20 @@ const vsStore = (function () {
     } catch (_) { return; /* Upstash indispo → on garde le cache local (mode dégradé) */ }
     const migratedFlag = 'vs_migrated:' + vsOrg();   // la migration douce vaut pour la structure
     let migratedAny = false;
+    /* Les versions lues EN MÊME TEMPS que les données : c'est ce numéro-là que le
+       serveur redemandera pour accepter notre prochaine écriture. Le prendre d'un
+       second appel aurait laissé une écriture s'intercaler entre les deux. */
+    const versionsServeur = server.__versions || {};
     domains.forEach(d => {
+      versions[d] = versionsServeur[d] != null ? versionsServeur[d] : '0';
       if (server[d] != null) {
         unpack(d, server[d]);                    // le serveur gagne
+        bases[d] = pack(d);                      // …et devient notre référence de fusion
       } else if (!isEmpty(d) && !localStorage.getItem(migratedFlag)) {
         put(d);                                   // migration douce : pousse le local
         migratedAny = true;
+      } else {
+        bases[d] = pack(d);
       }
     });
     if (migratedAny) { try { localStorage.setItem(migratedFlag, '1'); } catch (_) {} }

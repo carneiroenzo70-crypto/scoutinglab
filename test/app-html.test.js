@@ -265,3 +265,86 @@ test('l\'écart-type refuse de se prononcer sur moins de deux valeurs', () => {
   assert.ok(Math.abs(D.vsdEcartType([2, 4, 4, 4, 5, 5, 7, 9]) - 2.138) < 0.01,
     'écart-type d\'échantillon standard');
 });
+
+/* ── 7. LA FUSION À TROIS SOURCES ─────────────────────────────────────────────────
+   Le serveur détecte désormais le conflit (voir test/store.test.js). Mais détecter ne
+   suffit pas : si le coach doit choisir « ma version » ou « la sienne », l'un des deux
+   perd son travail — on aurait remplacé une perte silencieuse par une perte annoncée.
+
+   Ce qui est vérifié ici n'est pas « ça fusionne », c'est que le CAS COURANT — deux
+   coachs qui ajoutent chacun un prospect différent — se règle SANS PERTE et sans poser
+   de question. Le reste du temps, on vérifie surtout que rien ne disparaît. */
+function fusionFns() {
+  const debut = app.indexOf('function vsMemeValeur(');
+  assert.ok(debut > 0, 'vsMemeValeur introuvable dans app.html');
+  const i = app.indexOf('function vsFusionDomaine(', debut);
+  assert.ok(i > debut, 'vsFusionDomaine introuvable dans app.html');
+  const ferme = /\r?\n\}\r?\n/g;
+  ferme.lastIndex = i;
+  const m = ferme.exec(app);
+  assert.ok(m, 'fin de vsFusionDomaine introuvable');
+  return new Function(app.slice(debut, m.index + m[0].length) +
+    '\nreturn { vsFusionDomaine: vsFusionDomaine };')();
+}
+const F = fusionFns();
+const crm = liste => ({ spes_crm_pipeline: liste });
+
+/* ⚠ LE CAS QUI ARRIVE TOUS LES JOURS DANS UNE STRUCTURE. */
+test('deux coachs qui ajoutent chacun un prospect gardent les deux', () => {
+  const base = crm([{ id: 1, nom: 'Existant' }]);
+  const mien = crm([{ id: 1, nom: 'Existant' }, { id: 2, nom: 'Ajouté par moi' }]);
+  const autre = crm([{ id: 1, nom: 'Existant' }, { id: 3, nom: 'Ajouté par lui' }]);
+  const r = F.vsFusionDomaine(base, mien, autre);
+  const ids = r.data.spes_crm_pipeline.map(x => x.id).sort();
+  assert.deepStrictEqual(ids, [1, 2, 3], 'les deux ajouts doivent survivre');
+  assert.deepStrictEqual(r.conflits, [], 'et ce cas ne doit demander aucun arbitrage');
+});
+
+test('une suppression volontaire n\'est pas ressuscitée par la fusion', () => {
+  const base = crm([{ id: 1, nom: 'A' }, { id: 2, nom: 'B' }]);
+  const mien = crm([{ id: 1, nom: 'A' }]);                       // j'ai supprimé le 2
+  const autre = crm([{ id: 1, nom: 'A' }, { id: 2, nom: 'B' }]); // l'autre n'y a pas touché
+  const r = F.vsFusionDomaine(base, mien, autre);
+  assert.deepStrictEqual(r.data.spes_crm_pipeline.map(x => x.id), [1]);
+});
+
+/* Entre supprimer le travail de quelqu'un et laisser une ligne en trop, la ligne en trop
+   se corrige d'un clic — le travail perdu, non. La fusion penche donc vers la
+   conservation, et le dit. */
+test('supprimé d\'un côté mais MODIFIÉ de l\'autre : on garde, et on le signale', () => {
+  const base = crm([{ id: 1, nom: 'A' }, { id: 2, nom: 'B' }]);
+  const mien = crm([{ id: 1, nom: 'A' }]);                            // j'ai supprimé le 2
+  const autre = crm([{ id: 1, nom: 'A' }, { id: 2, nom: 'B corrigé' }]); // l'autre l'a retravaillé
+  const r = F.vsFusionDomaine(base, mien, autre);
+  const deux = r.data.spes_crm_pipeline.find(x => x.id === 2);
+  assert.ok(deux, 'le travail de l\'autre coach ne doit pas être détruit par ma suppression');
+  assert.strictEqual(deux.nom, 'B corrigé');
+  assert.ok(r.conflits.length, 'et ce choix doit remonter à l\'écran, pas rester dans le code');
+});
+
+test('le même élément modifié des deux côtés : le dernier garde la main, mais c\'est signalé', () => {
+  const base = crm([{ id: 1, nom: 'Origine' }]);
+  const mien = crm([{ id: 1, nom: 'Ma version' }]);
+  const autre = crm([{ id: 1, nom: 'Sa version' }]);
+  const r = F.vsFusionDomaine(base, mien, autre);
+  assert.strictEqual(r.data.spes_crm_pipeline[0].nom, 'Ma version');
+  assert.ok(r.conflits.length, 'le seul cas vraiment indécidable doit se voir');
+});
+
+test('ce que je n\'ai pas touché prend la valeur de l\'autre', () => {
+  /* Sans la base, on ne saurait pas que c'est LUI qui a changé et pas moi. */
+  const base = { vs_rosters: [{ id: 1 }], vs_active_roster: 1 };
+  const mien = { vs_rosters: [{ id: 1 }], vs_active_roster: 1 };
+  const autre = { vs_rosters: [{ id: 1 }], vs_active_roster: 7 };
+  const r = F.vsFusionDomaine(base, mien, autre);
+  assert.strictEqual(r.data.vs_active_roster, 7);
+  assert.deepStrictEqual(r.conflits, []);
+});
+
+test('un élément ajouté par l\'autre depuis ma lecture arrive bien chez moi', () => {
+  const base = crm([]);
+  const mien = crm([]);
+  const autre = crm([{ id: 9, nom: 'Nouveau' }]);
+  const r = F.vsFusionDomaine(base, mien, autre);
+  assert.deepStrictEqual(r.data.spes_crm_pipeline, [{ id: 9, nom: 'Nouveau' }]);
+});
