@@ -165,3 +165,103 @@ test('un champion dont la majorité du kit n\'est pas mitigée est signalé', ()
   assert.doesNotMatch(sain, /mal modélisé/,
     'un sort mixte sur quatre ne doit pas déclencher l\'avertissement');
 });
+
+/* ── 6. LE DIGEST « CE QUI A CHANGÉ » ──────────────────────────────────────────────
+   La logique vit dans app.html, où il n'y a pas de runner. On l'EXTRAIT et on
+   l'exécute, comme pour boAfficher : c'est la seule façon de vérifier une décision
+   plutôt qu'un motif de texte.
+
+   Ce qui est vérifié n'est pas « ça produit des signaux » — n'importe quel seuil en
+   produit. C'est que le seuil est RELATIF AU JOUEUR : le même écart absolu doit être
+   signalé chez un joueur régulier et ignoré chez un joueur instable. Sans ça, le digest
+   ne vaut pas mieux qu'un tableur avec un ±10 %. */
+function digestFns() {
+  /* Une seule TRANCHE CONTIGUË, des constantes jusqu'à la fin de vsdSignaux. Découper
+     variable par variable sur le premier « ; » suivi d'un saut de ligne échouait : deux
+     constantes portent un commentaire APRÈS le point-virgule, et l'extraction avalait
+     alors le bloc suivant en produisant du code invalide. Le défaut était dans le test,
+     pas dans app.html — et un test qui échoue à extraire ne prouve rien du tout. */
+  const debut = app.indexOf('var VSD_MESURES =');
+  assert.ok(debut > 0, 'VSD_MESURES introuvable dans app.html');
+  const i = app.indexOf('function vsdSignaux(', debut);
+  assert.ok(i > debut, 'vsdSignaux introuvable dans app.html');
+  const ferme = /\r?\n\}\r?\n/g;
+  ferme.lastIndex = i;
+  const m = ferme.exec(app);
+  assert.ok(m, 'fin de vsdSignaux introuvable');
+  const src = app.slice(debut, m.index + m[0].length);
+  return new Function(src + '\nreturn { vsdSignaux: vsdSignaux, vsdEcartType: vsdEcartType };')();
+}
+const D = digestFns();
+
+/* Fabrique d'historique : une valeur par jour, du plus ancien au plus récent. */
+const histo = (pseudo, cle, valeurs, tiers) => valeurs.map((v, i) => ({
+  date: new Date(Date.UTC(2026, 7, 1 + i)).toISOString(),
+  players: [Object.assign({ pseudo, role: 'Mid' }, { [cle]: v },
+    tiers ? { tier: tiers[i] } : {})]
+}));
+
+test('un mouvement hors du bruit habituel du joueur est signalé', () => {
+  /* Joueur RÉGULIER : CS/min qui varie de ±0,05, puis chute de 0,6. */
+  const snaps = histo('Regulier', 'csMin', [8.00, 8.05, 7.95, 8.02, 7.98, 8.01, 7.40]);
+  const r = D.vsdSignaux(snaps, { jours: 6 });
+  assert.ok(r.assez, 'sept relevés doivent suffire : ' + (r.pourquoi || ''));
+  const s = r.signaux.find(x => x.mesure === 'csMin');
+  assert.ok(s, 'la chute de CS/min doit être signalée');
+  assert.strictEqual(s.sens, -1, 'et signalée comme une baisse');
+});
+
+/* ⚠ LE TEST QUI JUSTIFIE TOUT LE RESTE. Même joueur, même écart final EXACTEMENT,
+   mais un historique qui oscille déjà autant. Un seuil fixe signalerait les deux ;
+   ici le second doit se taire, parce que ce mouvement-là ne dit rien de nouveau. */
+test('le MÊME écart chez un joueur instable n\'est PAS signalé', () => {
+  const regulier = D.vsdSignaux(histo('R', 'csMin', [8.00, 8.05, 7.95, 8.02, 7.98, 8.01, 7.40]), { jours: 6 });
+  const instable = D.vsdSignaux(histo('I', 'csMin', [8.00, 7.30, 8.60, 7.20, 8.50, 7.35, 7.40]), { jours: 6 });
+  const vuR = regulier.signaux.some(s => s.mesure === 'csMin');
+  const vuI = instable.signaux.some(s => s.mesure === 'csMin');
+  assert.ok(vuR, 'le joueur régulier doit être signalé');
+  assert.ok(!vuI, 'le joueur instable ne doit PAS l\'être : ce mouvement est son ordinaire');
+});
+
+test('un historique parfaitement plat ne produit aucun signal', () => {
+  /* Écart-type nul : le modèle ne sait pas juger, il se tait au lieu d\'inventer. */
+  const r = D.vsdSignaux(histo('Plat', 'kda', [3, 3, 3, 3, 3, 3, 3]), { jours: 6 });
+  assert.deepStrictEqual(r.signaux.filter(s => s.mesure === 'kda'), []);
+});
+
+test('trop peu de relevés : le digest le dit au lieu de produire du vide', () => {
+  const r = D.vsdSignaux(histo('Neuf', 'kda', [3, 5]), { jours: 14 });
+  assert.strictEqual(r.assez, false);
+  assert.match(r.pourquoi, /relev/, 'la raison doit être écrite en clair');
+  assert.deepStrictEqual(r.signaux, []);
+});
+
+test('un changement de palier est toujours signalé, et passe devant le reste', () => {
+  const snaps = histo('Grimpe', 'csMin', [8.0, 8.05, 7.95, 8.02, 7.98, 8.01, 7.40],
+    ['GOLD', 'GOLD', 'GOLD', 'GOLD', 'GOLD', 'GOLD', 'PLATINUM']);
+  const r = D.vsdSignaux(snaps, { jours: 6 });
+  const t = r.signaux.find(s => s.mesure === 'tier');
+  assert.ok(t, 'le passage Or → Platine doit être signalé');
+  assert.strictEqual(t.sens, 1, 'et reconnu comme une montée');
+  assert.strictEqual(t.avantTexte, 'Or');
+  assert.strictEqual(t.apresTexte, 'Platine');
+  assert.strictEqual(r.signaux[0].mesure, 'tier', 'le palier doit être le premier signal');
+});
+
+test('la comparaison part du relevé le plus récent AVANT la fenêtre', () => {
+  /* Historique long : comparer au plus ancien ferait passer une dérive de saison pour
+     un mouvement de la semaine. On veut le bord de la fenêtre, pas le début des temps. */
+  const snaps = histo('Long', 'kda', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const r = D.vsdSignaux(snaps, { jours: 3 });
+  assert.ok(r.assez, r.pourquoi || '');
+  assert.ok(r.jours <= 4, 'la période comparée doit rester proche de la fenêtre, obtenu ' + r.jours);
+  assert.notStrictEqual(new Date(r.depuis).getTime(), new Date(snaps[0].date).getTime(),
+    'le point de départ ne doit pas être le tout premier relevé');
+});
+
+test('l\'écart-type refuse de se prononcer sur moins de deux valeurs', () => {
+  assert.strictEqual(D.vsdEcartType([]), null);
+  assert.strictEqual(D.vsdEcartType([5]), null);
+  assert.ok(Math.abs(D.vsdEcartType([2, 4, 4, 4, 5, 5, 7, 9]) - 2.138) < 0.01,
+    'écart-type d\'échantillon standard');
+});

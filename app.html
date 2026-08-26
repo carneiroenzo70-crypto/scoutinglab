@@ -6127,6 +6127,200 @@ async function rsTeamScore(roster) {
   RS_ROLES.forEach(r => { const s = perRole[r] && perRole[r].score; if (typeof s === 'number' && s < min) { min = s; weakest = r; } });
   return { team, perRole, weakest };
 }
+/* ══════════ CE QUI A CHANGÉ — le digest ══════════
+   La différence entre un rapport et un produit, c'est la MÉMOIRE. Un data analyste
+   travaille en instantané : il dit où en est le joueur aujourd'hui. Le cron quotidien,
+   lui, garde 90 jours par roster — personne d'autre n'a l'historique de CET effectif.
+   Ce qu'on peut en tirer et qu'aucun rapport ne donne : ce qui a BOUGÉ.
+
+   ── Le choix qui décide de tout : quel écart mérite d'être montré ──────────────────
+   Un seuil fixe (« signaler au-delà de ±10 % ») est ce que fait un tableur, et il est
+   faux dans les deux sens. Un support à 2,1 de vision/min qui passe à 2,4 bouge de 14 %
+   sans que ça veuille rien dire : sa mesure oscille autant d'une semaine sur l'autre.
+   À l'inverse, un joueur très régulier qui perd 4 % de CS/min vient peut-être de changer
+   quelque chose d'important, et le seuil fixe ne le verra jamais.
+
+   On compare donc chaque écart à la VARIABILITÉ PROPRE DU JOUEUR sur la fenêtre : son
+   écart-type à lui, sur cette mesure-là. Un mouvement compte s'il sort de son bruit
+   habituel. C'est précisément ce qu'un analyste humain ne refait pas tous les matins
+   pour cinq joueurs et sept mesures — et c'est ce qui empêche le digest de devenir un
+   tableau de bord de plus.
+
+   Trois refus délibérés :
+   · Écart-type nul ou incalculable → on ne signale RIEN, plutôt que de traiter le
+     moindre frémissement comme un événement. Ne pas savoir se dit.
+   · Moins de VSD_MIN_POINTS relevés sur la période → on l'annonce au lieu de produire
+     des signaux sur du vide.
+   · Le changement de palier (Or → Platine) est signalé TOUJOURS : il est catégoriel,
+     pas continu, et aucun écart-type n'a de sens dessus. */
+var VSD_MESURES = [
+  { cle: 'lp',       nom: 'LP',                      unite: '',   decimales: 0 },
+  { cle: 'wr',       nom: 'winrate',                 unite: ' %', decimales: 0 },
+  { cle: 'kda',      nom: 'KDA',                     unite: '',   decimales: 2 },
+  { cle: 'csMin',    nom: 'CS/min',                  unite: '',   decimales: 2 },
+  { cle: 'visMin',   nom: 'vision/min',              unite: '',   decimales: 2 },
+  { cle: 'killPart', nom: 'participation aux kills', unite: ' %', decimales: 0 },
+  { cle: 'dmgShare', nom: 'part de dégâts',          unite: ' %', decimales: 0 }
+];
+var VSD_PALIERS = ['IRON', 'BRONZE', 'SILVER', 'GOLD', 'PLATINUM', 'EMERALD', 'DIAMOND', 'MASTER', 'GRANDMASTER', 'CHALLENGER'];
+var VSD_PALIER_FR = { IRON: 'Fer', BRONZE: 'Bronze', SILVER: 'Argent', GOLD: 'Or', PLATINUM: 'Platine',
+  EMERALD: 'Émeraude', DIAMOND: 'Diamant', MASTER: 'Maître', GRANDMASTER: 'Grand Maître', CHALLENGER: 'Challenger' };
+var VSD_MIN_POINTS = 4;   // en dessous, l'écart-type ne veut rien dire
+var VSD_SIGMA = 1.5;      // combien d'écarts-types font un signal
+
+function vsdEcartType(valeurs) {
+  var v = (valeurs || []).filter(function (x) { return typeof x === 'number' && isFinite(x); });
+  if (v.length < 2) return null;
+  var moy = v.reduce(function (a, b) { return a + b; }, 0) / v.length;
+  var variance = v.reduce(function (a, b) { return a + (b - moy) * (b - moy); }, 0) / (v.length - 1);
+  return Math.sqrt(variance);
+}
+
+/* snaps : instantanés { date, players:[{pseudo, role, tier, lp, wr, …}] }. */
+function vsdSignaux(snaps, options) {
+  options = options || {};
+  var jours = options.jours || 14;
+  var seuil = options.sigma != null ? options.sigma : VSD_SIGMA;
+  var minPoints = options.minPoints != null ? options.minPoints : VSD_MIN_POINTS;
+  var liste = (snaps || []).slice().sort(function (a, b) {
+    return String(a.date || '').localeCompare(String(b.date || ''));
+  });
+  if (liste.length < 2) {
+    return { signaux: [], assez: false, points: liste.length,
+             pourquoi: 'Il faut au moins deux relevés pour comparer quoi que ce soit.' };
+  }
+
+  var recent = liste[liste.length - 1];
+  var limite = new Date(new Date(recent.date).getTime() - jours * 864e5);
+  /* Le point de comparaison : le plus RÉCENT qui soit encore antérieur à la fenêtre.
+     Prendre le plus ancien de tout l'historique aurait comparé à trois mois en arrière,
+     et fait passer pour « un mouvement de cette semaine » une dérive de saison. */
+  var anterieurs = liste.slice(0, -1).filter(function (s) { return new Date(s.date) <= limite; });
+  var avant = anterieurs.length ? anterieurs[anterieurs.length - 1] : liste[0];
+  var fenetre = liste.filter(function (s) { return new Date(s.date) >= new Date(avant.date); });
+  if (fenetre.length < minPoints) {
+    return { signaux: [], assez: false, points: fenetre.length, minPoints: minPoints,
+             pourquoi: 'Seulement ' + fenetre.length + ' relevé(s) sur la période : trop peu pour ' +
+                       'distinguer un vrai mouvement du bruit habituel du joueur.' };
+  }
+
+  var joursReels = Math.max(1, Math.round((new Date(recent.date) - new Date(avant.date)) / 864e5));
+  var chez = function (s, pseudo) {
+    return (s.players || []).filter(function (p) { return p.pseudo === pseudo; })[0] || null;
+  };
+  var signaux = [];
+
+  (recent.players || []).forEach(function (apres) {
+    var vieux = chez(avant, apres.pseudo);
+    if (!vieux) return;
+
+    /* Le palier : catégoriel, donc toujours signalé, jamais soumis à l'écart-type. */
+    if (apres.tier && vieux.tier && apres.tier !== vieux.tier) {
+      var monte = VSD_PALIERS.indexOf(apres.tier) > VSD_PALIERS.indexOf(vieux.tier);
+      signaux.push({
+        pseudo: apres.pseudo, role: apres.role || '', mesure: 'tier', nom: 'palier',
+        categoriel: true, sens: monte ? 1 : -1, jours: joursReels,
+        avantTexte: VSD_PALIER_FR[vieux.tier] || vieux.tier,
+        apresTexte: VSD_PALIER_FR[apres.tier] || apres.tier,
+        z: Infinity   // un changement de palier passe devant tout le reste
+      });
+    }
+
+    VSD_MESURES.forEach(function (m) {
+      var a = vieux[m.cle], b = apres[m.cle];
+      if (typeof a !== 'number' || typeof b !== 'number') return;
+      var historique = fenetre.map(function (s) {
+        var p = chez(s, apres.pseudo); return p ? p[m.cle] : null;
+      });
+      var sigma = vsdEcartType(historique);
+      /* Écart-type nul ou inconnu : on ne sait pas juger, donc on se tait. */
+      if (sigma == null || sigma === 0) return;
+      var delta = b - a;
+      var z = delta / sigma;
+      if (Math.abs(z) < seuil) return;
+      signaux.push({
+        pseudo: apres.pseudo, role: apres.role || '', mesure: m.cle, nom: m.nom,
+        categoriel: false, avant: a, apres: b, delta: delta, sigma: sigma, z: z,
+        sens: delta > 0 ? 1 : -1, decimales: m.decimales, unite: m.unite, jours: joursReels
+      });
+    });
+  });
+
+  signaux.sort(function (x, y) { return Math.abs(y.z) - Math.abs(x.z); });
+  return { signaux: signaux, assez: true, points: fenetre.length, jours: joursReels,
+           depuis: avant.date, jusqua: recent.date };
+}
+
+/* Le rendu du digest. Deux règles de présentation qui découlent du calcul :
+   · on annonce COMBIEN d'écarts-types fait chaque mouvement, parce que c'est le seul
+     chiffre qui distingue ce digest d'un tableau de bord — le lecteur doit pouvoir
+     contester le seuil, donc le voir ;
+   · quand il n'y a rien à dire, on le dit et on s'arrête. Une section qui invente du
+     contenu les jours calmes apprend au coach à ne plus la lire. */
+var VSD_JOURS = 14;
+function vsdFmt(v, dec) { return (dec ? v.toFixed(dec) : Math.round(v)).toString().replace('.', ','); }
+function vsdHtml(roster) {
+  var snaps = rsSnapsGet(roster.id) || [];
+  var r = vsdSignaux(snaps, { jours: VSD_JOURS });
+  /* Le titre annonce la période RÉELLEMENT comparée, pas la fenêtre demandée. Quand
+     l'historique est plus court que 14 jours, écrire « 14 derniers jours » ferait passer
+     un écart de 6 jours pour un écart de deux semaines — un mensonge par arrondi, et
+     exactement le genre de détail qui fait perdre confiance dans tout le reste. */
+  var periode = r.assez && r.jours ? r.jours + (r.jours > 1 ? ' derniers jours' : ' dernier jour')
+                                   : VSD_JOURS + ' derniers jours';
+  var h = '<div class="card" style="margin-top:18px;padding:18px 20px">' +
+    '<div class="h3" style="font-size:16px;margin-bottom:4px">Ce qui a changé' +
+    '<span class="faint" style="font-weight:400;font-size:.78rem"> · ' + periode + '</span></div>';
+
+  if (!r.assez) {
+    return h + '<div class="faint" style="font-size:.82rem;line-height:1.55">' +
+      anEsc(r.pourquoi || 'Pas assez de relevés.') +
+      ' Le relevé automatique tourne chaque matin ; cette section se remplira toute seule.' +
+      '</div></div>';
+  }
+  if (!r.signaux.length) {
+    return h + '<div class="faint" style="font-size:.82rem;line-height:1.55">' +
+      'Rien de notable sur ' + r.points + ' relevés. Tous les écarts restent dans les ' +
+      'variations habituelles de chaque joueur — ce qui est une information, pas une absence ' +
+      'd\'information.</div></div>';
+  }
+
+  h += '<div class="faint" style="font-size:.78rem;margin-bottom:12px;line-height:1.5">' +
+    'Un écart n\'est retenu que s\'il sort du bruit <b>propre à ce joueur</b> sur la période ' +
+    '(' + r.points + ' relevés). Un seuil fixe signalerait les joueurs irréguliers tous les ' +
+    'jours et laisserait passer les vrais décrochages des joueurs constants.</div>';
+
+  h += '<div style="display:flex;flex-direction:column;gap:8px">';
+  r.signaux.slice(0, 8).forEach(function (s) {
+    var monte = s.sens > 0;
+    var couleur = monte ? 'var(--lime)' : '#E05A5A';
+    var fleche = monte ? '&#9650;' : '&#9660;';
+    var detail;
+    if (s.categoriel) {
+      detail = '<b>' + anEsc(s.avantTexte) + '</b> &rarr; <b>' + anEsc(s.apresTexte) + '</b>';
+    } else {
+      detail = vsdFmt(s.avant, s.decimales) + s.unite + ' &rarr; <b>' +
+        vsdFmt(s.apres, s.decimales) + s.unite + '</b>' +
+        ' <span class="faint">(' + (s.delta > 0 ? '+' : '−') +
+        vsdFmt(Math.abs(s.delta), s.decimales) + s.unite +
+        ', soit ' + vsdFmt(Math.abs(s.z), 1) + '× son écart habituel)</span>';
+    }
+    h += '<div style="display:flex;align-items:baseline;gap:10px;padding:9px 12px;' +
+      'border:1px solid var(--border);border-radius:9px;background:var(--surf2)">' +
+      '<span style="color:' + couleur + ';font-size:11px">' + fleche + '</span>' +
+      '<span style="min-width:130px"><b>' + anEsc(s.pseudo) + '</b>' +
+      (s.role ? ' <span class="faint" style="font-size:.75rem">' + anEsc(s.role) + '</span>' : '') +
+      '</span>' +
+      '<span style="font-size:.85rem"><span class="faint">' + anEsc(s.nom) + '</span> ' + detail + '</span>' +
+      '</div>';
+  });
+  h += '</div>';
+  if (r.signaux.length > 8) {
+    h += '<div class="faint" style="font-size:.75rem;margin-top:8px">' +
+      (r.signaux.length - 8) + ' autre(s) mouvement(s) plus faibles, non affichés.</div>';
+  }
+  return h + '</div>';
+}
 /* ─── Snapshots de roster (suivi manuel dans le temps) ─── */
 function rsSnapsAll() { try { return JSON.parse(localStorage.getItem('vs_roster_snapshots') || '{}'); } catch (_) { return {}; } }
 const _rsServerSnaps = {};   // cache des snapshots fusionnés (serveur + local) par roster
@@ -6451,6 +6645,13 @@ async function renderRoster() {
   if (!roster) roster = rsCreate('Mon équipe');
   const list = rsAll();
   rsSyncTrack();   // enregistre les rosters suivis côté serveur (pour le cron) à chaque ouverture
+  /* Les instantanés servent maintenant au digest « Ce qui a changé », affiché en tête et
+     non plus seulement derrière le bouton « Évolution » : il faut donc les charger à
+     l'ouverture. UNE fois par roster — `_rsServerSnaps` sert de garde, sinon chaque
+     re-rendu (changement de roster, saisie, capture) rejouerait l'appel réseau. */
+  if (_rsServerSnaps[roster.id] === undefined) {
+    try { await rsLoadSnaps(roster.id); } catch (_) {}
+  }
 
   let html = '<div class="rs-toolbar">';
   html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderRoster()">';
@@ -6493,6 +6694,11 @@ async function renderRoster() {
   body += '<div class="crm-kpi"><div class="k">Maillon faible</div><div class="v" style="font-size:17px;color:var(--rank-gold)">' + (ts.weakest || '—') + '</div></div>';
   body += '<div class="crm-kpi"><div class="k">Vivier scouté</div><div class="v">' + cands.length + '</div></div>';
   body += '</div></div>';
+
+  /* « Ce qui a changé » AVANT les cartes de poste. Les cartes disent où en est chacun ;
+     le digest dit ce qui a bougé — et c'est ça qu'un coach doit voir en ouvrant la page.
+     Placé après les cartes, il aurait été sous la ligne de flottaison, donc jamais lu. */
+  body += vsdHtml(roster);
 
   body += '<div class="rs-grid">';
   for (const role of RS_ROLES) {
