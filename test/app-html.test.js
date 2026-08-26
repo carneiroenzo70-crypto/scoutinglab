@@ -543,3 +543,48 @@ test('le chemin d\'enregistrement traite les échecs au lieu de les avaler', () 
   /* Contre-test de portée : si l'extraction ratait, `src` serait vide et tout passerait. */
   assert.ok(src.length > 800, 'extraction de put() trop courte pour prouver quoi que ce soit');
 });
+
+/* ── 12. Leaguepedia se consulte TOUJOURS par le proxy ─────────────────────────────
+   `api/lp.js` est un proxy avec cache Redis de 6 h, écrit précisément pour éviter le
+   rate-limit de lol.fandom.com. Onze appels sur quatorze l'utilisaient ; trois partaient
+   en direct depuis le navigateur — et ces trois-là (âge, recherche floue, tenures) sont
+   déclenchés PAR JOUEUR, donc en rafale sur un roster ou une liste de prospects. C'est ce
+   qui rendait l'avant-match « fragile » : le proxy existait et était contourné. */
+test('aucun appel à Leaguepedia ne contourne le proxy /api/lp', () => {
+  const lignes = app.split('\n');
+  const directs = [];
+  lignes.forEach((l, i) => {
+    if (!/lol\.fandom\.com\/api\.php/.test(l)) return;
+    /* L'URL est construite sur plusieurs lignes puis consommée juste après : on regarde
+       la fenêtre qui suit pour voir par où elle part. */
+    const fenetre = lignes.slice(i, i + 14).join(' ');
+    if (!/pmCargo|\/api\/lp/.test(fenetre)) directs.push('ligne ' + (i + 1));
+  });
+  assert.deepStrictEqual(directs, [],
+    'appel(s) direct(s) à lol.fandom.com : le navigateur se fait limiter et rien n\'est ' +
+    'mis en cache. Passer par pmCargo(url), qui proxifie via /api/lp.');
+});
+
+test('la détection reconnaît un appel Leaguepedia non proxifié', () => {
+  /* Contre-test : sans lui, la vérification pourrait ne plus rien couvrir. */
+  const faux = ['const u = "https://lol.fandom.com/api.php?action=cargoquery";',
+                'const r = await fetch(u);'].join('\n').split('\n');
+  let vu = false;
+  faux.forEach((l, i) => {
+    if (!/lol\.fandom\.com\/api\.php/.test(l)) return;
+    if (!/pmCargo|\/api\/lp/.test(faux.slice(i, i + 14).join(' '))) vu = true;
+  });
+  assert.ok(vu, 'la détection doit repérer un fetch direct');
+});
+
+/* Un échec de requête n'est pas une réponse. L'ancienne version enregistrait `null` dans
+   le cache d'âge quoi qu'il arrive : un rate-limit de quelques secondes se figeait en
+   « ce joueur n'a pas d'âge » pour toute la session, sans jamais réessayer. */
+test('un échec réseau ne se mémorise pas comme une absence de donnée', () => {
+  const d = app.indexOf('const ageCache');
+  const i = app.indexOf('} catch(e) {', d);
+  assert.ok(d > 0 && i > d, 'la fonction de recherche d\'âge est introuvable');
+  const bloc = app.slice(i, i + 700);
+  assert.ok(!/ageCache\[[^\]]*\]\s*=\s*null/.test(bloc),
+    'le catch ne doit PAS mémoriser null : on n\'a pas pu demander, ce n\'est pas une réponse');
+});

@@ -11308,10 +11308,15 @@ async function searchAgeLeaguepedia(gameName) {
       '&where=ID%3D%22' + query + '%22' +
       '&format=json&origin=*&limit=1';
 
-    const resp = await fetch(searchUrl);
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    const results = data?.cargoquery || [];
+    /* Via le proxy /api/lp, comme le reste du site : cache Redis de 6 h côté serveur et
+       reprise sur rate-limit. Cet appel-ci partait EN DIRECT vers lol.fandom.com, et il
+       est déclenché PAR JOUEUR — donc en rafale sur un roster ou une liste de prospects.
+       C'est précisément ce que le proxy avait été écrit pour éviter, et il était contourné
+       ici et à deux autres endroits. */
+    const results = await pmCargo(searchUrl);
+    /* `null` = on n'a pas pu demander (réseau, quota). Ce n'est PAS « pas de résultat » :
+       on repart sans rien mémoriser, sinon un incident passager se figerait en fait. */
+    if (results === null) return null;
 
     if (results.length && results[0].title) {
       const p = results[0].title;
@@ -11340,10 +11345,8 @@ async function searchAgeLeaguepedia(gameName) {
       '&where=ID+LIKE+%22' + query + '%25%22' +
       '&format=json&origin=*&limit=3';
 
-    const resp2 = await fetch(fuzzyUrl);
-    if (resp2.ok) {
-      const data2 = await resp2.json();
-      const results2 = data2?.cargoquery || [];
+    const results2 = await pmCargo(fuzzyUrl) || [];
+    {
       for (const r of results2) {
         const p = r.title;
         if (p.Birthdate && p.Birthdate !== '0000-00-00') {
@@ -11358,10 +11361,16 @@ async function searchAgeLeaguepedia(gameName) {
       }
     }
 
+    /* Ici on a bien INTERROGÉ Leaguepedia et il n'a rien : c'est un fait, on le retient
+       pour ne pas redemander à chaque affichage. */
     ageCache[gameName.toLowerCase()] = null;
     return null;
   } catch(e) {
-    ageCache[gameName.toLowerCase()] = null;
+    /* ⚠ ON NE MÉMORISE PAS. Une exception ici veut dire qu'on n'a pas pu demander —
+       réseau, quota, proxy indisponible. L'ancienne version enregistrait `null` dans le
+       cache, ce qui transformait un incident de quelques secondes en « ce joueur n'a pas
+       d'âge » pour toute la session, sans plus jamais réessayer. Une panne passagère
+       enregistrée comme un fait, c'est le même défaut que partout ailleurs aujourd'hui. */
     return null;
   }
 }
@@ -11376,10 +11385,9 @@ async function searchCompetHistory(playerWikiId) {
       '&fields=Player,Team,Role,DateStart,DateEnd' +
       '&where=Player%3D%22' + q + '%22' +
       '&order_by=DateStart+DESC&limit=4&format=json&origin=*';
-    const resp = await fetch(url);
-    if (!resp.ok) return null;
-    const data = await resp.json();
-    const rows = data?.cargoquery || [];
+    /* Idem : par le proxy, cache 6 h. Les tenures changent quelques fois par an. */
+    const rows = await pmCargo(url);
+    if (rows === null) return null;
     if (!rows.length) return null;
     return rows.map(r => ({
       team: r.title.Team || '?',
