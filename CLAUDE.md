@@ -185,14 +185,19 @@ parties passeront de ~2 min à quelques secondes.
 ## Conventions
 
 - Zéro dépendance npm côté API (crypto natif + `fetch`). Ne pas introduire de framework.
-- **Tout script chargé depuis un domaine tiers doit porter `integrity` + `crossorigin`**
-  (SRI, posé le 26/08/2026 sur chart.js, jspdf, jspdf-autotable et pdf-lib). Sans empreinte,
-  un CDN compromis exécute du code arbitraire dans une page authentifiée. `crossorigin` est
-  indispensable : sans lui le navigateur bloque un script tiers porteur d'une empreinte.
-  Un test (`test/app-html.test.js`) refuse tout nouveau script tiers non scellé.
-  ⚠️ **Monter une version ne se limite pas à changer l'URL** — il faut recalculer l'empreinte,
-  sinon le script est refusé et la fonctionnalité disparaît sans message clair :
-  `node -e "fetch(URL).then(r=>r.arrayBuffer()).then(b=>console.log('sha384-'+require('crypto').createHash('sha384').update(Buffer.from(b)).digest('base64')))"`
+- **Aucun script tiers.** chart.js, jspdf, jspdf-autotable et pdf-lib venaient de trois CDN
+  et s'exécutaient sans contrôle dans une page authentifiée. Des empreintes SRI ont d'abord
+  été posées (26/08/2026), puis les fichiers ont été **hébergés dans `assets/vendor/`** le
+  même jour : le SRI réglait la compromission d'un CDN, **pas son indisponibilité** — unpkg
+  en panne et l'export PDF mourait. Origines, versions et licences : `assets/vendor/LICENCES.md`
+  (MIT ×3, Apache-2.0 pour pdf-lib ; fichiers inchangés, en-têtes de licence intacts).
+  Deux tests l'imposent : aucun `<script src="https://…">`, et chaque fichier référencé
+  existe bien sur le disque. Si un CDN devait revenir, `integrity` + `crossorigin` restent
+  exigés par un troisième test.
+  ⚠️ **La version est dans le NOM du fichier**, parce que `vercel.json` pose un cache
+  **immuable d'un an** sur `/assets/vendor/`. Monter une version = **nouveau nom de fichier**
+  + balise mise à jour + ancien supprimé. Remplacer le contenu à nom constant ferait servir
+  l'ancienne version pendant un an.
 - Commentaires et libellés UI **en français**.
 - Suivre les patterns existants (`rankIcon()`, `anScoreColor()`, `anEsc()`, tokens `--vs-*`)
   plutôt que réinventer.

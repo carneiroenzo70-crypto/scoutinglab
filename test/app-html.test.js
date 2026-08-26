@@ -392,12 +392,33 @@ test('la détection reconnaît bien un script tiers non protégé', () => {
   });
 });
 
-test('les quatre bibliothèques attendues sont bien celles qui sont scellées', () => {
-  /* Garde-fou de portée : si le test ne trouvait plus aucun script tiers (URL déplacée,
-     balises réécrites), il passerait au vert en ne surveillant plus rien. */
-  const scelles = [...app.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(https?:\/\/[^"]+)"[^>]*>/g)]
-    .map(m => m[1].split('/').pop());
-  assert.strictEqual(scelles.length, 4, 'attendu 4 scripts tiers, trouvé ' + scelles.length);
-  ['chart.umd.min.js', 'jspdf.umd.min.js', 'jspdf.plugin.autotable.min.js', 'pdf-lib.min.js']
-    .forEach(f => assert.ok(scelles.indexOf(f) >= 0, f + ' introuvable parmi les scripts scellés'));
+/* Depuis le 26/08/2026 les quatre bibliothèques sont HÉBERGÉES PAR NOUS. Le SRI réglait
+   la compromission d'un CDN, pas son indisponibilité : unpkg en panne, et l'export PDF
+   mourait. La garantie est donc plus forte qu'une empreinte — il n'y a plus de tiers du
+   tout dans la chaîne de chargement. Le test ci-dessus reste en place pour le jour où
+   quelqu'un rebrancherait un CDN. */
+test('aucun script n\'est chargé depuis un domaine externe', () => {
+  const tiers = [...app.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(https?:\/\/[^"]+)"[^>]*>/g)]
+    .map(m => m[1]);
+  assert.deepStrictEqual(tiers, [],
+    'un script tiers réintroduit la panne d\'un CDN dans notre chaîne : les quatre ' +
+    'bibliothèques vivent dans assets/vendor/. Si c\'est délibéré, il lui faut au moins ' +
+    'integrity + crossorigin (test précédent).');
+});
+
+/* Une balise qui pointe vers un fichier absent ne lève rien au chargement du HTML : les
+   graphiques et l'export PDF disparaissent simplement, sans message clair. C'est
+   exactement ce qui arriverait en montant une version — le nom du fichier porte la
+   version, donc il CHANGE à chaque mise à jour. */
+test('chaque bibliothèque référencée existe bien sur le disque', () => {
+  const refs = [...app.matchAll(/<script\b[^>]*\bsrc\s*=\s*"(\/assets\/vendor\/[^"]+)"/g)]
+    .map(m => m[1]);
+  assert.strictEqual(refs.length, 4, 'attendu 4 bibliothèques locales, trouvé ' + refs.length);
+  const absents = refs.filter(r => !fs.existsSync(path.join(__dirname, '..', r)));
+  assert.deepStrictEqual(absents, [], 'fichier(s) référencé(s) mais absent(s) du dépôt');
+  /* La version dans le nom n'est pas cosmétique : vercel.json pose un cache immuable d'un
+     an sur /assets/vendor/. Un nom sans version ferait servir l'ancien fichier pendant
+     tout ce temps après une mise à jour. */
+  refs.forEach(r => assert.match(r, /\d+\.\d+\.\d+/,
+    r + ' doit porter son numéro de version : le cache immuable en dépend'));
 });

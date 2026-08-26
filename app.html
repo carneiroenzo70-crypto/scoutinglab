@@ -3775,38 +3775,33 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   outline-offset:2px;
 }
 </style>
-<!-- `defer` AJOUTÉ le 26/08/2026. Ces quatre bibliothèques bloquaient l'analyse du HTML
-     dans le <head> : mesuré, elles démarraient à 372 ms et duraient de 1 597 à 1 877 ms,
-     soit ~1,9 s des 2,7 s avant que la page réagisse. Aucune n'est utilisée au niveau
-     supérieur d'un script (vérifié) — elles ne servent qu'aux graphiques et à l'export
-     PDF, après une action. `defer` conserve l'ordre et s'exécute avant DOMContentLoaded.
+<!-- ══ CES QUATRE BIBLIOTHÈQUES SONT SERVIES PAR VISIONSCORE ═══════════════════════
+     Elles venaient de trois CDN publics (jsdelivr, cloudflare, unpkg) et s'exécutaient
+     sans le moindre contrôle dans une page où les coachs sont authentifiés. On y a
+     d'abord posé des empreintes SRI, ce qui réglait la compromission — mais pas la
+     DISPONIBILITÉ : unpkg indisponible, et l'export PDF mourait. Le SLA de trois tiers
+     restait dans notre chaîne pour du code qui ne bouge jamais.
 
-     ══ SRI — empreintes ajoutées le 26/08/2026 ════════════════════════════════════════
-     Ces quatre fichiers viennent de TROIS CDN tiers et s'exécutaient SANS AUCUN CONTRÔLE
-     dans une page où les coachs sont authentifiés. Un seul de ces CDN compromis, et du
-     code arbitraire tournait avec accès au token de session et aux données de la
-     structure. `integrity` fait vérifier au navigateur l'empreinte du fichier reçu : au
-     moindre octet différent, il refuse de l'exécuter.
+     Les fichiers sont donc hébergés ici. Ça supprime les deux risques d'un coup, et
+     l'empreinte devient inutile : un fichier de même origine ne peut pas être substitué
+     par un tiers. Chacun a été téléchargé PUIS comparé à l'empreinte relevée sur son CDN,
+     et conservé uniquement en cas de correspondance — ce sont exactement les octets que
+     le navigateur validait auparavant. Aucun n'est modifié ; leur en-tête de licence est
+     intact. Origines, versions et licences : assets/vendor/LICENCES.md.
 
-     `crossorigin="anonymous"` est INDISPENSABLE — sans lui, le navigateur bloque un
-     script tiers porteur d'une empreinte, et les graphiques comme l'export PDF
-     tomberaient. Les trois CDN servent bien `Access-Control-Allow-Origin: *` (vérifié).
+     ⚠ LA VERSION EST DANS LE NOM DU FICHIER, et ce n'est pas cosmétique : vercel.json
+     pose un cache IMMUABLE d'un an sur /assets/vendor/. Remplacer le contenu d'un fichier
+     sans changer son nom laisserait les navigateurs servir l'ancienne version pendant
+     tout ce temps. Monter une version = nouveau nom, balise mise à jour, ancien supprimé.
 
-     Les empreintes sont calculées sur les fichiers RÉELLEMENT servis, pas recopiées
-     d'une documentation, et vérifiées reproductibles sur trois lectures : une source qui
-     varierait ferait échouer la page au hasard — pire que le risque qu'on couvre.
-
-     ⚠ POUR MONTER UNE VERSION : changer l'URL NE SUFFIT PAS. Sans recalculer l'empreinte,
-     le script est refusé et la fonctionnalité disparaît sans message clair. En une ligne :
-       node -e "fetch(URL).then(r=>r.arrayBuffer()).then(b=>console.log('sha384-'+require('crypto').createHash('sha384').update(Buffer.from(b)).digest('base64')))"
-
-     Ce que le SRI ne couvre PAS : si un CDN est indisponible, la bibliothèque ne charge
-     pas — l'intégrité n'est pas la disponibilité. Le remède serait de servir ces quatre
-     fichiers depuis notre propre domaine (~1,1 Mo ajoutés au dépôt). -->
-  <script defer src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js" integrity="sha384-nQIZ6tIcczKARkLebcfqb6P67Pcv2p+KIX3NH6oGaIBc64j2HxDKerK6Efn4aeiY" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script defer src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js" integrity="sha384-weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+     `defer` (posé le même jour) reste indispensable : ces quatre scripts bloquaient
+     l'analyse du HTML dans le <head> et coûtaient ~1,9 s des 2,7 s avant que la page
+     réagisse. Aucune n'est utilisée au niveau supérieur d'un script — elles ne servent
+     qu'aux graphiques et à l'export PDF, après une action de l'utilisateur. -->
+  <script defer src="/assets/vendor/chart-4.4.0.umd.min.js"></script>
+<script defer src="/assets/vendor/jspdf-2.5.1.umd.min.js"></script>
+<script defer src="/assets/vendor/jspdf-autotable-3.6.0.min.js"></script>
+<script defer src="/assets/vendor/pdf-lib-1.17.1.min.js"></script>
 </head>
 
 <body class="landing-active">
