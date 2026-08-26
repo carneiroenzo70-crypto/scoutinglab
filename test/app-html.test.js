@@ -422,3 +422,41 @@ test('chaque bibliothèque référencée existe bien sur le disque', () => {
   refs.forEach(r => assert.match(r, /\d+\.\d+\.\d+/,
     r + ' doit porter son numéro de version : le cache immuable en dépend'));
 });
+
+/* Les quatre bibliotheques n'ont plus d'empreinte SRI : le navigateur ne verifie plus
+   rien, puisqu'elles viennent de notre propre domaine. La verification passe donc de son
+   cote au NOTRE. Ce test compare chaque fichier a l'empreinte relevee sur son CDN
+   d'origine au moment ou il a ete recupere.
+
+   Il attrape trois choses : une conversion de fins de ligne par git (voir .gitattributes),
+   un telechargement partiel, et une modification volontaire du contenu. Sans lui, plus
+   personne au monde ne verifierait ces 1,1 Mo de code executes dans une page authentifiee. */
+const EMPREINTES_VENDOR = {
+  'chart-4.4.0.umd.min.js':       'e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g',
+  'jspdf-2.5.1.umd.min.js':       'JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk',
+  'jspdf-autotable-3.6.0.min.js': 'nQIZ6tIcczKARkLebcfqb6P67Pcv2p+KIX3NH6oGaIBc64j2HxDKerK6Efn4aeiY',
+  'pdf-lib-1.17.1.min.js':        'weMABwrltA6jWR8DDe9Jp5blk+tZQh7ugpCsF3JwSA53WZM9/14PjS5LAJNHNjAI'
+};
+test('les bibliotheques hebergees sont octet pour octet celles publiees en amont', () => {
+  const crypto = require('node:crypto');
+  const ecarts = [];
+  Object.keys(EMPREINTES_VENDOR).forEach(nom => {
+    const chemin = path.join(__dirname, '..', 'assets', 'vendor', nom);
+    assert.ok(fs.existsSync(chemin), nom + ' absent de assets/vendor/');
+    const h = crypto.createHash('sha384').update(fs.readFileSync(chemin)).digest('base64');
+    if (h !== EMPREINTES_VENDOR[nom]) ecarts.push(nom + ' : attendu ' + EMPREINTES_VENDOR[nom] + ', obtenu ' + h);
+  });
+  assert.deepStrictEqual(ecarts, [],
+    'fichier(s) modifie(s) depuis leur recuperation. Si la mise a jour est voulue, changer ' +
+    'le NOM du fichier (la version y figure, le cache est immuable) et l\'empreinte ici.');
+});
+
+test('la verification d\'empreinte reconnait un fichier modifie', () => {
+  /* Contre-test : une empreinte qui ne bouge jamais ne prouve rien. */
+  const crypto = require('node:crypto');
+  const vrai = fs.readFileSync(path.join(__dirname, '..', 'assets', 'vendor', 'chart-4.4.0.umd.min.js'));
+  const trafique = Buffer.concat([vrai, Buffer.from('//x')]);
+  const h = crypto.createHash('sha384').update(trafique).digest('base64');
+  assert.notStrictEqual(h, EMPREINTES_VENDOR['chart-4.4.0.umd.min.js'],
+    'trois octets ajoutes doivent suffire a faire changer l\'empreinte');
+});

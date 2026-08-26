@@ -1,0 +1,9 @@
+# Bibliothèques tierces hébergées par nous : elles doivent rester OCTET POUR OCTET
+# identiques aux fichiers publiés en amont. Git normalise les fins de ligne par défaut
+# (`warning: LF will be replaced by CRLF`), ce qui modifierait leur contenu au prochain
+# checkout sur un poste Windows — et donc leur empreinte, celle-là même qui prouve qu'ils
+# n'ont pas été touchés. `-text` interdit toute conversion.
+#
+# Un test (test/app-html.test.js) compare ces fichiers aux empreintes relevées sur leur
+# CDN d'origine : sans cette ligne, il échouerait sur les postes Windows.
+assets/vendor/*.js -text
