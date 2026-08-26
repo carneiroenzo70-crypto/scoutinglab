@@ -5654,10 +5654,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <b id="bo-niveau-v" class="tc-num">18</b>
             </label>
             <label class="tc-ligne-niv">
-              <span>Emplacements</span>
-              <input type="range" id="bo-slots" min="2" max="6" value="5" class="tc-range"
+              <span>Emplacements <small class="faint">(bottes comprises)</small></span>
+              <input type="range" id="bo-slots" min="2" max="6" value="6" class="tc-range"
                      oninput="document.getElementById('bo-slots-v').textContent=this.value"/>
-              <b id="bo-slots-v" class="tc-num">5</b>
+              <b id="bo-slots-v" class="tc-num">6</b>
             </label>
             <label class="tc-ligne-niv">
               <span>Budget</span>
@@ -21370,7 +21370,7 @@ function boChercherBuilds(){
   }
 
   var niveau = +document.getElementById('bo-niveau').value || 18;
-  var slots  = +document.getElementById('bo-slots').value || 5;
+  var slots  = +document.getElementById('bo-slots').value || 6;
   /* La recherche complète bloque le fil principal ~1,1 s (mesuré : 865 ms pour les
      objets, 259 ms pour les runes, 9 ms pour l'ordre). On la découpe en deux temps avec
      une respiration entre les deux : sans elle, le navigateur ne peindrait AUCUN des
@@ -21395,6 +21395,11 @@ function boChercherBuilds(){
     r.partAttaques = vRef ? vRef.partAttaques : null;
     /* L'identité DÉDUITE du champion — ce qui remplace la question qu'on posait. */
     r.profil = T.profilChampion(boEtat.champion);
+    /* La PHASE DE LIGNE : le mana bride-t-il vraiment ce champion ? C'est le fait qui
+       explique pourquoi son premier objet n'est pas son objet le plus fort. */
+    var m9 = T.matchupDepuisCompo(compo, 9);
+    var vLigne = m9 ? T.valeurLigne(boEtat.champion, r.builds[0].objets, m9, {}) : null;
+    r.brideParMana = vLigne ? vLigne.brideParMana : null;
     /* Les sorts que le modèle ne sait PAS mitiger (type mixte : il ignore quelle part
        passe par l'armure et quelle part par la résistance magique, et refuse d'inventer).
        Leur nombre décide d'un second avertissement — voir boAfficher. */
@@ -21571,8 +21576,27 @@ function boAfficher(r, ms){
         /* Le détail de méthode est replié : il doit rester consultable — c'est ce qui
            rend le conseil auditable — mais il n'a pas à occuper l'écran d'un coach qui
            veut juste savoir quoi acheter. */
+        /* LA PHASE DE LIGNE. C'est elle qui explique pourquoi le premier objet n'est pas
+           le plus fort du build — et le dire vaut mieux que laisser croire à un tri
+           arbitraire. Quatre tentatives ont échoué avant celle-ci ; c'est le mana qui
+           tranche, et il n'est bridant que pour certains champions. */
+        '<p class="mo-d" style="margin:6px 0 0">Le premier objet est jugé en <b>phase de ' +
+        'ligne</b> (niveau 9, une minute d\'échanges, <b>mana compté</b>), le dernier en ' +
+        'combat d\'équipe. ' +
+        (r.brideParMana === true
+          ? 'Sur ce champion, <b>le mana bride réellement</b> le nombre de sorts lançables : ' +
+            'un objet qui en donne vaut donc davantage tôt qu\'un objet qui frappe plus fort.'
+          : r.brideParMana === false
+            ? 'Sur ce champion, <b>le mana ne bride pas</b> — ses sorts coûtent peu au regard ' +
+              'de sa réserve. Les objets de mana ne lui apportent donc rien de particulier tôt.'
+            : '') + '</p>' +
         '<details class="bo-details"><summary>Comment cet ordre est calculé</summary>' +
-        anEsc(b.ordre.critere) + '. ' + anEsc(b.ordre.methode) + '.</details></div>';
+        anEsc(b.ordre.critere) + '. ' + anEsc(b.ordre.methode) + '.<br>' +
+        'Deux cadres, mélangés selon l\'or déjà porté : phase de ligne (niveau 9, 60 s, ' +
+        'mana bridé) et combat d\'équipe (niveau 18, cinq adversaires). La bascule se fait ' +
+        'vers 9 000 po, soit trois objets. Sans ce second cadre, Ahri ne prenait aucun objet ' +
+        'de mana — au niveau 18 le mana ne sert plus — et sa Coiffe de Rabadon sortait en ' +
+        'premier au lieu du troisième objet.</details></div>';
     }
     html += '</div>';
   });

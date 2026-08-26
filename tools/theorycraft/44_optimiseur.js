@@ -33,7 +33,35 @@ const RUNES = (Array.isArray(runesBrutes) ? runesBrutes : Object.values(runesBru
 /* Le vivier de candidats : objets FINIS et assez chers pour porter un effet notable.
    Le seuil de 1 800 po est celui qu'emploient déjà l'audit et les tests — le changer
    ici ferait diverger deux comptages qui doivent parler du même ensemble. */
-const CANDIDATS = items.filter(o => o.fini && o.prix >= 1800).map(o => o.id);
+/* ── LES BOTTES, absentes jusqu'ici ────────────────────────────────────────────────
+   Le seuil de 1 800 po les jetait toutes : les bottes finies coûtent de 900 à 1 250 po.
+   L'outil proposait donc des builds de cinq objets à 15 550 po SANS BOTTES, ce qu'aucun
+   joueur ne fait et ce qui suffit à faire fermer la page.
+
+   Ce n'était pas non plus rattrapable par le champ `fini` : les bottes de niveau 2
+   (Jambières du berzerker, Sandales de Mercure…) portent `fini: false` À JUSTE TITRE,
+   puisqu'elles évoluent en bottes de niveau 3. Ce sont ces dernières — sept au total —
+   qu'il faut ajouter, et elles se reconnaissent par leur GROUPE et non par leur
+   catégorie : les Jambières de métal ne portent pas la catégorie « Boots » mais bien le
+   groupe. Se fier aux catégories aurait laissé passer une deuxième paire.
+
+   La légalité savait déjà refuser deux paires (groupe « bottes » limité à 1) — vérifié
+   avant de les ajouter, sinon la recherche aurait pu en empiler deux. */
+const estBotte = o => (o.groupes || []).indexOf('Boots') >= 0;
+const CANDIDATS = items.filter(o => o.fini && (o.prix >= 1800 || estBotte(o))).map(o => o.id);
+/* Les bottes se cherchent À PART, et il a fallu le constater pour le comprendre : une
+   fois ajoutées au vivier, AUCUN build n'en prenait, à aucun objectif. C'est logique —
+   elles ne donnent presque pas de dégâts et peu de résistances, donc un objet de 3 000 po
+   les domine toujours sur les deux axes que le modèle sait mesurer. Ce que le modèle ne
+   mesure pas, c'est la VITESSE DE DÉPLACEMENT : se placer, esquiver, poursuivre. Aucun
+   joueur ne joue sans bottes, et un outil qui n'en propose jamais se disqualifie seul.
+
+   On réserve donc un emplacement. Ce n'est pas un aveu de faiblesse mais la bonne
+   modélisation d'une contrainte réelle du jeu — et le CHOIX de la paire, lui, reste
+   entièrement calculé : contre une composition physique on ne prend pas les mêmes que
+   contre une composition magique. */
+const BOTTES = items.filter(o => o.fini && estBotte(o)).map(o => o.id);
+const SANS_BOTTES = items.filter(o => o.fini && o.prix >= 1800 && !estBotte(o)).map(o => o.id);
 const parId = {};
 items.forEach(o => { parId[o.id] = o; });
 
@@ -306,6 +334,9 @@ function chercherBuilds(champId, niveau, matchup, options = {}) {
   if (!champions[champId] || !matchup) return null;
   const emplacements = options.emplacements || 6;
   const largeur = options.largeur || 8;          // faisceau
+  /* Un emplacement réservé aux bottes, sauf demande contraire explicite. */
+  const avecBottes = options.bottes !== false && emplacements >= 2;
+  const slotsLibres = avecBottes ? emplacements - 1 : emplacements;
   const objectif = options.objectif || 'equilibre';
   const orMax = options.orMax || Infinity;
   const combien = options.combien || 5;
@@ -316,14 +347,30 @@ function chercherBuilds(champId, niveau, matchup, options = {}) {
   const base = valeurBuild(champId, niveau, [], matchup, options);
   if (!base) return null;
 
-  let faisceau = [{ objets: [], v: base, s: score(base, base, objectif) }];
+  /* ── CE QUI NOTE UN BUILD PENDANT LA RECHERCHE ────────────────────────────────
+     Autrefois `score(v, base, objectif)` : la valeur du build FINI, au niveau 18,
+     contre cinq adversaires. Trier ensuite ces cinq objets ne pouvait rien rattraper —
+     un objet que la recherche n'a jamais sélectionné ne peut pas apparaître en premier.
+     C'est pourquoi Ahri ressortait sans le moindre objet de mana : au niveau 18 le mana
+     ne sert plus à rien, donc la recherche n'en prenait aucun, donc l'ordre d'achat
+     n'avait que des objets de fin de partie à ranger.
+
+     `moteur.puis` note la MÊME séquence en mélangeant les deux cadres selon l'or déjà
+     porté : le premier objet se juge presque entièrement en phase de ligne (niveau 9,
+     mana bridé), le cinquième presque entièrement en combat d'équipe. Mesuré sur Ahri,
+     ça change le build entier — Bâton de l'archange, Malfaisance, PUIS la Coiffe de
+     Rabadon en troisième, ce que tout joueur d'Ahri fait et qu'aucun réglage d'ordre
+     n'avait réussi à produire. */
+  const moteur = moteurAire(champId, niveau, matchup, options);
+
+  let faisceau = [{ objets: [], v: base, s: moteur.puis([]) }];
   let evaluations = 0;
   const vus = new Set();
 
-  for (let slot = 0; slot < emplacements; slot++) {
+  for (let slot = 0; slot < slotsLibres; slot++) {
     const suivants = [];
     faisceau.forEach(noeud => {
-      CANDIDATS.forEach(id => {
+      (avecBottes ? SANS_BOTTES : CANDIDATS).forEach(id => {
         if (noeud.objets.indexOf(id) >= 0) return;
         const objets = noeud.objets.concat([id]);
         if ((parId[id].prix || 0) + noeud.v.or > orMax) return;
@@ -341,12 +388,32 @@ function chercherBuilds(champId, niveau, matchup, options = {}) {
         const v = valeurBuild(champId, niveau, objets, matchup, options);
         evaluations++;
         if (!v) return;
-        suivants.push({ objets, v, s: score(v, base, objectif) });
+        suivants.push({ objets, v, s: moteur.puis(objets) });
       });
     });
     if (!suivants.length) break;
     suivants.sort((a, b) => b.s - a.s);
     faisceau = suivants.slice(0, largeur);
+  }
+
+  /* LA PAIRE DE BOTTES, choisie sur le build réellement retenu. Les sept sont essayées :
+     contre une composition physique, l'armure des Coques en acier vaut mieux que la
+     tenacité des Sandales de Mercure, et l'inverse contre des mages. Ce choix-là, le
+     modèle sait le faire — c'est exactement la question du matchup. */
+  if (avecBottes) {
+    faisceau = faisceau.map(noeud => {
+      let meilleur = null;
+      BOTTES.forEach(id => {
+        const objets = noeud.objets.concat([id]);
+        if (!L.buildLegal(objets, { emplacements }).legal) return;
+        const v = valeurBuild(champId, niveau, objets, matchup, options);
+        evaluations++;
+        if (!v) return;
+        const s = moteur.puis(objets);
+        if (!meilleur || s > meilleur.s) meilleur = { objets, v, s };
+      });
+      return meilleur || noeud;
+    }).sort((a, b) => b.s - a.s);
   }
 
   /* ── Le POURQUOI, obtenu sans travail supplémentaire ──────────────────────────
@@ -364,7 +431,7 @@ function chercherBuilds(champId, niveau, matchup, options = {}) {
         gainSurvie: sans ? n.v.survie - sans.survie : null,
         /* Part du score total que cet objet porte à lui seul. Sert à trier, et à dire
            « c'est cet objet-là qui fait la différence » sans agiter les mains. */
-        partScore: sans ? n.s - score(sans, base, objectif) : null
+        partScore: sans ? n.s - moteur.puis(n.objets.filter(x => x !== id)) : null
       };
     }).sort((a, b) => (b.partScore || 0) - (a.partScore || 0));
 
@@ -600,21 +667,152 @@ function paliersDeConstruction(id) {
   return [...new Set(o.composeDe || [])].filter(c => parId[c]);
 }
 
+/* ── LA PHASE DE LIGNE ─────────────────────────────────────────────────────────────
+   Quatre tentatives ont échoué à faire sortir la règle « pas de Coiffe de Rabadon en
+   premier » : le niveau d'achat, les dégâts du kit nu, la somme des calculs, la courbe
+   de construction. Aucune ne pouvait marcher, parce qu'aucune ne touchait à la vraie
+   raison — on n'achète pas un Rabadon en premier parce qu'il ne fait pas TENIR SA LIGNE.
+
+   Le modèle n'avait pas de ligne du tout : niveau 18, cinq adversaires, mana infini.
+   Deux de ces trois hypothèses sont fausses en début de partie, et la troisième est
+   celle qui décide de tout.
+
+   LE MANA BRIDE, et c'est mesurable dans le fichier de jeu (`base.mana`, `manaParNiv`,
+   `regenMana`, et le `cout` de chaque sort) :
+
+       Ahri niveau 9 ...... 6 Q lançables en 60 s, quand ses recharges en permettent 8
+       Cassiopeia ......... 11 contre 17 — bridée de plus d'un tiers
+       Garen, Katarina .... jamais bridés : leurs sorts ne coûtent pas de mana
+
+   ⚠ La contrainte se compte sur le KIT ENTIER, pas sur un sort. J'ai d'abord conclu que
+   Smolder n'était pas bridé parce que son Q coûte 25 — c'était faux : Q 25 + W 70 +
+   E 65 + R 100 dépassent largement ses ~600 de mana au niveau 9. Regarder un seul sort
+   et en tirer une conclusion sur le champion, c'est la faute qui avait déjà fait
+   conseiller une Lame d'infini à Ahri.
+
+   D'où le renversement, mesuré : en combat d'équipe la Coiffe est à 0,4 % derrière la
+   Torche noire ; en phase de ligne elle est à 32 % derrière. Rien n'a été écrit en dur —
+   la Torche noire et l'Écho de Luden portent 600 de mana chacun, la Coiffe zéro, et le
+   mana est ce qui limite le nombre de sorts. La règle du joueur sort du mécanisme.
+
+   Deux conventions restent, et elles sont annoncées : la fenêtre de ligne (60 s
+   d'échanges) et le niveau de référence (9, milieu de phase de ligne). */
+const NIVEAU_LIGNE = 9;
+const FENETRE_LIGNE = 60;
+
+function valeurLigne(champId, objets, matchup, options = {}) {
+  const c = champions[champId];
+  if (!c || !matchup) return null;
+  const fenetre = options.fenetreLigne || FENETRE_LIGNE;
+  const niveau = options.niveauLigne || NIVEAU_LIGNE;
+  const p = M.profil(champId, niveau, objets, { fenetre, runes: options.runes || [] });
+  if (!p) return null;
+  const fiche = S.ficheBuild(champId, niveau, objets, {
+    fenetre, partPhysique: matchup.partPhysique, cible: matchup.cibles[0],
+    runes: options.runes || []
+  });
+  if (!fiche) return null;
+
+  const partAA = options.partAttaques != null
+    ? options.partAttaques
+    : (profilChampion(champId) || { partAttaques: 0.6 }).partAttaques;
+
+  let somme = 0, bride = false;
+  matchup.cibles.forEach(cible => {
+    /* Ce que chaque sort rapporte, ce qu'il coûte, et combien de fois ses recharges
+       l'autorisent sur la fenêtre. */
+    const lancables = [];
+    ['Q', 'W', 'E', 'R'].forEach(touche => {
+      const s = (c.sorts || {})[touche];
+      if (!s || s.nonExploitable) return;
+      const noms = Object.keys(s.calculs || {}).filter(n => s.calculs[n].genre === 'degats');
+      if (!noms.length) return;
+      const r = M.evaluerCalcul(champId, touche, noms[0], touche === 'R' ? 3 : 5, p, cible,
+                                { hypotheses: options.hypotheses || {}, fenetre });
+      if (!r || !r.ok) return;
+      const degats = r.subis != null ? r.subis : (r.brut != null ? r.brut : 0);
+      if (!degats) return;
+      const rangs = s.cooldown || [];
+      const cdBrut = rangs.length ? rangs[Math.min(touche === 'R' ? 2 : 4, rangs.length - 1)] : null;
+      if (cdBrut == null) return;
+      const cd = cdBrut * 100 / (100 + (p.accel || 0));
+      const couts = s.cout || [];
+      const cout = couts.length ? (couts[Math.min(touche === 'R' ? 2 : 4, couts.length - 1)] || 0) : 0;
+      lancables.push({ degats, cout, max: Math.max(0, Math.floor(fenetre / cd)) });
+    });
+
+    /* LE MANA, dépensé comme un joueur le dépense : sur le sort qui rapporte le plus par
+       point de mana d'abord. Répartir à parts égales aurait puni les champions à sorts
+       d'appoint bon marché, et récompensé ceux qui n'ont qu'un seul gros sort. */
+    let budget = (p.mana || 0) + (p.regenManaTotal || 0) / 5 * fenetre;
+    lancables.sort((a, b) => (b.degats / (b.cout || 0.001)) - (a.degats / (a.cout || 0.001)));
+    let total = 0;
+    lancables.forEach(l => {
+      let n = l.max;
+      if (l.cout > 0) {
+        const abordables = Math.floor(budget / l.cout);
+        if (abordables < n) { n = abordables; bride = true; }
+        budget -= n * l.cout;
+      }
+      total += n * l.degats;
+    });
+
+    const aa = M.degatsAttaque(p, cible);
+    if (aa && aa.dps != null) total += aa.dps * fenetre * partAA;
+    somme += total;
+  });
+
+  return {
+    degats: somme / matchup.cibles.length,
+    survie: fiche.defensif.pvEffectifsMixte,
+    or: fiche.or, niveau, fenetre, brideParMana: bride
+  };
+}
+
 /* Le calcul d'aire, EXTRAIT pour que la vérification puisse l'appeler au lieu de le
    réécrire. La version précédente de ce fichier laissait la force brute du test refaire
    la formule de son côté : quand le critère a changé ici, le test a continué à passer
    avec l'ANCIEN — vert, et ne prouvant plus rien. Un test qui duplique la formule qu'il
    vérifie ne vérifie que lui-même. */
+/* L'or auquel on considère la phase de ligne terminée : trois objets. C'est une
+   convention, comme la fenêtre de 60 s — annoncée plutôt que cachée dans une constante
+   anonyme. Elle sert à passer PROGRESSIVEMENT du cadre « ligne » au cadre « combat
+   d'équipe » : le premier objet se juge presque entièrement en ligne, le cinquième
+   presque entièrement en combat d'équipe, et l'or déjà porté suffit à savoir où l'on
+   en est — aucune question de plus à poser. */
+const OR_FIN_DE_LIGNE = 9000;
+
 function moteurAire(champId, niveau, matchup, options = {}) {
-  const base = valeurBuild(champId, niveau, [], matchup, options);
   const objectif = options.objectif || 'equilibre';
+  /* Deux cadres, deux références. Les comparer en valeur absolue n'aurait aucun sens :
+     60 s à niveau 9 et 20 s à niveau 18 ne produisent pas des nombres de même ordre. On
+     ramène chacun à SA propre progression par rapport au champion nu, et on mélange des
+     rapports, pas des points. */
+  const matchupLigne = matchupDepuisCompo(matchup.ids, options.niveauLigne || NIVEAU_LIGNE);
+  const baseFight = valeurBuild(champId, niveau, [], matchup, options);
+  const baseLigne = valeurLigne(champId, [], matchupLigne, options);
+
+  const rapport = (v, ref) => {
+    if (!v || !ref) return 0;
+    if (objectif === 'degats') return ref.degats ? v.degats / ref.degats : 0;
+    if (objectif === 'survie') return ref.survie ? v.survie / ref.survie : 0;
+    if (!ref.degats || !ref.survie) return 0;
+    return Math.sqrt((v.degats / ref.degats) * (v.survie / ref.survie));
+  };
+
   let evaluations = 0;
   const memo = {};
   const puis = ens => {
     const cle = ens.slice().sort().join(',');
     if (memo[cle] === undefined) {
       evaluations++;
-      memo[cle] = score(valeurBuild(champId, niveau, ens, matchup, options), base, objectif);
+      const or = ens.reduce((s, id) => s + ((parId[id] || {}).prix || 0), 0);
+      const poidsLigne = Math.max(0, Math.min(1, 1 - or / OR_FIN_DE_LIGNE));
+      const fight = rapport(valeurBuild(champId, niveau, ens, matchup, options), baseFight);
+      const ligne = poidsLigne > 0
+        ? rapport(valeurLigne(champId, ens, matchupLigne, options), baseLigne)
+        : 0;
+      memo[cle] = poidsLigne * ligne + (1 - poidsLigne) * fight;
     }
     return memo[cle];
   };
@@ -715,5 +913,5 @@ function ordreAchat(champId, niveau, objets, matchup, options = {}) {
 }
 
 module.exports = { CANDIDATS, RUNES, profilChampion, matchupDepuisCompo, valeurBuild, score,
-                   moteurAire, paliersDeConstruction,
+                   moteurAire, paliersDeConstruction, valeurLigne,
                    chercherBuilds, comparerBuilds, chercherRunes, ordreAchat };

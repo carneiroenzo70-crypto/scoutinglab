@@ -132,6 +132,7 @@ ${source}
     /* Optimiseur : la seule partie du moteur qui RÉPOND à « lequel prendre ? » plutôt
        qu'à « combien vaut celui-ci ? ». */
     profilChampion: optimiseur.profilChampion,
+    valeurLigne: optimiseur.valeurLigne,
     matchupDepuisCompo: optimiseur.matchupDepuisCompo,
     chercherBuilds: optimiseur.chercherBuilds,
     comparerBuilds: optimiseur.comparerBuilds,

@@ -380,5 +380,101 @@ const nomsAhri = sansQuestion.builds[0].noms.join(' | ');
 vrai('sans aucune question posee, Ahri sort un build de mage',
      !/Lame d'infini|Danseur/.test(nomsAhri), nomsAhri);
 
+
+/* -- LA PHASE DE LIGNE ------------------------------------------------------------
+   Quatre tentatives ont echoue a faire sortir la regle << pas de Coiffe de Rabadon en
+   premier >> : le niveau d'achat, les degats du kit nu, la somme des calculs, la courbe
+   de construction. Aucune ne pouvait marcher : le modele n'avait pas de LIGNE. Niveau
+   18, cinq adversaires, mana infini -- et c'est la troisieme hypothese qui decide.
+
+   On ne verifie donc pas que << ca sort le bon build >> (on pourrait l'ecrire en dur).
+   On verifie que le MECANISME est celui qu'on annonce : le mana bride, il ne bride pas
+   tout le monde, et c'est lui qui deplace le Rabadon. */
+console.log('\n-- La phase de ligne --');
+
+const mLigne = O.matchupDepuisCompo(['Aatrox', 'Amumu', 'Fizz', 'Ashe', 'Alistar'], 9);
+const mFight = O.matchupDepuisCompo(['Aatrox', 'Amumu', 'Fizz', 'Ashe', 'Alistar'], 18);
+
+/* 1. Le mana bride, et PAS tout le monde. Si tout le monde etait bride, la contrainte
+      ne separerait rien et vaudrait une constante de plus. */
+/* CORRECTION D'UNE ERREUR QUE J'AI FAITE ET ANNONCEE : j'avais conclu << Smolder n'est
+   pas bride >> en ne regardant QUE son Q, qui coute 25. Son kit entier (Q 25, W 70,
+   E 65, R 100) demande bien plus que ses ~600 de mana au niveau 9. Regarder un seul
+   sort d'un kit et en tirer une conclusion sur le champion etait la meme faute que
+   celle qui avait fait conseiller une Lame d'infini a Ahri. */
+vrai('le mana bride Ahri en phase de ligne',
+     O.valeurLigne('Ahri', [], mLigne, {}).brideParMana === true);
+vrai('  il bride aussi Smolder : son kit entier coute bien plus que son Q seul',
+     O.valeurLigne('Smolder', [], mLigne, {}).brideParMana === true);
+vrai('  et Cassiopeia, la plus dependante de sa reserve',
+     O.valeurLigne('Cassiopeia', [], mLigne, {}).brideParMana === true);
+/* La contrainte doit SEPARER. Si elle etait vraie pour tout le monde elle ne
+   distinguerait rien et vaudrait une constante de plus -- exactement le defaut qu'on
+   reproche aux curseurs inventes. Les champions sans cout de mana ne sont pas brides. */
+vrai('  mais PAS Garen, Katarina ni Aatrox : leurs sorts ne coutent pas de mana',
+     ['Garen', 'Katarina', 'Aatrox']
+       .every(c => O.valeurLigne(c, [], mLigne, {}).brideParMana === false));
+
+/* 2. LE renversement, mesure : la Coiffe talonne la Torche noire en combat d'equipe et
+      decroche nettement en ligne. Rien n'est ecrit en dur -- la Torche porte 600 de
+      mana, la Coiffe zero, et le mana limite le nombre de sorts. */
+const RABADON = 3089, TORCHE = 2503;   // 6653 est le Tourment de Liandry, pas la Torche noire
+const nuL = O.valeurLigne('Ahri', [], mLigne, {}).degats;
+const ligneDe = id => O.valeurLigne('Ahri', [id], mLigne, {}).degats / nuL;
+const fightDe = id => O.valeurBuild('Ahri', 18, [id], mFight, {}).degats;
+vrai('en combat d equipe, Coiffe et Torche noire sont au coude a coude',
+     Math.abs(fightDe(RABADON) - fightDe(TORCHE)) / fightDe(TORCHE) < 0.05,
+     Math.round(fightDe(RABADON)) + ' contre ' + Math.round(fightDe(TORCHE)));
+vrai('  en phase de ligne, la Torche noire decroche nettement la Coiffe',
+     ligneDe(TORCHE) > ligneDe(RABADON) * 1.15,
+     'x' + ligneDe(TORCHE).toFixed(2) + ' contre x' + ligneDe(RABADON).toFixed(2));
+
+/* 3. La consequence sur le conseil rendu : la Coiffe ne doit plus etre le premier achat.
+      C'est la regle que tout joueur d'Ahri connait, et elle sort du mecanisme. */
+const bAhri = O.chercherBuilds('Ahri', 18, mFight, { objectif: 'degats', emplacements: 5 }).builds[0];
+const ordAhri = O.ordreAchat('Ahri', 18, bAhri.objets, mFight, { objectif: 'degats' });
+const rangRabadon = ordAhri.ordre.indexOf(RABADON);
+vrai('la Coiffe de Rabadon n est plus le premier achat d Ahri',
+     rangRabadon !== 0,
+     rangRabadon < 0 ? 'absente du build' : 'achetee en position ' + (rangRabadon + 1) +
+     ' — ' + ordAhri.etapes.map(e => e.nom).join(' > '));
+
+/* 4. Et la recherche elle-meme a change : elle prend desormais un objet de MANA pour
+      Ahri, ce qu'elle ne faisait jamais en ne jugeant qu'au niveau 18. */
+const donneMana = id => !!(((items.find(o => o.id === id) || {}).stats || {}).mana);
+vrai('  la recherche retient au moins un objet de mana pour Ahri',
+     bAhri.objets.some(donneMana),
+     bAhri.noms.join(' | '));
+
+
+/* -- LES BOTTES ------------------------------------------------------------------
+   Elles etaient TOUTES absentes : le seuil de 1 800 po du vivier les jetait (les bottes
+   finies coutent 900 a 1 250 po). L'outil proposait des builds a 15 550 po sans bottes,
+   ce qu'aucun joueur ne fait. Une fois ajoutees au vivier, AUCUN build n'en prenait
+   spontanement -- elles ne donnent ni degats ni resistances notables, et le modele ne
+   mesure pas la vitesse de deplacement. D'ou un emplacement reserve. */
+console.log('\n-- Les bottes --');
+const estUneBotte = id => (((items.find(o => o.id === id) || {}).groupes) || []).indexOf('Boots') >= 0;
+const mBottesAD = O.matchupDepuisCompo(['Zed', 'Jhin', 'LeeSin', 'Darius', 'Draven'], 18);
+const mBottesAP = O.matchupDepuisCompo(['Ahri', 'Syndra', 'Viktor', 'Lux', 'Karthus'], 18);
+const bottesDe = (champ, mm) => {
+  const b = O.chercherBuilds(champ, 18, mm, { objectif: 'equilibre', emplacements: 6 }).builds[0];
+  return b.objets.filter(estUneBotte);
+};
+const bottesAD = bottesDe('Ahri', mBottesAD), bottesAP = bottesDe('Ahri', mBottesAP);
+vrai('tout build propose comporte exactement une paire de bottes',
+     bottesAD.length === 1 && bottesAP.length === 1,
+     bottesAD.length + ' et ' + bottesAP.length);
+/* Et le CHOIX de la paire est calcule, pas fixe : c'est une vraie question de matchup. */
+vrai('  et la paire change avec la composition d en face',
+     bottesAD[0] !== bottesAP[0],
+     'face AD : ' + (items.find(o => o.id === bottesAD[0]) || {}).nom +
+     ' / face AP : ' + (items.find(o => o.id === bottesAP[0]) || {}).nom);
+/* Contre-test : deux paires resteraient illegales, et la recherche ne doit jamais y
+   arriver -- c'est la couche de legalite qui l'interdit, on verifie qu'elle tient. */
+const Lbottes = require('./40_legalite');
+vrai('  deux paires de bottes restent refusees par la legalite',
+     Lbottes.buildLegal([3174, 3173]).legal === false);
+
 console.log('\n═══ ' + ok + ' réussis, ' + ko + ' échoués ═══');
 process.exit(ko ? 1 : 0);
