@@ -206,8 +206,39 @@ majorité **stricte** sur ≥ `DL_META_MIN_ROLE` games) ; `SS_CHAMP_ROLE` (relev
 à un patch, et qui décrit la SoloQ) n'est plus que le repli pour les champions que
 personne ne joue en compétition. Un seul point d'entrée : `dlRoleChamp()`.
 
-Garde-fous : `test/draft-meta.test.js` (12 tests) refuse le retour du tri alphabétique,
+Garde-fous : `test/draft-meta.test.js` refuse le retour du tri alphabétique,
 l'absence de borne de date et une année écrite en dur.
+
+### 🧭 « Nous », dans la salle de draft, est une donnée — pas le côté bleu
+
+Le client faisait `dlRoleOf('blue')` en dur pour décider qui était « nous ». Un staff
+qui drafte **côté rouge** voyait donc ses propres picks traités comme ceux de
+l'adversaire : les contres étaient calculés contre sa propre équipe, les synergies
+cherchées dans le camp d'en face, et **rien ne le signalait**.
+
+`draft-engine.js` porte maintenant `notreCote` (réglable dans le lobby, indépendamment
+de l'ordre de draft — First Selection oblige), avec `VSDraft.notreCote(state)` /
+`coteAdverse(state)` en lecture **tolérante** : un état sérialisé avant le déploiement
+rend `'blue'` plutôt que `undefined`, sinon les deux camps deviendraient « pas nous ».
+Côté client, un seul point d'entrée : `dlRoleNous()` / `dlRoleEux()`.
+
+### Ce que la salle de draft dit au coach (et ce qu'elle refuse de dire)
+
+- **Lecture de composition** : part physique/magique des deux camps, portée, classes.
+  La part de dégâts vient de `vsTheorycraft.matchupDepuisCompo` — les `typeDegats` sont
+  lus dans les **fichiers du jeu**. ⚠️ Ne jamais écrire une seconde table de types :
+  elle divergerait au premier patch. Les classes viennent des `tags` Data Dragon
+  (`ssChampList` les conserve désormais). Le moteur (~1 Mo) est chargé **à l'entrée de
+  la salle**, en arrière-plan ; la draft fonctionne entièrement sans lui.
+- **Alertes** : aucune sous 3 picks, chacune porte son seuil et son motif.
+- **Conseil** (`dlConseilBans` / `dlConseilPicks`) : ⚠️ **aucun score composite**, jamais.
+  C'était la tentation évidente ; un « 87 » ne se défend pas en réunion d'avant-match.
+  La règle de tri est **écrite à l'écran** et chaque proposition porte ses données brutes.
+- **Seuils d'honnêteté** : `DL_CONTRE_MIN` (3 games) pour un contre, `DL_WR_MIN_GAMES`
+  (3) avant d'afficher un pourcentage, `DL_POOL_MIN_GAMES` (2) pour entrer dans la liste
+  de bans. En dessous : on montre le volume et on tait le pourcentage.
+  *(Le brief d'avant-match, lui, commet encore cette faute — « point faible identifié »
+  sur 2 games dans `ssMatchupBrief`. Chantier ouvert.)*
 
 **Vitesse d'import (fait le 19/07/2026)** : cache serveur des matchs + back-off honnête
 sur 429 — voir piège n°5. **Reste** : quand Riot accordera la clé **Production**, retirer

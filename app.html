@@ -943,6 +943,85 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .dl-counter-badge{ position:absolute; top:2px; left:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E05040; color:#fff; }
 .ss-champ.dl-synergy{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(74,158,232,.75); }
 .dl-synergy-badge{ position:absolute; top:2px; left:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#4A9EE8; color:#fff; }
+/* ── Bandeau de séquence : les 20 actions, celle en cours marquée ──────────────
+   Ce n'est pas une décoration. Sous chrono, la question « est-ce que je suis en
+   fin de phase 1 ou au début de la phase 2 » change complètement la valeur d'un
+   ban, et elle se lisait jusqu'ici en comptant les cases des deux colonnes. */
+.dl-seq{ display:flex; gap:3px; margin-bottom:12px; flex-wrap:wrap; }
+.dl-seq-c{ flex:1 1 0; min-width:16px; height:20px; display:grid; place-items:center;
+  font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1;
+  border-radius:4px; border:1px solid var(--vs-forest-600); color:var(--vs-fg-3);
+  background:rgba(4,18,15,.25); opacity:.55; transition:opacity .15s, transform .15s; }
+.dl-seq-c.fait{ opacity:1; }
+.dl-seq-blue.fait{ color:#7DB3FF; border-color:rgba(74,158,232,.55); background:rgba(74,158,232,.12); }
+.dl-seq-red.fait{ color:var(--vs-red-400); border-color:rgba(255,90,51,.5); background:rgba(255,51,0,.1); }
+.dl-seq-c.courant{ opacity:1; transform:scaleY(1.35); border-color:var(--vs-emerald-400);
+  color:var(--vs-emerald-300); background:rgba(45,212,167,.16); box-shadow:0 0 0 1px rgba(45,212,167,.3); }
+/* Nos étapes portent un liseré bas : le coach repère « mes tours » sans lire. */
+.dl-seq-c.nous{ border-bottom-width:3px; }
+.dl-seq-ban{ font-style:normal; }
+body:not(.theme-dark) .dl-seq-c{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.14); }
+
+/* Qui est qui. « Bleu »/« Rouge » ne suffit pas quand on cherche sa propre colonne. */
+.dl-side-qui{ font-size:9.5px; font-weight:800; letter-spacing:.07em; text-transform:uppercase;
+  padding:2px 8px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-3); }
+.dl-side-nous .dl-side-qui{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.1); }
+.dl-side-nous{ background:rgba(45,212,167,.045); }
+body:not(.theme-dark) .dl-side-nous{ background:rgba(45,212,167,.07); }
+.dl-opt-cote.dl-cote-blue.on{ border-color:rgba(74,158,232,.75); background:rgba(74,158,232,.12); }
+.dl-opt-cote.dl-cote-red.on{ border-color:rgba(255,90,51,.7); background:rgba(255,51,0,.1); }
+
+/* ── Panneaux d'analyse ──────────────────────────────────────────────────────── */
+.dl-analyse{ display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:12px; margin-top:12px; }
+.dl-lecture, .dl-conseil{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px 14px; background:rgba(4,18,15,.22); min-width:0; }
+body:not(.theme-dark) .dl-lecture, body:not(.theme-dark) .dl-conseil{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.14); }
+.dl-pan-h{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:10px; }
+/* La provenance vit À CÔTÉ du titre, pas dans une infobulle : un chiffre dont on
+   doit chercher l'origine est un chiffre qu'on finit par citer sans la connaître. */
+.dl-pan-src{ font-size:10px; color:var(--vs-fg-3); }
+
+.dl-lec-cols{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media (max-width:620px){ .dl-lec-cols{ grid-template-columns:1fr; } }
+.dl-lec-col{ border:1px solid var(--vs-forest-600); border-radius:10px; padding:10px; min-width:0; }
+.dl-lec-col.nous{ border-color:var(--vs-emerald-600); }
+.dl-lec-h{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin-bottom:8px; }
+.dl-lec-t{ font-family:var(--font-display); font-weight:800; font-size:13px; color:var(--vs-fg-1); }
+.dl-lec-n{ font-family:var(--font-mono); font-size:10px; color:var(--vs-fg-3); }
+.dl-lec-vide{ font-size:11px; color:var(--vs-fg-3); }
+.dl-lec-r{ display:flex; gap:8px; align-items:baseline; margin-top:7px; font-size:11px; flex-wrap:wrap; }
+.dl-lec-k{ font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); min-width:52px; }
+.dl-lec-v{ color:var(--vs-fg-2); display:flex; gap:4px; flex-wrap:wrap; }
+.dl-lec-note{ font-size:10px; color:var(--vs-fg-3); margin-top:4px; }
+.dl-cl{ font-size:10px; padding:1px 7px; border-radius:999px; border:1px solid var(--vs-forest-600); color:var(--vs-fg-2); }
+
+/* Barre de profil de dégâts. Deux couleurs franches et opposées : le coup d'œil
+   doit répondre « monotype ou pas », pas inviter à lire un dégradé. */
+.dl-deg-bar{ height:7px; border-radius:999px; overflow:hidden; background:rgba(138,96,255,.35); border:1px solid var(--vs-forest-600); }
+.dl-deg-p{ display:block; height:100%; background:#E6B23E; }
+.dl-deg-l{ display:flex; justify-content:space-between; gap:8px; margin-top:4px; font-family:var(--font-mono); font-size:10px; }
+.dl-deg-ph{ color:#E6B23E; font-weight:800; }
+.dl-deg-ma{ color:#B79CFF; font-weight:800; }
+
+.dl-lec-al{ margin-top:9px; display:flex; flex-direction:column; gap:5px; }
+.dl-al{ font-size:10.5px; line-height:1.45; padding:6px 8px; border-radius:8px; border-left:3px solid; }
+.dl-al-risque{ border-color:#E6B23E; background:rgba(230,178,62,.09); color:var(--vs-fg-2); }
+.dl-al-occasion{ border-color:var(--vs-emerald-500); background:rgba(45,212,167,.08); color:var(--vs-fg-2); }
+
+/* ── Conseil : une liste de propositions, chacune avec son motif ─────────────── */
+.dl-cs-l{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+.dl-cs-li{ display:flex; align-items:center; gap:9px; padding:6px 8px; border-radius:9px;
+  border:1px solid var(--vs-forest-600); background:rgba(4,18,15,.25); min-width:0; }
+body:not(.theme-dark) .dl-cs-li{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.12); }
+.dl-cs-li img{ width:30px; height:30px; border-radius:7px; flex:none; }
+.dl-cs-n{ font-weight:800; font-size:12px; color:var(--vs-fg-1); min-width:76px; flex:none; }
+.dl-cs-m{ font-size:10.5px; color:var(--vs-fg-2); line-height:1.4; min-width:0; }
+.dl-cs-m b{ color:var(--vs-emerald-300); font-weight:800; }
+.dl-cs-m i{ font-style:normal; color:var(--vs-fg-3); }
+/* La règle de tri est écrite sous la liste. Un classement dont on ignore le critère
+   est une opinion déguisée en mesure. */
+.dl-cs-regle{ font-size:10px; color:var(--vs-fg-3); margin-top:8px; line-height:1.5; }
+.dl-cs-vide{ font-size:11px; color:var(--vs-fg-3); line-height:1.5; }
+
 /* Repère de positionnement des curseurs : sans lui ils se placeraient par rapport à la page. */
 #ss-live{ position:relative; }
 /* Couche dédiée : elle n'est jamais reconstruite, donc les curseurs survivent aux picks. */
@@ -7812,7 +7891,10 @@ async function ssChampList() {
       var c = j.data[k];
       var existant = parNom[c.name];
       if (!existant || (existant.key.indexOf('_') >= 0 && c.id.indexOf('_') < 0)) {
-        parNom[c.name] = { key: c.id, name: c.name, role: SS_CHAMP_ROLE[c.name] || null };
+        // `tags` est la classification officielle de Riot (Tank, Marksman, Mage,
+        // Assassin, Fighter, Support). Elle arrive dans la même réponse — la jeter
+        // obligeait ensuite à réinventer une table de classes à la main.
+        parNom[c.name] = { key: c.id, name: c.name, role: SS_CHAMP_ROLE[c.name] || null, tags: c.tags || [] };
       }
     });
     var list = Object.keys(parNom).map(function (n) { return parNom[n]; })
@@ -8599,7 +8681,7 @@ function dlMetaBestPartners(meta, champNorm, wantRole) {
 // l'intention du coach : limite connue et assumée, pas une donnée inventée.
 function dlMetaContext() {
   var s = _dlState, g = s.games[s.gameIndex];
-  var meRole = dlRoleOf('blue');
+  var meRole = dlRoleNous();
   var mine = {}, theirs = {};
   g.actions.forEach(function (a) {
     if (a.type !== 'pick' || !a.champion) return;
@@ -8631,6 +8713,140 @@ function dlPoolDe(s) {
   base.pool = s.champPool; base.frais = false;
   base.motif = base.recent > 0 ? 'mince' : 'absent';
   return base;
+}
+
+/* ── Profil de composition ────────────────────────────────────────────────────
+   Le type de dégâts d'un sort n'est pas une opinion : il est écrit dans les
+   fichiers du jeu, et le moteur de theorycraft le lit déjà (`typeDegats`). On
+   l'appelle plutôt que d'écrire une seconde table — elle divergerait au premier
+   patch, sans que rien ne le signale. Le moteur pèse ~1 Mo : il est chargé en
+   arrière-plan à l'ouverture de la salle, et la draft reste entièrement
+   utilisable sans lui (la lecture de composition dit alors qu'elle manque). */
+function dlMoteur() { return (typeof window !== 'undefined' && window.vsTheorycraft) || null; }
+function dlMoteurCharger(apres) {
+  if (dlMoteur() || typeof tcCharger !== 'function') return;
+  if (window._dlMoteurEnCours) return;
+  window._dlMoteurEnCours = true;
+  tcCharger().then(function () { if (typeof apres === 'function') apres(); })
+             .catch(function () {})
+             .then(function () { window._dlMoteurEnCours = false; });
+}
+
+// Les champions déjà pikés par un camp, dans l'ordre de la draft.
+function dlPicksDe(role) {
+  var g = _dlState.games[_dlState.gameIndex];
+  return g.actions.filter(function (a) { return a.type === 'pick' && a.by === role && a.champion; })
+                  .map(function (a) { return a.champion; });
+}
+
+var DL_CLASSE_FR = { Tank: 'Tank', Fighter: 'Combattant', Mage: 'Mage', Assassin: 'Assassin', Marksman: 'Tireur', Support: 'Support' };
+
+/* Lecture d'un camp. Chaque chiffre rend AUSSI son assise (combien de picks il a
+   pu lire) : une part de dégâts sur deux champions ne se commente pas comme une
+   part sur cinq, et l'afficher sans le dire serait le principal moyen de tromper
+   un coach avec des données pourtant exactes. */
+function dlLireCompo(role) {
+  var keys = dlPicksDe(role);
+  var out = { picks: keys.length, partPhysique: null, sansType: [], cac: 0, distance: 0, porteeLues: 0, classes: {}, moteur: !!dlMoteur() };
+  if (!keys.length) return out;
+
+  var liste = window._ssChamps || [];
+  keys.forEach(function (k) {
+    var c = liste.find(function (x) { return x.key === k; });
+    (c && c.tags || []).forEach(function (t) {
+      var fr = DL_CLASSE_FR[t]; if (fr) out.classes[fr] = (out.classes[fr] || 0) + 1;
+    });
+  });
+
+  var T = dlMoteur();
+  if (T) {
+    var mu = T.matchupDepuisCompo(keys);
+    if (mu) {
+      out.partPhysique = mu.partPhysique;
+      out.sansType = (mu.sansTypeConnu || []).slice();
+    }
+    keys.forEach(function (k) {
+      var pr = T.profilChampion(k); if (!pr) return;
+      out.porteeLues++;
+      if (pr.corpsACorps) out.cac++; else out.distance++;
+    });
+    out.version = T.version;
+  }
+  return out;
+}
+
+/* Les alertes. Chacune porte son SEUIL et son motif : « 80 % physique » n'aide
+   personne, « 80 % physique sur 4 picks lus, un seul type de résistance les
+   couvre » se discute en réunion. Aucune ne se déclenche sous 3 picks — en dire
+   quoi que ce soit plus tôt serait du bruit présenté comme une analyse. */
+function dlAlertesCompo(l, nous) {
+  var a = [];
+  if (l.picks < 3) return a;
+  if (l.partPhysique != null) {
+    var pc = Math.round(l.partPhysique * 100);
+    if (pc >= 75) a.push({ ton: nous ? 'risque' : 'occasion', texte: pc + ' % de sources physiques' + (nous
+      ? ' — une seule ligne de résistance suffit à vous éteindre, prévoyez une menace magique.'
+      : ' — un seul type de résistance les couvre : vos objets défensifs sont évidents.') });
+    if (pc <= 25) a.push({ ton: nous ? 'risque' : 'occasion', texte: (100 - pc) + ' % de sources magiques' + (nous
+      ? ' — même remarque en miroir : sans dégâts physiques, leur build défensif est trivial.'
+      : ' — leur composition est lisible : une seule résistance à monter.') });
+  }
+  if (l.picks >= 4) {
+    var avant = (l.classes['Tank'] || 0) + (l.classes['Combattant'] || 0);
+    if (!avant) a.push({ ton: nous ? 'risque' : 'occasion', texte: 'aucune ligne avant sur ' + l.picks + ' picks'
+      + (nous ? ' — il reste un emplacement pour en trouver une.' : ' — leurs porteurs sont exposés à un engage direct.') });
+  }
+  if (l.cac >= 4) a.push({ ton: nous ? 'risque' : 'occasion', texte: l.cac + ' champions au corps-à-corps'
+    + (nous ? ' — composition qui doit engager : elle souffre du poke et du disengage.' : ' — ils doivent venir à vous : le poke et le disengage les punissent.') });
+  return a;
+}
+
+function dlBarreDegats(l) {
+  if (l.partPhysique == null) {
+    return '<div class="dl-lec-vide">' + (l.moteur
+      ? 'Aucun type de dégâts lisible sur ces picks.'
+      : 'Moteur de dégâts en cours de chargement…') + '</div>';
+  }
+  var pc = Math.round(l.partPhysique * 100);
+  return '<div class="dl-deg"><div class="dl-deg-bar" title="Part des sources de dégâts physiques, lue dans les fichiers du jeu">'
+    + '<span class="dl-deg-p" style="width:' + pc + '%"></span></div>'
+    + '<div class="dl-deg-l"><span class="dl-deg-ph">' + pc + ' % physique</span><span class="dl-deg-ma">' + (100 - pc) + ' % magique</span></div>'
+    + (l.sansType.length ? '<div class="dl-lec-note">Type non lu pour ' + l.sansType.map(anEsc).join(', ') + ' — non comptés.</div>' : '')
+    + '</div>';
+}
+
+function dlColonneLecture(role, titre, nous) {
+  var l = dlLireCompo(role);
+  var classes = Object.keys(l.classes).sort(function (a, b) { return l.classes[b] - l.classes[a]; });
+  var h = '<div class="dl-lec-col' + (nous ? ' nous' : '') + '">'
+    + '<div class="dl-lec-h"><span class="dl-lec-t">' + anEsc(titre) + '</span>'
+    + '<span class="dl-lec-n">' + l.picks + '/5 picks</span></div>';
+  if (!l.picks) return h + '<div class="dl-lec-vide">Aucun pick posé.</div></div>';
+  h += dlBarreDegats(l);
+  if (l.porteeLues) {
+    h += '<div class="dl-lec-r"><span class="dl-lec-k">Portée</span><span class="dl-lec-v">'
+      + l.distance + ' à distance · ' + l.cac + ' corps-à-corps</span></div>';
+  }
+  if (classes.length) {
+    h += '<div class="dl-lec-r"><span class="dl-lec-k">Classes</span><span class="dl-lec-v">'
+      + classes.map(function (c) { return '<span class="dl-cl">' + anEsc(c) + (l.classes[c] > 1 ? ' ×' + l.classes[c] : '') + '</span>'; }).join('') + '</span></div>';
+  }
+  var al = dlAlertesCompo(l, nous);
+  if (al.length) {
+    h += '<div class="dl-lec-al">' + al.map(function (x) {
+      return '<div class="dl-al dl-al-' + x.ton + '">' + anEsc(x.texte) + '</div>';
+    }).join('') + '</div>';
+  }
+  return h + '</div>';
+}
+
+function dlLectureHtml() {
+  var T = dlMoteur();
+  return '<div class="dl-lecture"><div class="dl-pan-h"><span class="label">Lecture de la draft</span>'
+    + '<span class="dl-pan-src">' + (T ? 'types de dégâts lus dans les fichiers du jeu · données ' + anEsc(T.version) : 'moteur de dégâts non chargé')
+    + ' · classes Riot</span></div>'
+    + '<div class="dl-lec-cols">' + dlColonneLecture(dlRoleNous(), 'Nous', true)
+    + dlColonneLecture(dlRoleEux(), 'Adversaire', false) + '</div></div>';
 }
 
 function dlThreats() {
@@ -8697,6 +8913,201 @@ function dlScoutHtml() {
   return h + '</div>';
 }
 
+/* ── Conseil de draft ─────────────────────────────────────────────────────────
+   Ce panneau ne calcule AUCUN score composite. C'était la tentation évidente —
+   mêler pool adverse, priorité méta et contre en un chiffre unique — et c'est
+   précisément ce qu'un coach professionnel ne peut pas utiliser : un « 87 » ne se
+   défend pas en réunion d'avant-match. Chaque proposition sort donc d'une règle de
+   tri ÉCRITE à l'écran, et porte son motif en toutes lettres. Le coach décide ;
+   l'outil lui apporte ce qu'il n'a pas le temps d'aller chercher pendant 30 s. */
+
+function dlChampParNorm(norm) {
+  return (window._ssChamps || []).find(function (c) { return dlNorm(c.name) === norm; }) || null;
+}
+
+// Winrate réel de A contre B au même poste, sur la fenêtre de méta. Sous le seuil
+// d'échantillon, on ne rend rien plutôt qu'un pourcentage sur deux games.
+var DL_CONTRE_MIN = 3;
+// En dessous, on montre le volume et on TAIT le pourcentage — plutôt que d'écrire
+// « 100 % » sur une game et de laisser le coach en tirer une priorité de ban.
+var DL_WR_MIN_GAMES = 3;
+// Un champion vu une seule fois n'est pas un pool : il ne remonte que s'il n'y a
+// rien de mieux (le repli est annoncé sous la liste).
+var DL_POOL_MIN_GAMES = 2;
+function dlContre(meta, role, aNorm, bNorm) {
+  if (!meta || !role || !aNorm || !bNorm) return null;
+  var c = meta.counter[role] && meta.counter[role][aNorm] && meta.counter[role][aNorm][bNorm];
+  if (!c || c.games < DL_CONTRE_MIN) return null;
+  return { games: c.games, wr: Math.round(c.wins / c.games * 100) };
+}
+
+/* Ce qui reste OUVERT dans le pool adverse. C'est la question de la seconde phase
+   de bans, et elle est pénible à tenir de tête : cinq pools, et il faut soustraire
+   tout ce qui est déjà banni ou piké. */
+function dlMenacesOuvertes() {
+  var indispo = VSDraft.unavailable(_dlState);
+  var menaces = dlThreats();
+  var out = [];
+  Object.keys(menaces).forEach(function (norm) {
+    var c = dlChampParNorm(norm); if (!c || indispo[c.key]) return;
+    var joueurs = menaces[norm];
+    out.push({
+      key: c.key, nom: c.name, role: dlRoleChamp(c), joueurs: joueurs,
+      total: joueurs.reduce(function (t, x) { return t + x.games; }, 0),
+      wrMax: joueurs.reduce(function (t, x) { return Math.max(t, x.wr); }, 0),
+      frais: joueurs.some(function (x) { return x.frais; })
+    });
+  });
+  // Règle de tri, affichée à l'écran : volume d'abord (ce qu'ils jouent VRAIMENT),
+  // winrate ensuite. Le winrate seul ferait remonter un 100 % sur une game.
+  return out.sort(function (a, b) { return b.total - a.total || b.wrMax - a.wrMax; });
+}
+
+// Les postes que NOUS n'avons pas encore remplis, d'après le rôle de nos picks.
+function dlPostesLibres() {
+  var pris = {};
+  dlPicksDe(dlRoleNous()).forEach(function (k) {
+    var c = (window._ssChamps || []).find(function (x) { return x.key === k; });
+    var r = dlRoleChamp(c); if (r) pris[r] = true;
+  });
+  return SS_ROLES.filter(function (r) { return !pris[r]; });
+}
+
+function dlLigneConseil(c, motifs) {
+  return '<li class="dl-cs-li"><img src="' + ssChampImg(c.key) + '" alt="" loading="lazy">'
+    + '<span class="dl-cs-n">' + anEsc(c.nom || c.name) + '</span>'
+    + '<span class="dl-cs-m">' + motifs.join(' · ') + '</span></li>';
+}
+
+function dlConseilBans() {
+  var ouvertes = dlMenacesOuvertes();
+  if (!ouvertes.length) {
+    return '<div class="dl-cs-vide">Aucun champion du pool adverse n\'est encore ouvert — ou le pool n\'est pas chargé (onglet Avant-match).</div>';
+  }
+  var meta = (window._dlMeta && window._dlMeta.priority) ? window._dlMeta : null;
+  var gameNum = Math.min(3, _dlState.gameIndex + 1);
+  var solides = ouvertes.filter(function (m) { return m.total >= DL_POOL_MIN_GAMES; });
+  var maigre = !solides.length;
+  var retenues = maigre ? ouvertes : solides;
+  var lignes = retenues.slice(0, 5).map(function (m) {
+    var motifs = [];
+    var j = m.joueurs.slice().sort(function (a, b) { return b.games - a.games; })[0];
+    motifs.push('<b>' + anEsc(j.joueur) + '</b> ' + j.games + ' game' + (j.games > 1 ? 's' : '')
+      + (j.games >= DL_WR_MIN_GAMES ? ' · ' + j.wr + ' %' : '')
+      + (m.frais ? '' : ' <i>(archives)</i>'));
+    if (m.joueurs.length > 1) motifs.push(m.joueurs.length + ' joueurs du roster');
+    if (meta && m.role) {
+      var pr = meta.priority[m.role] && meta.priority[m.role][dlNorm(m.nom)];
+      if (pr && pr[gameNum] >= 3) motifs.push('piké ' + pr[gameNum] + '× en game ' + gameNum + ' au haut niveau');
+    }
+    return dlLigneConseil(m, motifs);
+  }).join('');
+  return '<ul class="dl-cs-l">' + lignes + '</ul>'
+    + '<div class="dl-cs-regle">Trié par volume de games de l\'adversaire sur la fenêtre, puis par winrate. '
+    + 'Le pourcentage n\'est affiché qu\'à partir de ' + DL_WR_MIN_GAMES + ' games — en dessous il ne mesure rien. '
+    + 'Aucun score composite : les motifs sont les données elles-mêmes.'
+    + (maigre ? ' <b>Échantillon très mince</b> : rien au-dessus de ' + DL_POOL_MIN_GAMES + ' games, ce qui suit est indicatif.' : '')
+    + '</div>';
+}
+
+function dlConseilPicks() {
+  var meta = (window._dlMeta && window._dlMeta.priority) ? window._dlMeta : null;
+  var libres = dlPostesLibres();
+  if (!libres.length) return '<div class="dl-cs-vide">Tous les postes sont pourvus.</div>';
+  var ctx = meta ? dlMetaContext() : { mine: {}, theirs: {} };
+  var indispo = VSDraft.unavailable(_dlState);
+  var gameNum = Math.min(3, _dlState.gameIndex + 1);
+  var liste = window._ssChamps || [];
+
+  var propositions = [];
+  libres.forEach(function (role) {
+    var face = ctx.theirs[role];   // ce qu'ils ont déjà posé à ce poste, s'ils l'ont posé
+    liste.forEach(function (c) {
+      if (indispo[c.key] || dlRoleChamp(c) !== role) return;
+      var cNorm = dlNorm(c.name);
+      var motifs = [], rang = 0;
+      // 1) Un contre MESURÉ face à leur champion du même poste. C'est le signal le
+      //    plus fort et le plus difficile à retrouver de tête en pleine draft.
+      var vs = face ? dlContre(meta, role, cNorm, face) : null;
+      if (vs && vs.wr >= 55) {
+        var nomF = (dlChampParNorm(face) || {}).name || face;
+        motifs.push('<b>' + vs.wr + ' %</b> face à ' + anEsc(nomF) + ' (' + vs.games + ' games)');
+        rang += 1000 + vs.wr;
+      }
+      // 2) Une synergie MESURÉE avec notre allié du duo de bas.
+      if (role === 'ADC' || role === 'Sup') {
+        var allyRole = role === 'ADC' ? 'Sup' : 'ADC', ally = ctx.mine[allyRole];
+        var partners = (meta && ally) ? dlMetaBestPartners(meta, ally, role) : [];
+        var moi = partners.find(function (x) { return x.champ === cNorm; });
+        if (moi && moi.wr >= 55) {
+          motifs.push('<b>' + moi.wr + ' %</b> avec ' + anEsc((dlChampParNorm(ally) || {}).name || ally) + ' (' + moi.games + ' games)');
+          rang += 500 + moi.wr;
+        }
+      }
+      // 3) À défaut, la priorité du haut niveau pour ce numéro de game.
+      var pr = meta && meta.priority[role] && meta.priority[role][cNorm];
+      if (pr && pr[gameNum] >= 3) {
+        motifs.push('piké ' + pr[gameNum] + '× en game ' + gameNum);
+        rang += pr[gameNum];
+      }
+      if (!motifs.length) return;
+      propositions.push({ key: c.key, nom: c.name, role: role, motifs: motifs, rang: rang });
+    });
+  });
+
+  if (!propositions.length) {
+    return '<div class="dl-cs-vide">Rien de mesuré à proposer : ni contre, ni synergie, ni priorité au-dessus du seuil d\'échantillon sur les postes restants.</div>';
+  }
+  propositions.sort(function (a, b) { return b.rang - a.rang; });
+  var lignes = propositions.slice(0, 5).map(function (x) {
+    return dlLigneConseil(x, [SS_ROLE_LABEL[x.role]].concat(x.motifs));
+  }).join('');
+  return '<ul class="dl-cs-l">' + lignes + '</ul>'
+    + '<div class="dl-cs-regle">Contre mesuré d\'abord, puis synergie, puis priorité du haut niveau. '
+    + 'Seuil : ' + DL_CONTRE_MIN + ' games minimum, 55 % minimum — en dessous ce n\'est pas un signal, c\'est du bruit. '
+    + 'Les postes restants sont déduits du rôle dominant de vos picks : un flex pick est rattaché à son poste habituel.</div>';
+}
+
+function dlConseilHtml() {
+  var step = VSDraft.currentStep(_dlState);
+  if (!step) return '';
+  var aNous = step.by === dlRoleNous();
+  var titre, corps;
+  if (!aNous) {
+    titre = 'À l\'adversaire de jouer — ce qui reste ouvert';
+    corps = dlConseilBans();
+  } else if (step.type === 'ban') {
+    titre = 'Ban ' + (step.index + 1) + '/20 — priorités sur leur pool';
+    corps = dlConseilBans();
+  } else {
+    titre = 'Pick ' + (step.index + 1) + '/20 — ce que disent les données';
+    corps = dlConseilPicks();
+  }
+  return '<div class="dl-conseil"><div class="dl-pan-h"><span class="label">' + titre + '</span></div>' + corps + '</div>';
+}
+
+function dlAnalyseHtml() {
+  return '<div class="dl-analyse">' + dlLectureHtml() + dlConseilHtml() + '</div>';
+}
+
+/* Bandeau de séquence : les 20 actions du Tournament Draft, celle en cours
+   marquée. Un coach qui hésite doit voir d'un coup d'œil ce qui vient APRÈS son
+   action — c'est ce qui distingue un ban de fin de phase 1 d'un ban de phase 2. */
+function dlSequenceHtml() {
+  var s = _dlState, g = s.games[s.gameIndex];
+  var courant = g.actions.length;
+  return '<div class="dl-seq" aria-label="Séquence de draft">' + VSDraft.SEQUENCE.map(function (etape, i) {
+    var cote = etape.by === 'first' ? s.sides.first : s.sides.second;
+    var nous = etape.by === dlRoleNous();
+    var etat = i < courant ? ' fait' : (i === courant ? ' courant' : '');
+    var champ = i < courant ? g.actions[i].champion : null;
+    var titre = (etape.type === 'ban' ? 'Ban ' : 'Pick ') + (i + 1) + ' — ' + dlNomCote(cote)
+      + (nous ? ' (nous)' : ' (adversaire)') + (champ ? ' : ' + champ : '');
+    return '<span class="dl-seq-c dl-seq-' + cote + ' dl-seq-' + etape.type + etat + (nous ? ' nous' : '') + '" title="' + anEsc(titre) + '">'
+      + (etape.type === 'ban' ? 'B' : 'P') + '</span>';
+  }).join('') + '</div>';
+}
+
 function dlRender(m) {
   _dlMatch = m;
   var box = document.getElementById('ss-live'); if (!box) return;
@@ -8705,6 +9116,12 @@ function dlRender(m) {
     _dlState = VSDraft.createState({ bo: m.bo || 1, firstSide: 'blue' });
     _dlState._matchId = m.id;
   }
+  // Le moteur de dégâts (~1 Mo) part en arrière-plan dès l'entrée dans la salle : il
+  // servira à la lecture de composition, et le charger au 6e pick ferait attendre le
+  // coach exactement au mauvais moment. La draft n'en dépend pas pour fonctionner.
+  dlMoteurCharger(function () {
+    if (_dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
+  });
   // Les pools adverses alimentent le panneau de scouting et le marquage de la grille.
   // Chargement en arrière-plan : la draft reste utilisable même si la base compét
   // est lente ou indisponible, le panneau se remplira ensuite.
@@ -8723,6 +9140,14 @@ function dlRender(m) {
     (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
 
   if (_dlState.status === 'running') { dlRenderGrid(); dlStartTimer(); } else dlStopTimer();
+  // La lecture de composition a besoin des classes Riot, qui arrivent avec la liste
+  // des champions. dlRenderGrid la charge aussi, mais le panneau est rendu avant elle
+  // et le lobby ne la charge pas du tout : on la demande ici, une seule fois.
+  if (!window._ssChamps && typeof ssChampList === 'function') {
+    ssChampList().then(function (l) {
+      if (l && l.length && _dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
+    }).catch(function () {});
+  }
   dlRenderPresence();
   dlBindCursor();
 }
@@ -8734,12 +9159,25 @@ function dlLobbyHtml() {
     return '<button class="dl-opt' + (on ? ' on' : '') + '" onclick="dlConfigure(\'' + side + '\')">'
       + '<span class="dl-opt-t">' + titre + '</span><span class="dl-opt-s">' + sous + '</span></button>';
   };
+  // Même gabarit pour le camp : deux réglages distincts, une seule grammaire visuelle.
+  var carteCote = function (side, titre) {
+    var on = VSDraft.notreCote(s) === side;
+    return '<button class="dl-opt dl-opt-cote dl-cote-' + side + (on ? ' on' : '') + '" onclick="dlConfigureCote(\'' + side + '\')">'
+      + '<span class="dl-opt-t">' + titre + '</span>'
+      + '<span class="dl-opt-s">' + (side === 'blue' ? 'Nos picks dans la colonne de gauche' : 'Nos picks dans la colonne de droite') + '</span></button>';
+  };
   return '<div class="dl-lobby">'
     + '<div class="label" style="margin-bottom:8px">Qui drafte en premier ?</div>'
     + '<p class="faint" style="font-size:11.5px;margin:0 0 10px;line-height:1.55">Depuis First Selection (2026), le côté de la carte et l\'ordre de draft ne sont plus liés : préparez les quatre combinaisons contre <strong style="color:var(--vs-fg-1)">' + anEsc(opp) + '</strong>.</p>'
     + '<div class="dl-opts">'
       + carte('blue', 'Bleu drafte en premier', 'first pick bleu · last pick rouge')
       + carte('red', 'Rouge drafte en premier', 'first pick rouge · last pick bleu')
+    + '</div>'
+    + '<div class="label" style="margin:16px 0 8px">De quel côté joue votre équipe ?</div>'
+    + '<p class="faint" style="font-size:11.5px;margin:0 0 10px;line-height:1.55">Indépendant de l\'ordre de draft. Tout ce que l\'outil dit ensuite — contres, synergies, lecture de composition, conseil — se lit depuis ce camp.</p>'
+    + '<div class="dl-opts">'
+      + carteCote('blue', 'Nous sommes côté bleu')
+      + carteCote('red', 'Nous sommes côté rouge')
     + '</div>'
     + '<div class="dl-lobby-row">'
       + '<label class="dl-f"><span>Temps par action</span><input id="dl-turn" type="number" min="5" max="120" value="' + s.format.turnSeconds + '"></label>'
@@ -8755,6 +9193,16 @@ function dlLobbyHtml() {
 
 // Le camp affiché à gauche est toujours le bleu ; `first`/`second` désignent l'ordre.
 function dlRoleOf(side) { return _dlState.sides.first === side ? 'first' : 'second'; }
+
+/* Notre camp et celui d'en face, exprimés dans le vocabulaire de la séquence
+   (1er/2nd drafteur) parce que c'est ce que portent les actions. Tout ce qui suit
+   — contres, synergies, lecture de composition, conseil — en dépend : c'est le
+   point unique où « nous » se décide. */
+function dlNotreCote() { return VSDraft.notreCote(_dlState); }
+function dlCoteAdverse() { return VSDraft.coteAdverse(_dlState); }
+function dlRoleNous() { return dlRoleOf(dlNotreCote()); }
+function dlRoleEux() { return dlRoleOf(dlCoteAdverse()); }
+function dlNomCote(side) { return side === 'blue' ? 'Bleu' : 'Rouge'; }
 
 // Icônes officielles du client (position select), servies par Community Dragon — le
 // même miroir public des assets Riot que celui déjà utilisé pour les champions
@@ -8792,10 +9240,15 @@ function dlBoardHtml() {
   h += '<button class="btn btn-ghost btn-sm" onclick="dlQuit()">Quitter</button>';
   h += '</div></div>';
 
+  if (!termine) h += dlSequenceHtml();
   if (!termine) h += dlRoleBarHtml();
   if (termine) h += '<div class="dl-done">Draft terminée.</div>';
 
   h += '<div class="dl-sides">' + dlSideHtml('blue', g) + dlSideHtml('red', g) + '</div>';
+
+  // La lecture de composition reste affichée APRÈS la draft : c'est le moment du
+  // débrief, et c'est là qu'un staff regarde ce qu'il a réellement construit.
+  h += dlAnalyseHtml();
 
   // Une fois la draft close, le scouting et la grille n'ont plus lieu d'être : ils
   // n'existaient que pour préparer les picks à venir.
@@ -8843,9 +9296,12 @@ function dlSideHtml(side, g) {
     }
     return out;
   };
-  var mine = (side === 'blue');
-  return '<div class="dl-side dl-side-' + side + (actif ? ' actif' : '') + '">'
-    + '<div class="dl-side-h"><span class="dl-side-n">' + (mine ? 'Bleu' : 'Rouge') + '</span>'
+  // « Bleu » et « Rouge » ne disent pas au coach lequel est le sien : en salle, sous
+  // chrono, c'est exactement l'information qu'on cherche des yeux.
+  var nous = (side === dlNotreCote());
+  return '<div class="dl-side dl-side-' + side + (actif ? ' actif' : '') + (nous ? ' dl-side-nous' : '') + '">'
+    + '<div class="dl-side-h"><span class="dl-side-n">' + dlNomCote(side) + '</span>'
+    + '<span class="dl-side-qui">' + (nous ? 'Nous' : 'Adversaire') + '</span>'
     + '<span class="dl-side-o">' + (role === 'first' ? '1er drafteur' : '2nd drafteur') + '</span></div>'
     + '<div class="dl-row"><span class="dl-row-l">Bans</span><div class="dl-slots">' + ligne('ban', bans) + '</div></div>'
     + '<div class="dl-row"><span class="dl-row-l">Picks</span><div class="dl-slots">' + ligne('pick', picks) + '</div></div>'
@@ -8964,6 +9420,7 @@ async function dlRenderGrid() {
 }
 
 function dlConfigure(side) { dlEnvoyer({ type: 'configure', firstSide: side }); }
+function dlConfigureCote(side) { dlEnvoyer({ type: 'configure', notreCote: side }); }
 
 function dlStart() {
   var t = parseInt((document.getElementById('dl-turn') || {}).value, 10);

@@ -153,3 +153,68 @@ test('un joueur sans game récente garde un pool complet exploitable', () => {
   assert.strictEqual(agg.champPool.length, 1,
     'un revenant ne doit pas disparaître du scouting : on montre ses archives, en le disant');
 });
+
+/* ── 5. La lecture de composition ─────────────────────────────────────────────
+   Ces fonctions décident ce que le coach lit pendant les 30 secondes qu'il a pour
+   bannir. Un seuil qui glisse, et l'outil se met à commenter du bruit avec
+   l'aplomb d'une mesure. */
+
+vm.runInContext([source('dlAlertesCompo'), source('dlContre')].join('\n') + '\nconst DL_CONTRE_MIN = 3;', bac);
+
+const lecture = (o) => Object.assign(
+  { picks: 5, partPhysique: null, sansType: [], cac: 0, distance: 0, porteeLues: 5, classes: {}, moteur: true }, o);
+
+test('aucune alerte avant trois picks : en dessous ce serait du bruit', () => {
+  const l = lecture({ picks: 2, partPhysique: 1, cac: 2, classes: {} });
+  assert.strictEqual(bac.dlAlertesCompo(l, true).length, 0,
+    'deux picks ne décrivent pas une composition');
+});
+
+test('un profil monotype est signalé, dans les deux sens', () => {
+  const phys = bac.dlAlertesCompo(lecture({ picks: 4, partPhysique: 0.8, classes: { Tank: 1 } }), true);
+  assert.ok(phys.some(a => /physiques/.test(a.texte)), 'profil très physique non signalé');
+  const magi = bac.dlAlertesCompo(lecture({ picks: 4, partPhysique: 0.2, classes: { Tank: 1 } }), true);
+  assert.ok(magi.some(a => /magiques/.test(a.texte)), 'profil très magique non signalé');
+});
+
+test('un profil équilibré ne déclenche rien', () => {
+  const a = bac.dlAlertesCompo(lecture({ picks: 5, partPhysique: 0.55, cac: 2, classes: { Tank: 1, Combattant: 1 } }), true);
+  assert.deepStrictEqual(Array.from(a), [], '55 % n\'est pas un déséquilibre');
+});
+
+test('la même lecture change de TON selon le camp', () => {
+  const l = lecture({ picks: 4, partPhysique: 0.85, classes: { Tank: 1 } });
+  assert.strictEqual(bac.dlAlertesCompo(l, true)[0].ton, 'risque');
+  assert.strictEqual(bac.dlAlertesCompo(l, false)[0].ton, 'occasion',
+    'chez l\'adversaire, un profil monotype est une occasion, pas un risque');
+});
+
+test('l\'absence de ligne avant n\'est signalée qu\'à partir de quatre picks', () => {
+  const trois = bac.dlAlertesCompo(lecture({ picks: 3, partPhysique: 0.5, classes: { Mage: 2 } }), true);
+  assert.ok(!trois.some(a => /ligne avant/.test(a.texte)), 'il reste deux picks pour en trouver une');
+  const quatre = bac.dlAlertesCompo(lecture({ picks: 4, partPhysique: 0.5, classes: { Mage: 3 } }), true);
+  assert.ok(quatre.some(a => /ligne avant/.test(a.texte)));
+});
+
+test('un combattant compte comme ligne avant, au même titre qu\'un tank', () => {
+  const a = bac.dlAlertesCompo(lecture({ picks: 4, partPhysique: 0.5, classes: { Combattant: 1, Mage: 2 } }), true);
+  assert.ok(!a.some(x => /ligne avant/.test(x.texte)));
+});
+
+test('un contre sous le seuil d\'échantillon ne rend rien', () => {
+  const meta = { counter: { Mid: { sylas: { azir: { games: 2, wins: 2 } } } } };
+  assert.strictEqual(bac.dlContre(meta, 'Mid', 'sylas', 'azir'), null,
+    '100 % sur deux games mettrait un champion en tête d\'une liste de conseils');
+});
+
+test('un contre mesuré rend son winrate ET son échantillon', () => {
+  const meta = { counter: { Mid: { sylas: { azir: { games: 11, wins: 8 } } } } };
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(bac.dlContre(meta, 'Mid', 'sylas', 'azir'))), { games: 11, wr: 73 });
+});
+
+test('dlContre ne suppose jamais que la case existe', () => {
+  const meta = { counter: { Mid: {} } };
+  assert.strictEqual(bac.dlContre(meta, 'Mid', 'inconnu', 'azir'), null);
+  assert.strictEqual(bac.dlContre(null, 'Mid', 'a', 'b'), null);
+  assert.strictEqual(bac.dlContre(meta, 'Jgl', 'a', 'b'), null, 'un poste absent ne doit pas lever');
+});

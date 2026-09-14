@@ -37,7 +37,15 @@
     // Un seul côté est fourni : l'autre s'en déduit. Deux équipes du même côté
     // deviennent ainsi impossibles à représenter.
     var firstSide = opts.firstSide === 'red' ? 'red' : 'blue';
+    /* De quel côté est NOTRE équipe. Rien à voir avec l'ordre de draft — depuis
+       First Selection les deux se choisissent séparément, et un staff peut très
+       bien drafter en second côté bleu. C'est une donnée de la SALLE et non de
+       chaque navigateur : les coachs connectés doivent lire la même draft, sinon
+       l'un voit ses propres picks là où l'autre voit ceux de l'adversaire.
+       Défaut 'blue' : c'est ce que le client supposait en dur jusqu'ici. */
+    var notreCote = opts.notreCote === 'red' ? 'red' : 'blue';
     return {
+      notreCote: notreCote,
       format: {
         bo: bo,
         fearless: bo > 1,   // fearless en BO3/BO5, jamais en BO1
@@ -182,6 +190,7 @@
       if (op.firstSide === 'blue' || op.firstSide === 'red') {
         sC.sides = { first: op.firstSide, second: op.firstSide === 'blue' ? 'red' : 'blue' };
       }
+      if (op.notreCote === 'blue' || op.notreCote === 'red') sC.notreCote = op.notreCote;
       if (op.turnSeconds != null) sC.format.turnSeconds = op.turnSeconds;
       if (op.reserveSeconds != null) sC.format.reserveSeconds = op.reserveSeconds;
       return ok(sC);
@@ -190,8 +199,16 @@
     return err(state, 'Opération inconnue : ' + type);
   }
 
+  /* Lecture tolérante : un état sérialisé avant l'introduction du champ (salle
+     ouverte pendant le déploiement) ne doit pas rendre `undefined` — la comparaison
+     `cote === notreCote(state)` échouerait des deux côtés et le camp adverse
+     deviendrait invisible, sans la moindre erreur. */
+  function notreCote(state) { return (state && state.notreCote === 'red') ? 'red' : 'blue'; }
+  function coteAdverse(state) { return notreCote(state) === 'blue' ? 'red' : 'blue'; }
+
   return {
     SEQUENCE: SEQUENCE, createGame: createGame, createState: createState,
-    currentStep: currentStep, unavailable: unavailable, apply: apply
+    currentStep: currentStep, unavailable: unavailable, apply: apply,
+    notreCote: notreCote, coteAdverse: coteAdverse
   };
 });

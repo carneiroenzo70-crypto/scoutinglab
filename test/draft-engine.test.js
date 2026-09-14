@@ -290,3 +290,46 @@ test('configurer une draft deja lancee est refuse', () => {
   const r = D.apply(draftDemarree({ bo: 1 }), { type: 'configure', firstSide: 'red' }, T0 + 1000);
   assert.ok(r.error, 'on ne change pas les regles en pleine draft');
 });
+
+/* ── Le camp du coach ──────────────────────────────────────────────────────────
+   Le client supposait « bleu = nous » en dur. Un staff qui drafte côté ROUGE voyait
+   donc ses propres picks traités comme ceux de l'adversaire : les contres étaient
+   calculés contre sa propre équipe, et rien ne le signalait. */
+
+test('notre cote se choisit independamment de l\'ordre de draft', () => {
+  const s = D.createState({ bo: 1, firstSide: 'blue', notreCote: 'red' });
+  assert.deepEqual(s.sides, { first: 'blue', second: 'red' });
+  assert.equal(s.notreCote, 'red', 'drafter en second cote rouge est un cas courant');
+  assert.equal(D.notreCote(s), 'red');
+  assert.equal(D.coteAdverse(s), 'blue');
+});
+
+test('le cote par defaut reste bleu : c\'est ce que le client supposait', () => {
+  assert.equal(D.createState({ bo: 1 }).notreCote, 'blue');
+});
+
+test('un etat sans le champ est lu comme bleu, jamais comme undefined', () => {
+  // Salle ouverte avant le deploiement : la comparaison de cote doit rester decidable,
+  // sinon les deux camps deviennent « pas nous » et l'adversaire disparait en silence.
+  assert.equal(D.notreCote({}), 'blue');
+  assert.equal(D.notreCote(null), 'blue');
+  assert.equal(D.coteAdverse({}), 'red');
+});
+
+test('configure change notre cote dans le lobby', () => {
+  const r = D.apply(D.createState({ bo: 1 }), { type: 'configure', notreCote: 'red' }, Date.now());
+  assert.equal(r.error, null);
+  assert.equal(r.state.notreCote, 'red');
+});
+
+test('configure ignore une valeur de cote invalide', () => {
+  const r = D.apply(D.createState({ bo: 1 }), { type: 'configure', notreCote: 'vert' }, Date.now());
+  assert.equal(r.state.notreCote, 'blue', 'une valeur inconnue ne doit pas effacer le reglage');
+});
+
+test('notre cote survit a un rejouer', () => {
+  let s = D.createState({ bo: 1, notreCote: 'red' });
+  s = D.apply(s, { type: 'start' }, Date.now()).state;
+  s = D.apply(s, { type: 'replay' }, Date.now()).state;
+  assert.equal(s.notreCote, 'red', 'rejouer remet la draft a zero, pas le camp de l\'equipe');
+});
