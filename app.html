@@ -936,7 +936,7 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .ss-champ.dl-off{ opacity:.25; cursor:not-allowed; filter:grayscale(1); }
 .ss-champ.dl-menace{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(230,178,62,.65); }
 .dl-mz{ position:absolute; top:2px; right:2px; font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1; padding:2px 4px; border-radius:5px; background:#E6B23E; color:#2A1D00; }
-/* Méta pro (LCK/LPL/LEC) : coin haut-gauche, libre — .dl-menace/.dl-mz (repère
+/* Méta pro (ligues lues par DL_META_SOURCES) : coin haut-gauche, libre — .dl-menace/.dl-mz (repère
    adverse) occupent déjà le haut-droite. Les deux peuvent s'afficher ensemble :
    ce sont deux signaux différents, pas une redite. */
 .ss-champ.dl-counter{ position:relative; box-shadow:inset 0 0 0 1.5px rgba(224,80,64,.75); }
@@ -962,6 +962,11 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
 .dl-sc-c{ font-size:10.5px; color:var(--vs-fg-2); background:rgba(45,212,167,.08); border:1px solid var(--vs-forest-600); border-radius:6px; padding:2px 7px; }
 .dl-sc-c b{ color:var(--vs-fg-1); font-weight:700; }
 body:not(.theme-dark) .dl-sc-c{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.12); }
+/* Age du pool affiche a cote des champions. Sans ce reperage, un pourcentage de
+   fevrier et un pourcentage de la semaine derniere se ressemblent exactement. */
+.dl-sc-age{ font-size:9.5px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+  color:var(--vs-emerald-400); border:1px solid var(--vs-forest-600); border-radius:6px; padding:2px 6px; align-self:center; }
+.dl-sc-age.old{ color:var(--vs-fg-3); border-style:dashed; }
 .dl-sc-prep{ margin-top:9px; }
 .dl-sc-prep-l{ display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
 .dl-sc-prep-l img{ width:28px; height:28px; border-radius:6px; border:1px solid rgba(230,178,62,.5); }
@@ -8358,15 +8363,59 @@ function dlShowCursor(nom, x, y) {
 
 function dlStopTimer() { if (_dlTimer) { clearInterval(_dlTimer); _dlTimer = null; } }
 
-/* ── Suggestions de draft basées sur la vraie méta pro (LCK/LPL/LEC) ──
+/* ── Suggestions de draft basées sur la vraie méta pro ──
    Calculé côté client depuis les picks/bans réels de la table Leaguepedia
    PicksAndBansS7 (via /api/lp, même cache 6 h que le reste du site — pas de
-   nouveau endpoint, on est à 12/12 fonctions Vercel). Trois signaux, tous issus
-   de résultats réels, jamais d'une règle codée en dur :
+   nouveau endpoint, la limite de fonctions Vercel est atteinte). Quatre signaux,
+   tous issus de résultats réels, jamais d'une règle codée en dur :
      - priorité de pick/ban par numéro de game du BO (identité vs adaptation) ;
      - synergie ADC ↔ Support (winrate de la paire quand les deux sont pickés) ;
-     - contre au même poste (winrate d'un champion face à un adversaire donné). */
-const DL_META_LEAGUES = ['LCK', 'LPL', 'LEC'];
+     - contre au même poste (winrate d'un champion face à un adversaire donné) ;
+     - rôle RÉELLEMENT joué en compétition, qui prime sur la table statique.
+
+   ⚠️ LA FENÊTRE TEMPORELLE EST LE CŒUR DU SUJET. La requête triait sur
+   `OverviewPage DESC`, c'est-à-dire par ordre ALPHABÉTIQUE : pour la LEC, dont
+   les splits s'appellent Winter/Spring/Summer, « Winter » passait en tête et les
+   300 lignes étaient consommées par les games de JANVIER. Et rien ne bornait la
+   période : une game du premier patch de l'année pesait autant qu'une game du
+   patch courant. On trie désormais sur la DATE et on borne la fenêtre — un contre
+   n'a de sens que sur la méta où il a été mesuré. */
+
+/* Où la méta se lit. Deux niveaux, parce qu'ils ne répondent pas à la même
+   question : les ligues « majeures » font la méta, la ligue « terrain » est celle
+   où joue réellement le client (LFL / EMEA Masters) et où les priorités de ban
+   diffèrent souvent de la LCK. Les deux alimentent le même agrégat ; `sources`
+   dit ensuite au coach d'où sortent les chiffres, au lieu d'un « LCK/LPL/LEC »
+   écrit en dur qui n'était déjà plus vrai.
+   `motif` est une expression LIKE sur OverviewPage : les ligues sont préfixées
+   (`LEC/2026 Season/…`) mais les internationaux ne le sont pas
+   (`2026 Season World Championship`) — d'où les jokers des deux côtés. */
+const DL_META_SOURCES = [
+  { motif: 'LCK/%', label: 'LCK', niveau: 'majeure' },
+  { motif: 'LPL/%', label: 'LPL', niveau: 'majeure' },
+  { motif: 'LEC/%', label: 'LEC', niveau: 'majeure' },
+  { motif: 'LTA%', label: 'LTA', niveau: 'majeure' },
+  { motif: 'LCP/%', label: 'LCP', niveau: 'majeure' },
+  { motif: '%World Championship%', label: 'Worlds', niveau: 'majeure' },
+  { motif: '%Mid-Season Invitational%', label: 'MSI', niveau: 'majeure' },
+  { motif: '%First Stand%', label: 'First Stand', niveau: 'majeure' },
+  { motif: 'LFL/%', label: 'LFL', niveau: 'terrain' },
+  { motif: '%EMEA Masters%', label: 'EMEA Masters', niveau: 'terrain' }
+];
+
+/* Fenêtre courte = la méta du moment (environ deux patchs). Fenêtre large = le
+   repli quand la courte ne tient pas l'échantillon : intersaison, semaine sans
+   journée jouée. On préfère un chiffre plus ancien ANNONCÉ COMME TEL à l'absence
+   de chiffre — mais jamais un chiffre récent calculé sur dix games. */
+const DL_META_FENETRE = 42;        // jours
+const DL_META_FENETRE_LARGE = 120; // jours
+const DL_META_MIN_GAMES = 120;     // en dessous, on élargit
+const DL_META_MIN_ROLE = 8;        // games avant de laisser la compét redéfinir un rôle
+
+function dlMetaBorne(jours) {
+  return new Date(Date.now() - jours * 86400000).toISOString().slice(0, 10) + ' 00:00:00';
+}
+function dlMetaDate(t) { return t['DateTime UTC'] || t.DateTime_UTC || ''; }
 
 // "Team1PicksByRoleOrder" : champions séparés par une virgule, dans l'ordre
 // Top/Jungle/Mid/Bot/Support publié par Leaguepedia — donc le VRAI rôle joué
@@ -8376,34 +8425,31 @@ function dlMetaParseSide(picksStr) {
   return parts.length === 5 ? parts : null;
 }
 
-async function dlMetaBuild() {
-  var priority = {}, pairStats = {}, counter = {};
+/* Agrégation pure : des lignes Leaguepedia vers les quatre signaux. Séparée du
+   chargement pour pouvoir être relancée sur un sous-ensemble (la fenêtre courte)
+   sans refaire la moindre requête. */
+function dlMetaAgreger(rows) {
+  var priority = {}, pairStats = {}, counter = {}, roleCount = {}, retenues = 0;
   SS_ROLES.forEach(function (r) { priority[r] = {}; counter[r] = {}; });
 
-  var loadLeague = async function (league) {
-    var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=PicksAndBansS7'
-      + '&fields=Team1PicksByRoleOrder,Team2PicksByRoleOrder,Winner,N_GameInMatch,OverviewPage'
-      + '&where=OverviewPage%20LIKE%20%22' + encodeURIComponent(league + '/2026%') + '%22'
-      + '&order_by=OverviewPage%20DESC&limit=300&format=json&origin=*';
-    var rows = await pmCargo(url);
-    return rows || [];
+  var compterRole = function (champ, role) {
+    roleCount[champ] = roleCount[champ] || {};
+    roleCount[champ][role] = (roleCount[champ][role] || 0) + 1;
   };
-
-  var rowsByLeague = await Promise.all(DL_META_LEAGUES.map(loadLeague));
-  var rows = [].concat.apply([], rowsByLeague);
-  if (!rows.length) return null;
 
   rows.forEach(function (x) {
     var t = x.title || {};
     var side1 = dlMetaParseSide(t.Team1PicksByRoleOrder);
     var side2 = dlMetaParseSide(t.Team2PicksByRoleOrder);
     if (!side1 || !side2) return;   // format inattendu pour cette ligne : on l'ignore, jamais d'invention
+    retenues++;
     var winner = parseInt(t.Winner, 10);
     var gameNum = Math.min(3, parseInt(t.N_GameInMatch, 10) || 1);
 
     SS_ROLES.forEach(function (role, i) {
       var c1 = dlNorm(side1[i]), c2 = dlNorm(side2[i]);
       if (c1) {
+        compterRole(c1, role);
         priority[role][c1] = priority[role][c1] || { 1: 0, 2: 0, 3: 0 };
         priority[role][c1][gameNum]++;
         if (c2) {
@@ -8414,6 +8460,7 @@ async function dlMetaBuild() {
         }
       }
       if (c2) {
+        compterRole(c2, role);
         priority[role][c2] = priority[role][c2] || { 1: 0, 2: 0, 3: 0 };
         priority[role][c2][gameNum]++;
         if (c1) {
@@ -8437,7 +8484,87 @@ async function dlMetaBuild() {
     });
   });
 
-  return { priority: priority, pairStats: pairStats, counter: counter, builtAt: Date.now() };
+  return { priority: priority, pairStats: pairStats, counter: counter, roleCount: roleCount, games: retenues };
+}
+
+async function dlMetaBuild() {
+  var borneLarge = dlMetaBorne(DL_META_FENETRE_LARGE);
+
+  // Une requête par source. Le `where` borne la période côté serveur : sans lui,
+  // les 300 lignes remontées par une ligue active couvrent trois jours et celles
+  // d'une ligue en pause couvrent un an — deux échantillons incomparables.
+  var charger = async function (src) {
+    var where = 'OverviewPage LIKE "' + src.motif + '" AND DateTime_UTC >= "' + borneLarge + '"';
+    var url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=PicksAndBansS7'
+      + '&fields=Team1PicksByRoleOrder,Team2PicksByRoleOrder,Winner,N_GameInMatch,OverviewPage,DateTime_UTC'
+      + '&where=' + encodeURIComponent(where)
+      + '&order_by=' + encodeURIComponent('DateTime_UTC DESC')
+      + '&limit=300&format=json&origin=*';
+    var rows = await pmCargo(url);
+    // Une source muette (ligue en intersaison, tournoi pas encore créé) n'est pas
+    // une erreur : elle ne contribue simplement pas. Une source en échec non plus —
+    // pmCargo rend null, et la méta se construit avec ce qu'on a.
+    return (rows || []).map(function (r) { r._label = src.label; return r; });
+  };
+
+  var parSource = await Promise.all(DL_META_SOURCES.map(charger));
+  var rows = [].concat.apply([], parSource);
+  if (!rows.length) return null;
+  rows.sort(function (a, b) { return dlMetaDate(b.title || {}).localeCompare(dlMetaDate(a.title || {})); });
+
+  var borneCourte = dlMetaBorne(DL_META_FENETRE);
+  var recentes = rows.filter(function (r) { return dlMetaDate(r.title || {}) >= borneCourte; });
+
+  var agg = dlMetaAgreger(recentes);
+  var fenetre = DL_META_FENETRE;
+  if (agg.games < DL_META_MIN_GAMES) { agg = dlMetaAgreger(rows); fenetre = DL_META_FENETRE_LARGE; }
+  if (!agg.games) return null;
+
+  var utilisees = fenetre === DL_META_FENETRE ? recentes : rows;
+  var labels = [];
+  utilisees.forEach(function (r) { if (r._label && labels.indexOf(r._label) < 0) labels.push(r._label); });
+  var dates = utilisees.map(function (r) { return dlMetaDate(r.title || {}).slice(0, 10); }).filter(Boolean);
+
+  agg.fenetreJours = fenetre;
+  agg.sources = labels;
+  agg.du = dates.length ? dates[dates.length - 1] : '';
+  agg.au = dates.length ? dates[0] : '';
+  agg.builtAt = Date.now();
+  return agg;
+}
+
+/* Rôle réellement joué en compétition sur la fenêtre. SS_CHAMP_ROLE est un relevé
+   op.gg figé à un patch : il vieillit, et il décrit la SoloQ, pas la draft pro.
+   Quand la compét donne un rôle dominant net sur un échantillon suffisant, c'est
+   elle qui tranche ; sinon on garde la table, qui couvre les champions que
+   personne ne joue en compétition. */
+function dlMetaRolePro(meta, nom) {
+  var c = meta && meta.roleCount && meta.roleCount[dlNorm(nom)];
+  if (!c) return null;
+  var total = 0, best = null;
+  SS_ROLES.forEach(function (r) { total += (c[r] || 0); if (!best || (c[r] || 0) > (c[best] || 0)) best = r; });
+  if (total < DL_META_MIN_ROLE) return null;
+  // Majorité STRICTE exigée : à 50/50 entre Mid et ADC, il n'y a pas de rôle dominant,
+  // et trancher reviendrait à inventer une intention. On retombe alors sur la table.
+  if ((c[best] || 0) / total <= 0.5) return null;
+  return best;
+}
+
+// Le rôle à employer partout dans la salle de draft : la compét si elle a parlé,
+// la table statique sinon. Une seule porte d'entrée, pour que la grille, le tri,
+// les contres et les synergies raisonnent tous sur le MÊME rôle.
+function dlRoleChamp(c) {
+  if (!c) return null;
+  return dlMetaRolePro(window._dlMeta, c.name) || c.role || null;
+}
+
+// Provenance affichée sous la grille : sans elle, un coach ne peut pas savoir si
+// « 42 % face à Ahri » vient de la semaine dernière ou de février.
+function dlMetaProvenance(meta) {
+  if (!meta || !meta.games) return '';
+  return meta.games + ' games de compétition · ' + (meta.du || '?') + ' → ' + (meta.au || '?')
+    + ' (fenêtre ' + meta.fenetreJours + ' j)'
+    + (meta.sources && meta.sources.length ? ' · ' + meta.sources.join(', ') : '');
 }
 
 // Une seule construction par session (le cache 6h de /api/lp couvre le reste) :
@@ -8466,10 +8593,10 @@ function dlMetaBestPartners(meta, champNorm, wantRole) {
   return out.sort(function (a, b) { return b.wr - a.wr || b.games - a.games; });
 }
 
-// Ce qu'ont déjà piké chaque camp cette game, classé par rôle STATIQUE du champion
-// (le même que celui qui organise déjà la grille) — un flex pick est donc rattaché
-// à son rôle dominant habituel, pas à l'intention du coach : limite connue et
-// assumée, pas une donnée inventée.
+// Ce qu'ont déjà piké chaque camp cette game, classé par le rôle que dlRoleChamp
+// donne au champion (compét d'abord, table statique en repli) — le même que celui
+// qui organise la grille. Un flex pick reste rattaché à son rôle dominant, pas à
+// l'intention du coach : limite connue et assumée, pas une donnée inventée.
 function dlMetaContext() {
   var s = _dlState, g = s.games[s.gameIndex];
   var meRole = dlRoleOf('blue');
@@ -8477,7 +8604,7 @@ function dlMetaContext() {
   g.actions.forEach(function (a) {
     if (a.type !== 'pick' || !a.champion) return;
     var champ = (window._ssChamps || []).find(function (c) { return c.key === a.champion; });
-    var role = champ && champ.role; if (!role) return;
+    var role = dlRoleChamp(champ); if (!role) return;
     (a.by === meRole ? mine : theirs)[role] = dlNorm(champ.name);
   });
   return { mine: mine, theirs: theirs };
@@ -8490,16 +8617,32 @@ function dlMetaContext() {
 // normalisée, sinon la moitié des menaces ne seraient jamais reconnues.
 function dlNorm(n) { return String(n || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
+// Le pool à opposer au coach : le récent s'il tient l'échantillon, l'historique
+// sinon. On rend aussi `frais` pour que l'affichage puisse le DIRE — un pourcentage
+// dont on ignore l'âge ne vaut pas mieux qu'une impression.
+function dlPoolDe(s) {
+  if (!s || s === SS_ERR) return null;
+  var base = { fenetre: s.poolFenetre, derniere: s.derniere, recent: s.gamesRecent || 0 };
+  if (s.champPoolRecent && s.gamesRecent >= PM_POOL_MIN_FRAIS) {
+    base.pool = s.champPoolRecent; base.frais = true; base.motif = 'frais';
+    return base;
+  }
+  if (!s.champPool || !s.champPool.length) return null;
+  base.pool = s.champPool; base.frais = false;
+  base.motif = base.recent > 0 ? 'mince' : 'absent';
+  return base;
+}
+
 function dlThreats() {
   var m = _dlMatch; if (!m) return {};
   var cache = (window._ssCompetCache || {})[m.id]; if (!cache) return {};
   var out = {};
   (m.oppRoster || []).forEach(function (p) {
-    var s = cache[ssCompetKey(p.link || p.name)];
-    if (!s || s === SS_ERR || !s.champPool) return;
-    s.champPool.forEach(function (c) {
+    var pd = dlPoolDe(cache[ssCompetKey(p.link || p.name)]);
+    if (!pd) return;
+    pd.pool.forEach(function (c) {
       var k = dlNorm(c.name);
-      (out[k] = out[k] || []).push({ joueur: p.name, role: p.role, games: c.games, wr: c.wr });
+      (out[k] = out[k] || []).push({ joueur: p.name, role: p.role, games: c.games, wr: c.wr, frais: pd.frais });
     });
   });
   return out;
@@ -8522,12 +8665,25 @@ function dlScoutHtml() {
   }
   var cache = (window._ssCompetCache || {})[m.id] || {};
   var lignes = roster.map(function (p) {
-    var s = cache[ssCompetKey(p.link || p.name)];
-    var pool = (s && s !== SS_ERR && s.champPool) ? s.champPool.slice(0, 4) : null;
+    var pd = dlPoolDe(cache[ssCompetKey(p.link || p.name)]);
+    var pool = pd ? pd.pool.slice(0, 4) : null;
+    // L'étiquette d'âge n'est pas un détail cosmétique : c'est la différence entre
+    // « il joue ça en ce moment » et « il jouait ça au printemps ». Elle distingue
+    // aussi les deux motifs de repli, qui n'appellent pas la même méfiance.
+    var age = '';
+    if (pd && pd.motif === 'frais') {
+      age = '<span class="dl-sc-age" title="Pool mesuré sur les ' + pd.fenetre + ' derniers jours (' + pd.recent + ' games)">' + pd.fenetre + ' j</span>';
+    } else if (pd && pd.motif === 'mince') {
+      age = '<span class="dl-sc-age old" title="Seulement ' + pd.recent + ' game(s) de compétition sur les ' + pd.fenetre
+        + ' derniers jours — trop peu pour un winrate, on affiche le pool complet (dernière game le ' + anEsc(pd.derniere || '?') + ')">historique</span>';
+    } else if (pd) {
+      age = '<span class="dl-sc-age old" title="Aucune game de compétition depuis ' + pd.fenetre
+        + ' jours — pool d\'archives, dernière game le ' + anEsc(pd.derniere || '?') + '">archives</span>';
+    }
     return '<div class="dl-sc-row"><span class="rs-rolechip">' + anEsc(p.role || '?') + '</span>'
       + '<span class="dl-sc-n">' + anEsc(p.name) + '</span>'
       + '<span class="dl-sc-pool">' + (pool && pool.length
-          ? pool.map(function (c) { return '<span class="dl-sc-c"><b>' + anEsc(c.name) + '</b> ' + c.games + 'g·' + c.wr + '%</span>'; }).join('')
+          ? pool.map(function (c) { return '<span class="dl-sc-c"><b>' + anEsc(c.name) + '</b> ' + c.games + 'g·' + c.wr + '%</span>'; }).join('') + age
           : '<span class="faint" style="font-size:10.5px">pool non chargé</span>') + '</span></div>';
   }).join('');
   var prepares = dlBansPrepares();
@@ -8719,14 +8875,22 @@ async function dlRenderGrid() {
     var mz = menaces[dlNorm(c.name)];
     return mz ? mz.reduce(function (t, x) { return t + x.games; }, 0) : -1;
   };
-  // Priorité pro (nombre de fois pické/banné à ce poste, pour ce numéro de game du
-  // BO) — sert uniquement à trier, pas à afficher un badge de plus sur un bouton
-  // déjà minuscule (52px).
+  // Priorité pro : nombre de fois PIKÉ à ce poste pour ce numéro de game du BO.
+  // (Le commentaire disait « piké/banné » : PicksAndBansS7 ne nous donne les bans
+  // que sans rôle, ils n'ont jamais été comptés ici.) Sert uniquement à trier, pas
+  // à ajouter un badge sur un bouton déjà minuscule (52px).
   var metaPriority = function (c) {
-    if (!meta || !c.role) return -1;
-    var p = meta.priority[c.role] && meta.priority[c.role][dlNorm(c.name)];
+    var rl = dlRoleChamp(c);
+    if (!meta || !rl) return -1;
+    var p = meta.priority[rl] && meta.priority[rl][dlNorm(c.name)];
     return p ? p[gameNum] : -1;
   };
+
+  // D'où sortent les pourcentages affichés. C'était « LCK/LPL/LEC » écrit en dur
+  // dans deux infobulles, alors que la liste des ligues lues est désormais variable
+  // (et qu'elle n'incluait déjà plus les internationaux ni la LFL).
+  var libelleSrc = (meta && meta.sources && meta.sources.length)
+    ? meta.sources.slice(0, 4).join(', ') : 'compétition';
 
   var bouton = function (c) {
     var off = !!indispo[c.key];
@@ -8734,29 +8898,30 @@ async function dlRenderGrid() {
     var titre = anEsc(c.name) + (off ? ' — indisponible' : '');
     if (mz) titre += ' — joué par ' + mz.map(function (x) { return x.joueur + ' (' + x.games + 'g, ' + x.wr + '%)'; }).join(', ');
 
-    // Contre / synergie pro (LCK/LPL/LEC) : au même poste que l'ennemi déjà pické
+    // Contre / synergie pro : au même poste que l'ennemi déjà pické
     // → winrate réel face à lui ; en ADC/Support avec un allié déjà pické → winrate
     // réel de la paire. Minimum 3 games pour éviter d'afficher un chiffre sur un
     // échantillon trop petit pour être fiable.
     var metaCls = '', metaBadge = '';
     var cNorm = dlNorm(c.name);
-    if (meta && c.role) {
-      var vsChamp = ctx.theirs[c.role];
-      var vs = vsChamp && meta.counter[c.role] && meta.counter[c.role][cNorm] && meta.counter[c.role][cNorm][vsChamp];
+    var rl = dlRoleChamp(c);
+    if (meta && rl) {
+      var vsChamp = ctx.theirs[rl];
+      var vs = vsChamp && meta.counter[rl] && meta.counter[rl][cNorm] && meta.counter[rl][cNorm][vsChamp];
       if (vs && vs.games >= 3) {
         var wr = Math.round(vs.wins / vs.games * 100);
         if (wr < 45) {
           metaCls = ' dl-counter'; metaBadge = '<span class="dl-counter-badge">' + wr + '%</span>';
-          titre += ' — ' + wr + '% de victoires face à ' + anEsc(normToName[vsChamp] || vsChamp) + ' en LCK/LPL/LEC (' + vs.games + ' games)';
+          titre += ' — ' + wr + '% de victoires face à ' + anEsc(normToName[vsChamp] || vsChamp) + ' en ' + libelleSrc + ' (' + vs.games + ' games, ' + meta.fenetreJours + ' derniers jours)';
         }
       }
-      if (!metaBadge && (c.role === 'ADC' || c.role === 'Sup')) {
-        var allyRole = c.role === 'ADC' ? 'Sup' : 'ADC', ally = ctx.mine[allyRole];
-        var partners = ally ? dlMetaBestPartners(meta, ally, c.role) : [];
+      if (!metaBadge && (rl === 'ADC' || rl === 'Sup')) {
+        var allyRole = rl === 'ADC' ? 'Sup' : 'ADC', ally = ctx.mine[allyRole];
+        var partners = ally ? dlMetaBestPartners(meta, ally, rl) : [];
         var top = partners[0];
         if (top && top.champ === cNorm && top.wr >= 55) {
           metaCls = ' dl-synergy'; metaBadge = '<span class="dl-synergy-badge">' + top.wr + '%</span>';
-          titre += ' — ' + top.wr + '% de victoires avec ' + anEsc(normToName[ally] || ally) + ' en LCK/LPL/LEC (' + top.games + ' games)';
+          titre += ' — ' + top.wr + '% de victoires avec ' + anEsc(normToName[ally] || ally) + ' en ' + libelleSrc + ' (' + top.games + ' games, ' + meta.fenetreJours + ' derniers jours)';
         }
       }
     }
@@ -8772,7 +8937,7 @@ async function dlRenderGrid() {
   // La grille elle-même est portée par .ss-champrole-grp — mettre les boutons
   // directement dans .ss-champgrid les empilerait sur une seule colonne.
   var groupes = {}; SS_ROLES.forEach(function (r) { groupes[r] = []; }); groupes[''] = [];
-  f.forEach(function (c) { (groupes[c.role] || groupes['']).push(c); });
+  f.forEach(function (c) { var rl = dlRoleChamp(c); (groupes[rl] || groupes['']).push(c); });
 
   grid.innerHTML = SS_ROLES.concat(['']).map(function (r) {
     var champs = groupes[r] || []; if (!champs.length) return '';
@@ -8788,9 +8953,13 @@ async function dlRenderGrid() {
   }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
   var info = document.getElementById('dl-info');
   if (info) {
-    info.textContent = step
+    var etape = step
       ? ((step.type === 'ban' ? 'Ban' : 'Pick') + ' ' + (step.index + 1) + '/20 — clique un champion.')
       : 'Aucune action attendue.';
+    // La provenance est écrite À CÔTÉ de l'étape, pas dans une infobulle : un coach
+    // doit pouvoir dire à son staff sur quoi reposent les repères avant de bannir.
+    var prov = meta ? dlMetaProvenance(meta) : 'Méta de compétition en cours de chargement…';
+    info.textContent = etape + (prov ? '  ·  ' + prov : '');
   }
 }
 
@@ -9368,6 +9537,11 @@ async function tmLeagues(names) {   // 1 requête groupée → {team: ligue}
   } catch (_) {}
   return out;
 }
+const PM_POOL_FRAIS = 90;        // jours — au-delà, un pool ne décrit plus la méta jouée
+const PM_POOL_MIN_FRAIS = 4;     // games minimum avant d'oser afficher le pool récent seul
+function pmBorneFraiche() {
+  return new Date(Date.now() - PM_POOL_FRAIS * 86400000).toISOString().slice(0, 10);
+}
 function pmAggCompet(games) {   // agrégats compétition (partagé batch + individuel)
   if (!games || !games.length) return null;
   let w = 0, kS = 0, dS = 0, aS = 0, csS = 0, visS = 0, dmgS = 0, goldS = 0;
@@ -9379,27 +9553,38 @@ function pmAggCompet(games) {   // agrégats compétition (partagé batch + indi
   });
   const n = games.length;
   const pool = Object.entries(champs).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+  // Pool RÉCENT : même calcul, restreint à la fenêtre. Il est fourni À CÔTÉ du pool
+  // complet et jamais à sa place — un joueur revenu de blessure n'a rien de récent,
+  // et afficher « pool vide » serait plus faux que d'afficher son historique daté.
+  const bornePool = pmBorneFraiche();
+  const recentes = games.filter(g => (g.date || '') >= bornePool);
+  const champsR = {};
+  recentes.forEach(g => { champsR[g.champ] = champsR[g.champ] || { games: 0, wins: 0 }; champsR[g.champ].games++; if (g.win) champsR[g.champ].wins++; });
+  const poolRecent = Object.entries(champsR).map(e => ({ name: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
+  const derniere = games.map(g => g.date || '').filter(Boolean).sort().pop() || '';
   const byEvent = Object.entries(events).map(e => ({ event: e[0], games: e[1].games, wr: Math.round(e[1].wins / e[1].games * 100) })).sort((a, b) => b.games - a.games);
   return {
     count: n, winrate: Math.round(w / n * 100),
     kda: dS ? ((kS + aS) / dS).toFixed(2) : (kS + aS).toFixed(2),
     csAvg: Math.round(csS / n), visionAvg: Math.round(visS / n),
     dmgAvg: Math.round(dmgS / n), goldAvg: Math.round(goldS / n),
-    champPool: pool.slice(0, 6), byEvent: byEvent.slice(0, 6), games: games.slice(0, 8)
+    champPool: pool.slice(0, 6), byEvent: byEvent.slice(0, 6), games: games.slice(0, 8),
+    champPoolRecent: poolRecent.slice(0, 6), gamesRecent: recentes.length,
+    poolFenetre: PM_POOL_FRAIS, derniere: derniere
   };
 }
 async function pmFetchCompetBatch(names) {   // 1 requête pour plusieurs joueurs (anti rate-limit)
   const uniq = [...new Set(names.filter(Boolean))];
   if (!uniq.length) return {};
   const inList = uniq.map(n => '"' + n.replace(/"/g, '') + '"').join(',');
-  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%20IN%20(' + encodeURIComponent(inList) + ')&order_by=DateTime_UTC%20DESC&limit=200&format=json&origin=*';
+  const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Link,Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,PlayerWin,DateTime_UTC,TeamVs,OverviewPage&where=Link%20IN%20(' + encodeURIComponent(inList) + ')&order_by=DateTime_UTC%20DESC&limit=500&format=json&origin=*';
   const rows = await pmCargo(url);
   if (!rows) return {};
   const byLink = {};
   rows.forEach(x => { const t = x.title; const lk = (t.Link || '').toLowerCase(); (byLink[lk] = byLink[lk] || []).push(t); });
   const result = {};
   Object.keys(byLink).forEach(lk => {
-    const games = byLink[lk].slice(0, 20).map(t => ({ champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', event: (t.OverviewPage || '').split('/')[0] }));
+    const games = byLink[lk].slice(0, 20).map(t => ({ champ: t.Champion || '?', k: +t.Kills || 0, d: +t.Deaths || 0, a: +t.Assists || 0, cs: +t.CS || 0, vision: +t.VisionScore || 0, gold: +t.Gold || 0, dmg: +t.DamageToChampions || 0, win: t.PlayerWin === 'Yes', vs: t.TeamVs || '', date: (t['DateTime UTC'] || '').slice(0, 10), event: (t.OverviewPage || '').split('/')[0] }));
     result[lk] = pmAggCompet(games);
   });
   return result;

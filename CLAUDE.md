@@ -176,8 +176,38 @@ Spec détaillée : `docs/superpowers/specs/2026-07-19-multitenant-storage-design
 | CRM pipeline / structures | ✅ en service |
 | Candidatures | ✅ par compte — chaque structure branche son Google Form sur `/api/candidates?to=<ingestKey>` (code visible dans l'onglet) |
 | Avant-match | 🟠 marche, mais fragile (rate-limit Leaguepedia) |
+| Salle de draft (préparation + live) | ✅ moteur de règles testé ; méta et pools adverses désormais **datés** (cf. ci-dessous) |
 | Analyse vidéo / scrim | 🔴 **en pause** — non vendable en l'état, Enzo explore la question avec Riot. Ne pas relancer ce chantier sans demande explicite. |
 | Stripe / paiement | ⚪ scaffold dormant (facturation manuelle) — cf. `docs/STRIPE_SETUP.md` |
+
+### ⏱️ La méta de draft est DATÉE — ne jamais réintroduire un agrégat sans fenêtre
+
+Corrigé le 14/09/2026. Trois défauts se cumulaient dans la salle de draft, tous muets :
+
+- la requête méta triait sur `order_by=OverviewPage DESC`, c'est-à-dire par ordre
+  **alphabétique** de nom de split. Pour la LEC (Winter/Spring/Summer), « Winter »
+  passait en tête : les 300 lignes remontées étaient celles de **janvier** ;
+- **aucune borne de date** : une game du premier patch de l'année pesait autant
+  qu'une game du patch courant dans les contres, synergies et priorités ;
+- le **pool adverse** se limitait aux 20 dernières games, sans borne d'âge — pour un
+  remplaçant, ces 20 games couvrent un an et le « pool » affiché datait du printemps.
+
+Désormais : `DL_META_SOURCES` (ligues majeures + internationaux + LFL/EMEA Masters,
+**sans année en dur** — une année figée cesserait silencieusement de remonter quoi que
+ce soit au 1er janvier), tri sur `DateTime_UTC`, fenêtre de `DL_META_FENETRE` jours avec
+repli **annoncé** sur `DL_META_FENETRE_LARGE` quand l'échantillon ne tient pas, et
+`champPoolRecent` (`PM_POOL_FRAIS` jours) à côté du pool complet. Chaque chiffre affiché
+porte sa provenance (`dlMetaProvenance`) et chaque pool porte son âge — avec trois états
+distincts : fenêtre tenue, échantillon récent trop mince, aucune game récente. Les
+confondre affichait « rien de récent » à côté d'un pool vieux de cinq jours.
+
+Le rôle d'un champion vient de la **compétition** quand elle a parlé (`dlMetaRolePro`,
+majorité **stricte** sur ≥ `DL_META_MIN_ROLE` games) ; `SS_CHAMP_ROLE` (relevé op.gg figé
+à un patch, et qui décrit la SoloQ) n'est plus que le repli pour les champions que
+personne ne joue en compétition. Un seul point d'entrée : `dlRoleChamp()`.
+
+Garde-fous : `test/draft-meta.test.js` (12 tests) refuse le retour du tri alphabétique,
+l'absence de borne de date et une année écrite en dur.
 
 **Vitesse d'import (fait le 19/07/2026)** : cache serveur des matchs + back-off honnête
 sur 429 — voir piège n°5. **Reste** : quand Riot accordera la clé **Production**, retirer
