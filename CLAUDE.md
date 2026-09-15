@@ -240,6 +240,27 @@ Côté client, un seul point d'entrée : `dlRoleNous()` / `dlRoleEux()`.
   *(Le brief d'avant-match, lui, commet encore cette faute — « point faible identifié »
   sur 2 games dans `ssMatchupBrief`. Chantier ouvert.)*
 
+### 🗂️ Historique des drafts (Draft live → Google Sheets)
+
+Chaque game **terminée** en Draft live est archivée automatiquement dans le domaine
+`seasons`, liste **`draftsLive` au premier niveau** (pas dans le match) — donc partagée
+entre coachs de la structure. Point d'archivage unique : `dlArchiver()` dans `dlRender`,
+par où passent l'état local ET l'état reçu du serveur de salle.
+
+- ⚠️ **Enregistrement strictement déterministe** : `id` = hash(match, game, séquence,
+  `finishedAt`). `finishedAt` est posé par **le moteur**, donc par le serveur en salle
+  partagée : deux coachs écrivent le même élément, et `vsFusionValeur` (qui descend par
+  `id` dans les listes) le reconnaît comme identique. Ne jamais y mettre l'horloge du
+  navigateur — ça fabriquerait un conflit, ou deux copies de la même draft.
+- ⚠️ **Le Worker WebSocket importe `draft-engine.js` au build** (`ws-server/src/index.js`) :
+  il faut le **redéployer** pour que `finishedAt` existe en salle partagée. Sans ça les
+  ids restent déterministes, mais deux drafts identiques rejouées fusionnent en une.
+- Export : une ligne par game, 31 colonnes (`DL_HISTO_COLONNES`) — « Copier pour Google
+  Sheets » (TSV, collage direct) et CSV (`ssTelechargerCsv`, BOM UTF-8). Colonne `Type`
+  = « Simulation » : ne jamais confondre avec une draft officielle. Emplacement perdu au
+  chrono = « (vide) », jamais sauté (ça décalerait les colonnes).
+- Tests : `test/draft-historique.test.js`.
+
 **Vitesse d'import (fait le 19/07/2026)** : cache serveur des matchs + back-off honnête
 sur 429 — voir piège n°5. **Reste** : quand Riot accordera la clé **Production**, retirer
 la pause de 1400 ms dans `fetchMatchesInBatches` (`app.html`) → les imports de 100/200

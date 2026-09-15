@@ -1022,6 +1022,31 @@ body:not(.theme-dark) .dl-cs-li{ background:rgba(255,255,255,.5); border-color:r
 .dl-cs-regle{ font-size:10px; color:var(--vs-fg-3); margin-top:8px; line-height:1.5; }
 .dl-cs-vide{ font-size:11px; color:var(--vs-fg-3); line-height:1.5; }
 
+/* ── Historique des drafts ── */
+.dl-hi-vide{ font-size:12px; color:var(--vs-fg-3); padding:4px 0; }
+.dl-hi-l{ display:flex; flex-direction:column; gap:10px; }
+.dl-hi-it{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:10px 12px; background:rgba(4,18,15,.22); }
+body:not(.theme-dark) .dl-hi-it{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.14); }
+.dl-hi-h{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+.dl-hi-t{ font-family:var(--font-display); font-weight:800; font-size:13.5px; color:var(--vs-fg-1); }
+.dl-hi-chip{ font-size:10px; font-weight:700; padding:2px 9px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); }
+.dl-hi-chip.dl-hi-blue{ color:#7DB3FF; border-color:rgba(74,158,232,.5); background:rgba(74,158,232,.1); }
+.dl-hi-chip.dl-hi-red{ color:var(--vs-red-400); border-color:rgba(255,90,51,.5); background:rgba(255,51,0,.08); }
+.dl-hi-d{ font-family:var(--font-mono); font-size:10.5px; color:var(--vs-fg-3); margin-left:auto; }
+.dl-hi-x{ display:grid; place-items:center; width:26px; height:26px; border-radius:7px; border:1px solid transparent; background:none; color:var(--vs-fg-3); cursor:pointer; }
+.dl-hi-x:hover{ color:var(--vs-red-400); border-color:rgba(255,90,51,.45); }
+.dl-hi-lbl, .dl-hi-row{ display:grid; grid-template-columns:44px auto 14px auto; align-items:center; gap:6px; justify-content:start; }
+.dl-hi-lbl span{ font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-hi-row{ margin-top:4px; }
+.dl-hi-qui{ font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-hi-qui.nous{ color:var(--vs-emerald-300); }
+.dl-hi-grp{ display:flex; gap:4px; }
+.dl-hi-sep{ width:1px; height:22px; background:var(--vs-forest-600); justify-self:center; }
+.dl-hi-ic{ width:30px; height:30px; border-radius:7px; border:1px solid var(--vs-forest-600); display:block; background:rgba(4,18,15,.35); }
+.dl-hi-ic.ban{ filter:grayscale(1) brightness(.62); }
+.dl-hi-ic.vide{ border-style:dashed; }
+@media (max-width:520px){ .dl-hi-ic{ width:24px; height:24px; } .dl-hi-lbl, .dl-hi-row{ grid-template-columns:38px auto 8px auto; } }
+
 /* Repère de positionnement des curseurs : sans lui ils se placeraient par rapport à la page. */
 #ss-live{ position:relative; }
 /* Couche dédiée : elle n'est jamais reconstruite, donc les curseurs survivent aux picks. */
@@ -8152,7 +8177,8 @@ function ssRenderMatchDetail(root, id) {
   } else if (tab === 'live') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Draft live <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ((m.bo || 1) > 1 ? ' · fearless' : '') + '</span></h3></div>'
       + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Simulation à la séquence officielle, chronométrée. Depuis 2026 le côté et l\'ordre de draft se choisissent séparément — les quatre combinaisons sont donc jouables.</p>'
-      + '<div id="ss-live"></div></div>';
+      + '<div id="ss-live"></div></div>'
+      + '<div class="card" style="padding:16px 20px;margin-top:14px"><div id="ss-histo"></div></div>';
   } else if (tab === 'prematch') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div>'
       + '<p class="faint" style="font-size:11.5px;margin:-4px 0 12px;line-height:1.55">Chargé automatiquement depuis la base compét. Corrige un nom si l\'équipe a changé de titulaire — c\'est ce roster qui alimente les matchups ci-dessous.</p>'
@@ -8300,6 +8326,18 @@ function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function 
 
 // Export de tous les scénarios en CSV — s'ouvre directement dans Google Sheets ou Excel,
 // une ligne par camp et par game, pour que le staff les emmène hors-ligne en gaming house.
+/* Téléchargement CSV lisible tel quel par Google Sheets et Excel : BOM UTF-8 (sans
+   lui Excel affiche « PrÃ©paration »), séparateur virgule, fins de ligne CRLF. */
+function ssCelluleCsv(v) { v = (v == null) ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+function ssTelechargerCsv(nomFichier, lignes) {
+  var csv = lignes.map(function (r) { return r.map(ssCelluleCsv).join(','); }).join('\r\n');
+  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = nomFichier;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
 function ssExportDraftSheet(mid) {
   var m = ssData().matches.find(function (x) { return x.id === mid; });
   if (!m || !m.draft || !m.draft.scenarios || !m.draft.scenarios.length) { if (typeof showToast === 'function') showToast('Aucun scénario de draft à exporter', 'warning'); return; }
@@ -8311,14 +8349,7 @@ function ssExportDraftSheet(mid) {
       rows.push([sc.name, 'Game ' + (gi + 1), 'Rouge'].concat(g.rb).concat(g.rp));
     });
   });
-  var champ = function (v) { v = String(v || ''); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
-  var csv = [headers].concat(rows).map(function (r) { return r.map(champ).join(','); }).join('\r\n');
-  var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'draft_' + ((m.opp && m.opp.name) ? m.opp.name.replace(/[^a-z0-9]+/gi, '_') : m.id) + '.csv';
-  a.click(); URL.revokeObjectURL(url);
+  ssTelechargerCsv('draft_' + ((m.opp && m.opp.name) ? m.opp.name.replace(/[^a-z0-9]+/gi, '_') : m.id) + '.csv', [headers].concat(rows));
   if (typeof showToast === 'function') showToast('Tableur exporté — ' + m.draft.scenarios.length + ' scénario(s)', 'success');
 }
 
@@ -9108,6 +9139,204 @@ function dlSequenceHtml() {
   }).join('') + '</div>';
 }
 
+/* ── Historique des drafts ─────────────────────────────────────────────────────
+   Jusqu'ici une draft terminée ne laissait AUCUNE trace : « Rejouer » l'effaçait,
+   « Quitter » aussi, et fermer l'onglet de même. Or c'est après coup qu'un staff
+   s'en sert — comparer les scénarios joués contre un adversaire, repérer les bans
+   qui reviennent, tenir le tableau de suivi de la saison.
+
+   Chaque game terminée est donc archivée AUTOMATIQUEMENT dans le domaine
+   « seasons » (déjà synchronisé : l'historique suit la structure, d'un appareil et
+   d'un coach à l'autre), dans une liste `draftsLive` au premier niveau — et non à
+   l'intérieur du match. La fusion du stockage partagé descend par `id` dans les
+   listes : deux coachs d'une même salle qui archivent la même game au même instant
+   écrivent le même élément, et la fusion le reconnaît comme identique au lieu de
+   lever un conflit sur le match entier.
+
+   D'où l'exigence d'un enregistrement STRICTEMENT déterministe : son identité vient
+   du match, du numéro de game, de la séquence jouée et de l'heure de fin posée par
+   le moteur — jamais de l'horloge du navigateur. */
+function dlHash(txt) {
+  var h = 5381;
+  for (var i = 0; i < txt.length; i++) h = ((h << 5) + h + txt.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function dlSignatureGame(g) {
+  return ((g && g.actions) || []).map(function (a) { return a.type.charAt(0) + a.by.charAt(0) + ':' + (a.champion || '-'); }).join(',');
+}
+
+// Transforme une game TERMINÉE en ligne d'historique, lue depuis NOTRE camp.
+function dlEnregistrementGame(state, gi, matchId) {
+  var g = state && state.games && state.games[gi];
+  if (!g || !g.done) return null;
+  var g0 = state.games[0];
+  var nous = VSDraft.notreCote(state);
+  var rNous = state.sides.first === nous ? 'first' : 'second';
+  var liste = function (qui, type) {
+    return g.actions.filter(function (a) { return (a.by === rNous) === (qui === 'nous') && a.type === type; })
+                    .map(function (a) { return a.champion || null; });
+  };
+  return {
+    id: 'dl' + dlHash(matchId + '|' + gi + '|' + dlSignatureGame(g) + '|' + (g.finishedAt || '')),
+    // Les games d'un même BO partagent la série : elle se déduit de la game 1, que
+    // tous les clients connaissent à l'identique.
+    serie: 's' + dlHash(matchId + '|' + dlSignatureGame(g0) + '|' + (g0.finishedAt || '')),
+    matchId: matchId,
+    game: gi + 1, bo: state.format.bo, fearless: !!state.format.fearless,
+    fini: g.finishedAt ? new Date(g.finishedAt).toISOString() : null,
+    notreCote: nous, nousDrafteur: rNous,
+    nousBans: liste('nous', 'ban'), euxBans: liste('eux', 'ban'),
+    nousPicks: liste('nous', 'pick'), euxPicks: liste('eux', 'pick'),
+    sequence: g.actions.map(function (a) { return { t: a.type, qui: a.by === rNous ? 'nous' : 'eux', c: a.champion || null }; })
+  };
+}
+
+// Archive les games terminées de la salle qui ne le sont pas encore. Idempotent :
+// dlRender l'appelle à chaque changement d'état, local comme reçu du serveur.
+function dlArchiver() {
+  if (!_dlState || !_dlState._matchId || !_dlState.games) return 0;
+  var aArchiver = _dlState.games.map(function (g, gi) { return dlEnregistrementGame(_dlState, gi, _dlState._matchId); })
+                                .filter(Boolean);
+  if (!aArchiver.length) return 0;
+  var d = ssData();
+  if (!Array.isArray(d.draftsLive)) d.draftsLive = [];
+  var connus = {}; d.draftsLive.forEach(function (r) { connus[r.id] = true; });
+  var nouveaux = aArchiver.filter(function (r) { return !connus[r.id]; });
+  if (!nouveaux.length) return 0;
+  d.draftsLive = d.draftsLive.concat(nouveaux);
+  ssWrite(d);
+  if (typeof showToast === 'function') showToast(nouveaux.length > 1 ? nouveaux.length + ' drafts ajoutées à l\'historique' : 'Draft ajoutée à l\'historique', 'success');
+  return nouveaux.length;
+}
+
+function dlNomChamp(key) {
+  if (!key) return '';
+  var c = (window._ssChamps || []).find(function (x) { return x.key === key; });
+  return c ? c.name : key;
+}
+function dlDateHisto(r) {
+  if (!r.fini) return '';
+  var d = new Date(r.fini), p = function (x) { return String(x).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* Le format du tableur : UNE LIGNE PAR GAME, ce que tiennent les staffs dans leur
+   Google Sheet de suivi. Bans et picks en colonnes fixes, dans l'ordre où ils ont
+   été posés — c'est ce qui permet ensuite de filtrer « tous nos first picks » ou
+   « leurs bans de phase 2 » d'une simple colonne. Une colonne Notes vide, parce que
+   c'est la première chose qu'un coach ajoute à la main. */
+var DL_HISTO_COLONNES = ['Date', 'Compétition', 'Adversaire', 'Série', 'Game', 'Format', 'Notre côté', 'Ordre de draft']
+  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Ban nous ' + i; }))
+  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Ban adv. ' + i; }))
+  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Pick nous ' + i; }))
+  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Pick adv. ' + i; }))
+  .concat(['Séquence complète', 'Type', 'Notes']);
+
+function dlLignesTableur(enregistrements, matchs, nomDe) {
+  var parId = {}; (matchs || []).forEach(function (m) { parId[m.id] = m; });
+  var cinq = function (l) { var o = []; for (var i = 0; i < 5; i++) o.push(l && l[i] ? nomDe(l[i]) : (l && i < l.length ? '(vide)' : '')); return o; };
+  return enregistrements.map(function (r) {
+    var m = parId[r.matchId] || {};
+    var seq = (r.sequence || []).map(function (a) {
+      return (a.t === 'ban' ? 'B' : 'P') + (a.qui === 'nous' ? ' nous ' : ' adv. ') + (a.c ? nomDe(a.c) : '(vide)');
+    }).join(' > ');
+    return [dlDateHisto(r), m.competition || '', (m.opp && m.opp.name) || '', r.serie, r.game, 'BO' + r.bo + (r.fearless ? ' fearless' : ''),
+      r.notreCote === 'blue' ? 'Bleu' : 'Rouge', r.nousDrafteur === 'first' ? '1er' : '2nd']
+      .concat(cinq(r.nousBans)).concat(cinq(r.euxBans)).concat(cinq(r.nousPicks)).concat(cinq(r.euxPicks))
+      .concat([seq, 'Simulation', '']);
+  });
+}
+
+// Du plus récent au plus ancien ; à défaut d'heure, l'ordre d'archivage fait foi.
+function dlHistoTrie(liste) {
+  return liste.map(function (r, i) { return { r: r, i: i }; })
+    .sort(function (a, b) { return (b.r.fini || '').localeCompare(a.r.fini || '') || b.i - a.i; })
+    .map(function (x) { return x.r; });
+}
+function dlHistoDe(mid) {
+  var d = ssData();
+  return dlHistoTrie((d.draftsLive || []).filter(function (r) { return !mid || r.matchId === mid; }));
+}
+
+async function dlHistoExporter(mid, mode) {
+  if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
+  var d = ssData();
+  var recs = dlHistoDe(mid);
+  if (!recs.length) { showToast('Aucune draft dans l\'historique', 'warning'); return; }
+  var lignes = [DL_HISTO_COLONNES].concat(dlLignesTableur(recs, d.matches, dlNomChamp));
+  if (mode === 'copier') {
+    // Tabulations : c'est ce qu'un collage dans Google Sheets découpe en colonnes.
+    var tsv = lignes.map(function (l) { return l.map(function (v) { return String(v == null ? '' : v).replace(/[\t\r\n]+/g, ' '); }).join('\t'); }).join('\n');
+    ssCopy(tsv, recs.length + ' draft(s) copiée(s) — collez dans Google Sheets');
+    return;
+  }
+  var m = mid && d.matches.find(function (x) { return x.id === mid; });
+  var nom = m ? 'historique_drafts_' + ((m.opp && m.opp.name) || m.id).replace(/[^a-z0-9]+/gi, '_')
+              : 'historique_drafts_' + new Date().toISOString().slice(0, 10);
+  ssTelechargerCsv(nom + '.csv', lignes);
+  showToast('Tableur exporté — ' + recs.length + ' draft(s)', 'success');
+}
+
+function dlHistoSupprimer(id) {
+  if (!confirm('Retirer cette draft de l\'historique ? Elle disparaîtra pour tous les coachs de la structure.')) return;
+  var d = ssData();
+  d.draftsLive = (d.draftsLive || []).filter(function (r) { return r.id !== id; });
+  ssWrite(d);
+  if (_dlMatch) dlRenderHisto(_dlMatch);
+}
+
+function dlHistoIcones(liste, ban) {
+  var out = '';
+  for (var i = 0; i < 5; i++) {
+    var k = liste && liste[i];
+    out += k
+      ? '<img class="dl-hi-ic' + (ban ? ' ban' : '') + '" src="' + ssChampImg(k) + '" alt="' + anEsc(dlNomChamp(k)) + '" title="' + anEsc(dlNomChamp(k)) + '" loading="lazy">'
+      : '<span class="dl-hi-ic vide" title="' + (liste && i < liste.length ? 'Temps écoulé' : '') + '"></span>';
+  }
+  return out;
+}
+
+function dlRenderHisto(m) {
+  var box = document.getElementById('ss-histo'); if (!box || !m) return;
+  var recs = dlHistoDe(m.id);
+  var total = (ssData().draftsLive || []).length;
+  var h = '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap">'
+    + '<h3 class="h3" style="font-size:15px">Historique des drafts <span class="faint" style="font-weight:400;font-size:12px">· ' + recs.length + ' contre ' + anEsc((m.opp && m.opp.name) || 'cet adversaire') + '</span></h3>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + (recs.length ? '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\',\'copier\')" title="Copie avec les colonnes : collez directement dans une feuille Google Sheets">Copier pour Google Sheets</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\')">Télécharger .csv</button>' : '')
+    + (total ? '<button class="btn btn-cta btn-xs" onclick="dlHistoExporter(null)" title="Toutes les drafts de la structure, tous matchs confondus">Toute la saison (' + total + ')</button>' : '')
+    + '</div></div>'
+    + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Chaque game terminée en Draft live est enregistrée automatiquement et partagée avec les coachs de la structure. Une ligne par game dans le tableur : bans et picks dans l\'ordre où ils ont été posés.</p>';
+  if (!recs.length) {
+    box.innerHTML = h + '<div class="dl-hi-vide">Aucune draft terminée contre cet adversaire pour l\'instant.</div>';
+    return;
+  }
+  h += '<div class="dl-hi-l">' + recs.map(function (r) {
+    var ligne = function (qui, bans, picks) {
+      return '<div class="dl-hi-row"><span class="dl-hi-qui' + (qui === 'Nous' ? ' nous' : '') + '">' + qui + '</span>'
+        + '<span class="dl-hi-grp">' + dlHistoIcones(bans, true) + '</span>'
+        + '<span class="dl-hi-sep"></span>'
+        + '<span class="dl-hi-grp">' + dlHistoIcones(picks, false) + '</span></div>';
+    };
+    return '<div class="dl-hi-it">'
+      + '<div class="dl-hi-h"><span class="dl-hi-t">Game ' + r.game + '<span class="faint"> / BO' + r.bo + '</span></span>'
+      + '<span class="dl-hi-chip dl-hi-' + r.notreCote + '">Nous ' + (r.notreCote === 'blue' ? 'bleu' : 'rouge') + ' · ' + (r.nousDrafteur === 'first' ? '1er' : '2nd') + ' drafteur</span>'
+      + '<span class="dl-hi-d">' + anEsc(dlDateHisto(r)) + '</span>'
+      + '<button class="dl-hi-x" onclick="dlHistoSupprimer(\'' + r.id + '\')" title="Retirer de l\'historique" aria-label="Retirer de l\'historique">'
+      + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button></div>'
+      + '<div class="dl-hi-lbl"><span></span><span>Bans</span><span></span><span>Picks</span></div>'
+      + ligne('Nous', r.nousBans, r.nousPicks) + ligne('Adv.', r.euxBans, r.euxPicks)
+      + '</div>';
+  }).join('') + '</div>';
+  box.innerHTML = h;
+  // Les noms des infobulles viennent de la liste des champions : si elle n'est pas
+  // encore là (onglet ouvert à froid), on la charge et on redessine une fois.
+  if (!window._ssChamps && typeof ssChampList === 'function') {
+    ssChampList().then(function () { if (document.getElementById('ss-histo')) dlRenderHisto(m); }).catch(function () {});
+  }
+}
+
 function dlRender(m) {
   _dlMatch = m;
   var box = document.getElementById('ss-live'); if (!box) return;
@@ -9130,6 +9359,9 @@ function dlRender(m) {
       if (_dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
     }).catch(function () {});
   }
+  // Tout changement d'état passe ici, qu'il vienne d'une action locale ou du serveur
+  // de salle : c'est donc ici, et seulement ici, qu'une game terminée est archivée.
+  dlArchiver();
   /* Le contenu re-généré et les curseurs vivent dans deux couches SÉPARÉES : sans ça,
      chaque pick reconstruirait le HTML et effacerait les curseurs des autres coachs,
      qui ne réapparaîtraient qu'au prochain mouvement de souris. */
@@ -9150,6 +9382,7 @@ function dlRender(m) {
   }
   dlRenderPresence();
   dlBindCursor();
+  dlRenderHisto(m);
 }
 
 function dlLobbyHtml() {

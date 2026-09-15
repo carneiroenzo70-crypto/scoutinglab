@@ -28,7 +28,7 @@
   ];
 
   function createGame() {
-    return { actions: [], phaseStartedAt: null, phaseEndsAt: null, reserve: null, done: false };
+    return { actions: [], phaseStartedAt: null, phaseEndsAt: null, reserve: null, done: false, finishedAt: null };
   }
 
   function createState(opts) {
@@ -113,6 +113,12 @@
       g.done = true;
       g.phaseStartedAt = null;
       g.phaseEndsAt = null;
+      /* L'heure de fin est posée PAR LE MOTEUR, donc par le serveur en salle partagée :
+         tous les coachs connectés reçoivent la même valeur. L'historique s'en sert comme
+         identité de la game — si chaque navigateur prenait sa propre horloge, deux
+         coachs archiveraient deux enregistrements différents de la même draft, et la
+         fusion du stockage partagé les signalerait en conflit. */
+      g.finishedAt = now;
       // Fearless : seuls les champions PIKÉS sortent du pool, et pour les DEUX équipes.
       // Les champions bannis redeviennent disponibles à la game suivante.
       if (s.format.fearless) {
