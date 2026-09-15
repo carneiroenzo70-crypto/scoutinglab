@@ -9368,6 +9368,14 @@ function dlRender(m) {
   if (!document.getElementById('dl-board')) {
     box.innerHTML = '<div id="dl-board"></div><div id="dl-cursor-layer"></div>';
   }
+  /* La grille des champions défile DANS son propre conteneur (#dl-grid), et ce
+     conteneur est recréé à chaque action puisque tout le plateau est reconstruit :
+     un élément neuf repart à scrollTop = 0. Un coach qui venait de descendre à la
+     section ADC pour piker se retrouvait donc renvoyé en haut de la liste à chaque
+     clic, et devait redescendre pour le support. On relève la position ici, et
+     dlRenderGrid la rend une fois la grille remplie. */
+  var grilleAvant = document.getElementById('dl-grid');
+  if (grilleAvant && window._dlGridScroll == null) window._dlGridScroll = grilleAvant.scrollTop;
   document.getElementById('dl-board').innerHTML =
     (_dlState.status === 'lobby') ? dlLobbyHtml() : dlBoardHtml();
 
@@ -9543,10 +9551,18 @@ function dlSideHtml(side, g) {
 
 async function dlRenderGrid() {
   var grid = document.getElementById('dl-grid'); if (!grid) return;
+  // Position à conserver : celle relevée par dlRender si le plateau vient d'être
+  // reconstruit, sinon celle de la grille courante (arrivée de la méta, frappe…).
+  // Un filtre qui CHANGE remet en haut : ses résultats ne sont plus les mêmes.
+  var position = (window._dlGridScroll != null) ? window._dlGridScroll : grid.scrollTop;
+  if (_dlQ !== window._dlGridQ) position = 0;
   var s = _dlState, step = VSDraft.currentStep(s);
   var indispo = VSDraft.unavailable(s);
   var menaces = dlThreats();
   var list = await ssChampList();
+  // Pendant l'attente, une action (ou un état reçu de la salle) a pu reconstruire le
+  // plateau : on écrit dans la grille présente à l'écran, pas dans l'ancienne.
+  grid = document.getElementById('dl-grid'); if (!grid) return;
   var q = (_dlQ || '').toLowerCase();
   var f = list.filter(function (c) { return !q || c.name.toLowerCase().indexOf(q) >= 0; });
 
@@ -9640,6 +9656,9 @@ async function dlRenderGrid() {
       + '<span class="ss-champrole-n">' + champs.length + '</span>'
       + '</div><div class="ss-champrole-grp">' + champs.map(bouton).join('') + '</div>';
   }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
+  grid.scrollTop = position;
+  window._dlGridScroll = null;
+  window._dlGridQ = _dlQ;
   var info = document.getElementById('dl-info');
   if (info) {
     var etape = step

@@ -709,3 +709,21 @@ test('les dates et le taux de victoire sortent des données, pas d\'une estimati
   assert.strictEqual(a.jusqua, '2026-08-26');
   assert.strictEqual(a.victoires, 1);
 });
+
+/* ── La grille de draft ne doit plus renvoyer le coach en haut de liste ──────────────
+   Troisième défaut de la même famille : aucune erreur, une interface qui « marche ».
+   La grille des champions défile dans son propre conteneur (#dl-grid), et chaque action
+   reconstruit tout le plateau — donc un conteneur NEUF, à scrollTop 0. Un coach descendu
+   à la section ADC était renvoyé en haut à chaque pick, et devait redescendre pour le
+   support. Mesuré : 652 px avant le clic, 0 après. */
+test('la position de défilement de la grille de draft survit à une action', () => {
+  const rendu = codeSeul.slice(codeSeul.indexOf('function dlRender(m)'));
+  const avantReconstruction = rendu.slice(0, rendu.indexOf("getElementById('dl-board').innerHTML"));
+  assert.ok(/_dlGridScroll\s*=\s*grilleAvant\.scrollTop/.test(avantReconstruction),
+    'dlRender doit relever scrollTop de #dl-grid AVANT de reconstruire le plateau : ' +
+    'après, l\'élément relevé est déjà le neuf, à 0.');
+  const grille = codeSeul.slice(codeSeul.indexOf('async function dlRenderGrid()'));
+  const corps = grille.slice(0, grille.indexOf('\nfunction ') > 0 ? grille.indexOf('\nfunction ') : undefined);
+  assert.ok(/grid\.scrollTop\s*=\s*position/.test(corps),
+    'dlRenderGrid doit rendre la position une fois la grille remplie.');
+});
