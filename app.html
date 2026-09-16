@@ -8396,7 +8396,26 @@ function dlConnect(m) {
   };
   _dlWS.onopen = function () { showToast('Salle partagée ouverte.', 'success'); dlRenderPresence(); };
   _dlWS.onclose = function () { _dlWS = null; _dlPeers = []; dlRenderPresence(); };
-  _dlWS.onerror = function () { showToast('Salle injoignable — tu restes en solo.', 'warning'); };
+  _dlWS.onerror = function () { dlDirePourquoi(url); };
+}
+
+/* Pourquoi la salle n'a pas voulu s'ouvrir. L'API WebSocket ne donne au JavaScript
+   AUCUN code HTTP quand le serveur refuse : `onerror` ne porte ni statut ni message.
+   On rejoue donc la même adresse en requête ordinaire — le serveur répond alors 426
+   (« il ne manquait que l'upgrade », donc le jeton est bon), 401, 403 ou 404, et le
+   coach lit enfin quoi faire au lieu d'un « injoignable » qui couvre tout. */
+function dlDirePourquoi(wsUrl) {
+  var motifs = {
+    401: 'Session expirée — déconnecte-toi puis reconnecte-toi, la salle s\'ouvrira.',
+    403: 'Cette salle appartient à une autre structure.',
+    404: 'Identifiant de salle invalide — préviens le staff technique.',
+    426: 'Le serveur de salle répond et t\'a reconnu, mais la connexion temps réel a été bloquée (pare-feu ou réseau d\'entreprise). Essaie un autre réseau.'
+  };
+  fetch(wsUrl.replace(/^ws/, 'http')).then(function (r) {
+    showToast(motifs[r.status] || ('Salle injoignable (code ' + r.status + ') — tu restes en solo.'), 'warning', 6000);
+  }).catch(function () {
+    showToast('Serveur de salle injoignable — tu restes en solo.', 'warning');
+  });
 }
 
 function dlDisconnect() {

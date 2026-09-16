@@ -25,8 +25,13 @@ export class DraftRoom {
     const token = url.searchParams.get('token') || '';
     const boBrut = parseInt(url.searchParams.get('bo') || '1', 10);
 
+    /* Ces refus portent les en-têtes CORS parce que le navigateur les RELIT : une
+       WebSocket rejetée ne livre aucun code HTTP au JavaScript, alors le client rejoue
+       la même adresse en requête ordinaire pour savoir quoi dire au coach. Sans CORS il
+       lirait un échec opaque, et « salle injoignable » couvrirait aussi bien une session
+       expirée qu'une coupure réseau. */
     const payload = await verifyToken(token, this.env.SESSION_SECRET);
-    if (!payload) return new Response('non authentifié', { status: 401 });
+    if (!payload) return new Response('non authentifié', { status: 401, headers: corsHeaders() });
     const org = orgOfToken(payload);
 
     /* La salle appartient à la structure qui l'a créée. Un lien qui fuite ne donne donc
@@ -34,10 +39,12 @@ export class DraftRoom {
        d'une équipe. */
     const proprietaire = await this.state.storage.get('org');
     if (!proprietaire) await this.state.storage.put('org', org);
-    else if (proprietaire !== org) return new Response("salle d'une autre structure", { status: 403 });
+    else if (proprietaire !== org) return new Response("salle d'une autre structure", { status: 403, headers: corsHeaders() });
 
+    /* 426 signifie ici « ton jeton est bon, il ne manquait que l'upgrade » : c'est
+       exactement ce que la requête de diagnostic du client cherche à savoir. */
     if (request.headers.get('Upgrade') !== 'websocket') {
-      return new Response('websocket attendu', { status: 426 });
+      return new Response('websocket attendu', { status: 426, headers: corsHeaders() });
     }
 
     let etat = await this.lireEtat();
