@@ -53,21 +53,7 @@ export class DraftRoom {
        serait facturée tant qu'une socket est ouverte, même totalement inactive. */
     this.state.acceptWebSocket(serveur, [JSON.stringify({ u: payload.u, org })]);
 
-    // Sécurité : JSON.stringify avec safeReplacer pour éviter les boucles infinies sur
-    // des références circulaires (un état mal formé ne devrait jamais arriver ici, mais c'est mieux d'être sûr).
-    try {
-      const seen = new WeakSet();
-      serveur.send(JSON.stringify({ type: 'state', state: etat }, (key, value) => {
-        if (typeof value === 'object' && value !== null) {
-          if (seen.has(value)) return '[Circular]';
-          seen.add(value);
-        }
-        return value;
-      }));
-    } catch (err) {
-      console.error('Erreur lors de l\'envoi de l\'état initial:', err);
-      serveur.send(JSON.stringify({ type: 'error', message: 'État invalide' }));
-    }
+    serveur.send(JSON.stringify({ type: 'state', state: etat }));
     this.diffuserPresence();
 
     return new Response(null, { status: 101, webSocket: client });
