@@ -9296,6 +9296,122 @@ async function dlHistoExporter(mid, mode) {
   showToast('Tableur exporté — ' + recs.length + ' draft(s)', 'success');
 }
 
+/* ── La draft PRÉSENTÉE, pour Google Sheets ────────────────────────────────────────
+   L'export à plat (31 colonnes, une ligne par game) sert à filtrer et à croiser ; il
+   ne se LIT pas. Celui-ci se lit : un bloc par game, les deux camps côte à côte dans
+   leurs couleurs, puis l'ordre réel des actions en dessous.
+
+   Un TSV ne peut porter aucune couleur — c'est du texte. Google Sheets, en revanche,
+   conserve les fonds de cellule et les fusions quand on lui colle du HTML : c'est donc
+   du HTML qu'on met dans le presse-papier, avec le texte tabulé en second format pour
+   les endroits qui n'en veulent pas (éditeur de texte, Discord). */
+var DL_FEUILLE = {
+  bleu: 'background:#D6E4FF;color:#10307A', rouge: 'background:#FFDAD6;color:#7A1410',
+  titre: 'background:#E3EAE6;font-weight:700', sous: 'color:#5A6B63;font-size:11px'
+};
+
+/* UNE SEULE description des lignes, deux rendus. Construire le HTML et le texte
+   séparément les ferait diverger au premier changement, et le repli afficherait alors
+   autre chose que ce qu'on croit avoir copié. */
+function dlFeuilleLignes(recs, matchs, nomDe, monEquipe) {
+  var parId = {}; (matchs || []).forEach(function (x) { parId[x.id] = x; });
+  /* Même règle que le tableur à plat : une case perdue au chrono s'écrit « (vide) »,
+     une case jamais jouée reste vide. Les confondre ferait lire un ban là où il n'y en
+     a pas eu. */
+  var caseChamp = function (l, i) { return (l && l[i]) ? nomDe(l[i]) : (l && i < l.length ? '(vide)' : ''); };
+  var L = [];
+  recs.forEach(function (r, idx) {
+    var m = parId[r.matchId] || {};
+    var adv = (m.opp && m.opp.name) || 'Adversaire';
+    var nousBleu = r.notreCote === 'blue';
+    /* Le côté et l'ordre de draft sont indépendants depuis First Selection 2026 : on
+       ne peut pas déduire « bleu = 1er », il faut le calculer depuis notre propre rôle. */
+    var bleu1er = nousBleu === (r.nousDrafteur === 'first');
+    if (idx) L.push({ t: 'vide', c: ['', '', ''] });
+    L.push({ t: 'titre', c: [(monEquipe || 'Nous') + '  vs  ' + adv + (m.competition ? '  —  ' + m.competition : ''), '', ''] });
+    L.push({ t: 'sous', c: ['Game ' + r.game + ' / BO' + r.bo + (r.fearless ? ' · fearless' : '') +
+                            (dlDateHisto(r) ? ' · ' + dlDateHisto(r) : ''), '', ''] });
+    L.push({ t: 'camps', c: ['', 'BLEU — ' + (nousBleu ? 'nous' : adv) + ' · ' + (bleu1er ? '1er' : '2nd') + ' drafteur',
+                                 'ROUGE — ' + (nousBleu ? adv : 'nous') + ' · ' + (bleu1er ? '2nd' : '1er') + ' drafteur'] });
+    var bBans = nousBleu ? r.nousBans : r.euxBans, rBans = nousBleu ? r.euxBans : r.nousBans;
+    var bPicks = nousBleu ? r.nousPicks : r.euxPicks, rPicks = nousBleu ? r.euxPicks : r.nousPicks;
+    for (var i = 0; i < 5; i++) L.push({ t: 'duo', c: [i ? '' : 'Bans', caseChamp(bBans, i), caseChamp(rBans, i)] });
+    for (var j = 0; j < 5; j++) L.push({ t: 'duo', c: [j ? '' : 'Picks', caseChamp(bPicks, j), caseChamp(rPicks, j)] });
+    L.push({ t: 'section', c: ['Ordre de la draft', '', ''] });
+    var nb = 0, np = 0;
+    (r.sequence || []).forEach(function (a) {
+      var estBleu = (a.qui === 'nous') === nousBleu;
+      var v = a.c ? nomDe(a.c) : '(vide)';
+      L.push({ t: 'seq', c: [a.t === 'ban' ? 'Ban ' + (++nb) : 'Pick ' + (++np), estBleu ? v : '', estBleu ? '' : v] });
+    });
+  });
+  return L;
+}
+
+function dlFeuilleHtml(lignes) {
+  var td = function (v, style) { return '<td style="' + style + '">' + anEsc(v) + '</td>'; };
+  var corps = lignes.map(function (l) {
+    var c = l.c;
+    if (l.t === 'vide') return '<tr><td colspan="3"></td></tr>';
+    if (l.t === 'titre' || l.t === 'section')
+      return '<tr><td colspan="3" style="' + DL_FEUILLE.titre + '">' + anEsc(c[0]) + '</td></tr>';
+    if (l.t === 'sous') return '<tr><td colspan="3" style="' + DL_FEUILLE.sous + '">' + anEsc(c[0]) + '</td></tr>';
+    if (l.t === 'camps')
+      return '<tr>' + td(c[0], '') + td(c[1], DL_FEUILLE.bleu + ';font-weight:700') + td(c[2], DL_FEUILLE.rouge + ';font-weight:700') + '</tr>';
+    /* Une case colorée mais VIDE dessinerait une bande de couleur là où rien ne s'est
+       passé — dans l'ordre chronologique, une action sur deux est justement vide. */
+    return '<tr>' + td(c[0], 'color:#5A6B63') +
+           td(c[1], c[1] ? DL_FEUILLE.bleu : '') + td(c[2], c[2] ? DL_FEUILLE.rouge : '') + '</tr>';
+  }).join('');
+  return '<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px">' + corps + '</table>';
+}
+
+function dlFeuilleTexte(lignes) {
+  return lignes.map(function (l) {
+    return (l.t === 'titre' || l.t === 'sous' || l.t === 'section') ? l.c[0] : l.c.join('\t');
+  }).join('\n');
+}
+
+/* Le presse-papier reçoit DEUX formats : Sheets prend le HTML (et garde les couleurs),
+   tout le reste retombe sur le texte. L'API moderne est la seule à savoir écrire deux
+   formats ; le repli passe par une sélection réelle, qui préserve aussi le HTML. */
+function dlCopierFeuille(html, texte, okMsg) {
+  var ok = function () { showToast(okMsg, 'success', 5000); };
+  if (navigator.clipboard && window.ClipboardItem) {
+    navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([html], { type: 'text/html' }),
+      'text/plain': new Blob([texte], { type: 'text/plain' })
+    })]).then(ok).catch(function () { dlCopierFeuilleRepli(html, ok, texte); });
+    return;
+  }
+  dlCopierFeuilleRepli(html, ok, texte);
+}
+function dlCopierFeuilleRepli(html, ok, texte) {
+  try {
+    var d = document.createElement('div');
+    d.innerHTML = html;
+    d.setAttribute('contenteditable', 'true');
+    d.style.cssText = 'position:fixed;left:-99999px;top:0;opacity:0';
+    document.body.appendChild(d);
+    var sel = window.getSelection(), r = document.createRange();
+    r.selectNodeContents(d); sel.removeAllRanges(); sel.addRange(r);
+    var fait = document.execCommand('copy');
+    sel.removeAllRanges(); d.remove();
+    if (fait) { ok(); return; }
+  } catch (_) {}
+  ssCopy(texte, 'Mise en forme impossible — draft copiée en texte');
+}
+
+async function dlHistoFeuille(mid) {
+  if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
+  var d = ssData();
+  var recs = dlHistoDe(mid);
+  if (!recs.length) { showToast('Aucune draft dans l\'historique', 'warning'); return; }
+  var lignes = dlFeuilleLignes(recs, d.matches, dlNomChamp, d.myTeam && d.myTeam.name);
+  dlCopierFeuille(dlFeuilleHtml(lignes), dlFeuilleTexte(lignes),
+    recs.length + ' draft(s) copiée(s) — collez dans Google Sheets, les couleurs suivent');
+}
+
 function dlHistoSupprimer(id) {
   if (!confirm('Retirer cette draft de l\'historique ? Elle disparaîtra pour tous les coachs de la structure.')) return;
   var d = ssData();
@@ -9322,7 +9438,8 @@ function dlRenderHisto(m) {
   var h = '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap">'
     + '<h3 class="h3" style="font-size:15px">Historique des drafts <span class="faint" style="font-weight:400;font-size:12px">· ' + recs.length + ' contre ' + anEsc((m.opp && m.opp.name) || 'cet adversaire') + '</span></h3>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + (recs.length ? '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\',\'copier\')" title="Copie avec les colonnes : collez directement dans une feuille Google Sheets">Copier pour Google Sheets</button>'
+    + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuille(\'' + m.id + '\')" title="Les deux camps côte à côte dans leurs couleurs, puis l\'ordre des actions. Collez dans Google Sheets : la mise en forme suit.">Copier la draft présentée</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\',\'copier\')" title="Une ligne par game, 31 colonnes — pour filtrer et croiser dans Sheets">Copier le tableau à plat</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\')">Télécharger .csv</button>' : '')
     + (total ? '<button class="btn btn-cta btn-xs" onclick="dlHistoExporter(null)" title="Toutes les drafts de la structure, tous matchs confondus">Toute la saison (' + total + ')</button>' : '')
     + '</div></div>'

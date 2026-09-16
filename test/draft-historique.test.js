@@ -134,6 +134,90 @@ test('le tableur écrit des NOMS de champions, et le contexte du match', () => {
     'une draft simulée ne doit jamais se confondre avec une draft officielle dans le suivi');
 });
 
+/* ── La feuille PRÉSENTÉE (collage Google Sheets) ──────────────────────────────────
+   Ce que ce bloc doit garantir avant tout : que la colonne BLEUE contienne bien ce qui
+   a été joué CÔTÉ BLEU. Se tromper de camp ne lève aucune erreur et produit une feuille
+   parfaitement crédible — un staff y lirait ses propres bans comme étant ceux de
+   l'adversaire, et préparerait le match suivant à l'envers. */
+const feuille = app.slice(app.indexOf('var DL_FEUILLE'), app.indexOf('function dlFeuilleLignes'));
+const bacF = vm.createContext({ Date, Math, JSON, String, anEsc: (s) => String(s == null ? '' : s) });
+vm.runInContext([feuille, source('dlDateHisto'), source('dlFeuilleLignes'),
+  source('dlFeuilleHtml'), source('dlFeuilleTexte')].join('\n'), bacF);
+
+const MATCHS = [{ id: 'm1', competition: 'LFL', opp: { name: 'Karmine Corp Blue' } }];
+const lignesDe = (r) => bacF.dlFeuilleLignes([r], MATCHS, (k) => k, 'VisionScore');
+
+test('la colonne bleue montre le camp BLEU, même quand nous sommes rouges', () => {
+  // Bleu drafte en premier, nous sommes rouge : la colonne bleue est donc l'adversaire.
+  const r = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'blue', notreCote: 'red' }), 0, 'm1');
+  const L = lignesDe(r);
+  const bans = L.filter((l) => l.t === 'duo').slice(0, 5);
+  const picks = L.filter((l) => l.t === 'duo').slice(5, 10);
+  assert.deepStrictEqual(plat(bans.map((l) => l.c[1])), plat(r.euxBans), 'colonne bleue = bans de l\'adversaire');
+  assert.deepStrictEqual(plat(bans.map((l) => l.c[2])), plat(r.nousBans), 'colonne rouge = nos bans');
+  assert.deepStrictEqual(plat(picks.map((l) => l.c[1])), plat(r.euxPicks));
+  assert.deepStrictEqual(plat(picks.map((l) => l.c[2])), plat(r.nousPicks));
+
+  const camps = L.find((l) => l.t === 'camps');
+  assert.match(camps.c[1], /Karmine Corp Blue/, 'l\'en-tête bleu doit nommer l\'adversaire');
+  assert.match(camps.c[2], /nous/, 'l\'en-tête rouge doit nous désigner');
+});
+
+test('l\'ordre de draft est rendu par camp, pas déduit de la couleur', () => {
+  /* Depuis First Selection 2026, côté et ordre sont indépendants : « bleu = 1er » est
+     faux. On vérifie donc les deux combinaisons. */
+  const rougeDabord = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'red', notreCote: 'blue' }), 0, 'm1');
+  const c1 = lignesDe(rougeDabord).find((l) => l.t === 'camps');
+  assert.match(c1.c[1], /2nd drafteur/, 'bleu joue second quand rouge ouvre');
+  assert.match(c1.c[2], /1er drafteur/);
+
+  const bleuDabord = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'blue', notreCote: 'blue' }), 0, 'm1');
+  const c2 = lignesDe(bleuDabord).find((l) => l.t === 'camps');
+  assert.match(c2.c[1], /1er drafteur/);
+  assert.match(c2.c[2], /2nd drafteur/);
+});
+
+test('l\'ordre chronologique n\'attribue chaque action qu\'à UN camp', () => {
+  const r = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'blue', notreCote: 'red' }), 0, 'm1');
+  const seq = lignesDe(r).filter((l) => l.t === 'seq');
+  assert.strictEqual(seq.length, 20, 'les 20 actions doivent figurer');
+  seq.forEach((l) => {
+    assert.ok(!(l.c[1] && l.c[2]), 'une action appartient à un seul camp : ' + JSON.stringify(l.c));
+    assert.ok(l.c[1] || l.c[2], 'et elle doit apparaître quelque part : ' + JSON.stringify(l.c));
+  });
+  // jouerGame numérote les champions à partir de C0 : la 1re action est donc « C0 ».
+  assert.strictEqual(seq[0].c[1], 'C0', 'le 1er ban est celui du bleu, qui ouvre');
+  assert.strictEqual(seq[0].c[2], '', 'et le rouge n\'a rien posé à ce tour');
+});
+
+test('une case sans action ne reçoit pas de couleur de fond', () => {
+  /* Dans l\'ordre chronologique une colonne sur deux est vide : la colorer dessinerait
+     une bande continue là où il ne s\'est rien passé. */
+  const r = bac.dlEnregistrementGame(draftTerminee({}), 0, 'm1');
+  const html = bacF.dlFeuilleHtml(lignesDe(r));
+  assert.doesNotMatch(html, /<td style="background:#[0-9A-F]{6}[^"]*"><\/td>/i,
+    'aucune cellule vide ne doit porter de fond coloré');
+  assert.match(html, /background:#D6E4FF/, 'le bleu doit bien être employé');
+  assert.match(html, /background:#FFDAD6/, 'le rouge aussi');
+});
+
+test('un emplacement perdu au chrono reste « (vide) » dans la feuille', () => {
+  const r = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'blue', notreCote: 'blue' }, [0]), 0, 'm1');
+  const premierBan = lignesDe(r).filter((l) => l.t === 'duo')[0];
+  assert.strictEqual(premierBan.c[1], '(vide)', 'le ban perdu au chrono doit se voir, pas disparaître');
+});
+
+test('le repli texte porte le même contenu que le HTML', () => {
+  /* Les deux rendus viennent d\'une seule description : si l\'un se met à mentir, c\'est
+     que quelqu\'un a recréé une construction parallèle. */
+  const r = bac.dlEnregistrementGame(draftTerminee({ notreCote: 'blue' }), 0, 'm1');
+  const L = lignesDe(r);
+  const texte = bacF.dlFeuilleTexte(L);
+  assert.match(texte, /VisionScore {2}vs {2}Karmine Corp Blue/, 'le titre du match doit y être');
+  assert.match(texte, /Ordre de la draft/);
+  assert.strictEqual(texte.split('\n').length, L.length, 'une ligne de texte par ligne décrite');
+});
+
 test('l\'historique se lit du plus récent au plus ancien', () => {
   const trie = bac.dlHistoTrie([
     { id: 'a', fini: '2026-09-10T18:00:00.000Z' }, { id: 'b', fini: '2026-09-12T18:00:00.000Z' },
