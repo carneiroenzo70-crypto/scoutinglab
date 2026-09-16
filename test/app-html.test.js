@@ -786,6 +786,143 @@ test('un chargement qui aboutit re-rend la draft UNE fois', async () => {
     'garde aurait simplement supprimé la fonctionnalité au lieu de corriger la boucle.');
 });
 
+/* ── 16. Un poste déjà pourvu ne doit plus occuper le haut de la grille ────────────
+   Une fois Rell posée, le coach n'a plus rien à chercher dans les 23 supports — ils
+   restaient pourtant en plein milieu de la liste, entre le Mid et l'ADC.
+
+   Le piège est le CAMP : la grille sert à piker pour celui dont c'est le tour, qui
+   n'est pas toujours nous (mode solo, on joue les deux). Interroger notre camp au lieu
+   du sien reléguerait nos postes pendant qu'on simule l'adversaire — sans la moindre
+   erreur à l'écran, juste une grille rangée à l'envers. */
+function postesFns(picks, champs, moiRole) {
+  const debut = app.indexOf('function dlPostesPourvus(');
+  assert.ok(debut > 0, 'dlPostesPourvus introuvable dans app.html');
+  const fin = app.indexOf('function dlLigneConseil(', debut);
+  assert.ok(fin > debut, 'fin du bloc des postes introuvable');
+  return new Function('dlPicksDe', 'dlRoleNous', 'window', 'dlRoleChamp', 'SS_ROLES',
+    app.slice(debut, fin) + '\nreturn { dlPostesPourvus: dlPostesPourvus, dlPostesLibres: dlPostesLibres };')(
+    (r) => picks[r] || [], () => moiRole, { _ssChamps: champs },
+    (c) => (c ? c.role : null), ['Top', 'Jgl', 'Mid', 'ADC', 'Sup']);
+}
+const CHAMPS = [{ key: 'Rell', role: 'Sup' }, { key: 'Jinx', role: 'ADC' }, { key: 'Azir', role: 'Mid' }];
+const PICKS = { first: ['Rell', 'Jinx'], second: ['Azir'] };
+
+test('les postes pourvus sont ceux du camp interrogé, pas toujours les nôtres', () => {
+  const F = postesFns(PICKS, CHAMPS, 'first');
+  assert.deepStrictEqual(F.dlPostesPourvus('first'), { Sup: 'Rell', ADC: 'Jinx' });
+  assert.deepStrictEqual(F.dlPostesPourvus('second'), { Mid: 'Azir' },
+    'interroger le camp adverse doit rendre SES postes, pas les nôtres');
+  assert.deepStrictEqual(F.dlPostesLibres('first'), ['Top', 'Jgl', 'Mid']);
+  assert.deepStrictEqual(F.dlPostesLibres('second'), ['Top', 'Jgl', 'ADC', 'Sup']);
+});
+
+test('le poste retenu garde le champion qui l\'occupe, pour pouvoir le nommer', () => {
+  const F = postesFns(PICKS, CHAMPS, 'first');
+  assert.strictEqual(F.dlPostesPourvus('first').Sup, 'Rell',
+    '« déjà pourvu · Rell » vaut mieux que de laisser le coach deviner lequel');
+});
+
+test('sans argument, ce sont NOS postes qui sont lus (ce dont dépend le conseil)', () => {
+  const F = postesFns(PICKS, CHAMPS, 'second');
+  assert.deepStrictEqual(F.dlPostesLibres(), ['Top', 'Jgl', 'ADC', 'Sup'],
+    'le conseil raisonne sur notre camp : dlRoleNous doit rester le défaut');
+});
+
+test('la grille relègue d\'après le camp qui PIKE, et seulement sur un pick', () => {
+  const rendu = codeSeul.slice(codeSeul.indexOf('async function dlRenderGrid()'));
+  const corps = rendu.slice(0, rendu.indexOf('\nfunction dlConfigure'));
+  assert.match(corps, /dlPostesPourvus\(step\.by\)/,
+    'la grille doit interroger le camp dont c\'est le tour, pas le nôtre');
+  assert.match(corps, /step\.type === 'pick'[\s\S]{0,80}dlPostesPourvus/,
+    'sur un BAN rien ne doit être relégué : on bannit dans tous les postes, y compris ' +
+    'ceux qu\'on a déjà pourvus');
+  /* RELÉGUÉES, pas retirées : le rôle affiché n'est qu'un rôle dominant, et un flex
+     pick (Karma jouée mid, Pantheon support) doit rester cliquable. L'ordre se
+     construit donc en CONCATÉNANT les pourvus après les libres — si quelqu'un
+     remplaçait ça par un simple filtre, les champions disparaîtraient. */
+  assert.match(corps, /ordreRoles\s*=\s*SS_ROLES\.filter[\s\S]{0,140}\.concat\(SS_ROLES\.filter/,
+    'les postes pourvus doivent être replacés en fin de liste, jamais écartés');
+});
+
+/* ── 17. Le conseil de pick ne propose rien qu'il ne puisse chiffrer ───────────────
+   Le panneau restait vide en fin de draft : il exigeait 3 picks relevés minimum, alors
+   que la donnée existait à 1 ou 2. On affiche donc le COMPTE réel au lieu d'un seuil.
+
+   Le risque, en desserrant, est de le remplir de bruit. Un garde-fou le tient : « ce
+   qui manque à votre composition » (le type de dégâts, lu dans les fichiers du jeu)
+   REHAUSSE un champion déjà mesuré, mais n'en propose jamais un seul — sinon le conseil
+   remonterait n'importe quel champion magique que personne ne joue, au seul prétexte
+   qu'il est magique. C'est exactement ce que ce test empêche de revenir. */
+function jouerConseil({ libres, champs, priority, manque, partAD }) {
+  const debut = app.indexOf('function dlConseilPicks()');
+  assert.ok(debut > 0, 'dlConseilPicks introuvable dans app.html');
+  const fin = app.indexOf('function dlConseilHtml()', debut);
+  assert.ok(fin > debut, 'fin de dlConseilPicks introuvable');
+  const html = new Function(
+    'window', '_dlState', 'VSDraft', 'dlPostesLibres', 'dlMetaContext', 'dlRoleChamp', 'dlNorm',
+    'dlContre', 'dlMetaBestPartners', 'dlChampParNorm', 'dlManqueCompo', 'dlPartAD',
+    'dlLigneConseil', 'SS_ROLE_LABEL', 'DL_CONTRE_MIN', 'anEsc',
+    app.slice(debut, fin) + '\nreturn dlConseilPicks();')(
+    { _ssChamps: champs, _dlMeta: { priority: priority, counter: {}, pairStats: {} } },
+    { gameIndex: 0 }, { unavailable: () => ({}) },
+    () => libres, () => ({ mine: {}, theirs: {} }),
+    (c) => c && c.role, (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, ''),
+    () => null, () => [], () => null,
+    () => manque, (k) => (k in partAD ? partAD[k] : null),
+    (c, motifs) => '<li>' + c.nom + ' :: ' + motifs.join(' | ') + '</li>',
+    { Top: 'Top', Jgl: 'Jungle', Mid: 'Mid', ADC: 'ADC', Sup: 'Support' }, 3, (s) => String(s));
+  return [...html.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
+}
+
+const JGL = [{ key: 'LeeSin', name: 'Lee Sin', role: 'Jgl' }, { key: 'Amumu', name: 'Amumu', role: 'Jgl' },
+             { key: 'Ivern', name: 'Ivern', role: 'Jgl' }];
+const AD = { LeeSin: 1, Amumu: 0, Ivern: 0 };   // Amumu et Ivern : dégâts magiques
+
+test('un champion que personne ne joue n\'est pas proposé, même s\'il comble le manque', () => {
+  /* Ivern est magique et la compo réclame du magique — mais il n'a aucun pick relevé.
+     Le proposer reviendrait à inventer un conseil à partir d'un seul type de dégâts. */
+  const l = jouerConseil({
+    libres: ['Jgl'], champs: JGL, priority: { Jgl: { leesin: { 1: 9 }, amumu: { 1: 3 } } },
+    manque: { veut: 'magique', pc: 92 }, partAD: AD
+  });
+  assert.ok(!l.some((x) => /Ivern/.test(x)),
+    'Ivern n\'est joué nulle part : il ne doit pas apparaître');
+  assert.strictEqual(l.length, 2, 'seuls les deux champions réellement pikés sont proposés');
+});
+
+test('combler le manque de la compo fait remonter un champion DÉJÀ mesuré', () => {
+  const l = jouerConseil({
+    libres: ['Jgl'], champs: JGL, priority: { Jgl: { leesin: { 1: 9 }, amumu: { 1: 3 } } },
+    manque: { veut: 'magique', pc: 92 }, partAD: AD
+  });
+  assert.match(l[0], /Amumu/,
+    'piké 3× seulement, mais seul à combler 92 % de dégâts d\'un même type : il passe devant');
+  assert.match(l[0], /piké 3×/, 'et son compte réel reste affiché');
+  assert.match(l[0], /92 %/, 'ainsi que la raison, chiffrée');
+  assert.match(l[1], /Lee Sin/);
+});
+
+test('sans manque de composition, c\'est le compte de picks qui classe', () => {
+  const l = jouerConseil({
+    libres: ['Jgl'], champs: JGL, priority: { Jgl: { leesin: { 1: 9 }, amumu: { 1: 3 } } },
+    manque: null, partAD: AD
+  });
+  assert.match(l[0], /Lee Sin/, '9 picks passent devant 3 quand rien ne manque à la compo');
+  assert.match(l[1], /Amumu/);
+});
+
+test('un champion piké 1× ou 2× est proposé, avec son compte exact', () => {
+  /* C'est le desserrage : sous l'ancien seuil de 3, ces deux-là disparaissaient et le
+     panneau affichait « rien de mesuré » alors que la donnée existait. */
+  const l = jouerConseil({
+    libres: ['Jgl'], champs: JGL, priority: { Jgl: { leesin: { 1: 2 }, amumu: { 1: 1 } } },
+    manque: null, partAD: AD
+  });
+  assert.strictEqual(l.length, 2, 'les deux doivent être proposés');
+  assert.match(l[0], /piké 2×/);
+  assert.match(l[1], /piké 1×/);
+});
+
 test('sans la garde, le bloc boucle bel et bien', async () => {
   /* Contre-test : une vérification qui passerait aussi sur le code fautif ne prouve rien.
      On retire la garde du source extrait et on montre que la boucle repart. */

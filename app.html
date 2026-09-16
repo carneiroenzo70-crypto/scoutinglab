@@ -1499,6 +1499,13 @@ body:not(.theme-dark) .ss-rolechip-f{ border-color:rgba(31,71,64,.16); }
 body:not(.theme-dark) .ss-champrole-t{ color:var(--vs-emerald-500); }
 .ss-champrole-n{ font-family:var(--font-mono); font-weight:700; font-size:10px; color:var(--vs-fg-3); background:rgba(45,212,167,.1); border-radius:999px; padding:0 6px; letter-spacing:0; }
 .ss-champrole-grp{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+/* Poste déjà pourvu par le camp qui pike : relégué en bas et atténué, jamais retiré —
+   le rôle affiché n'est qu'un rôle DOMINANT, et un flex pick doit rester atteignable.
+   Le survol rend la pleine opacité pour qu'on puisse y piocher sans se battre. */
+.ss-champrole-t.pourvu{ opacity:.5; }
+.ss-champrole-grp.pourvu{ opacity:.4; transition:opacity .12s ease; }
+.ss-champrole-grp.pourvu:hover{ opacity:1; }
+.ss-champrole-pris{ font-weight:400; font-size:10px; letter-spacing:0; text-transform:none; color:var(--vs-fg-3); }
 .ss-champ{ width:52px; border:0; background:transparent; cursor:pointer; padding:2px; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:2px; transition:background .1s; }
 .ss-champ:hover{ background:rgba(45,212,167,.1); }
 .ss-champ img{ width:40px; height:40px; border-radius:7px; }
@@ -9013,13 +9020,23 @@ function dlMenacesOuvertes() {
   return out.sort(function (a, b) { return b.total - a.total || b.wrMax - a.wrMax; });
 }
 
-// Les postes que NOUS n'avons pas encore remplis, d'après le rôle de nos picks.
-function dlPostesLibres() {
+/* Les postes qu'un camp a déjà remplis, et PAR QUI — le nom sert à l'écrire à côté du
+   poste plutôt qu'à laisser le coach le déduire. Le camp est celui qu'on interroge
+   (`first`/`second`) : la grille raisonne sur celui dont c'est le tour, le conseil sur
+   le nôtre. Le rôle vient de dlRoleChamp, donc d'un rôle DOMINANT : un flex pick est
+   rattaché à son poste habituel, et c'est une approximation assumée, écrite à l'écran. */
+function dlPostesPourvus(role) {
   var pris = {};
-  dlPicksDe(dlRoleNous()).forEach(function (k) {
+  dlPicksDe(role || dlRoleNous()).forEach(function (k) {
     var c = (window._ssChamps || []).find(function (x) { return x.key === k; });
-    var r = dlRoleChamp(c); if (r) pris[r] = true;
+    var r = dlRoleChamp(c); if (r && !pris[r]) pris[r] = k;
   });
+  return pris;
+}
+
+// Les postes qu'un camp n'a pas encore remplis (par défaut : les nôtres).
+function dlPostesLibres(role) {
+  var pris = dlPostesPourvus(role);
   return SS_ROLES.filter(function (r) { return !pris[r]; });
 }
 
@@ -9060,6 +9077,31 @@ function dlConseilBans() {
     + '</div>';
 }
 
+/* Le type de dégâts d'un champion, lu dans les fichiers du jeu par le moteur — la
+   MÊME source que la lecture de composition affichée au-dessus. Mis en cache : le
+   profil parcourt tous les sorts, et le conseil interroge ~150 champions par rendu. */
+function dlPartAD(key) {
+  var T = dlMoteur(); if (!T) return null;
+  var cache = window._dlPartAD || (window._dlPartAD = {});
+  if (!(key in cache)) {
+    var p = T.profilChampion(key);
+    cache[key] = p ? p.partAD : null;
+  }
+  return cache[key];
+}
+
+/* Ce qui manque à notre composition, et seulement quand c'est franc. Sous 3 picks on
+   ne dit rien — la part de dégâts d'une compo à moitié faite ne veut rien dire. Les
+   seuils sont ceux de la lecture de draft (75 % / 25 %), pour que les deux panneaux ne
+   se contredisent jamais à l'écran. */
+function dlManqueCompo() {
+  var l = dlLireCompo(dlRoleNous());
+  if (l.picks < 3 || l.partPhysique == null) return null;
+  if (l.partPhysique >= 0.75) return { veut: 'magique', pc: Math.round(l.partPhysique * 100) };
+  if (l.partPhysique <= 0.25) return { veut: 'physique', pc: 100 - Math.round(l.partPhysique * 100) };
+  return null;
+}
+
 function dlConseilPicks() {
   var meta = (window._dlMeta && window._dlMeta.priority) ? window._dlMeta : null;
   var libres = dlPostesLibres();
@@ -9068,6 +9110,7 @@ function dlConseilPicks() {
   var indispo = VSDraft.unavailable(_dlState);
   var gameNum = Math.min(3, _dlState.gameIndex + 1);
   var liste = window._ssChamps || [];
+  var manque = dlManqueCompo();
 
   var propositions = [];
   libres.forEach(function (role) {
@@ -9094,11 +9137,29 @@ function dlConseilPicks() {
           rang += 500 + moi.wr;
         }
       }
-      // 3) À défaut, la priorité du haut niveau pour ce numéro de game.
+      // 3) À défaut, la priorité du haut niveau pour ce numéro de game. On affiche le
+      //    COMPTE réel plutôt que d'exiger un seuil : sous l'ancien minimum de 3 picks,
+      //    le panneau restait vide en fin de draft alors que la donnée existait. Un
+      //    champion piké 2× reste un fait mesuré, il est simplement classé plus bas.
       var pr = meta && meta.priority[role] && meta.priority[role][cNorm];
-      if (pr && pr[gameNum] >= 3) {
-        motifs.push('piké ' + pr[gameNum] + '× en game ' + gameNum);
-        rang += pr[gameNum];
+      var vus = (pr && pr[gameNum]) || 0;
+      if (vus > 0) {
+        motifs.push('piké ' + vus + '× en game ' + gameNum);
+        rang += vus;
+      }
+      // 4) Ce qui manque à NOTRE composition — le type de dégâts n'est pas une opinion,
+      //    il est écrit dans les fichiers du jeu. Ce motif REHAUSSE un champion déjà
+      //    mesuré (contre, synergie ou picks relevés), il n'en propose jamais un tout
+      //    seul : sinon on remonterait un champion que personne ne joue au seul prétexte
+      //    qu'il est magique, et le panneau se remplirait de noms sans emploi.
+      //    Une part AD à 0,5 exactement = kit sans ratio lisible : le moteur ne tranche
+      //    pas, nous non plus.
+      if (manque && motifs.length) {
+        var part = dlPartAD(c.key);
+        if (part != null && part !== 0.5 && (part < 0.5) === (manque.veut === 'magique')) {
+          motifs.push('dégâts ' + manque.veut + 's — votre compo est à ' + manque.pc + ' % de l\'autre type');
+          rang += 200;
+        }
       }
       if (!motifs.length) return;
       propositions.push({ key: c.key, nom: c.name, role: role, motifs: motifs, rang: rang });
@@ -9106,16 +9167,24 @@ function dlConseilPicks() {
   });
 
   if (!propositions.length) {
-    return '<div class="dl-cs-vide">Rien de mesuré à proposer : ni contre, ni synergie, ni priorité au-dessus du seuil d\'échantillon sur les postes restants.</div>';
+    /* Il reste un cas où l'on ne propose rien, et il doit dire lequel : la méta n'est
+       pas encore là, ou elle est là et ne contient rien sur ces postes. Inventer une
+       liste ici la ferait passer pour mesurée. */
+    return '<div class="dl-cs-vide">' + (meta
+      ? 'Aucun pick relevé en compétition sur les postes restants, et aucun contre ni synergie mesurés.'
+      : 'Méta de compétition en cours de chargement…') + '</div>';
   }
   propositions.sort(function (a, b) { return b.rang - a.rang; });
   var lignes = propositions.slice(0, 5).map(function (x) {
     return dlLigneConseil(x, [SS_ROLE_LABEL[x.role]].concat(x.motifs));
   }).join('');
   return '<ul class="dl-cs-l">' + lignes + '</ul>'
-    + '<div class="dl-cs-regle">Contre mesuré d\'abord, puis synergie, puis priorité du haut niveau. '
-    + 'Seuil : ' + DL_CONTRE_MIN + ' games minimum, 55 % minimum — en dessous ce n\'est pas un signal, c\'est du bruit. '
-    + 'Les postes restants sont déduits du rôle dominant de vos picks : un flex pick est rattaché à son poste habituel.</div>';
+    + '<div class="dl-cs-regle">Dans l\'ordre : contre mesuré (' + DL_CONTRE_MIN + ' games et 55 % minimum), '
+    + 'synergie mesurée, puis ce qui se pike à ce poste au haut niveau — avec son compte exact, pour que '
+    + '2 picks ne se lisent pas comme 20. Un champion qui comble ce qui manque à votre composition remonte '
+    + 'dans ce classement, mais n\'y entre jamais seul : seuls des champions réellement joués sont proposés. '
+    + 'Chaque ligne porte le chiffre qui la justifie. Les postes restants sont déduits du rôle dominant de '
+    + 'vos picks : un flex pick est rattaché à son poste habituel.</div>';
 }
 
 function dlConseilHtml() {
@@ -9787,7 +9856,16 @@ async function dlRenderGrid() {
   var groupes = {}; SS_ROLES.forEach(function (r) { groupes[r] = []; }); groupes[''] = [];
   f.forEach(function (c) { var rl = dlRoleChamp(c); (groupes[rl] || groupes['']).push(c); });
 
-  grid.innerHTML = SS_ROLES.concat(['']).map(function (r) {
+  /* Les postes que le camp qui PIKE a déjà remplis descendent en bas, atténués : une
+     fois Rell posée, il n'y a plus rien à chercher dans les 23 supports, et ils
+     occupaient le milieu de la liste. On ne les retire pas — le rôle affiché n'est
+     qu'un rôle dominant, et un flex pick doit rester atteignable. Sur un BAN, l'ordre
+     ne bouge pas : on bannit dans tous les postes, y compris ceux qu'on a déjà pourvus. */
+  var pourvus = (step && step.type === 'pick') ? dlPostesPourvus(step.by) : {};
+  var ordreRoles = SS_ROLES.filter(function (r) { return !pourvus[r]; })
+    .concat(SS_ROLES.filter(function (r) { return !!pourvus[r]; })).concat(['']);
+
+  grid.innerHTML = ordreRoles.map(function (r) {
     var champs = groupes[r] || []; if (!champs.length) return '';
     // À l'intérieur d'un rôle : d'abord les champions joués par l'adversaire (menace
     // directe), puis la priorité pro pour cette game du BO, puis l'ordre alphabétique.
@@ -9795,9 +9873,12 @@ async function dlRenderGrid() {
     // Le repère de menace reste porté par la bordure + le badge du champion lui-même
     // (`.dl-menace` / `.dl-mz`) : un coach pro connaît la méta, inutile de le lui redire
     // en toutes lettres à côté du nom du rôle.
-    return '<div class="ss-champrole-t" id="dl-role-' + r + '">' + (r ? SS_ROLE_LABEL[r] : 'Autres / non classés')
+    var occupe = pourvus[r];
+    return '<div class="ss-champrole-t' + (occupe ? ' pourvu' : '') + '" id="dl-role-' + r + '">'
+      + (r ? SS_ROLE_LABEL[r] : 'Autres / non classés')
       + '<span class="ss-champrole-n">' + champs.length + '</span>'
-      + '</div><div class="ss-champrole-grp">' + champs.map(bouton).join('') + '</div>';
+      + (occupe ? '<span class="ss-champrole-pris">déjà pourvu · ' + anEsc(dlNomChamp(occupe)) + '</span>' : '')
+      + '</div><div class="ss-champrole-grp' + (occupe ? ' pourvu' : '') + '">' + champs.map(bouton).join('') + '</div>';
   }).join('') || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
   grid.scrollTop = position;
   window._dlGridScroll = null;
