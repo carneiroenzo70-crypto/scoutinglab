@@ -4,9 +4,9 @@
    1. une game archivée par deux coachs de la même salle doit produire le MÊME
       enregistrement, octet pour octet — sinon la fusion du stockage partagé lève un
       conflit, ou pire, garde deux copies de la même draft ;
-   2. la ligne de tableur doit rester alignée sur ses en-têtes quoi qu'il arrive
-      (emplacement vide sur temps écoulé, game incomplète) — une colonne décalée dans
-      un Google Sheet de suivi fausse silencieusement tous les filtres du staff. */
+   2. la feuille exportée doit attribuer chaque ban et chaque pick au BON camp — une
+      inversion ne lève aucune erreur et produit une feuille parfaitement crédible, dans
+      laquelle le staff lirait ses propres bans comme étant ceux de l'adversaire. */
 
 const test = require('node:test');
 const assert = require('node:assert');
@@ -27,12 +27,9 @@ function source(nom) {
   }
   throw new Error('accolades non refermées pour ' + nom);
 }
-const colonnes = app.slice(app.indexOf('var DL_HISTO_COLONNES'), app.indexOf('function dlLignesTableur'));
-
 const bac = vm.createContext({ VSDraft: D, Date, Math, JSON, String });
-vm.runInContext([colonnes, source('dlHash'), source('dlSignatureGame'), source('dlEnregistrementGame'),
-  source('dlLignesTableur'), source('dlHistoTrie'), source('dlDateHisto')].join('\n') +
-  '\nthis.COLONNES = DL_HISTO_COLONNES;', bac);
+vm.runInContext([source('dlHash'), source('dlSignatureGame'), source('dlEnregistrementGame'),
+  source('dlHistoTrie'), source('dlDateHisto')].join('\n'), bac);
 const plat = (x) => JSON.parse(JSON.stringify(x));
 
 // Joue une game complète ; `vides` = index d'actions laissées au temps écoulé.
@@ -108,33 +105,7 @@ test('les games d\'un même BO partagent la série', () => {
   assert.strictEqual(g2.fearless, true);
 });
 
-test('chaque ligne de tableur a exactement autant de cellules que d\'en-têtes', () => {
-  const r = bac.dlEnregistrementGame(draftTerminee({}, [0, 19]), 0, 'm1');
-  const lignes = bac.dlLignesTableur([r], [{ id: 'm1', competition: 'LFL', opp: { name: 'Karmine Corp Blue' } }], (k) => 'nom:' + k);
-  assert.strictEqual(lignes[0].length, bac.COLONNES.length,
-    'une cellule en trop ou en moins décale toutes les colonnes du Google Sheet');
-});
-
-test('un emplacement perdu au chrono est écrit « (vide) », jamais sauté', () => {
-  const r = bac.dlEnregistrementGame(draftTerminee({ firstSide: 'blue', notreCote: 'blue' }, [0]), 0, 'm1');
-  const ligne = bac.dlLignesTableur([r], [], (k) => k);
-  const i = bac.COLONNES.indexOf('Ban nous 1');
-  assert.strictEqual(ligne[0][i], '(vide)', 'sauter la case décalerait les bans suivants d\'un rang');
-  assert.strictEqual(ligne[0][i + 1], 'C2');
-  assert.ok(/B nous \(vide\)/.test(ligne[0][bac.COLONNES.indexOf('Séquence complète')]));
-});
-
-test('le tableur écrit des NOMS de champions, et le contexte du match', () => {
-  const r = bac.dlEnregistrementGame(draftTerminee({ notreCote: 'blue' }), 0, 'm1');
-  const ligne = bac.dlLignesTableur([r], [{ id: 'm1', competition: 'LFL', opp: { name: 'Karmine Corp Blue' } }], (k) => 'Champion ' + k)[0];
-  assert.strictEqual(ligne[bac.COLONNES.indexOf('Adversaire')], 'Karmine Corp Blue');
-  assert.strictEqual(ligne[bac.COLONNES.indexOf('Compétition')], 'LFL');
-  assert.strictEqual(ligne[bac.COLONNES.indexOf('Pick nous 1')], 'Champion C6');
-  assert.strictEqual(ligne[bac.COLONNES.indexOf('Type')], 'Simulation',
-    'une draft simulée ne doit jamais se confondre avec une draft officielle dans le suivi');
-});
-
-/* ── La feuille PRÉSENTÉE (collage Google Sheets) ──────────────────────────────────
+/* ── La feuille PRÉSENTÉE (fichier à ouvrir dans Google Sheets) ────────────────────
    Ce que ce bloc doit garantir avant tout : que la colonne BLEUE contienne bien ce qui
    a été joué CÔTÉ BLEU. Se tromper de camp ne lève aucune erreur et produit une feuille
    parfaitement crédible — un staff y lirait ses propres bans comme étant ceux de
@@ -142,7 +113,7 @@ test('le tableur écrit des NOMS de champions, et le contexte du match', () => {
 const feuille = app.slice(app.indexOf('var DL_FEUILLE'), app.indexOf('function dlFeuilleLignes'));
 const bacF = vm.createContext({ Date, Math, JSON, String, anEsc: (s) => String(s == null ? '' : s) });
 vm.runInContext([feuille, source('dlDateHisto'), source('dlFeuilleLignes'),
-  source('dlFeuilleHtml'), source('dlFeuilleTexte')].join('\n'), bacF);
+  source('dlFeuilleHtml')].join('\n'), bacF);
 
 const MATCHS = [{ id: 'm1', competition: 'LFL', opp: { name: 'Karmine Corp Blue' } }];
 const lignesDe = (r) => bacF.dlFeuilleLignes([r], MATCHS, (k) => k, 'VisionScore');
@@ -207,15 +178,12 @@ test('un emplacement perdu au chrono reste « (vide) » dans la feuille', () => 
   assert.strictEqual(premierBan.c[1], '(vide)', 'le ban perdu au chrono doit se voir, pas disparaître');
 });
 
-test('le repli texte porte le même contenu que le HTML', () => {
-  /* Les deux rendus viennent d\'une seule description : si l\'un se met à mentir, c\'est
-     que quelqu\'un a recréé une construction parallèle. */
+test('le fichier porte le match, la game et l\'ordre des actions', () => {
   const r = bac.dlEnregistrementGame(draftTerminee({ notreCote: 'blue' }), 0, 'm1');
-  const L = lignesDe(r);
-  const texte = bacF.dlFeuilleTexte(L);
-  assert.match(texte, /VisionScore {2}vs {2}Karmine Corp Blue/, 'le titre du match doit y être');
-  assert.match(texte, /Ordre de la draft/);
-  assert.strictEqual(texte.split('\n').length, L.length, 'une ligne de texte par ligne décrite');
+  const html = bacF.dlFeuilleHtml(lignesDe(r));
+  assert.match(html, /VisionScore {2}vs {2}Karmine Corp Blue/, 'le titre du match doit y être');
+  assert.match(html, /Ordre de la draft/);
+  assert.match(html, /Game 1 \/ BO1/);
 });
 
 test('l\'historique se lit du plus récent au plus ancien', () => {

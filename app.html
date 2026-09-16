@@ -8072,8 +8072,8 @@ function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); va
 function ssSetSeason(id) { var d = ssData(); d.activeSeason = id; ssWrite(d); renderSeasons(); }
 function ssAddSplit() { var d = ssData(); var s = ssActiveSeason(d); if (!s) return; var name = prompt('Nom du split :', 'Split ' + ((s.splits.length || 0) + 1)); if (!name) return; s.splits.push({ id: ssId(), name: name.trim() }); ssWrite(d); renderSeasons(); }
 // On ouvre toujours sur la draft, quel que soit l'onglet quitté au match précédent.
-function ssOpenMatch(id) { window._ssOpen = id; window._ssTab = 'draft'; renderSeasons(); }
-function ssBackCal() { window._ssOpen = null; window._ssSlot = null; window._ssTab = 'draft'; renderSeasons(); }
+function ssOpenMatch(id) { window._ssOpen = id; window._ssTab = 'live'; renderSeasons(); }
+function ssBackCal() { window._ssOpen = null; window._ssTab = 'live'; renderSeasons(); }
 function ssDeleteMatch(id) { if (!confirm('Supprimer ce match ?')) return; var d = ssData(); d.matches = d.matches.filter(function (m) { return m.id !== id; }); ssWrite(d); window._ssOpen = null; renderSeasons(); }
 // ── Sélecteur d'équipe (mon équipe + adversaire) ──
 var _ssOppTimer = null;
@@ -8166,22 +8166,21 @@ function ssRenderMatchDetail(root, id) {
   var dt = new Date(m.date);
   var dateStr = isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   var isPast = !isNaN(dt) && dt < new Date();
-  var tab = window._ssTab || 'draft';
-  if (tab === 'result' && !isPast) tab = 'draft';   // onglet Résultat réservé aux matchs joués
+  var tab = window._ssTab || 'live';
   var h = '<button class="btn btn-ghost btn-sm" onclick="ssBackCal()" style="margin-bottom:14px">← Retour au calendrier</button>';
   h += '<div class="card ss-detail-head"><div class="ss-dh-teams">' + ssLogoImg(team, 44) + '<div class="ss-dh-vs">vs</div>' + ssLogoImg(m.opp, 44) + '<div style="min-width:0"><div class="ss-dh-name">' + anEsc((m.opp && m.opp.name) || '—') + '</div><div class="faint" style="font-size:12px">' + anEsc(m.competition || '') + ' · BO' + (m.bo || 1) + '</div></div></div>'
     + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="faint" style="font-size:12.5px;text-transform:capitalize">' + anEsc(dateStr) + '</span><button class="btn btn-ghost btn-xs" onclick="ssDeleteMatch(\'' + m.id + '\')" style="color:var(--vs-red-400)">Supprimer</button></div></div>';
   // Barre d'onglets
-  var tabDef = [{ k: 'draft', l: 'Préparation de draft' }, { k: 'live', l: 'Draft live' }, { k: 'prematch', l: 'Avant-match' }];
+  var tabDef = [{ k: 'live', l: 'Draft live' }, { k: 'prematch', l: 'Avant-match' }];
   if (isPast) tabDef.push({ k: 'result', l: 'Résultat' });
+  /* Un onglet mémorisé dans la session peut ne plus exister — « Résultat » sur un match
+     à venir, ou la préparation de draft depuis son retrait. Sans ce repli, aucun onglet
+     n'est actif ET aucun contenu n'est rendu : une page blanche, sans la moindre erreur. */
+  if (!tabDef.some(function (t) { return t.k === tab; })) tab = 'live';
   h += '<div class="ss-mtabs">' + tabDef.map(function (t) {
     return '<button class="ss-mtab' + (t.k === tab ? ' on' : '') + '" onclick="ssSetTab(\'' + t.k + '\')">' + t.l + '</button>';
   }).join('') + '</div>';
-  if (tab === 'draft') {
-    h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Préparation de draft <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ' → ' + (m.bo || 1) + ' game(s)</span></h3></div>'
-      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Sélectionne un emplacement (ban ou pick) puis un champion dans le pool. Le pool suit le patch en cours, tous les champions y sont. Clic droit sur un emplacement pour le vider.</p>'
-      + '<div id="ss-draft"></div></div>';
-  } else if (tab === 'live') {
+  if (tab === 'live') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Draft live <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ((m.bo || 1) > 1 ? ' · fearless' : '') + '</span></h3></div>'
       + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Simulation à la séquence officielle, chronométrée. Depuis 2026 le côté et l\'ordre de draft se choisissent séparément — les quatre combinaisons sont donc jouables.</p>'
       + '<div id="ss-live"></div></div>'
@@ -8201,7 +8200,6 @@ function ssRenderMatchDetail(root, id) {
     h += '<div class="card" style="padding:16px 20px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Recherche du résultat dans la base compét…</div>') + '</div></div>';
   }
   root.innerHTML = h;
-  if (tab === 'draft') ssRenderDraft(m);
   if (tab === 'live') dlRender(m);
   if (tab !== 'live') dlStopTimer();   // quitter l'onglet arrête le chrono
   // Roster adverse : chargement AUTOMATIQUE (plus de saisie manuelle nécessaire).
@@ -8241,124 +8239,7 @@ async function ssReloadRoster(id) {
     if (!r || !r.length) { if (typeof showToast === 'function') showToast('Roster introuvable — vérifie le nom exact de l\'équipe', 'warning'); }
   }
 }
-// ── Draft ──
-function ssEmptyGame() { return { bb: ['', '', '', '', ''], rb: ['', '', '', '', ''], bp: ['', '', '', '', ''], rp: ['', '', '', '', ''] }; }
-function ssNewScenario(bo, name) { var g = []; for (var i = 0; i < (bo || 1); i++) g.push(ssEmptyGame()); return { id: ssId(), name: name, games: g }; }
-function ssDraftEnsure(m) {
-  if (!m.draft || !Array.isArray(m.draft.scenarios) || !m.draft.scenarios.length) m.draft = { active: 0, scenarios: [ssNewScenario(m.bo, 'Scénario 1')] };
-  var bo = m.bo || 1;
-  m.draft.scenarios.forEach(function (sc) { while (sc.games.length < bo) sc.games.push(ssEmptyGame()); sc.games = sc.games.slice(0, bo); });
-  if (m.draft.active >= m.draft.scenarios.length) m.draft.active = 0;
-  return m.draft;
-}
-function ssRenderDraft(m) {
-  var box = document.getElementById('ss-draft'); if (!box) return;
-  var d = ssData(); var mm = d.matches.find(function (x) { return x.id === m.id; }) || m;
-  var dr = ssDraftEnsure(mm); ssWrite(d);
-  var sc = dr.scenarios[dr.active] || dr.scenarios[0];
-  var tabs = dr.scenarios.map(function (s, i) { return '<button class="ss-sctab' + (i === dr.active ? ' on' : '') + '" onclick="ssSetScenario(\'' + mm.id + '\',' + i + ')">' + anEsc(s.name) + '</button>'; }).join('');
-  var h = '<div class="ss-sctabs">' + tabs + '<button class="ss-sctab ss-sctab-add" onclick="ssAddScenario(\'' + mm.id + '\')">+ Scénario</button>'
-    + '<button class="ss-sctab ss-sctab-export" onclick="ssExportDraftSheet(\'' + mm.id + '\')" title="Télécharger tous les scénarios en tableur — compatible Google Sheets / Excel">'
-    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg> Tableur</button></div>';
-  h += '<div class="ss-games">';
-  sc.games.forEach(function (g, gi) {
-    h += '<div class="ss-game"><div class="ss-game-t">Game ' + (gi + 1) + '</div>' + ssTeamDraft(mm.id, gi, 'b', 'Bleu', g) + ssTeamDraft(mm.id, gi, 'r', 'Rouge', g) + '</div>';
-  });
-  h += '</div>';
-  h += '<div class="ss-pool-wrap"><div class="between" style="margin-bottom:8px;gap:10px;flex-wrap:wrap"><div class="faint" style="font-size:11.5px" id="ss-slotinfo"></div><span class="faint" style="font-size:10.5px;font-family:var(--font-mono)" id="ss-champcount"></span><input id="ss-champq" class="ss-champq" placeholder="Filtrer un champion…" value="' + anEsc(window._ssChampQ || '') + '" oninput="window._ssChampQ=this.value;ssRenderChampGrid()"></div><div id="ss-champrolef"></div><div id="ss-champgrid" class="ss-champgrid"></div></div>';
-  box.innerHTML = h;
-  ssRenderChampGrid();
-  ssUpdateSlotInfo();
-}
-function ssTeamDraft(mid, gi, side, label, g) {
-  var bans = g[side + 'b'], picks = g[side + 'p'];
-  var bh = '<div class="ss-side ss-side-' + side + '"><div class="ss-side-t">' + label + '</div><div class="ss-slots"><span class="ss-slabel faint">Bans</span>';
-  for (var i = 0; i < 5; i++) bh += ssSlot(mid, gi, side, 'b', i, bans[i], null);
-  bh += '</div><div class="ss-slots"><span class="ss-slabel faint">Picks</span>';
-  for (var j = 0; j < 5; j++) bh += ssSlot(mid, gi, side, 'p', j, picks[j], SS_ROLES[j]);
-  bh += '</div></div>';
-  return bh;
-}
-function ssSlot(mid, gi, side, type, idx, val, roleLbl) {
-  var key = gi + '|' + side + type + '|' + idx;
-  var sel = (window._ssSlot === key) ? ' sel' : '';
-  var inner = val ? '<img src="' + ssChampImg(val) + '" alt="' + anEsc(val) + '">' : (roleLbl ? '<span class="ss-slot-role">' + roleLbl + '</span>' : '');
-  return '<button class="ss-slot ss-slot-' + type + sel + '" onclick="ssSlotSelect(event,\'' + mid + '\',\'' + key + '\')" oncontextmenu="return ssClearSlot(event,\'' + mid + '\',\'' + key + '\')" title="' + (val ? anEsc(val) + ' — clic droit pour retirer' : 'Cliquer pour sélectionner') + '">' + inner + '</button>';
-}
-function ssSlotSelect(e, mid, key) { window._ssSlot = key; window._ssSlotMid = mid; document.querySelectorAll('.ss-slot.sel').forEach(function (b) { b.classList.remove('sel'); }); if (e && e.currentTarget) e.currentTarget.classList.add('sel'); ssUpdateSlotInfo(); }
-function ssClearSlot(e, mid, key) { e.preventDefault(); var p = key.split('|'), gi = +p[0], st = p[1], idx = +p[2]; var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (m && m.draft) { var sc = m.draft.scenarios[m.draft.active]; if (sc && sc.games[gi]) { sc.games[gi][st][idx] = ''; ssWrite(d); ssRenderDraft(m); } } return false; }
-function ssPlaceChamp(key) {
-  if (!window._ssSlot || !window._ssSlotMid) { if (typeof showToast === 'function') showToast('Sélectionne d\'abord un emplacement (ban/pick)', 'info'); return; }
-  var p = window._ssSlot.split('|'), gi = +p[0], st = p[1], idx = +p[2];
-  var d = ssData(); var m = d.matches.find(function (x) { return x.id === window._ssSlotMid; }); if (!m) return;
-  var dr = ssDraftEnsure(m); var sc = dr.scenarios[dr.active]; if (!sc || !sc.games[gi]) return;
-  sc.games[gi][st][idx] = key; ssWrite(d); ssRenderDraft(m);
-}
-function ssUpdateSlotInfo() { var el = document.getElementById('ss-slotinfo'); if (!el) return; if (window._ssSlot) { var p = window._ssSlot.split('|'), st = p[1]; el.textContent = 'Sélectionné : ' + (st.charAt(1) === 'b' ? 'Ban' : 'Pick') + ' ' + (st.charAt(0) === 'b' ? 'Bleu' : 'Rouge') + ' · Game ' + (+p[0] + 1) + ' — clique un champion (clic droit sur un emplacement = retirer).'; } else { el.textContent = 'Sélectionne un emplacement (ban/pick) puis un champion.'; } }
 const SS_ROLE_LABEL = { Top: 'Top', Jgl: 'Jungle', Mid: 'Mid', ADC: 'ADC', Sup: 'Support' };
-function ssChampRoleChipsHtml() {
-  var cur = window._ssChampRoleF || '';
-  var chip = function (v, lbl) { return '<button class="ss-rolechip-f' + (cur === v ? ' on' : '') + '" onclick="ssSetChampRoleF(\'' + v + '\')">' + lbl + '</button>'; };
-  return '<div class="ss-rolechips">' + chip('', 'Tous') + SS_ROLES.map(function (r) { return chip(r, SS_ROLE_LABEL[r]); }).join('') + '</div>';
-}
-function ssSetChampRoleF(r) { window._ssChampRoleF = r; ssRenderChampGrid(); }
-async function ssRenderChampGrid() {
-  var grid = document.getElementById('ss-champgrid'); if (!grid) return;
-  var chipsBox = document.getElementById('ss-champrolef'); if (chipsBox) chipsBox.innerHTML = ssChampRoleChipsHtml();
-  var list = await ssChampList();
-  var qq = (window._ssChampQ || '').toLowerCase();
-  var roleF = window._ssChampRoleF || '';
-  var f = list.filter(function (c) {
-    if (qq && c.name.toLowerCase().indexOf(qq) < 0) return false;
-    if (roleF && c.role !== roleF) return false;
-    return true;
-  });
-  // Regroupée par rôle RÉEL (op.gg, pas l'étiquette de base de Data Dragon) : un
-  // coach cherche « qui joue Support » à la volée, pas l'ordre alphabétique brut.
-  // Pas de troncature dans chaque groupe : la grille scrolle.
-  var groups = {}; SS_ROLES.forEach(function (r) { groups[r] = []; }); groups[''] = [];
-  f.forEach(function (c) { (groups[c.role] || groups['']).push(c); });
-  var champBtn = function (c) { return '<button class="ss-champ" onclick="ssPlaceChamp(\'' + c.key + '\')" title="' + anEsc(c.name) + '"><img src="' + ssChampImg(c.key) + '" alt="' + anEsc(c.name) + '" loading="lazy"><span>' + anEsc(c.name) + '</span></button>'; };
-  var order = roleF ? [roleF] : SS_ROLES.concat(['']);
-  var html = order.map(function (r) {
-    var champs = groups[r] || []; if (!champs.length) return '';
-    var lbl = r ? SS_ROLE_LABEL[r] : 'Autres / non classés';
-    return '<div class="ss-champrole-t">' + lbl + '<span class="ss-champrole-n">' + champs.length + '</span></div><div class="ss-champrole-grp">' + champs.map(champBtn).join('') + '</div>';
-  }).join('');
-  grid.innerHTML = html || '<div class="faint" style="padding:8px;font-size:12px">Aucun champion.</div>';
-  var info = document.getElementById('ss-champcount');
-  if (info) info.textContent = f.length ? (f.length + ' champions') : '';
-}
-function ssAddScenario(mid) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; var dr = ssDraftEnsure(m); dr.scenarios.push(ssNewScenario(m.bo, 'Scénario ' + (dr.scenarios.length + 1))); dr.active = dr.scenarios.length - 1; ssWrite(d); ssRenderDraft(m); }
-
-// Export de tous les scénarios en CSV — s'ouvre directement dans Google Sheets ou Excel,
-// une ligne par camp et par game, pour que le staff les emmène hors-ligne en gaming house.
-/* Téléchargement CSV lisible tel quel par Google Sheets et Excel : BOM UTF-8 (sans
-   lui Excel affiche « PrÃ©paration »), séparateur virgule, fins de ligne CRLF. */
-function ssCelluleCsv(v) { v = (v == null) ? '' : String(v); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
-function ssTelechargerCsv(nomFichier, lignes) {
-  var csv = lignes.map(function (r) { return r.map(ssCelluleCsv).join(','); }).join('\r\n');
-  var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url; a.download = nomFichier;
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-}
-function ssExportDraftSheet(mid) {
-  var m = ssData().matches.find(function (x) { return x.id === mid; });
-  if (!m || !m.draft || !m.draft.scenarios || !m.draft.scenarios.length) { if (typeof showToast === 'function') showToast('Aucun scénario de draft à exporter', 'warning'); return; }
-  var headers = ['Scénario', 'Game', 'Camp', 'Ban 1', 'Ban 2', 'Ban 3', 'Ban 4', 'Ban 5', 'Pick Top', 'Pick Jungle', 'Pick Mid', 'Pick ADC', 'Pick Support'];
-  var rows = [];
-  m.draft.scenarios.forEach(function (sc) {
-    sc.games.forEach(function (g, gi) {
-      rows.push([sc.name, 'Game ' + (gi + 1), 'Bleu'].concat(g.bb).concat(g.bp));
-      rows.push([sc.name, 'Game ' + (gi + 1), 'Rouge'].concat(g.rb).concat(g.rp));
-    });
-  });
-  ssTelechargerCsv('draft_' + ((m.opp && m.opp.name) ? m.opp.name.replace(/[^a-z0-9]+/gi, '_') : m.id) + '.csv', [headers].concat(rows));
-  if (typeof showToast === 'function') showToast('Tableur exporté — ' + m.draft.scenarios.length + ' scénario(s)', 'success');
-}
 
 /* ══════════════════════════════════════════════════════════════
    DRAFT LIVE — simulation chronométrée aux règles de compétition.
@@ -8921,13 +8802,6 @@ function dlThreats() {
   return out;
 }
 
-// Bans que le staff avait préparés dans l'onglet « Préparation de draft ».
-function dlBansPrepares() {
-  var m = _dlMatch; if (!m || !m.draft || !m.draft.scenarios) return [];
-  var sc = m.draft.scenarios[m.draft.active || 0]; if (!sc || !sc.games[0]) return [];
-  var g0 = sc.games[0];
-  return (g0.bb || []).concat(g0.rb || []).filter(Boolean);
-}
 
 function dlScoutHtml() {
   var m = _dlMatch;
@@ -8959,15 +8833,8 @@ function dlScoutHtml() {
           ? pool.map(function (c) { return '<span class="dl-sc-c"><b>' + anEsc(c.name) + '</b> ' + c.games + 'g·' + c.wr + '%</span>'; }).join('') + age
           : '<span class="faint" style="font-size:10.5px">pool non chargé</span>') + '</span></div>';
   }).join('');
-  var prepares = dlBansPrepares();
-  var h = '<div class="dl-scout"><span class="label">Scouting adverse — ' + anEsc((m.opp && m.opp.name) || '') + '</span>'
-    + '<div class="dl-sc-list">' + lignes + '</div>';
-  if (prepares.length) {
-    h += '<div class="dl-sc-prep"><span class="label" style="font-size:9.5px">Bans préparés</span><div class="dl-sc-prep-l">'
-      + prepares.map(function (k) { return '<img src="' + ssChampImg(k) + '" alt="' + anEsc(k) + '" title="' + anEsc(k) + ' — prévu dans ton scénario">'; }).join('')
-      + '</div></div>';
-  }
-  return h + '</div>';
+  return '<div class="dl-scout"><span class="label">Scouting adverse — ' + anEsc((m.opp && m.opp.name) || '') + '</span>'
+    + '<div class="dl-sc-list">' + lignes + '</div></div>';
 }
 
 /* ── Conseil de draft ─────────────────────────────────────────────────────────
@@ -9413,28 +9280,6 @@ function dlDateHisto(r) {
    été posés — c'est ce qui permet ensuite de filtrer « tous nos first picks » ou
    « leurs bans de phase 2 » d'une simple colonne. Une colonne Notes vide, parce que
    c'est la première chose qu'un coach ajoute à la main. */
-var DL_HISTO_COLONNES = ['Date', 'Compétition', 'Adversaire', 'Série', 'Game', 'Format', 'Notre côté', 'Ordre de draft']
-  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Ban nous ' + i; }))
-  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Ban adv. ' + i; }))
-  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Pick nous ' + i; }))
-  .concat([1, 2, 3, 4, 5].map(function (i) { return 'Pick adv. ' + i; }))
-  .concat(['Séquence complète', 'Type', 'Notes']);
-
-function dlLignesTableur(enregistrements, matchs, nomDe) {
-  var parId = {}; (matchs || []).forEach(function (m) { parId[m.id] = m; });
-  var cinq = function (l) { var o = []; for (var i = 0; i < 5; i++) o.push(l && l[i] ? nomDe(l[i]) : (l && i < l.length ? '(vide)' : '')); return o; };
-  return enregistrements.map(function (r) {
-    var m = parId[r.matchId] || {};
-    var seq = (r.sequence || []).map(function (a) {
-      return (a.t === 'ban' ? 'B' : 'P') + (a.qui === 'nous' ? ' nous ' : ' adv. ') + (a.c ? nomDe(a.c) : '(vide)');
-    }).join(' > ');
-    return [dlDateHisto(r), m.competition || '', (m.opp && m.opp.name) || '', r.serie, r.game, 'BO' + r.bo + (r.fearless ? ' fearless' : ''),
-      r.notreCote === 'blue' ? 'Bleu' : 'Rouge', r.nousDrafteur === 'first' ? '1er' : '2nd']
-      .concat(cinq(r.nousBans)).concat(cinq(r.euxBans)).concat(cinq(r.nousPicks)).concat(cinq(r.euxPicks))
-      .concat([seq, 'Simulation', '']);
-  });
-}
-
 // Du plus récent au plus ancien ; à défaut d'heure, l'ordre d'archivage fait foi.
 function dlHistoTrie(liste) {
   return liste.map(function (r, i) { return { r: r, i: i }; })
@@ -9446,34 +9291,14 @@ function dlHistoDe(mid) {
   return dlHistoTrie((d.draftsLive || []).filter(function (r) { return !mid || r.matchId === mid; }));
 }
 
-async function dlHistoExporter(mid, mode) {
-  if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
-  var d = ssData();
-  var recs = dlHistoDe(mid);
-  if (!recs.length) { showToast('Aucune draft dans l\'historique', 'warning'); return; }
-  var lignes = [DL_HISTO_COLONNES].concat(dlLignesTableur(recs, d.matches, dlNomChamp));
-  if (mode === 'copier') {
-    // Tabulations : c'est ce qu'un collage dans Google Sheets découpe en colonnes.
-    var tsv = lignes.map(function (l) { return l.map(function (v) { return String(v == null ? '' : v).replace(/[\t\r\n]+/g, ' '); }).join('\t'); }).join('\n');
-    ssCopy(tsv, recs.length + ' draft(s) copiée(s) — collez dans Google Sheets');
-    return;
-  }
-  var m = mid && d.matches.find(function (x) { return x.id === mid; });
-  var nom = m ? 'historique_drafts_' + ((m.opp && m.opp.name) || m.id).replace(/[^a-z0-9]+/gi, '_')
-              : 'historique_drafts_' + new Date().toISOString().slice(0, 10);
-  ssTelechargerCsv(nom + '.csv', lignes);
-  showToast('Tableur exporté — ' + recs.length + ' draft(s)', 'success');
-}
+/* ── La draft PRÉSENTÉE ────────────────────────────────────────────────────────────
+   Une draft doit se LIRE : un bloc par game, les deux camps côte à côte dans leurs
+   couleurs, puis l'ordre réel des actions en dessous.
 
-/* ── La draft PRÉSENTÉE, pour Google Sheets ────────────────────────────────────────
-   L'export à plat (31 colonnes, une ligne par game) sert à filtrer et à croiser ; il
-   ne se LIT pas. Celui-ci se lit : un bloc par game, les deux camps côte à côte dans
-   leurs couleurs, puis l'ordre réel des actions en dessous.
-
-   Un TSV ne peut porter aucune couleur — c'est du texte. Google Sheets, en revanche,
-   conserve les fonds de cellule et les fusions quand on lui colle du HTML : c'est donc
-   du HTML qu'on met dans le presse-papier, avec le texte tabulé en second format pour
-   les endroits qui n'en veulent pas (éditeur de texte, Discord). */
+   Le fichier produit est du HTML, et c'est ce qui porte la mise en forme : un CSV est
+   du texte et ne peut transporter aucune couleur, alors que Google Sheets conserve les
+   fonds de cellule à l'import d'un HTML (Fichier → Importer), tout comme Excel et
+   LibreOffice à l'ouverture. */
 var DL_FEUILLE = {
   bleu: 'background:#D6E4FF;color:#10307A', rouge: 'background:#FFDAD6;color:#7A1410',
   titre: 'background:#E3EAE6;font-weight:700', sous: 'color:#5A6B63;font-size:11px'
@@ -9535,58 +9360,6 @@ function dlFeuilleHtml(lignes) {
   return '<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px">' + corps + '</table>';
 }
 
-function dlFeuilleTexte(lignes) {
-  return lignes.map(function (l) {
-    return (l.t === 'titre' || l.t === 'sous' || l.t === 'section') ? l.c[0] : l.c.join('\t');
-  }).join('\n');
-}
-
-/* Le presse-papier reçoit DEUX formats : Sheets prend le HTML (et garde les couleurs),
-   tout le reste retombe sur le texte. L'API moderne est la seule à savoir écrire deux
-   formats ; le repli passe par une sélection réelle, qui préserve aussi le HTML. */
-function dlCopierFeuille(html, texte, okMsg) {
-  var ok = function () { showToast(okMsg, 'success', 5000); };
-  if (navigator.clipboard && window.ClipboardItem) {
-    navigator.clipboard.write([new ClipboardItem({
-      'text/html': new Blob([html], { type: 'text/html' }),
-      'text/plain': new Blob([texte], { type: 'text/plain' })
-    })]).then(ok).catch(function () { dlCopierFeuilleRepli(html, ok, texte); });
-    return;
-  }
-  dlCopierFeuilleRepli(html, ok, texte);
-}
-function dlCopierFeuilleRepli(html, ok, texte) {
-  try {
-    var d = document.createElement('div');
-    d.innerHTML = html;
-    d.setAttribute('contenteditable', 'true');
-    d.style.cssText = 'position:fixed;left:-99999px;top:0;opacity:0';
-    document.body.appendChild(d);
-    var sel = window.getSelection(), r = document.createRange();
-    r.selectNodeContents(d); sel.removeAllRanges(); sel.addRange(r);
-    var fait = document.execCommand('copy');
-    sel.removeAllRanges(); d.remove();
-    if (fait) { ok(); return; }
-  } catch (_) {}
-  ssCopy(texte, 'Mise en forme impossible — draft copiée en texte');
-}
-
-async function dlHistoFeuille(mid) {
-  if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
-  var d = ssData();
-  var recs = dlHistoDe(mid);
-  if (!recs.length) { showToast('Aucune draft dans l\'historique', 'warning'); return; }
-  var lignes = dlFeuilleLignes(recs, d.matches, dlNomChamp, d.myTeam && d.myTeam.name);
-  dlCopierFeuille(dlFeuilleHtml(lignes), dlFeuilleTexte(lignes),
-    recs.length + ' draft(s) copiée(s) — collez dans Google Sheets, les couleurs suivent');
-}
-
-/* Télécharger, plutôt que copier-coller. Le fichier est du HTML, et c'est délibéré :
-   c'est le seul format que Google Sheets sache importer EN GARDANT les couleurs
-   (Fichier → Importer accepte .html), et Excel comme LibreOffice l'ouvrent avec sa mise
-   en forme. Un .csv perdrait tout le formatage — il reste disponible à côté pour qui
-   veut filtrer. Renommer ce même HTML en .xls ne garantirait rien de plus et mentirait
-   sur son contenu. */
 async function dlHistoFeuilleFichier(mid) {
   if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
   var d = ssData();
@@ -9634,11 +9407,8 @@ function dlRenderHisto(m) {
   var h = '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap">'
     + '<h3 class="h3" style="font-size:15px">Historique des drafts <span class="faint" style="font-weight:400;font-size:12px">· ' + recs.length + ' contre ' + anEsc((m.opp && m.opp.name) || 'cet adversaire') + '</span></h3>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuilleFichier(\'' + m.id + '\')" title="Fichier prêt à ouvrir : les deux camps dans leurs couleurs, puis l\'ordre des actions. Dans Google Sheets : Fichier → Importer → Charger. S\'ouvre aussi dans Excel et LibreOffice.">Télécharger la draft présentée</button>'
-      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoFeuille(\'' + m.id + '\')" title="Même mise en forme, dans le presse-papier : collez directement dans une feuille ouverte.">Copier</button>'
-      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\',\'copier\')" title="Une ligne par game, 31 colonnes — pour filtrer et croiser dans Sheets">Copier le tableau à plat</button>'
-      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\')">Télécharger .csv</button>' : '')
-    + (total ? '<button class="btn btn-cta btn-xs" onclick="dlHistoExporter(null)" title="Toutes les drafts de la structure, tous matchs confondus">Toute la saison (' + total + ')</button>' : '')
+    + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuilleFichier(\'' + m.id + '\')" title="Fichier prêt à ouvrir : les deux camps dans leurs couleurs, puis l\'ordre des actions. Dans Google Sheets : Fichier → Importer → Charger. S\'ouvre aussi dans Excel et LibreOffice.">Télécharger la draft</button>' : '')
+    + (total ? '<button class="btn btn-ghost btn-xs" onclick="dlHistoFeuilleFichier(null)" title="Toutes les drafts de la structure, tous matchs confondus, dans un seul fichier">Toute la saison (' + total + ')</button>' : '')
     + '</div></div>'
     + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Chaque game terminée en Draft live est enregistrée automatiquement et partagée avec les coachs de la structure. Une ligne par game dans le tableur : bans et picks dans l\'ordre où ils ont été posés.</p>';
   if (!recs.length) {
@@ -10068,7 +9838,7 @@ function dlStartTimer() {
     }
   }, 250);
 }
-function ssSetScenario(mid, i) { var d = ssData(); var m = d.matches.find(function (x) { return x.id === mid; }); if (!m) return; ssDraftEnsure(m); m.draft.active = i; ssWrite(d); ssRenderDraft(m); }
+
 // ── Résultat réel + draft réelle des matchs passés (base compét) ──
 // Pourquoi pas Flashscore / un autre site de score : aucun d'eux n'expose d'API
 // publique, leurs pages bloquent les requêtes navigateur (CORS) et leurs CGU
