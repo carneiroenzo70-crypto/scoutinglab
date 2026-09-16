@@ -853,24 +853,30 @@ test('la grille relègue d\'après le camp qui PIKE, et seulement sur un pick', 
    REHAUSSE un champion déjà mesuré, mais n'en propose jamais un seul — sinon le conseil
    remonterait n'importe quel champion magique que personne ne joue, au seul prétexte
    qu'il est magique. C'est exactement ce que ce test empêche de revenir. */
-function jouerConseil({ libres, champs, priority, manque, partAD }) {
-  const debut = app.indexOf('function dlConseilPicks()');
-  assert.ok(debut > 0, 'dlConseilPicks introuvable dans app.html');
+function jouerConseil({ libres, champs, priority, manque, partAD, notrePool, contres }) {
+  /* On extrait aussi dlNotreJoueur / dlDansSonPool / dlJoueEnPro : ce sont elles qui
+     portent la règle « quelqu'un le joue-t-il ? », donc les stuber reviendrait à tester
+     le stub. Seul le CHARGEMENT (réseau) est neutralisé. */
+  const debut = app.indexOf('function dlNotreJoueur(');
+  assert.ok(debut > 0, 'dlNotreJoueur introuvable dans app.html');
   const fin = app.indexOf('function dlConseilHtml()', debut);
   assert.ok(fin > debut, 'fin de dlConseilPicks introuvable');
+  const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, '');
   const html = new Function(
     'window', '_dlState', 'VSDraft', 'dlPostesLibres', 'dlMetaContext', 'dlRoleChamp', 'dlNorm',
     'dlContre', 'dlMetaBestPartners', 'dlChampParNorm', 'dlManqueCompo', 'dlPartAD',
-    'dlLigneConseil', 'SS_ROLE_LABEL', 'DL_CONTRE_MIN', 'anEsc',
+    'dlLigneConseil', 'SS_ROLE_LABEL', 'DL_CONTRE_MIN', 'DL_WR_MIN_GAMES', 'anEsc', 'dlChargerNotrePool',
     app.slice(debut, fin) + '\nreturn dlConseilPicks();')(
-    { _ssChamps: champs, _dlMeta: { priority: priority, counter: {}, pairStats: {} } },
+    { _ssChamps: champs, _dlMeta: { priority: priority, counter: {}, pairStats: {} },
+      _dlNotrePool: notrePool || null },
     { gameIndex: 0 }, { unavailable: () => ({}) },
     () => libres, () => ({ mine: {}, theirs: {} }),
-    (c) => c && c.role, (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, ''),
-    () => null, () => [], () => null,
+    (c) => c && c.role, norm,
+    (meta, role, a) => (contres || {})[a] || null, () => [], () => null,
     () => manque, (k) => (k in partAD ? partAD[k] : null),
     (c, motifs) => '<li>' + c.nom + ' :: ' + motifs.join(' | ') + '</li>',
-    { Top: 'Top', Jgl: 'Jungle', Mid: 'Mid', ADC: 'ADC', Sup: 'Support' }, 3, (s) => String(s));
+    { Top: 'Top', Jgl: 'Jungle', Mid: 'Mid', ADC: 'ADC', Sup: 'Support' }, 3, 3,
+    (s) => String(s), () => {});
   return [...html.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => m[1]);
 }
 
@@ -909,6 +915,68 @@ test('sans manque de composition, c\'est le compte de picks qui classe', () => {
   });
   assert.match(l[0], /Lee Sin/, '9 picks passent devant 3 quand rien ne manque à la compo');
   assert.match(l[1], /Amumu/);
+});
+
+/* ⚠ LA RÈGLE POSÉE PAR LE STAFF, mot pour mot : « ne pas proposer Katarina si personne
+   ne la joue en pro, même si c'est un counter pick ». Un contre mesuré dit qu'un matchup
+   est favorable — il ne dit pas que le champion est dans les mains de celui qui va le
+   prendre. Sans cette barrière, le conseil envoie un joueur sur un champion qu'il n'a
+   jamais posé en match officiel, sur la foi d'un pourcentage. */
+test('un contre mesuré ne suffit PAS : si personne ne le joue, il n\'est pas proposé', () => {
+  const champs = [{ key: 'Katarina', name: 'Katarina', role: 'Mid' },
+                  { key: 'Azir', name: 'Azir', role: 'Mid' }];
+  const l = jouerConseil({
+    libres: ['Mid'], champs,
+    priority: { Mid: { azir: { 1: 4 } } },        // Katarina : jamais pikée en compétition
+    contres: { katarina: { wr: 62, games: 11 } }, // et pourtant, contre mesuré et solide
+    manque: null, partAD: {}, notrePool: null
+  });
+  assert.ok(!l.some((x) => /Katarina/.test(x)),
+    'Katarina contre leur mid à 62 %, mais personne ne la joue : elle ne doit pas sortir');
+  assert.strictEqual(l.length, 1);
+  assert.match(l[0], /Azir/);
+});
+
+test('le même contre devient une proposition dès que NOTRE joueur joue le champion', () => {
+  /* Même situation, à une différence près : notre midlaner l'a posée 5 fois en match
+     officiel. Le contre cesse d'être une idée de tableau blanc. */
+  const champs = [{ key: 'Katarina', name: 'Katarina', role: 'Mid' },
+                  { key: 'Azir', name: 'Azir', role: 'Mid' }];
+  const l = jouerConseil({
+    libres: ['Mid'], champs,
+    priority: { Mid: { azir: { 1: 4 } } },
+    contres: { katarina: { wr: 62, games: 11 } },
+    manque: null, partAD: {},
+    notrePool: { Mid: { pseudo: 'Vetheo', pool: [{ name: 'Katarina', games: 5, wr: 60 }] } }
+  });
+  assert.match(l[0], /Katarina/, 'le contre mesuré passe devant, maintenant qu\'il est jouable');
+  assert.match(l[0], /Vetheo/, 'et le conseil dit QUI le joue');
+  assert.match(l[0], /joué 5×/, 'avec son compte réel');
+});
+
+test('un champion du pool de notre joueur est proposé même absent du circuit', () => {
+  /* L'autre moitié de la règle : « joué par le joueur OU le circuit ». Un champion de
+     niche que notre joueur maîtrise reste une option légitime. */
+  const champs = [{ key: 'Ivern', name: 'Ivern', role: 'Jgl' }];
+  const l = jouerConseil({
+    libres: ['Jgl'], champs, priority: { Jgl: {} },
+    manque: null, partAD: {},
+    notrePool: { Jgl: { pseudo: 'Yike', pool: [{ name: 'Ivern', games: 4, wr: 75 }] } }
+  });
+  assert.strictEqual(l.length, 1, 'son pool suffit à le légitimer');
+  assert.match(l[0], /Yike/);
+});
+
+test('un champion joué en pro hors de CETTE game garde un chiffre', () => {
+  /* Il est très piké en game 3 et jamais en game 1 : l\'ancien affichage ne lui trouvait
+     aucun motif et il tombait dans un classement muet. On donne alors le total. */
+  const l = jouerConseil({
+    libres: ['Mid'], champs: [{ key: 'Azir', name: 'Azir', role: 'Mid' }],
+    priority: { Mid: { azir: { 1: 0, 2: 0, 3: 7 } } },
+    manque: null, partAD: {}, notrePool: null
+  });
+  assert.strictEqual(l.length, 1, 'joué 7× au haut niveau : il reste une option');
+  assert.match(l[0], /piké 7× au haut niveau/);
 });
 
 test('un champion piké 1× ou 2× est proposé, avec son compte exact', () => {

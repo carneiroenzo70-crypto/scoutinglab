@@ -9102,7 +9102,63 @@ function dlManqueCompo() {
   return null;
 }
 
+/* ── Ce que NOS joueurs savent jouer ───────────────────────────────────────────────
+   Un contre-pick n'est un conseil que si quelqu'un sait le jouer. Proposer Katarina
+   parce qu'elle bat leur mid, quand ni le circuit ni notre midlaner ne la jouent, c'est
+   du tableau blanc — pas une décision de draft.
+
+   La source est la même que pour le pool adverse (Leaguepedia). Elle dépend d'une donnée
+   que le staff doit avoir renseignée : le NOM COMPÉTITIF du poste (`proName`, posé par
+   l'import d'équipe). Sans lui il n'y a personne à interroger : on se rabat sur le seul
+   circuit, et le panneau l'écrit au lieu de laisser croire que le pool a été vérifié. */
+function dlNotreRoster() {
+  var r = (typeof rsActive === 'function') ? rsActive() : null;
+  if (!r || !r.slots) return [];
+  return SS_ROLES.map(function (role) {
+    var s = r.slots[role];
+    return (s && s.proName) ? { role: role, nom: s.proName, pseudo: s.pseudo || s.proName } : null;
+  }).filter(Boolean);
+}
+
+/* Chargé une fois par session. La garde est un ÉTAT, pas la présence du résultat : un
+   chargement qui n'aboutit pas laisserait le rendu le relancer sans fin — c'est
+   exactement la boucle qui figeait la draft à l'ouverture de la salle. */
+function dlChargerNotrePool() {
+  if (window._dlNotrePoolEtat) return;
+  var roster = dlNotreRoster();
+  if (!roster.length) { window._dlNotrePoolEtat = 'sans-noms'; return; }
+  window._dlNotrePoolEtat = 'encours';
+  pmFetchCompetBatch(roster.map(function (p) { return p.nom; })).then(function (raw) {
+    window._dlNotrePoolEtat = 'fait';
+    if (!raw) return;
+    var parRole = {};
+    roster.forEach(function (p) {
+      var s = raw[ssCompetKey(p.nom)];
+      var pd = (s && s !== SS_ERR) ? dlPoolDe(s) : null;
+      if (pd && pd.pool && pd.pool.length) parRole[p.role] = { pseudo: p.pseudo, pool: pd.pool, fenetre: pd.fenetre };
+    });
+    if (!Object.keys(parRole).length) return;
+    window._dlNotrePool = parRole;
+    if (_dlMatch && document.getElementById('ss-live')) dlRender(_dlMatch);
+  }).catch(function () { window._dlNotrePoolEtat = 'fait'; });
+}
+
+function dlNotreJoueur(role) { return (window._dlNotrePool || {})[role] || null; }
+function dlDansSonPool(j, nomChamp) {
+  if (!j) return null;
+  var n = dlNorm(nomChamp);
+  return j.pool.find(function (c) { return dlNorm(c.name) === n; }) || null;
+}
+/* Joué à ce poste sur le circuit, TOUTES games du BO confondues. La priorité par numéro
+   de game (game 1, 2, 3) sert à classer ; elle ne dit pas si le champion existe en pro —
+   un champion très joué en game 3 afficherait 0 en game 1 et passerait pour injouable. */
+function dlJoueEnPro(meta, role, norm) {
+  var p = meta && meta.priority[role] && meta.priority[role][norm];
+  return p ? ((p[1] || 0) + (p[2] || 0) + (p[3] || 0)) : 0;
+}
+
 function dlConseilPicks() {
+  dlChargerNotrePool();
   var meta = (window._dlMeta && window._dlMeta.priority) ? window._dlMeta : null;
   var libres = dlPostesLibres();
   if (!libres.length) return '<div class="dl-cs-vide">Tous les postes sont pourvus.</div>';
@@ -9118,6 +9174,15 @@ function dlConseilPicks() {
     liste.forEach(function (c) {
       if (indispo[c.key] || dlRoleChamp(c) !== role) return;
       var cNorm = dlNorm(c.name);
+      /* LA CONDITION D'ENTRÉE : quelqu'un doit réellement jouer ce champion à ce poste
+         — notre joueur, ou le circuit. Un contre mesuré ne suffit pas à lui seul : il
+         dit qu'un matchup est favorable, pas que le champion est jouable par celui qui
+         va le prendre. C'est la règle posée par le staff — « ne pas proposer Katarina
+         si personne ne la joue en pro, même si c'est un counter pick ». */
+      var joueur = dlNotreJoueur(role);
+      var sien = dlDansSonPool(joueur, c.name);
+      var enPro = dlJoueEnPro(meta, role, cNorm);
+      if (!sien && !enPro) return;
       var motifs = [], rang = 0;
       // 1) Un contre MESURÉ face à leur champion du même poste. C'est le signal le
       //    plus fort et le plus difficile à retrouver de tête en pleine draft.
@@ -9137,17 +9202,29 @@ function dlConseilPicks() {
           rang += 500 + moi.wr;
         }
       }
-      // 3) À défaut, la priorité du haut niveau pour ce numéro de game. On affiche le
-      //    COMPTE réel plutôt que d'exiger un seuil : sous l'ancien minimum de 3 picks,
-      //    le panneau restait vide en fin de draft alors que la donnée existait. Un
-      //    champion piké 2× reste un fait mesuré, il est simplement classé plus bas.
+      // 3) Notre joueur l'a déjà joué en compétition. C'est le motif le plus actionnable
+      //    d'un staff : le champion n'est pas seulement bon sur le papier, il est dans
+      //    les mains de celui qui va le prendre.
+      if (sien) {
+        motifs.push('<b>' + anEsc(joueur.pseudo) + '</b> l\'a joué ' + sien.games + '×'
+          + (sien.games >= DL_WR_MIN_GAMES ? ' · ' + sien.wr + ' %' : ''));
+        rang += 300 + sien.games;
+      }
+      // 4) La priorité du haut niveau pour ce numéro de game. On affiche le COMPTE réel
+      //    plutôt que d'exiger un seuil : sous l'ancien minimum de 3 picks, le panneau
+      //    restait vide en fin de draft alors que la donnée existait. À défaut de pick
+      //    sur CE numéro de game, on donne le total — sinon un champion très joué en
+      //    game 3 n'afficherait aucun chiffre en game 1.
       var pr = meta && meta.priority[role] && meta.priority[role][cNorm];
       var vus = (pr && pr[gameNum]) || 0;
       if (vus > 0) {
         motifs.push('piké ' + vus + '× en game ' + gameNum);
         rang += vus;
+      } else if (enPro > 0) {
+        motifs.push('piké ' + enPro + '× au haut niveau');
+        rang += 1;
       }
-      // 4) Ce qui manque à NOTRE composition — le type de dégâts n'est pas une opinion,
+      // 5) Ce qui manque à NOTRE composition — le type de dégâts n'est pas une opinion,
       //    il est écrit dans les fichiers du jeu. Ce motif REHAUSSE un champion déjà
       //    mesuré (contre, synergie ou picks relevés), il n'en propose jamais un tout
       //    seul : sinon on remonterait un champion que personne ne joue au seul prétexte
@@ -9171,7 +9248,7 @@ function dlConseilPicks() {
        pas encore là, ou elle est là et ne contient rien sur ces postes. Inventer une
        liste ici la ferait passer pour mesurée. */
     return '<div class="dl-cs-vide">' + (meta
-      ? 'Aucun pick relevé en compétition sur les postes restants, et aucun contre ni synergie mesurés.'
+      ? 'Personne ne joue les champions encore libres à ces postes — ni vos joueurs, ni le circuit. Rien à proposer qui tienne debout.'
       : 'Méta de compétition en cours de chargement…') + '</div>';
   }
   propositions.sort(function (a, b) { return b.rang - a.rang; });
@@ -9179,12 +9256,18 @@ function dlConseilPicks() {
     return dlLigneConseil(x, [SS_ROLE_LABEL[x.role]].concat(x.motifs));
   }).join('');
   return '<ul class="dl-cs-l">' + lignes + '</ul>'
-    + '<div class="dl-cs-regle">Dans l\'ordre : contre mesuré (' + DL_CONTRE_MIN + ' games et 55 % minimum), '
-    + 'synergie mesurée, puis ce qui se pike à ce poste au haut niveau — avec son compte exact, pour que '
-    + '2 picks ne se lisent pas comme 20. Un champion qui comble ce qui manque à votre composition remonte '
-    + 'dans ce classement, mais n\'y entre jamais seul : seuls des champions réellement joués sont proposés. '
-    + 'Chaque ligne porte le chiffre qui la justifie. Les postes restants sont déduits du rôle dominant de '
-    + 'vos picks : un flex pick est rattaché à son poste habituel.</div>';
+    + '<div class="dl-cs-regle"><b>Un champion n\'est proposé que si quelqu\'un le joue à ce poste</b> : '
+    + 'votre joueur, ou le circuit professionnel. Un contre mesuré ne suffit pas — il dit qu\'un matchup est '
+    + 'favorable, pas que le champion est dans les mains de celui qui va le prendre. '
+    + 'Classement : contre mesuré (' + DL_CONTRE_MIN + ' games et 55 % minimum), synergie mesurée, '
+    + 'pool de votre joueur, puis priorité du haut niveau — avec son compte exact, pour que 2 picks ne se '
+    + 'lisent pas comme 20. Ce qui comble un manque de votre composition remonte, sans jamais entrer seul. '
+    + (window._dlNotrePoolEtat === 'sans-noms'
+        ? '<b>Le pool de vos joueurs n\'est pas lu</b> : aucun poste du roster actif ne porte de nom '
+          + 'compétitif (renseigné par l\'import d\'équipe). Seul le circuit est pris en compte. '
+        : '')
+    + 'Les postes restants sont déduits du rôle dominant de vos picks : un flex pick est rattaché à son '
+    + 'poste habituel.</div>';
 }
 
 function dlConseilHtml() {
