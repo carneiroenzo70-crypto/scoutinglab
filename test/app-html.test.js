@@ -727,3 +727,73 @@ test('la position de défilement de la grille de draft survit à une action', ()
   assert.ok(/grid\.scrollTop\s*=\s*position/.test(corps),
     'dlRenderGrid doit rendre la position une fois la grille remplie.');
 });
+
+/* ── 15. La draft ne doit pas se re-rendre en boucle ───────────────────────────────
+   Celui-ci FIGEAIT la page entière, onglet compris : plus aucun clic ne répondait et le
+   navigateur affichait « Page ne répond pas ».
+
+   dlRender charge les stats compét en arrière-plan, puis se re-rend pour les afficher.
+   La relance était inconditionnelle, alors que `ssLoadCompetStats` sort SANS écrire
+   `_ssCompetCache[mid]` dans deux cas ordinaires : un chargement est déjà en vol, ou le
+   match n'a pas de roster côté stockage. La condition d'entrée restant vraie, le
+   re-rendu relançait le chargement, qui re-rendait… un tour de boucle par aller-retour
+   réseau. Mesuré avant correctif : 52 rendus en 5 secondes, en croissance.
+
+   On EXTRAIT le bloc et on le FAIT TOURNER, plutôt que d'y chercher un motif de texte :
+   ce qu'on veut prouver n'est pas qu'une ligne est présente, c'est que la boucle
+   s'arrête. */
+function blocStatsCompet() {
+  const debut = app.indexOf('if ((m.oppRoster || []).length');
+  assert.ok(debut > 0, 'bloc de chargement des stats compét introuvable dans dlRender');
+  const marque = '.catch(function () {});';
+  const fin = app.indexOf(marque, debut);
+  assert.ok(fin > debut, 'fin du bloc introuvable');
+  /* L'accolade qui referme le `if` vient APRÈS le .catch : l'omettre produit un source
+     tronqué, que `new Function` refuse — l'extraction doit rester exécutable. */
+  const accolade = app.indexOf('}', fin + marque.length);
+  assert.ok(accolade > fin, 'accolade fermante du bloc introuvable');
+  return app.slice(debut, accolade + 1);
+}
+
+/* Fait tourner le bloc et compte les rendus. `cacheRempli` dit si le chargement écrit
+   bien le cache — c'est justement ce qui n'arrive PAS dans les deux cas ci-dessus.
+   Le compteur est borné : sans borne, un test qui reproduit la boucle ne finirait pas. */
+async function rendusProvoques(src, cacheRempli) {
+  const BORNE = 60;
+  let rendus = 0;
+  const faux = { _ssCompetCache: {} };
+  const match = { id: 'm1', oppRoster: [{ name: 'Canna' }] };
+  const doc = { getElementById: () => ({}) };
+  const charger = async (mid) => { if (cacheRempli) faux._ssCompetCache[mid] = {}; };
+  const bloc = new Function('m', 'window', 'document', '_dlMatch', 'ssLoadCompetStats', 'dlRender', src);
+  const rendre = (m) => { rendus++; if (rendus < BORNE) bloc(m, faux, doc, match, charger, rendre); };
+  bloc(match, faux, doc, match, charger, rendre);
+  await new Promise((r) => setTimeout(r, 80));
+  return { rendus, borne: BORNE };
+}
+
+test('un chargement qui n\'aboutit pas ne relance pas la draft en boucle', async () => {
+  const r = await rendusProvoques(blocStatsCompet(), false);
+  assert.strictEqual(r.rendus, 0,
+    'le cache n\'ayant pas été écrit, il n\'y a rien de neuf à afficher : re-rendre ' +
+    'relancerait le chargement, qui re-rendrait — c\'est ce qui gelait la page.');
+});
+
+test('un chargement qui aboutit re-rend la draft UNE fois', async () => {
+  const r = await rendusProvoques(blocStatsCompet(), true);
+  assert.strictEqual(r.rendus, 1,
+    'les stats sont arrivées : elles doivent s\'afficher, et une seule fois — sinon la ' +
+    'garde aurait simplement supprimé la fonctionnalité au lieu de corriger la boucle.');
+});
+
+test('sans la garde, le bloc boucle bel et bien', async () => {
+  /* Contre-test : une vérification qui passerait aussi sur le code fautif ne prouve rien.
+     On retire la garde du source extrait et on montre que la boucle repart. */
+  const src = blocStatsCompet();
+  const sansGarde = src.replace(/if \(!\(window\._ssCompetCache \|\| \{\}\)\[m\.id\]\) return;/, '');
+  assert.notStrictEqual(sansGarde, src, 'la garde doit être trouvable pour que ce test ait un sens');
+  const r = await rendusProvoques(sansGarde, false);
+  assert.strictEqual(r.rendus, r.borne,
+    'sans la garde, les rendus ne s\'arrêtent que sur la borne du test — en production, ' +
+    'rien ne les arrête.');
+});

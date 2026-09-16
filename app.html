@@ -9193,10 +9193,8 @@ function dlEnregistrementGame(state, gi, matchId) {
 
 // Archive les games terminées de la salle qui ne le sont pas encore. Idempotent :
 // dlRender l'appelle à chaque changement d'état, local comme reçu du serveur.
-var _dlArchiverEnCours = false;
 function dlArchiver() {
   if (!_dlState || !_dlState._matchId || !_dlState.games) return 0;
-  if (_dlArchiverEnCours) return 0;  // Garde contre les appels recursifs depuis ssWrite
   var aArchiver = _dlState.games.map(function (g, gi) { return dlEnregistrementGame(_dlState, gi, _dlState._matchId); })
                                 .filter(Boolean);
   if (!aArchiver.length) return 0;
@@ -9206,8 +9204,7 @@ function dlArchiver() {
   var nouveaux = aArchiver.filter(function (r) { return !connus[r.id]; });
   if (!nouveaux.length) return 0;
   d.draftsLive = d.draftsLive.concat(nouveaux);
-  _dlArchiverEnCours = true;
-  try { ssWrite(d); } finally { _dlArchiverEnCours = false; }
+  ssWrite(d);
   if (typeof showToast === 'function') showToast(nouveaux.length > 1 ? nouveaux.length + ' drafts ajoutées à l\'historique' : 'Draft ajoutée à l\'historique', 'success');
   return nouveaux.length;
 }
@@ -9359,6 +9356,13 @@ function dlRender(m) {
   // est lente ou indisponible, le panneau se remplira ensuite.
   if ((m.oppRoster || []).length && !(window._ssCompetCache || {})[m.id] && typeof ssLoadCompetStats === 'function') {
     ssLoadCompetStats(m.id).then(function () {
+      // Ne re-rendre QUE si le cache a bien été rempli. ssLoadCompetStats sort sans
+      // l'écrire dans deux cas : un chargement est déjà en vol, ou le match n'a pas de
+      // roster côté stockage. Sans cette garde, le re-rendu relance le chargement, qui
+      // re-rend, qui relance… la page se fige en quelques secondes, une requête réseau
+      // par tour — c'est ce qui gelait la draft à l'ouverture de la salle partagée, où
+      // chaque état reçu du serveur déclenche un rendu de plus.
+      if (!(window._ssCompetCache || {})[m.id]) return;
       if (_dlMatch && _dlMatch.id === m.id && document.getElementById('ss-live')) dlRender(m);
     }).catch(function () {});
   }
