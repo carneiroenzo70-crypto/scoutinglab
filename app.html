@@ -9193,8 +9193,10 @@ function dlEnregistrementGame(state, gi, matchId) {
 
 // Archive les games terminées de la salle qui ne le sont pas encore. Idempotent :
 // dlRender l'appelle à chaque changement d'état, local comme reçu du serveur.
+var _dlArchiverEnCours = false;
 function dlArchiver() {
   if (!_dlState || !_dlState._matchId || !_dlState.games) return 0;
+  if (_dlArchiverEnCours) return 0;  // Garde contre les appels recursifs depuis ssWrite
   var aArchiver = _dlState.games.map(function (g, gi) { return dlEnregistrementGame(_dlState, gi, _dlState._matchId); })
                                 .filter(Boolean);
   if (!aArchiver.length) return 0;
@@ -9204,7 +9206,8 @@ function dlArchiver() {
   var nouveaux = aArchiver.filter(function (r) { return !connus[r.id]; });
   if (!nouveaux.length) return 0;
   d.draftsLive = d.draftsLive.concat(nouveaux);
-  ssWrite(d);
+  _dlArchiverEnCours = true;
+  try { ssWrite(d); } finally { _dlArchiverEnCours = false; }
   if (typeof showToast === 'function') showToast(nouveaux.length > 1 ? nouveaux.length + ' drafts ajoutées à l\'historique' : 'Draft ajoutée à l\'historique', 'success');
   return nouveaux.length;
 }
