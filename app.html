@@ -9111,13 +9111,28 @@ function dlManqueCompo() {
    que le staff doit avoir renseignée : le NOM COMPÉTITIF du poste (`proName`, posé par
    l'import d'équipe). Sans lui il n'y a personne à interroger : on se rabat sur le seul
    circuit, et le panneau l'écrit au lieu de laisser croire que le pool a été vérifié. */
-function dlNotreRoster() {
+/* Qui joue chez nous, avec une identité que Leaguepedia sait interroger. Deux sources,
+   dans l'ordre de précision :
+   1. les postes du roster actif qui portent un nom compétitif (`proName`, posé par
+      l'import d'équipe) — c'est le roster que le staff a réellement inscrit ;
+   2. à défaut, les titulaires que Leaguepedia donne pour NOTRE équipe. `myTeam` est déjà
+      choisie dans Seasons, et c'est une équipe du wiki : un staff de Skill Camp n'a donc
+      rien à ressaisir, le nom de l'équipe suffit à retrouver ses joueurs. */
+async function dlNotreRosterCompet() {
   var r = (typeof rsActive === 'function') ? rsActive() : null;
-  if (!r || !r.slots) return [];
-  return SS_ROLES.map(function (role) {
+  var slots = (r && r.slots) ? SS_ROLES.map(function (role) {
     var s = r.slots[role];
     return (s && s.proName) ? { role: role, nom: s.proName, pseudo: s.pseudo || s.proName } : null;
-  }).filter(Boolean);
+  }).filter(Boolean) : [];
+  if (slots.length) return slots;
+
+  var equipe = (ssData().myTeam || {}).name;
+  if (!equipe || typeof ssTeamRoster !== 'function') return [];
+  var lp = await ssTeamRoster(equipe).catch(function () { return null; });
+  if (!lp || !lp.length) return [];
+  return ssDedupeRoster(lp)
+    .filter(function (p) { return SS_ROLES.indexOf(p.role) >= 0; })
+    .map(function (p) { return { role: p.role, nom: p.link || p.name, pseudo: p.name }; });
 }
 
 /* Chargé une fois par session. La garde est un ÉTAT, pas la présence du résultat : un
@@ -9125,21 +9140,22 @@ function dlNotreRoster() {
    exactement la boucle qui figeait la draft à l'ouverture de la salle. */
 function dlChargerNotrePool() {
   if (window._dlNotrePoolEtat) return;
-  var roster = dlNotreRoster();
-  if (!roster.length) { window._dlNotrePoolEtat = 'sans-noms'; return; }
   window._dlNotrePoolEtat = 'encours';
-  pmFetchCompetBatch(roster.map(function (p) { return p.nom; })).then(function (raw) {
-    window._dlNotrePoolEtat = 'fait';
-    if (!raw) return;
-    var parRole = {};
-    roster.forEach(function (p) {
-      var s = raw[ssCompetKey(p.nom)];
-      var pd = (s && s !== SS_ERR) ? dlPoolDe(s) : null;
-      if (pd && pd.pool && pd.pool.length) parRole[p.role] = { pseudo: p.pseudo, pool: pd.pool, fenetre: pd.fenetre };
+  dlNotreRosterCompet().then(function (roster) {
+    if (!roster.length) { window._dlNotrePoolEtat = 'sans-equipe'; return null; }
+    return pmFetchCompetBatch(roster.map(function (p) { return p.nom; })).then(function (raw) {
+      window._dlNotrePoolEtat = 'fait';
+      if (!raw) return;
+      var parRole = {};
+      roster.forEach(function (p) {
+        var s = raw[ssCompetKey(p.nom)];
+        var pd = (s && s !== SS_ERR) ? dlPoolDe(s) : null;
+        if (pd && pd.pool && pd.pool.length) parRole[p.role] = { pseudo: p.pseudo, pool: pd.pool, fenetre: pd.fenetre };
+      });
+      if (!Object.keys(parRole).length) return;
+      window._dlNotrePool = parRole;
+      if (_dlMatch && document.getElementById('ss-live')) dlRender(_dlMatch);
     });
-    if (!Object.keys(parRole).length) return;
-    window._dlNotrePool = parRole;
-    if (_dlMatch && document.getElementById('ss-live')) dlRender(_dlMatch);
   }).catch(function () { window._dlNotrePoolEtat = 'fait'; });
 }
 
@@ -9262,9 +9278,10 @@ function dlConseilPicks() {
     + 'Classement : contre mesuré (' + DL_CONTRE_MIN + ' games et 55 % minimum), synergie mesurée, '
     + 'pool de votre joueur, puis priorité du haut niveau — avec son compte exact, pour que 2 picks ne se '
     + 'lisent pas comme 20. Ce qui comble un manque de votre composition remonte, sans jamais entrer seul. '
-    + (window._dlNotrePoolEtat === 'sans-noms'
-        ? '<b>Le pool de vos joueurs n\'est pas lu</b> : aucun poste du roster actif ne porte de nom '
-          + 'compétitif (renseigné par l\'import d\'équipe). Seul le circuit est pris en compte. '
+    + (window._dlNotrePoolEtat === 'sans-equipe'
+        ? '<b>Le pool de vos joueurs n\'est pas lu</b> : votre équipe n\'est pas définie (Seasons → '
+          + '« Définir mon équipe ») et aucun poste du roster ne porte de nom compétitif. Seul le '
+          + 'circuit est pris en compte. '
         : '')
     + 'Les postes restants sont déduits du rôle dominant de vos picks : un flex pick est rattaché à son '
     + 'poste habituel.</div>';
@@ -9564,6 +9581,33 @@ async function dlHistoFeuille(mid) {
     recs.length + ' draft(s) copiée(s) — collez dans Google Sheets, les couleurs suivent');
 }
 
+/* Télécharger, plutôt que copier-coller. Le fichier est du HTML, et c'est délibéré :
+   c'est le seul format que Google Sheets sache importer EN GARDANT les couleurs
+   (Fichier → Importer accepte .html), et Excel comme LibreOffice l'ouvrent avec sa mise
+   en forme. Un .csv perdrait tout le formatage — il reste disponible à côté pour qui
+   veut filtrer. Renommer ce même HTML en .xls ne garantirait rien de plus et mentirait
+   sur son contenu. */
+async function dlHistoFeuilleFichier(mid) {
+  if (typeof ssChampList === 'function') await ssChampList();   // noms lisibles, pas des clés
+  var d = ssData();
+  var recs = dlHistoDe(mid);
+  if (!recs.length) { showToast('Aucune draft dans l\'historique', 'warning'); return; }
+  var lignes = dlFeuilleLignes(recs, d.matches, dlNomChamp, d.myTeam && d.myTeam.name);
+  var m = mid && d.matches.find(function (x) { return x.id === mid; });
+  var cible = (m && m.opp && m.opp.name) || (mid ? mid : 'saison');
+  var page = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Drafts — '
+    + anEsc(cible) + '</title></head><body>' + dlFeuilleHtml(lignes) + '</body></html>';
+  var blob = new Blob([page], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'drafts_' + String(cible).replace(/[^a-z0-9]+/gi, '_') + '_'
+             + new Date().toISOString().slice(0, 10) + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  showToast(recs.length + ' draft(s) téléchargée(s) — dans Sheets : Fichier → Importer → Charger', 'success', 6000);
+}
+
 function dlHistoSupprimer(id) {
   if (!confirm('Retirer cette draft de l\'historique ? Elle disparaîtra pour tous les coachs de la structure.')) return;
   var d = ssData();
@@ -9590,7 +9634,8 @@ function dlRenderHisto(m) {
   var h = '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap">'
     + '<h3 class="h3" style="font-size:15px">Historique des drafts <span class="faint" style="font-weight:400;font-size:12px">· ' + recs.length + ' contre ' + anEsc((m.opp && m.opp.name) || 'cet adversaire') + '</span></h3>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuille(\'' + m.id + '\')" title="Les deux camps côte à côte dans leurs couleurs, puis l\'ordre des actions. Collez dans Google Sheets : la mise en forme suit.">Copier la draft présentée</button>'
+    + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuilleFichier(\'' + m.id + '\')" title="Fichier prêt à ouvrir : les deux camps dans leurs couleurs, puis l\'ordre des actions. Dans Google Sheets : Fichier → Importer → Charger. S\'ouvre aussi dans Excel et LibreOffice.">Télécharger la draft présentée</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="dlHistoFeuille(\'' + m.id + '\')" title="Même mise en forme, dans le presse-papier : collez directement dans une feuille ouverte.">Copier</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\',\'copier\')" title="Une ligne par game, 31 colonnes — pour filtrer et croiser dans Sheets">Copier le tableau à plat</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="dlHistoExporter(\'' + m.id + '\')">Télécharger .csv</button>' : '')
     + (total ? '<button class="btn btn-cta btn-xs" onclick="dlHistoExporter(null)" title="Toutes les drafts de la structure, tous matchs confondus">Toute la saison (' + total + ')</button>' : '')

@@ -917,6 +917,65 @@ test('sans manque de composition, c\'est le compte de picks qui classe', () => {
   assert.match(l[1], /Amumu/);
 });
 
+/* ── Retrouver NOS joueurs sans rien faire ressaisir au staff ──────────────────────
+   Le pool de nos joueurs ne servait à rien tant qu'il dépendait d'un nom compétitif
+   saisi poste par poste : un staff qui a inscrit son roster à la main n'en avait aucun,
+   et le conseil ne parlait alors que du circuit.
+
+   L'équipe est pourtant déjà connue (`myTeam`, choisie dans Seasons, et c'est une équipe
+   du wiki). Elle suffit à retrouver les titulaires. */
+function rosterCompetFns({ slots, myTeam, wiki }) {
+  const debut = app.indexOf('async function dlNotreRosterCompet(');
+  assert.ok(debut > 0, 'dlNotreRosterCompet introuvable dans app.html');
+  const fin = app.indexOf('function dlChargerNotrePool(', debut);
+  assert.ok(fin > debut, 'fin de dlNotreRosterCompet introuvable');
+  const appels = { wiki: 0 };
+  const f = new Function('rsActive', 'SS_ROLES', 'ssData', 'ssTeamRoster', 'ssDedupeRoster',
+    app.slice(debut, fin) + '\nreturn dlNotreRosterCompet;')(
+    () => (slots ? { slots } : null),
+    ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'],
+    () => ({ myTeam: myTeam || {} }),
+    async (nom) => { appels.wiki++; appels.nom = nom; return wiki; },
+    (l) => l);
+  return { f, appels };
+}
+
+test('le roster inscrit est utilisé tel quel quand il porte des noms compétitifs', async () => {
+  const { f, appels } = rosterCompetFns({
+    slots: { Mid: { pseudo: 'Veth', proName: 'Vetheo' }, Top: { pseudo: 'Cal' } },
+    myTeam: { name: 'Karmine Corp' }, wiki: []
+  });
+  const r = await f();
+  assert.deepStrictEqual(r, [{ role: 'Mid', nom: 'Vetheo', pseudo: 'Veth' }],
+    'seul le poste portant un nom compétitif est interrogeable');
+  assert.strictEqual(appels.wiki, 0, 'inutile d\'aller au wiki quand le roster suffit');
+});
+
+test('sans nom compétitif, l\'équipe définie suffit à retrouver les titulaires', async () => {
+  /* Le cas du staff qui a saisi son roster à la main : « si je suis Skill Camp, prendre
+     les joueurs Skill Camp ». */
+  const { f, appels } = rosterCompetFns({
+    slots: { Mid: { pseudo: 'Veth' } },
+    myTeam: { name: 'Skill Camp' },
+    wiki: [{ name: 'Joueur1', link: 'Joueur1 (X)', role: 'Mid' },
+           { name: 'Joueur2', link: 'Joueur2', role: 'Jgl' },
+           { name: 'Coach', link: 'Coach', role: 'Coach' }]
+  });
+  const r = await f();
+  assert.strictEqual(appels.nom, 'Skill Camp', 'c\'est NOTRE équipe qui est interrogée');
+  assert.deepStrictEqual(r, [
+    { role: 'Mid', nom: 'Joueur1 (X)', pseudo: 'Joueur1' },
+    { role: 'Jgl', nom: 'Joueur2', pseudo: 'Joueur2' }
+  ], 'le lien wiki sert à interroger (il désambiguïse), le pseudo à afficher ; ' +
+     'les non-joueurs sont écartés');
+});
+
+test('sans équipe ni nom compétitif, on ne devine pas', async () => {
+  const { f, appels } = rosterCompetFns({ slots: { Mid: { pseudo: 'Veth' } }, myTeam: {}, wiki: [] });
+  assert.deepStrictEqual(await f(), []);
+  assert.strictEqual(appels.wiki, 0, 'sans nom d\'équipe, il n\'y a rien à demander');
+});
+
 /* ⚠ LA RÈGLE POSÉE PAR LE STAFF, mot pour mot : « ne pas proposer Katarina si personne
    ne la joue en pro, même si c'est un counter pick ». Un contre mesuré dit qu'un matchup
    est favorable — il ne dit pas que le champion est dans les mains de celui qui va le
