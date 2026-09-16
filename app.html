@@ -1519,7 +1519,20 @@ body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,
 .ss-kpi .k{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
 .ss-kpi .v{ font-family:var(--font-mono); font-weight:800; font-size:22px; color:var(--vs-fg-1); margin-top:3px; line-height:1.15; }
 .ss-kpi .s{ font-size:10.5px; color:var(--vs-fg-3); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.ss-kpi-next .v{ font-family:var(--font-sans); font-size:14px; display:flex; align-items:center; gap:7px; min-width:0; }
+.ss-kpi-next .v{ font-family:var(--font-sans); font-size:14px; gap:7px; min-width:0; }
+/* Les quatre valeurs doivent se lire sur une même ligne. « Prochain adversaire » passe
+   sur deux lignes là où les autres libellés en tiennent une, ce qui décalait sa valeur
+   de 15 px vers le bas — visible au premier coup d'œil sur une rangée de cartes.
+   La valeur est donc poussée en bas de sa carte, et toutes reçoivent la même hauteur :
+   sans ça, la police plus petite du dernier bloc suffirait à le désaligner encore. */
+.ss-kpi{ display:flex; flex-direction:column; }
+.ss-kpi .v{ margin-top:auto; min-height:26px; display:flex; align-items:center; }
+/* Le motif d'étoiles de la page traversait les cartes : sur fond sombre il passait au
+   milieu des noms d'équipes et des chiffres. Une base opaque le bloque sans toucher aux
+   dégradés posés par-dessus, qui font tout le relief. Le mode clair garde son verre
+   dépoli (règle « relief 3D ») : là, le motif diffusé par le flou ne gêne pas. */
+body.theme-dark .ss-card,
+body.theme-dark .ss-kpi{ background-color:#0A2620; }
 /* Badge résultat sur la carte */
 .ss-res{ margin-top:2px; font-family:var(--font-mono); font-weight:800; font-size:11.5px; padding:2px 10px; border-radius:999px; }
 .ss-res.w{ color:#04211C; background:var(--vs-emerald-400); }
@@ -7977,7 +7990,7 @@ function ssRenderCalendar(root) {
   var d = ssData();
   var team = (d.myTeam && d.myTeam.name) ? d.myTeam : null;
   var teamBtn = '<button class="btn btn-ghost btn-sm" onclick="ssSetMyTeam()">' + (team ? (ssLogoImg(team, 20) + ' ' + anEsc(team.name)) : 'Définir mon équipe') + '</button>';
-  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Clique un match pour préparer l\'affrontement.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + '</div></div>';
+  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Chaque match ouvre sa préparation : roster adverse et pools de champions, draft live chronométrée, historique des drafts.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + '</div></div>';
   if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; return; }
   var season = ssActiveSeason(d);
   var seasonOpts = d.seasons.map(function (s) { return '<option value="' + s.id + '"' + (s.id === season.id ? ' selected' : '') + '>' + anEsc(s.name) + '</option>'; }).join('');
