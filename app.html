@@ -4112,7 +4112,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <button class="hd-nav-item" id="nav-scout" onclick="switchPanel('scout')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/></svg> Scouting</button>
     <button class="hd-nav-item" id="nav-crm" onclick="switchPanel('crm')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> CRM Agent</button>
     <!-- Top 30 a rejoint le CRM Agent (outil trop ciblé pour une entrée de premier niveau) -->
-    <button class="hd-nav-item" id="nav-more" onclick="toggleMoreMenu(event)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="5" cy="12" r="1.2" fill="currentColor"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/><circle cx="19" cy="12" r="1.2" fill="currentColor"/></svg> Plus</button>
+    <!-- Le menu « Plus » a disparu le 29/09/2026 : il ne portait plus que deux entrées.
+         Historique est un sous-onglet du Scouting, Builds des pros un onglet d'Analytics. -->
   </nav>
   <div style="display:flex;gap:6px;align-items:center">
     <!-- Toggle GLOBAL Compét / Solo Q — présent sur toutes les pages (socle
@@ -4175,23 +4176,17 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 </div>
 
 <!-- Dropdown Plus — flottant, hors du flux normal -->
-<div id="more-menu" style="display:none;position:fixed;top:52px;background:var(--surf2);
-  border:1px solid var(--border);border-radius:10px;padding:6px;
-  z-index:9999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
-  <button class="more-menu-item" onclick="switchPanel('history');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Historique</button>
-  <!-- Rouvert le 26/08/2026, mais sur un contenu qui a changé de nature : la rubrique
-       montre désormais les builds RÉELLEMENT joués par les professionnels (Leaguepedia),
-       au lieu de builds calculés par un optimiseur qui donnait un build de tank à une ADC. -->
-  <button class="more-menu-item" onclick="switchPanel('builds');document.getElementById('more-menu').style.display='none'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12v9M12 12 4 7.5M12 12l8-4.5"/></svg> Builds des pros</button>
-  <!-- RETIRÉS DU MENU le 26/08/2026 : « Calculateur », « Builds conseillés », « Le moteur ».
-       Le code et les panneaux restent en place et restent atteignables par switchPanel(),
-       seules les ENTRÉES du menu disparaissent. Raison : l'optimiseur donne un build de
-       tank à une ADC sur son objectif par défaut (Caitlyn repart avec Warmog et Jak'Sho),
-       parce que la survie croît sans limite face à des dégâts mesurés sur une fenêtre fixe.
-       Un onglet faux coûte plus cher qu'un onglet absent : il sert de preuve que le reste
-       n'est pas fiable non plus. À rouvrir quand l'optimiseur sera devenu un COMPARATEUR
-       de builds saisis par le coach — ce que le moteur sait faire et fait bien. -->
-</div>
+<!-- ⚠️ MÉMOIRE PRODUIT — à lire avant d'exposer Theorycraft dans la navigation.
+     « Calculateur », « Builds conseillés » et « Le moteur » ont été retirés du menu le
+     26/08/2026, volontairement. L'optimiseur donne un build de TANK à une ADC sur son
+     objectif par défaut (Caitlyn repart avec Warmog et Jak'Sho), parce que la survie
+     croît sans limite face à des dégâts mesurés sur une fenêtre fixe.
+     Un onglet faux coûte plus cher qu'un onglet absent : il sert de preuve que le reste
+     n'est pas fiable non plus. À rouvrir quand l'optimiseur sera devenu un COMPARATEUR
+     de builds saisis par le coach — ce que le moteur sait faire, et fait bien.
+     Les panneaux restent en place et atteignables par switchPanel() ; seules les entrées
+     de navigation manquent. « Builds des pros » est l'exception assumée : il montre les
+     builds RÉELLEMENT joués par les professionnels (Leaguepedia), rien de calculé. -->
 
 <!-- ════ SHELL ════ -->
 <div class="shell">
@@ -4387,6 +4382,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="sc-tab chip on" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
           <button class="sc-tab chip" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
           <button class="sc-tab chip" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
+          <button class="sc-tab chip" data-tab="history" onclick="scoutGoTab('history')">Historique</button>
         </div>
       </div>
 
@@ -5039,6 +5035,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <button class="sc-tab chip" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
         <button class="sc-tab chip on" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
         <button class="sc-tab chip" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
+          <button class="sc-tab chip" data-tab="history" onclick="scoutGoTab('history')">Historique</button>
       </div>
 
       <!-- Empty state -->
@@ -5145,6 +5142,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <button class="sc-tab chip" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
         <button class="sc-tab chip" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
         <button class="sc-tab chip on" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
+          <button class="sc-tab chip" data-tab="history" onclick="scoutGoTab('history')">Historique</button>
       </div>
 
       <!-- Import section -->
@@ -5449,6 +5447,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <h2 class="h2">Fiches sauvegardées</h2>
         <p class="muted">Vos dossiers de scouting enregistrés localement. Rechargez-en un pour continuer l'analyse.</p>
       </div>
+      <div class="rolepills sc-tabbar" style="margin-bottom:18px">
+        <button class="sc-tab chip" data-tab="scout" onclick="scoutGoTab('scout')">Fiche joueur</button>
+        <button class="sc-tab chip" data-tab="graphs" onclick="scoutGoTab('graphs')">Graphiques</button>
+        <button class="sc-tab chip" data-tab="map" onclick="scoutGoTab('map')">Carte</button>
+        <button class="sc-tab chip on" data-tab="history" onclick="scoutGoTab('history')">Historique</button>
+      </div>
 
       <div class="card" style="padding:16px;margin-bottom:16px">
         <div class="between" style="margin-bottom:14px;flex-wrap:wrap;gap:10px">
@@ -5580,6 +5584,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
+          <button class="an-tab chip" onclick="switchPanel('builds')">Builds des pros</button>
         </div>
         <div class="page-head">
           <div class="eyebrow">Analytics</div>
@@ -6040,6 +6045,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
          un champion et la composition d'en face, et le moteur CHERCHE. -->
     <div id="panel-builds" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
+        <div class="rolepills an-tabbar">
+          <button class="an-tab chip" onclick="anGoTab('scrim')">Stats équipe</button>
+          <button class="an-tab chip" onclick="anGoTab('roster')">Roster</button>
+          <button class="an-tab chip" onclick="anGoTab('timeline')">Timeline</button>
+          <button class="an-tab chip on" onclick="switchPanel('builds')">Builds des pros</button>
+        </div>
 
         <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
           <div class="page-head" style="min-width:0">
@@ -12924,6 +12935,12 @@ function goToWelcome() {
 }
 
 function switchPanel(id) {
+  /* `results` n'est plus une destination. Son contenu — le dossier joueur — est déplacé
+     dans `panel-scout` au démarrage (script « FUSION SCOUTING + DOSSIER », en bas de page) ;
+     le conteneur reste dans le document parce qu'il PORTE ce balisage, mais il est vidé.
+     Y router menait donc à un écran entièrement blanc, sans la moindre erreur. On envoie
+     là où le contenu se trouve vraiment. */
+  if (id === 'results') id = 'scout';
   if (typeof vsCanAccess === 'function' && !vsCanAccess(id)) { vsUpsell(id); return; }
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.hd-nav-item').forEach(b => b.classList.remove('active'));
@@ -12938,10 +12955,10 @@ function switchPanel(id) {
   const navIdx = idx < 0 ? -1 : idx;
   if (id === 'top50') { top50RenderTable(); }
   // 'analyse' (Comparer) pointe sur nav-crm : l'outil vit désormais dans CRM Agent.
-  const _navMap = { seasons:'nav-seasons', scout:'nav-scout', results:'nav-more', analyse:'nav-crm',
+  const _navMap = { seasons:'nav-seasons', scout:'nav-scout', analyse:'nav-crm',
                     top50:'nav-crm', crm:'nav-crm', analytics:'nav-analytics', scrimlab:'nav-analytics',
                     theorycraft:'nav-analytics', moteur:'nav-analytics', builds:'nav-analytics',
-                    graphs:'nav-scout', map:'nav-scout', history:'nav-more' };
+                    graphs:'nav-scout', map:'nav-scout', history:'nav-scout', builds:'nav-analytics' };
   const _activeId = _navMap[id];
   if (_activeId) document.getElementById(_activeId)?.classList.add('active');
   if (id === 'results') buildResults();
@@ -12954,7 +12971,7 @@ function switchPanel(id) {
   if (id === 'moteur' && typeof moOuvrir === 'function') moOuvrir();
   if (id === 'builds' && typeof boOuvrir === 'function') boOuvrir();
   // Sous-onglets Scouting (Fiche joueur / Graphiques / Carte)
-  if ((id === 'scout' || id === 'graphs' || id === 'map') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
+  if ((id === 'scout' || id === 'graphs' || id === 'map' || id === 'history') && typeof scoutSyncTabs === 'function') scoutSyncTabs(id);
   // Fond ambiant réactif au rôle : uniquement sur Scouter / Résultats
   document.body.classList.toggle('rolebg-on', id === 'scout' || id === 'results');
   // Barres segmentées : repositionne la pilule du panneau qui vient de devenir visible
