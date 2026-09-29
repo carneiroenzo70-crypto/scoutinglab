@@ -1362,7 +1362,25 @@ body:not(.theme-dark) .stb-hero{ background:rgba(31,71,64,.035); border-color:rg
 
 .stb-band{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; overflow:hidden; }
 body:not(.theme-dark) .stb-band{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
-.stb-p{ padding:12px 16px; }
+/* La ligne de joueur EST le bouton d'ouverture : le <summary> porte toute la
+   largeur, son padding, son survol. Un libellé de 160 px au bas d'une ligne de
+   1 780 px n'était pas une cible — on clique sur le joueur. */
+.stb-p{ padding:0; }
+.stb-p > summary{ display:flex; flex-direction:row; align-items:center; gap:12px;
+  padding:12px 16px; cursor:pointer; list-style:none; transition:background .14s; }
+.stb-p > summary::-webkit-details-marker{ display:none; }
+.stb-p > summary:hover{ background:rgba(255,255,255,.03); }
+body:not(.theme-dark) .stb-p > summary:hover{ background:rgba(31,71,64,.04); }
+.stb-p > summary:focus-visible{ outline:2px solid var(--vs-emerald-500); outline-offset:-2px; }
+.stb-p > .stb-adv{ padding:2px 16px 14px; }
+.stb-p.vide{ padding:12px 16px; }
+.stb-g{ flex:none; }
+/* Le chevron est la seule chose qui dit qu'une ligne s'ouvre. */
+.stb-chev{ flex:none; width:14px; text-align:center; color:var(--vs-fg-3);
+  transition:transform .16s var(--ease-out); }
+.stb-chev::before{ content:'\25B8'; font-size:11px; }
+.stb-p[open] .stb-chev{ transform:rotate(90deg); color:var(--vs-emerald-300); }
+body:not(.theme-dark) .stb-p[open] .stb-chev{ color:var(--vs-emerald-500); }
 .stb-p + .stb-p{ border-top:1px solid rgba(255,255,255,.045); }
 body:not(.theme-dark) .stb-p + .stb-p{ border-top-color:rgba(31,71,64,.08); }
 .stb-p.vide{ opacity:.5; }
@@ -8207,7 +8225,12 @@ async function renderStatsBoard() {
   /* Écrit en UNE fois dans le corps déjà en place : ni rendu en cascade, ni
      appel à renderStatsBoard depuis ce chemin — c'est la boucle rendu →
      chargement → rendu qui avait figé la salle de draft. */
-  el.innerHTML = stbKpisHtml(roster, ts) + stbHeroHtml(roster, ts)
+  /* Mémorisé pour le rafraîchissement d'après-sauvegarde. Les mesures coach
+     n'entrent PAS dans le calcul du score (rsResolveScore lit la fiche de
+     scouting ou les données Solo Q) : ce ts reste donc juste tant qu'on ne
+     change ni de roster ni de joueur. */
+  window._stbTs = ts;
+  el.innerHTML = '<div id="stb-tete">' + stbKpisHtml(roster, ts) + stbHeroHtml(roster, ts) + '</div>'
     + '<div class="stb-band">'
     + RS_ROLES.map(function (role) { return stbRow(roster, role, roster.slots[role], ts.perRole[role]); }).join('')
     + '</div>'
@@ -8246,18 +8269,23 @@ function stbRow(roster, role, slot, pr) {
   const adv = slot.adv || {};
   const fields = RS_ADV[role] || [];
   const nb = fields.filter(f => stbRempli(adv[f.k])).length;
-  let h = '<div class="stb-p">';
-  h += '<div class="stb-id"><span class="rs-rolechip">' + role + '</span>' + rsAvatarHtml(slot);
+  /* ⚠️ C'est la LIGNE ENTIÈRE qui ouvre les mesures, pas un libellé.
+     Le repli n'a d'abord réagi qu'à « Stats avancées » : 160 px de cible au bas
+     d'une ligne de 1 780 px, alors qu'on clique sur le joueur. Le <summary>
+     PORTE donc toute la ligne, et le chevron dit qu'elle s'ouvre. */
+  let h = '<details class="stb-p"><summary class="stb-id">';
+  h += '<span class="rs-rolechip">' + role + '</span>' + rsAvatarHtml(slot);
   h += '<div style="min-width:0"><div class="stb-nm">' + anEsc(primaire) + '</div><div class="stb-sq faint">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</div></div>';
   h += '<div class="stb-mes">' + stbBaseMesures(pr) + '</div>';
-  h += '<span style="flex:none">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span></div>';
-  /* La saisie passe derrière un repli — mais le compteur dit ce qu'il y a
-     dessous, sinon un repli fermé cache aussi bien six mesures qu'un vide.
-     Les champs restent dans le DOM : stbSaveAll les lit par identifiant,
-     replis fermés compris. */
-  h += '<details class="stb-det"><summary>Stats avancées'
-    + '<span class="stb-cnt' + (fields.length && nb === fields.length ? ' plein' : '') + '">' + nb + '/' + fields.length + '</span>'
-    + '</summary><div class="stb-adv">';
+  // Le compteur reste VISIBLE ligne fermée : sans lui, on ne sait pas si le
+  // repli cache six mesures saisies ou six champs vides.
+  h += '<span class="stb-cnt' + (fields.length && nb === fields.length ? ' plein' : '') + '" title="Mesures coach renseignées">' + nb + '/' + fields.length + '</span>';
+  h += '<span class="stb-g">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
+  h += '<span class="stb-chev" aria-hidden="true"></span>';
+  h += '</summary>';
+  /* Les champs restent dans le DOM même repliés : stbSaveAll les lit par
+     identifiant, et une ligne fermée ne doit pas perdre une saisie en cours. */
+  h += '<div class="stb-adv">';
   fields.forEach(f => {
     const val = (adv[f.k] == null ? '' : String(adv[f.k])).replace(/"/g, '&quot;');
     h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap">'
@@ -8265,7 +8293,7 @@ function stbRow(roster, role, slot, pr) {
       + '" placeholder="—" inputmode="decimal" autocomplete="off">'
       + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
   });
-  h += '</div></details></div>';
+  h += '</div></details>';
   return h;
 }
 function stbSaveAll() {
@@ -8282,7 +8310,39 @@ function stbSaveAll() {
   RS_SYN.forEach(f => { const el = document.getElementById('syn-' + f.k); if (el) { const v = el.value.trim(); if (v !== '') syn[f.k] = v; } });
   const list = rsAll(); const rr = list.find(x => x.id === r.id);
   if (rr) { rr.synergy = syn; rsSaveAll(list); }   // rsSaveAll → vsStore.save('rosters')
+  stbMajApresSauvegarde();
   if (typeof showToast === 'function') showToast('Stats coach enregistrées', 'success');
+}
+function stbMajApresSauvegarde() {
+  const roster = rsActive(); if (!roster) return;
+  // Compteur de chaque ligne + cadre des champs qui viennent d'être remplis.
+  document.querySelectorAll('.stb-band > details.stb-p').forEach(function (d) {
+    const chip = d.querySelector('.rs-rolechip'); if (!chip) return;
+    const role = chip.textContent.trim();
+    const slot = roster.slots[role]; if (!slot) return;
+    const adv = slot.adv || {}, champs = RS_ADV[role] || [];
+    const nb = champs.filter(function (f) { return stbRempli(adv[f.k]); }).length;
+    const cnt = d.querySelector('.stb-cnt');
+    if (cnt) { cnt.textContent = nb + '/' + champs.length; cnt.classList.toggle('plein', champs.length > 0 && nb === champs.length); }
+    champs.forEach(function (f) {
+      const el = document.getElementById('adv-' + role + '-' + f.k);
+      if (el) el.classList.toggle('rempli', stbRempli(el.value));
+    });
+  });
+  const syn = roster.synergy || {};
+  const dsyn = document.getElementById('an-stats-syn');
+  if (dsyn) {
+    const nbs = RS_SYN.filter(function (f) { return stbRempli(syn[f.k]); }).length;
+    const cnt = dsyn.querySelector('.stb-cnt');
+    if (cnt) { cnt.textContent = nbs + '/' + RS_SYN.length; cnt.classList.toggle('plein', nbs === RS_SYN.length); }
+    RS_SYN.forEach(function (f) {
+      const el = document.getElementById('syn-' + f.k);
+      if (el) el.classList.toggle('rempli', stbRempli(el.value));
+    });
+  }
+  // La bande de chiffres et l'état dominant : reconstruits depuis le ts mémorisé.
+  const tete = document.getElementById('stb-tete');
+  if (tete && window._stbTs) tete.innerHTML = stbKpisHtml(roster, window._stbTs) + stbHeroHtml(roster, window._stbTs);
 }
 /* Journal de moments clés — timecodes (mm:ss) que le coach note en regardant le
    scrim, pour « remonter la vidéo » dans son propre lecteur. Aucune vidéo

@@ -1354,10 +1354,39 @@ test('« Stats équipe » s\'ouvre sur une lecture, pas sur un formulaire', () =
   assert.match(bloc, /class="stb-band"/, 'les postes sont une bande, pas des cartes');
   // La saisie derrière un repli : c'est elle qui faisait 1 400 px de champs vides.
   const ligne = app.slice(app.indexOf('function stbRow('), app.indexOf('function stbSaveAll('));
-  assert.match(ligne, /<details class="stb-det">/,
+  assert.match(ligne, /<details class="stb-p">/,
     'les 30 mesures coach doivent rester derrière un repli');
   assert.match(ligne, /class="stb-cnt/,
     'un repli fermé doit annoncer combien de mesures il contient');
+});
+
+test('c\'est la ligne du joueur entière qui ouvre ses mesures', () => {
+  /* Le repli n'a d'abord réagi qu'au libellé « Stats avancées » : 160 px de
+     cible au bas d'une ligne de 1 780 px. On clique sur le joueur, pas sur une
+     étiquette — le <summary> doit donc porter toute la ligne d'identité. */
+  const ligne = app.slice(app.indexOf('function stbRow('), app.indexOf('function stbSaveAll('));
+  assert.match(ligne, /<details class="stb-p"><summary class="stb-id">/,
+    'le <summary> doit être la ligne d\'identité elle-même');
+  assert.match(ligne, /class="stb-chev"/, 'un chevron doit signaler que la ligne s\'ouvre');
+  // Le nom du joueur est DANS le summary : c'est là qu'on clique.
+  assert.match(ligne, /<summary class="stb-id">[\s\S]*stb-nm[\s\S]*<\/summary>/,
+    'le nom du joueur doit être dans la zone cliquable');
+});
+
+test('enregistrer met à jour les compteurs sans re-rendre la vue', () => {
+  /* Un re-rendu refermerait les lignes ouvertes et ferait perdre le focus de
+     saisie — c'est la boucle qui avait figé la salle de draft. Mais sans mise à
+     jour, « 0/6 » et « Mesures coach 0/30 » restaient faux après un
+     enregistrement, jusqu'à ce qu'on quitte l'onglet. */
+  const bloc = app.slice(app.indexOf('function stbMajApresSauvegarde()'),
+                         app.indexOf('function stbParseTime('));
+  assert.ok(bloc.length > 100, 'stbMajApresSauvegarde introuvable');
+  assert.doesNotMatch(bloc, /renderStatsBoard\(/,
+    'le rafraîchissement ne doit JAMAIS passer par un re-rendu complet');
+  assert.match(bloc, /stbKpisHtml\([\s\S]*stbHeroHtml\(/,
+    'la bande de chiffres et l\'état dominant doivent être refaits');
+  const save = app.slice(app.indexOf('function stbSaveAll()'), app.indexOf('function stbMajApresSauvegarde()'));
+  assert.match(save, /stbMajApresSauvegarde\(\)/, 'stbSaveAll doit l\'appeler');
 });
 
 test('le roster se lit en lignes comparables, pas en mosaïque', () => {
