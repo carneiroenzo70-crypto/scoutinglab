@@ -8029,7 +8029,108 @@ async function ssTeamSearch(q) {
   var rows = await pmCargo(url); if (!rows) return null;
   return rows.map(function (r) { return { name: r.title.Name || '', region: r.title.Region || '', image: r.title.Image || '' }; }).filter(function (t) { return t.name; });
 }
-function ssTeamLogo(t) { return (t && t.image) ? ('https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(t.image)) : ''; }
+/* ── LOGOS D'ÉQUIPES ───────────────────────────────────────────────────────────────
+   Les logos passaient par https://lol.fandom.com/wiki/Special:FilePath/<fichier>.
+   Fandom a fermé cette porte : elle répond 403 (vérifié le 29/09/2026 au navigateur ET
+   en curl, avec et sans User-Agent). Le défaut était MUET — `onerror` remplaçait chaque
+   logo par l'initiale de l'équipe, donc le calendrier restait parfaitement lisible, en
+   moins bien, et rien n'indiquait qu'une source externe avait cessé de répondre.
+
+   Le CDN statique de Fandom, lui, répond toujours. Mais son adresse contient un chemin
+   haché (/images/2/2d/…) qu'on ne peut PAS calculer localement de façon fiable :
+   « Karmine Corp Blue » REDIRIGE vers le fichier de « Karmine Corp », et aucun hachage
+   local ne connaît cette redirection. C'est l'API du wiki qui fait autorité.
+
+   Elle accepte jusqu'à 50 titres par appel : une saison entière se résout en UNE requête.
+   Le résultat est mis en cache — un logo d'équipe ne change pas d'un jour à l'autre.
+   ⚠️ Un nom introuvable est mémorisé comme tel (false), sinon on le redemanderait à
+   chaque rendu, indéfiniment. */
+var SS_LOGO_CLE = 'vs_logos';
+function ssLogoCache() {
+  if (!window._ssLogos) {
+    try { window._ssLogos = JSON.parse(localStorage.getItem(SS_LOGO_CLE) || '{}') || {}; }
+    catch (_) { window._ssLogos = {}; }
+  }
+  return window._ssLogos;
+}
+function ssLogoEcrire() { try { localStorage.setItem(SS_LOGO_CLE, JSON.stringify(ssLogoCache())); } catch (_) {} }
+// '' tant que ce n'est pas résolu, et '' aussi quand c'est résolu introuvable (false) :
+// dans les deux cas l'initiale fait le travail.
+function ssTeamLogo(t) {
+  var im = t && t.image; if (!im) return '';
+  var c = ssLogoCache()[im];
+  return (typeof c === 'string') ? c : '';
+}
+/* Résout une liste de fichiers du wiki en adresses CDN. Les LOGOS d'équipes et les
+   PHOTOS de joueurs passent par ici : c'est le même wiki, le même espace « File: », et
+   la même porte fermée. Deux résolveurs auraient divergé au premier changement chez
+   Fandom — et le second aurait été oublié, comme les photos l'ont été. */
+function ssLogoResoudre(noms) {
+  var cache = ssLogoCache(), lot = [];
+  (noms || []).forEach(function (n) { if (n && !(n in cache) && lot.indexOf(n) < 0) lot.push(n); });
+  if (!lot.length) return Promise.resolve(cache);
+  lot = lot.slice(0, 50);
+  var url = 'https://lol.fandom.com/api.php?action=query&format=json&prop=imageinfo&iiprop=url&titles='
+          + encodeURIComponent(lot.map(function (n) { return 'File:' + n; }).join('|'));
+  return pmWiki(url).then(function (j) {
+    /* ⚠️ Distinguer « le wiki a répondu que ce fichier n'existe pas » de « on n'a pas pu
+       joindre le wiki ». pmWiki rend null dans le second cas, sans lever d'exception.
+       Sans cette sortie, une coupure passagère marquait TOUS les logos introuvables —
+       et comme le cache est écrit en localStorage, ils le restaient pour toujours, bien
+       après le retour du réseau. Une panne d'une minute coûtait les logos à vie. */
+    if (!j) return cache;
+    var q = j.query || {}, pages = q.pages || {};
+    /* Le titre RENDU n'est pas toujours celui demandé : le wiki normalise la casse et
+       suit les redirections. Sans ce tableau d'alias, « Karmine Corp Blue » ne serait
+       jamais marqué résolu et repartirait en requête à chaque rendu. */
+    var alias = {};
+    ['normalized', 'redirects'].forEach(function (k) {
+      (q[k] || []).forEach(function (n) { (alias[n.to] = alias[n.to] || []).push(n.from); });
+    });
+    var sansPrefixe = function (s) { return String(s).replace(/^File:/, ''); };
+    Object.keys(pages).forEach(function (k) {
+      var p = pages[k];
+      var u = (p.imageinfo && p.imageinfo[0] && p.imageinfo[0].url) || false;
+      [p.title].concat(alias[p.title] || []).forEach(function (t) { cache[sansPrefixe(t)] = u; });
+    });
+    lot.forEach(function (n) { if (!(n in cache)) cache[n] = false; });
+    ssLogoEcrire();
+  }).catch(function () {
+    // Réseau coupé : on ne marque rien d'introuvable, ce serait mémoriser une panne.
+  }).then(function () { return cache; });
+}
+function ssLogosCharger() {
+  var cache = ssLogoCache(), manquants = [];
+  document.querySelectorAll('[data-logo]').forEach(function (el) {
+    var im = el.getAttribute('data-logo');
+    if (im && !(im in cache) && manquants.indexOf(im) < 0) manquants.push(im);
+  });
+  if (!manquants.length) { ssLogosPoser(); return; }
+  // Garde d'ÉTAT, pas de présence de résultat : c'est la distinction qui évite la boucle
+  // rendu → chargement → rendu qui avait gelé la salle de draft.
+  if (window._ssLogosEnVol) return;
+  window._ssLogosEnVol = true;
+  ssLogoResoudre(manquants).then(function () {
+    window._ssLogosEnVol = false;
+    ssLogosPoser();
+  });
+}
+/* Poser les logos résolus DANS LE DOM, sans re-rendre. Un re-rendu relancerait le
+   chargement, qui re-rendrait — exactement la boucle qui figeait la page. */
+function ssLogosPoser() {
+  var cache = ssLogoCache();
+  document.querySelectorAll('.ss-logo[data-logo]').forEach(function (el) {
+    if (el.querySelector('img')) return;
+    var u = cache[el.getAttribute('data-logo')];
+    if (typeof u !== 'string' || !u) return;
+    var img = document.createElement('img');
+    img.alt = ''; img.loading = 'lazy';
+    img.onerror = function () { el.classList.add('ss-logo-fb'); img.remove(); };
+    el.classList.remove('ss-logo-fb');
+    el.insertBefore(img, el.firstChild);
+    img.src = u;
+  });
+}
 async function ssTeamRoster(name) {
   // OverviewPage = la page wiki canonique du joueur ("Link" dans ScoreboardPlayers).
   // Indispensable : quand deux joueurs partagent un pseudo, Leaguepedia désambiguïse
@@ -8046,16 +8147,22 @@ function ssDedupeRoster(list) {
   list.forEach(function (p) { if (SS_ROLES.indexOf(p.role) < 0 && !out.find(function (o) { return o.name === p.name; })) out.push({ name: p.name, link: p.link || p.name, role: p.role }); });
   return out.slice(0, 7);
 }
+// `data-logo` porte le nom de fichier : c'est par lui que ssLogosCharger() retrouve les
+// logos encore à résoudre, et ssLogosPoser() ceux à insérer une fois l'adresse connue.
 function ssLogoImg(t, size) {
-  var s = size || 24, url = ssTeamLogo(t), ini = anEsc((((t && t.name) || '?').charAt(0) || '?').toUpperCase());
-  if (url) return '<span class="ss-logo" style="width:' + s + 'px;height:' + s + 'px"><img src="' + url + '" alt="" onerror="this.parentNode.classList.add(\'ss-logo-fb\');this.remove()"><span class="ss-logo-ini">' + ini + '</span></span>';
-  return '<span class="ss-logo ss-logo-fb" style="width:' + s + 'px;height:' + s + 'px"><span class="ss-logo-ini">' + ini + '</span></span>';
+  var s = size || 24, url = ssTeamLogo(t), im = (t && t.image) || '';
+  var ini = anEsc((((t && t.name) || '?').charAt(0) || '?').toUpperCase());
+  var attr = im ? ' data-logo="' + anEsc(im) + '"' : '';
+  var dim = ' style="width:' + s + 'px;height:' + s + 'px"';
+  if (url) return '<span class="ss-logo"' + attr + dim + '><img src="' + anEsc(url) + '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'ss-logo-fb\');this.remove()"><span class="ss-logo-ini">' + ini + '</span></span>';
+  return '<span class="ss-logo ss-logo-fb"' + attr + dim + '><span class="ss-logo-ini">' + ini + '</span></span>';
 }
 // ── Rendu principal ──
 function renderSeasons() {
   var root = document.getElementById('seasons-root'); if (!root) return;
-  if (window._ssOpen) { ssRenderMatchDetail(root, window._ssOpen); return; }
+  if (window._ssOpen) { ssRenderMatchDetail(root, window._ssOpen); ssLogosCharger(); return; }
   ssRenderCalendar(root);
+  ssLogosCharger();
 }
 /* ── DÉMARRAGE GUIDÉ ─────────────────────────────────────────────────────────────
    Une structure qui ouvre le produit trouve tous les panneaux vides. Chacun a bien son
@@ -10793,6 +10900,25 @@ async function pmCargo(url) {   // via proxy /api/lp : cache Redis 6 h + retry r
   }
   return null;
 }
+/* Même proxy que pmCargo, mais rend le JSON ENTIER. Toutes les requêtes Leaguepedia ne
+   sont pas des requêtes Cargo : la résolution des fichiers (logos d'équipe, photos de
+   joueurs) utilise `action=query&prop=imageinfo`, dont la réponse n'a pas de champ
+   `cargoquery` — pmCargo rendrait [] et on conclurait « aucun logo ».
+   Passer par /api/lp reste obligatoire : Leaguepedia limite fortement les appels
+   anonymes, et le proxy apporte le cache Redis 6 h et la reprise sur rate-limit. */
+async function pmWiki(url) {
+  if (_pmWikiCache[url] !== undefined) return _pmWikiCache[url];
+  const proxied = '/api/lp?url=' + encodeURIComponent(url);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(proxied, { headers: vsAuthHeaders() });
+      if (r.ok) { const j = await r.json(); if (!j.error) { _pmWikiCache[url] = j; return j; } }
+    } catch (_) {}
+    await new Promise(res => setTimeout(res, 500 * (attempt + 1)));
+  }
+  return null;
+}
+const _pmWikiCache = {};
 async function pmFetchCompet(proName) {
   const q = encodeURIComponent(proName);
   const url = 'https://lol.fandom.com/api.php?action=cargoquery&tables=ScoreboardPlayers&fields=Champion,Kills,Deaths,Assists,CS,VisionScore,Gold,DamageToChampions,Team,TeamVs,PlayerWin,DateTime_UTC,OverviewPage,Role,GameId&where=Link%3D%22' + q + '%22&order_by=DateTime_UTC%20DESC&limit=20&format=json&origin=*';
@@ -17809,8 +17935,13 @@ async function lpProLookup(gameName) {
   return out;
 }
 
+/* Même porte fermée que pour les logos d'équipe : la route FilePath du wiki répond 403.
+   La photo sort donc du cache partagé, que l'appelant remplit par ssLogoResoudre() AVANT
+   de construire son HTML. Tant qu'elle n'est pas résolue, on rend '' — et les deux
+   appelants n'affichent alors simplement pas d'image, ce qu'ils savaient déjà faire. */
 function proPhotoUrl(image) {
-  return image ? 'https://lol.fandom.com/wiki/Special:FilePath/' + encodeURIComponent(image) : '';
+  var c = image ? ssLogoCache()[image] : null;
+  return (typeof c === 'string') ? c : '';
 }
 
 /* Recherche par nom de scène, pour la liaison manuelle. */
@@ -17873,6 +18004,9 @@ async function proOpenSearch() {
       try { rows = await lpProSearch(q); } catch (_) {}
       if (moi !== seq) return;   // une frappe plus récente a pris la main
       if (!rows.length) { res.textContent = 'Aucun joueur trouvé pour « ' + q +' ».'; return; }
+      // Les photos des 8 résultats sont résolues en UN appel, avant de bâtir le HTML.
+      await ssLogoResoudre(rows.map(function (p) { return p.Image; }));
+      if (moi !== seq) return;
       res.innerHTML = rows.map(function (p) {
         const ph = proPhotoUrl(p.Image);
         return '<div class="advcfg-row" style="cursor:pointer;align-items:center" onclick="proLink(\''
@@ -17911,6 +18045,7 @@ async function proRenderCard(gameName) {
     return;
   }
 
+  if (p.image) await ssLogoResoudre([p.image]);
   const photo = proPhotoUrl(p.image);
   let age = '';
   if (p.naissance) {

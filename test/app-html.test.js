@@ -558,7 +558,10 @@ test('aucun appel à Leaguepedia ne contourne le proxy /api/lp', () => {
     /* L'URL est construite sur plusieurs lignes puis consommée juste après : on regarde
        la fenêtre qui suit pour voir par où elle part. */
     const fenetre = lignes.slice(i, i + 14).join(' ');
-    if (!/pmCargo|\/api\/lp/.test(fenetre)) directs.push('ligne ' + (i + 1));
+    /* Deux portes d'entrée légitimes, et deux seulement : `pmCargo` pour les requêtes
+       Cargo, `pmWiki` pour les autres (résolution des fichiers, qui répond hors du champ
+       `cargoquery`). Les deux passent par /api/lp — c'est ÇA qui compte ici. */
+    if (!/pmCargo|pmWiki|\/api\/lp/.test(fenetre)) directs.push('ligne ' + (i + 1));
   });
   assert.deepStrictEqual(directs, [],
     'appel(s) direct(s) à lol.fandom.com : le navigateur se fait limiter et rien n\'est ' +
@@ -1208,4 +1211,56 @@ test('« + Saison » et « + Split » restent dans la barre d\'outils, jamais da
   const barre = app.slice(debut, app.indexOf('var matches =', debut));
   assert.match(barre, /ssNewSeason\(\)/, '« + Saison » doit vivre dans la barre d\'outils');
   assert.match(barre, /ssAddSplit\(\)/, '« + Split » doit vivre dans la barre d\'outils');
+});
+
+/* ── 20. Logos d'équipes : ne pas revenir à une adresse morte ──────────────────────
+   Les logos passaient par `Special:FilePath`, que Fandom a fermé (403, vérifié le
+   29/09/2026). Le défaut était MUET : `onerror` posait l'initiale de l'équipe à la
+   place, l'interface restait lisible et rien ne disait qu'une source externe avait
+   cessé de répondre. C'est le type de panne qu'aucun test d'exécution n'attrape — mais
+   qu'un test statique empêche de réintroduire pour presque rien. */
+test('aucun logo ne repasse par Special:FilePath, fermé par Fandom', () => {
+  assert.doesNotMatch(codeSeul, /Special:FilePath/,
+    'Fandom répond 403 sur cette route. Passer par l\'API du wiki (action=query, ' +
+    'prop=imageinfo), qui rend l\'adresse CDN et suit les redirections de fichiers.');
+});
+
+test('la résolution des logos est groupée et mise en cache', () => {
+  const debut = app.indexOf('function ssLogoResoudre(');
+  assert.ok(debut > 0, 'ssLogoResoudre introuvable');
+  const bloc = app.slice(debut, app.indexOf('function ssLogosPoser(', debut));
+  // Un appel par équipe ferait une dizaine de requêtes par rendu de calendrier.
+  assert.match(bloc, /titles=/, 'les noms doivent partir groupés dans un seul `titles=`');
+  assert.match(bloc, /pmWiki\(/, 'passer par le proxy /api/lp, jamais en direct chez Fandom');
+  assert.match(bloc, /slice\(0,\s*50\)/, 'l\'API plafonne à 50 titres par appel');
+  // Sans mémorisation des introuvables, on redemanderait le même nom à chaque rendu.
+  assert.match(bloc, /if \(!\(n in cache\)\) cache\[n\] = false;/,
+    'un nom introuvable doit être mémorisé comme tel');
+  // Garde d'ÉTAT : c'est elle qui empêche la boucle rendu → chargement → rendu.
+  assert.match(bloc, /_ssLogosEnVol/, 'une garde d\'état est nécessaire');
+});
+
+test('les logos résolus sont posés dans le DOM, jamais par un re-rendu', () => {
+  const debut = app.indexOf('function ssLogosPoser(');
+  assert.ok(debut > 0, 'ssLogosPoser introuvable');
+  const bloc = app.slice(debut, debut + 900);
+  assert.doesNotMatch(bloc, /renderSeasons\(|ssRenderCalendar\(/,
+    'poser un logo ne doit JAMAIS déclencher un rendu : le rendu relance le chargement, ' +
+    'qui re-rendrait — c\'est la boucle qui avait figé la salle de draft.');
+  assert.match(bloc, /insertBefore|appendChild/, 'l\'image s\'insère directement');
+});
+
+test('une panne réseau ne grave pas les logos comme introuvables', () => {
+  /* pmWiki rend `null` quand le proxy n'a pas répondu — SANS lever d'exception. Confondre
+     ce cas avec « le wiki dit que ce fichier n'existe pas » marquait tous les logos
+     introuvables ; et comme le cache est écrit en localStorage, ils le restaient bien
+     après le retour du réseau. Une coupure d'une minute coûtait les logos à vie. */
+  const debut = app.indexOf('function ssLogoResoudre(');
+  const bloc = app.slice(debut, app.indexOf('function ssLogosCharger(', debut));
+  const sortie = bloc.indexOf('if (!j) return cache;');
+  const marquage = bloc.indexOf('cache[n] = false');
+  assert.ok(sortie > 0, 'une réponse absente doit sortir sans rien mémoriser');
+  assert.ok(marquage > sortie,
+    'le marquage « introuvable » doit venir APRÈS la sortie sur réponse absente, ' +
+    'sinon une panne réseau est mémorisée comme une absence de fichier');
 });
