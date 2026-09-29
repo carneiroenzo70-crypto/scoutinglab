@@ -7990,8 +7990,12 @@ function ssRenderCalendar(root) {
   var d = ssData();
   var team = (d.myTeam && d.myTeam.name) ? d.myTeam : null;
   var teamBtn = '<button class="btn btn-ghost btn-sm" onclick="ssSetMyTeam()">' + (team ? (ssLogoImg(team, 20) + ' ' + anEsc(team.name)) : 'Définir mon équipe') + '</button>';
-  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Chaque match ouvre sa préparation : roster adverse et pools de champions, draft live chronométrée, historique des drafts.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + '</div></div>';
-  if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; return; }
+  /* Le libellé du canal arrive d'une requête. Il s'écrit dans le bouton par
+     ssCanalMajBouton(), SANS re-rendu de la page : re-rendre au retour du chargement
+     relancerait le chargement, qui re-rendrait — la boucle qui avait gelé la draft. */
+  var canalBtn = '<button class="btn btn-ghost btn-sm" id="ss-canal-btn" onclick="ssCanalOuvrir()">Canal d\'équipe</button>';
+  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Chaque match ouvre sa préparation : roster adverse et pools de champions, draft live chronométrée, historique des drafts.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + canalBtn + '</div></div>';
+  if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; ssCanalCharger(); return; }
   var season = ssActiveSeason(d);
   var seasonOpts = d.seasons.map(function (s) { return '<option value="' + s.id + '"' + (s.id === season.id ? ' selected' : '') + '>' + anEsc(s.name) + '</option>'; }).join('');
   var toolbar = '<div class="ss-toolbar">'
@@ -8015,6 +8019,7 @@ function ssRenderCalendar(root) {
     if (past.length) body += secT('Passés', past.length, upcoming.length > 0) + '<div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
   }
   root.innerHTML = head + toolbar + kpis + body;
+  ssCanalCharger();
   // Résultats réels des matchs passés — récupérés en tâche de fond (une fois).
   past.forEach(function (m) { if (!m.result) ssEnsureResult(m.id); });
 }
@@ -8205,9 +8210,11 @@ function ssRenderMatchDetail(root, id) {
     h += '<div class="card" style="padding:16px 20px;margin-top:14px">'
       + '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Feuille de route</h3>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier la feuille équipe</button>'
-      + '<button class="btn btn-cta btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF équipe</button></div></div>'
-      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Copier » donne un texte prêt à coller dans WhatsApp ou Discord ; chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
+      + '<button class="btn btn-cta btn-xs" onclick="ssCanalEnvoyer(\'' + m.id + '\')">Envoyer dans le canal</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="ssWhatsApp(\'' + m.id + '\')">WhatsApp</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier</button>'
+      + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF</button></div></div>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Envoyer dans le canal » publie la feuille dans le salon Discord du staff ; « WhatsApp » ouvre le partage avec le texte déjà écrit. Chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
       + '<div id="ss-plan">' + ssPlanHtml(m) + '</div></div>';
   } else {
     h += '<div class="card" style="padding:16px 20px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Recherche du résultat dans la base compét…</div>') + '</div></div>';
@@ -10083,7 +10090,9 @@ function ssPlanHtml(m) {
         + '<div class="ss-pl-id"><div class="ss-pl-av ss-pl-av-opp' + (opp ? '' : ' ss-pl-av-empty') + '">' + oppIni + '</div>'
         + '<span class="ss-pl-opp' + (opp ? '' : ' faint') + '">' + anEsc(opp || '—') + '</span></div>'
         + '<div class="ss-pl-acts">'
-        + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier sa feuille</button>'
+        + '<button class="btn btn-ghost btn-xs" onclick="ssCanalEnvoyer(\'' + m.id + '\',\'' + role + '\')" title="Publier la feuille de ce poste dans le salon du staff">Envoyer</button>'
+        + '<button class="btn btn-ghost btn-xs" onclick="ssWhatsApp(\'' + m.id + '\',\'' + role + '\')" title="Partager sa feuille sur WhatsApp">WhatsApp</button>'
+        + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\',\'' + role + '\')">Copier</button>'
         + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button>'
         + '</div>'
       + '</div>'
@@ -10274,6 +10283,138 @@ function ssCopyFallback(txt, done) {
 function ssSheetCopy(id, role) {
   var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
   ssCopy(ssSheetText(m, role || null), role ? ('Feuille ' + role + ' copiée') : 'Feuille équipe copiée');
+}
+
+/* ════════════════════════════════════════════
+   CANAL D'ÉQUIPE — envoyer la feuille dans le salon du staff
+   ─────────────────────────────────────────────
+   Le coach ne copie plus pour coller ailleurs : il publie.
+
+   DISCORD est branché pour de vrai, par un webhook de salon : le coach colle une URL,
+   l'app publie. L'URL ne vit QUE côté serveur (cf. api/canal.js) — elle vaut droit
+   d'écriture sur le salon, on ne la redescend jamais dans le navigateur. Ici on ne
+   connaît donc que « configuré » et le libellé.
+
+   WHATSAPP ne peut PAS être automatisé, et ce n'est pas un manque de travail : l'API
+   WhatsApp Business n'adresse que des conversations 1-à-1, sur des modèles validés par
+   Meta, et les GROUPES ne sont pas adressables du tout. Aucun contournement n'existe
+   côté serveur. Le maximum atteignable est donc le partage natif : le texte est déjà
+   écrit, le coach choisit son groupe d'un geste. Sur mobile `navigator.share` ouvre la
+   feuille de partage du système (WhatsApp y figure, groupes compris) ; sur ordinateur on
+   retombe sur wa.me, qui ouvre WhatsApp Web avec le message prérempli.
+════════════════════════════════════════════ */
+// État du canal : null = pas encore lu, {configure:…} ensuite. Le libellé s'écrit
+// DIRECTEMENT dans le bouton, sans re-rendu : un chargement qui déclenche un rendu qui
+// relance le chargement est exactement la boucle qui a gelé la salle de draft.
+function ssCanalMajBouton() {
+  var b = document.getElementById('ss-canal-btn'); if (!b) return;
+  var c = window._ssCanal;
+  b.textContent = (c && c.configure) ? ('Canal · ' + c.libelle) : 'Brancher un canal';
+  b.title = (c && c.configure)
+    ? 'Les feuilles de route partent dans ce salon Discord. Clique pour changer.'
+    : 'Branche un salon Discord pour publier les feuilles de route en un clic.';
+}
+function ssCanalCharger() {
+  if (window._ssCanalEtat === 'encours' || window._ssCanalEtat === 'fait') { ssCanalMajBouton(); return; }
+  window._ssCanalEtat = 'encours';
+  fetch('/api/canal', { headers: vsAuthHeaders() })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) { window._ssCanal = j || { configure: false }; window._ssCanalEtat = 'fait'; ssCanalMajBouton(); })
+    .catch(function () { window._ssCanalEtat = 'fait'; ssCanalMajBouton(); });
+}
+function ssCanalOuvrir() {
+  var c = window._ssCanal || { configure: false };
+  var ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML =
+      '<div class="rs-modal" role="dialog" aria-modal="true">'
+    +   '<div class="rs-modal-h">Canal d\'équipe</div>'
+    +   (c.configure
+        ? '<div class="rs-modal-note" style="font-size:12px;color:var(--vs-fg-2)">Branché sur <b>' + anEsc(c.libelle) + '</b>' + (c.par ? ' · par ' + anEsc(c.par) : '') + '. Colle une nouvelle URL pour changer de salon.</div>'
+        : '<div class="rs-modal-note" style="font-size:12px;color:var(--vs-fg-2)">Dans Discord : <b>Paramètres du salon → Intégrations → Webhooks → Nouveau webhook → Copier l\'URL</b>. Aucun bot à inviter, rien à autoriser.</div>')
+    +   '<label class="rs-f"><span>URL du webhook Discord</span><input id="ss-canal-url" placeholder="https://discord.com/api/webhooks/…" autocomplete="off" spellcheck="false"></label>'
+    +   '<label class="rs-f"><span>Nom du salon (pour t\'y retrouver)</span><input id="ss-canal-lib" value="' + anEsc(c.configure ? c.libelle : '') + '" placeholder="#staff-coachs" autocomplete="off"></label>'
+    +   '<div class="rs-modal-note">L\'URL est vérifiée auprès de Discord, puis gardée côté serveur : elle ne redescend jamais dans ton navigateur. Tout le staff de ta structure partage ce canal.</div>'
+    +   '<div class="rs-modal-a">'
+    +     (c.configure ? '<button class="btn btn-ghost btn-sm" style="margin-right:auto" onclick="ssCanalDetacher()">Détacher</button>' : '')
+    +     '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
+    +     '<button class="btn btn-cta btn-sm" id="ss-canal-ok" onclick="ssCanalBrancher()">Vérifier &amp; brancher</button>'
+    +   '</div>'
+    + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(ov);
+  var f = ov.querySelector('#ss-canal-url'); if (f) f.focus();
+}
+function ssCanalBrancher() {
+  var g = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var url = g('ss-canal-url');
+  if (!url) { showToast('Colle l\'URL du webhook.', 'warning'); return; }
+  var btn = document.getElementById('ss-canal-ok');
+  if (btn) { btn.disabled = true; btn.textContent = 'Vérification…'; }
+  fetch('/api/canal', {
+    method: 'PUT',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
+    body: JSON.stringify({ url: url, libelle: g('ss-canal-lib') })
+  }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+    .then(function (res) {
+      if (!res.ok) {
+        // Le serveur explique POURQUOI (forme de l'URL, webhook inexistant, Discord
+        // injoignable) — le relayer tel quel vaut mieux qu'un « échec » générique.
+        showToast(res.j && res.j.error ? res.j.error : 'Impossible de brancher ce canal.', 'error', 7000);
+        if (btn) { btn.disabled = false; btn.textContent = 'Vérifier & brancher'; }
+        return;
+      }
+      window._ssCanal = { configure: true, libelle: res.j.libelle };
+      window._ssCanalEtat = 'fait';
+      var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+      ssCanalMajBouton();
+      showToast('Canal branché sur ' + res.j.libelle + '.', 'success');
+    }).catch(function () {
+      showToast('Réseau indisponible — canal non branché.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Vérifier & brancher'; }
+    });
+}
+function ssCanalDetacher() {
+  fetch('/api/canal', { method: 'DELETE', headers: vsAuthHeaders() })
+    .then(function () {
+      window._ssCanal = { configure: false }; window._ssCanalEtat = 'fait';
+      var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+      ssCanalMajBouton();
+      showToast('Canal détaché.', 'success');
+    }).catch(function () { showToast('Impossible de détacher le canal.', 'error'); });
+}
+// Publier la feuille. Pas de canal branché → on ouvre le réglage plutôt que de
+// refuser : le coach a cliqué « Envoyer », il veut envoyer.
+function ssCanalEnvoyer(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  if (window._ssCanal && !window._ssCanal.configure) { ssCanalOuvrir(); return; }
+  var d = ssData();
+  var titre = 'Feuille de route' + (role ? ' · ' + role : '') + ' — '
+    + ((d.myTeam && d.myTeam.name) || 'Mon équipe') + ' vs ' + ((m.opp && m.opp.name) || 'Adversaire');
+  showToast('Envoi dans le canal…', 'info', 2000);
+  fetch('/api/canal', {
+    method: 'POST',
+    headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
+    body: JSON.stringify({ titre: titre, texte: ssSheetText(m, role || null) })
+  }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, code: r.status, j: j }; }); })
+    .then(function (res) {
+      if (res.ok) { showToast('Feuille publiée' + (res.j.libelle ? ' dans ' + res.j.libelle : '') + '.', 'success'); return; }
+      // 409 = il n'y a pas (ou plus) de canal utilisable : ouvrir le réglage est la
+      // suite utile, un simple message laisserait le coach sans rien à faire.
+      showToast(res.j && res.j.error ? res.j.error : 'Envoi impossible.', 'error', 7000);
+      if (res.code === 409) { window._ssCanal = { configure: false }; ssCanalMajBouton(); ssCanalOuvrir(); }
+    }).catch(function () { showToast('Réseau indisponible — feuille non envoyée.', 'error'); });
+}
+// WhatsApp : partage natif sur mobile (les groupes y sont), wa.me sur ordinateur.
+function ssWhatsApp(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  var texte = ssSheetText(m, role || null);
+  if (navigator.share) {
+    navigator.share({ text: texte }).catch(function () { /* partage annulé : rien à dire */ });
+    return;
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(texte), '_blank', 'noopener');
 }
 // ── Génération de la feuille (PDF) ──
 // Page claire (elle est faite pour être imprimée / lue sur téléphone), bandeau
