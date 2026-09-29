@@ -886,6 +886,43 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-ev-badge.red{ background:rgba(255,90,51,.14); color:var(--vs-red-400); }
 .btn-xs{ height:26px; padding:0 10px; font-size:11px; }
 /* ── Draft live : lobby, plateau, chrono ── */
+/* ══ RÉGLAGE DE LA DRAFT, EN UNE BANDE ══
+   Deux questions binaires et deux nombres occupaient quatre grandes cartes et près de
+   470 px de hauteur — avant même d'avoir vu une draft. Même grammaire que la bande de
+   chiffres de Seasons : le réglage se lit d'un coup, et la draft commence plus haut. */
+.dl-setup{ display:flex; align-items:stretch; flex-wrap:wrap;
+  border:1px solid var(--vs-forest-700); border-radius:12px; overflow:hidden; background:#0B2F2A; }
+body:not(.theme-dark) .dl-setup{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.dl-setup-c{ flex:1 1 auto; min-width:0; padding:14px 18px; display:flex; flex-direction:column;
+  gap:9px; justify-content:center; border-left:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .dl-setup-c{ border-left-color:rgba(31,71,64,.12); }
+.dl-setup-c:first-child{ border-left:0; }
+.dl-setup-k{ font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-setup-n{ flex:0 0 116px; }
+.dl-setup-n input{ width:100%; height:34px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500);
+  background:rgba(4,18,15,.3); color:var(--vs-fg-1); font-family:var(--font-mono); font-size:13px; }
+body:not(.theme-dark) .dl-setup-n input{ background:rgba(255,255,255,.7); border-color:rgba(31,71,64,.16); }
+.dl-setup-go{ flex:0 0 auto; }
+.dl-setup-go .btn{ height:38px; white-space:nowrap; }
+/* Un choix binaire est un interrupteur, pas deux affiches. */
+.dl-seg{ display:flex; gap:3px; padding:3px; border:1px solid var(--vs-forest-500); border-radius:9px; background:rgba(4,18,15,.3); }
+body:not(.theme-dark) .dl-seg{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+.dl-seg-b{ flex:1; height:30px; padding:0 12px; border:0; border-radius:6px; background:transparent;
+  color:var(--vs-fg-2); font-family:var(--font-sans); font-size:12.5px; font-weight:600; cursor:pointer;
+  white-space:nowrap; transition:background .14s var(--ease-out), color .14s var(--ease-out); }
+.dl-seg-b:hover{ color:var(--vs-fg-1); }
+.dl-seg-b.on{ background:var(--vs-emerald-400); color:#04211C; }
+/* Le camp garde ses couleurs : elles portent une information — quelle colonne est la nôtre. */
+.dl-seg-b.bleu.on{ background:#4A9EE8; color:#04211C; }
+.dl-seg-b.rouge.on{ background:#FF5A33; color:#2A0A00; }
+.dl-setup-dit{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px;
+  font-size:12.5px; line-height:1.5; color:var(--vs-fg-2); }
+.dl-setup-dit b{ color:var(--vs-fg-1); font-weight:700; }
+@media (max-width:760px){
+  .dl-setup-c{ flex:1 1 100%; border-left:0; border-top:1px solid var(--vs-forest-700); }
+  .dl-setup-c:first-child{ border-top:0; }
+  .dl-setup-n{ flex:1 1 100%; }
+}
 .dl-opts{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
 .dl-opt{ flex:1; min-width:210px; text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, background .15s; }
 .dl-opt:hover{ border-color:var(--vs-emerald-500); }
@@ -1468,6 +1505,36 @@ body:not(.theme-dark) .ss-pl-mu, body:not(.theme-dark) .ss-pl-ta{ background:rgb
 .ss-pl-time:focus,.ss-pl-lbl:focus,.ss-pl-me:focus,.ss-pl-mu:focus,.ss-pl-ta:focus{ outline:0; border-color:var(--vs-emerald-500); }
 .ss-pl-time{ width:90px; flex:none; font-family:var(--font-mono); font-weight:700; font-variant-numeric:tabular-nums; }
 .ss-pl-lbl{ flex:1; min-width:0; }
+
+/* ══ LE DÉROULÉ EST UNE LISTE, PAS UN FORMULAIRE ══
+   Six champs encadrés et remplis, empilés, donnaient à la journée l'aspect d'un
+   questionnaire — et noyaient le rail du temps, qui est pourtant l'information. Les
+   champs restent DISCRETS tant qu'on ne les touche pas : on relit ce déroulé bien plus
+   souvent qu'on ne le modifie. Le cadre revient au survol et au focus, donc rien ne se
+   perd pour qui veut éditer. */
+.ss-pl-list{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; padding:4px 14px 4px 4px; }
+body:not(.theme-dark) .ss-pl-list{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.ss-pl-list .ss-pl-row{ padding:2px 0 2px 22px; }
+.ss-pl-list .ss-pl-row + .ss-pl-row{ border-top:1px solid rgba(255,255,255,.045); }
+body:not(.theme-dark) .ss-pl-list .ss-pl-row + .ss-pl-row{ border-top-color:rgba(31,71,64,.08); }
+.ss-pl-list .ss-pl-row::before{ left:7px; }
+.ss-pl-list .ss-pl-row::after{ left:4px; }
+.ss-pl-time, .ss-pl-lbl{ border-color:transparent; background:transparent; }
+.ss-pl-time:hover, .ss-pl-lbl:hover{ background:rgba(255,255,255,.045); }
+.ss-pl-time:focus, .ss-pl-lbl:focus{ background:rgba(255,255,255,.055); }
+body:not(.theme-dark) .ss-pl-time:hover, body:not(.theme-dark) .ss-pl-lbl:hover{ background:rgba(31,71,64,.05); }
+body:not(.theme-dark) .ss-pl-time:focus, body:not(.theme-dark) .ss-pl-lbl:focus{ background:rgba(31,71,64,.06); }
+
+/* Même traitement pour le roster adverse : cinq boîtes pleines en rangée pour cinq
+   noms déjà chargés automatiquement, c'est du bruit. Le nom se lit, il se corrige rarement. */
+.ss-rin{ border-color:transparent; background:transparent; }
+.ss-rin:hover{ background:rgba(255,255,255,.045); }
+.ss-rin:focus{ background:rgba(255,255,255,.055); }
+body:not(.theme-dark) .ss-rin:hover{ background:rgba(31,71,64,.05); }
+body:not(.theme-dark) .ss-rin:focus{ background:rgba(31,71,64,.06); }
+.ss-roster-grid{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A;
+  padding:8px 12px; gap:2px 12px; }
+body:not(.theme-dark) .ss-roster-grid{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
 .ss-pl-del{ width:30px; height:30px; flex:none; display:inline-flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid transparent; background:transparent; color:var(--vs-fg-3); cursor:pointer; transition:.14s; }
 .ss-pl-del:hover{ color:var(--vs-red-400,#E0785F); border-color:var(--vs-forest-500); background:rgba(192,80,58,.1); }
 .ss-pl-ta{ display:block; width:100%; height:auto; min-height:52px; padding:8px 10px; line-height:1.5; resize:vertical; box-sizing:border-box; }
@@ -9856,41 +9923,44 @@ function dlRender(m) {
 }
 
 function dlLobbyHtml() {
-  var s = _dlState, opp = (_dlMatch && _dlMatch.opp && _dlMatch.opp.name) || 'l\'adversaire';
-  var carte = function (side, titre, sous) {
-    var on = s.sides.first === side;
-    return '<button class="dl-opt' + (on ? ' on' : '') + '" onclick="dlConfigure(\'' + side + '\')">'
-      + '<span class="dl-opt-t">' + titre + '</span><span class="dl-opt-s">' + sous + '</span></button>';
+  var s = _dlState;
+  /* Un segment par question. Les quatre sous-titres qui expliquaient chaque option
+     deviennent UNE phrase, sous la bande, qui décrit la combinaison RETENUE — et qui
+     suit donc le réglage au lieu de décrire quatre possibilités dont trois sont fausses. */
+  var seg = function (actif, side, txt, cls) {
+    return '<button class="dl-seg-b' + (cls ? ' ' + cls : '') + (actif ? ' on' : '') + '" onclick="'
+      + (cls ? 'dlConfigureCote' : 'dlConfigure') + '(\'' + side + '\')">' + txt + '</button>';
   };
-  // Même gabarit pour le camp : deux réglages distincts, une seule grammaire visuelle.
-  var carteCote = function (side, titre) {
-    var on = VSDraft.notreCote(s) === side;
-    return '<button class="dl-opt dl-opt-cote dl-cote-' + side + (on ? ' on' : '') + '" onclick="dlConfigureCote(\'' + side + '\')">'
-      + '<span class="dl-opt-t">' + titre + '</span>'
-      + '<span class="dl-opt-s">' + (side === 'blue' ? 'Nos picks dans la colonne de gauche' : 'Nos picks dans la colonne de droite') + '</span></button>';
-  };
+  var prem = s.sides.first === 'blue' ? 'bleu' : 'rouge';
+  var dern = s.sides.first === 'blue' ? 'rouge' : 'bleu';
+  var notre = VSDraft.notreCote(s);
+  var phrase = '<b>' + (prem === 'bleu' ? 'Bleu' : 'Rouge') + '</b> drafte en premier — last pick ' + dern
+    + '. Vous êtes côté <b>' + (notre === 'blue' ? 'bleu' : 'rouge') + '</b>, picks '
+    + (notre === 'blue' ? 'à gauche' : 'à droite')
+    + ' : contres, synergies et conseil se lisent depuis ce camp.';
+
   return '<div class="dl-lobby">'
-    + '<div class="label" style="margin-bottom:8px">Qui drafte en premier ?</div>'
-    + '<p class="faint" style="font-size:11.5px;margin:0 0 10px;line-height:1.55">Depuis First Selection (2026), le côté de la carte et l\'ordre de draft ne sont plus liés : préparez les quatre combinaisons contre <strong style="color:var(--vs-fg-1)">' + anEsc(opp) + '</strong>.</p>'
-    + '<div class="dl-opts">'
-      + carte('blue', 'Bleu drafte en premier', 'first pick bleu · last pick rouge')
-      + carte('red', 'Rouge drafte en premier', 'first pick rouge · last pick bleu')
+    + '<div class="dl-setup">'
+      + '<div class="dl-setup-c"><div class="dl-setup-k">Ordre de draft</div><div class="dl-seg">'
+        + seg(s.sides.first === 'blue', 'blue', 'Bleu 1<sup>er</sup>')
+        + seg(s.sides.first === 'red', 'red', 'Rouge 1<sup>er</sup>')
+      + '</div></div>'
+      + '<div class="dl-setup-c"><div class="dl-setup-k">Notre camp</div><div class="dl-seg">'
+        + seg(notre === 'blue', 'blue', 'Bleu', 'bleu')
+        + seg(notre === 'red', 'red', 'Rouge', 'rouge')
+      + '</div></div>'
+      + '<div class="dl-setup-c dl-setup-n"><div class="dl-setup-k">Temps (s)</div>'
+        + '<input id="dl-turn" type="number" min="5" max="120" value="' + s.format.turnSeconds + '"></div>'
+      + '<div class="dl-setup-c dl-setup-n"><div class="dl-setup-k">Réserve (s)</div>'
+        + '<input id="dl-res" type="number" min="0" max="300" value="' + s.format.reserveSeconds + '"></div>'
+      + '<div class="dl-setup-c dl-setup-go"><div class="dl-setup-k">&nbsp;</div>'
+        + '<button class="btn btn-cta" onclick="dlStart()">Lancer la draft</button></div>'
     + '</div>'
-    + '<div class="label" style="margin:16px 0 8px">De quel côté joue votre équipe ?</div>'
-    + '<p class="faint" style="font-size:11.5px;margin:0 0 10px;line-height:1.55">Indépendant de l\'ordre de draft. Tout ce que l\'outil dit ensuite — contres, synergies, lecture de composition, conseil — se lit depuis ce camp.</p>'
-    + '<div class="dl-opts">'
-      + carteCote('blue', 'Nous sommes côté bleu')
-      + carteCote('red', 'Nous sommes côté rouge')
-    + '</div>'
-    + '<div class="dl-lobby-row">'
-      + '<label class="dl-f"><span>Temps par action</span><input id="dl-turn" type="number" min="5" max="120" value="' + s.format.turnSeconds + '"></label>'
-      + '<label class="dl-f"><span>Réserve par équipe</span><input id="dl-res" type="number" min="0" max="300" value="' + s.format.reserveSeconds + '"></label>'
-      + '<button class="btn btn-cta" onclick="dlStart()">Lancer la draft</button>'
+    + '<div class="dl-setup-dit"><span style="flex:1 1 380px;min-width:0">' + phrase + '</span>'
       // La salle s'ouvre AVANT le lancement : sinon un seul coach choisirait le côté et
       // la priorité, et les autres arriveraient devant le fait accompli.
-      + '<span class="dl-lobby-salle">' + dlBarreSalleHtml() + '</span>'
-    + '</div>'
-    + '<div class="faint" style="font-size:11px;margin-top:8px">30 s par action est le standard du Tournament Draft. La réserve exacte dépend de la ligue — à confirmer auprès du staff.</div>'
+      + '<span class="dl-lobby-salle">' + dlBarreSalleHtml() + '</span></div>'
+    + '<div class="faint" style="font-size:11px;margin-top:8px">30 s par action est le standard du Tournament Draft ; la réserve dépend de la ligue.</div>'
     + '</div>';
 }
 
