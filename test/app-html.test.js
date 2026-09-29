@@ -1379,3 +1379,43 @@ test('l\'avant-match n\'ouvre plus le calculateur retiré de la navigation', () 
   assert.match(app, /Champion prévu : /,
     'le champion prévu doit figurer sur la feuille, sinon le champ n\'alimente rien');
 });
+
+// ── 23. Analyse vidéo de scrim : rebranchée, et sans promesse intenable ──
+
+test('l\'analyse vidéo a sa vue, son onglet, et sa zone de dépôt rebranchée', () => {
+  assert.match(app, /id="an-view-video"/, 'la vue vidéo doit exister');
+  assert.match(app, /data-tab="video"/, 'l\'onglet doit exister');
+  /* Le studio n'avait pas été supprimé : il était DÉBRANCHÉ. Plus personne
+     n'appelait slUiInit(), donc la zone de dépôt était bien à l'écran mais ne
+     réagissait à rien. C'est cet appel qui la fait exister. */
+  const bloc = app.slice(app.indexOf('function anShowView('), app.indexOf('function anEnterHub('));
+  assert.match(bloc, /slUiInit\(\)/, 'la zone de dépôt doit être rebranchée à l\'ouverture');
+  assert.match(bloc, /'video'/, 'la vue vidéo doit être routée');
+});
+
+test('aucun chemin de dossier personnel n\'est servi aux clients', () => {
+  /* Le panneau « Piloter un replay » affiche, quand l'agent local est absent —
+     c'est-à-dire chez tout client — un « cd C:\Users\carne\vs-studio ». Tant
+     que cet agent n'est pas distribuable, son panneau reste masqué. */
+  const vue = app.slice(app.indexOf('id="an-view-video"'), app.indexOf('id="panel-scrimlab"'));
+  assert.match(vue, /id="scrim-live-wrap" style="display:none"/,
+    'le pilotage de replay doit rester masqué');
+  const show = app.slice(app.indexOf('function anShowView('), app.indexOf('function anEnterHub('));
+  assert.doesNotMatch(show, /vsliveInit\(\)/,
+    'ne pas chercher l\'agent local tant que son panneau est masqué');
+});
+
+test('on ne promet nulle part de lire un .rofl comme une vidéo', () => {
+  /* Fait vérifié : un .rofl ne contient aucune vidéo (99,5 % de keyframes
+     chiffrées par Riot). Aucun outil ne le convertit en MP4. */
+  const debut = app.indexOf('const AN_DESC = {');
+  const bloc = app.slice(debut, app.indexOf('};', debut));
+  assert.match(bloc, /rofl ne contient pas de vidéo/,
+    'la description de l\'onglet doit lever l\'ambiguïté du .rofl');
+});
+
+test('sortir du studio ramène sur l\'onglet d\'où l\'on vient', () => {
+  const ligne = app.slice(app.indexOf('function slBackToHub()'), app.indexOf('function slBackToHub()') + 130);
+  assert.match(ligne, /anGoTab\('video'\)/,
+    'switchPanel repasse par anEnterHub, qui forcerait « Stats équipe »');
+});

@@ -5921,6 +5921,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" data-tab="scrim" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" data-tab="roster" onclick="anGoTab('roster')">Roster</button>
+          <button class="an-tab chip" data-tab="video" onclick="anGoTab('video')">Analyse vidéo</button>
           <button class="an-tab chip" data-tab="timeline" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip" onclick="switchPanel('builds')">Builds des pros</button>
         </div>
@@ -5929,16 +5930,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <p class="muted an-desc" id="an-desc"></p>
         </div>
 
-        <!-- ══ Vue Stats équipe (tableau de data coach — remplace l'Analyse vidéo) ══ -->
+        <!-- ══ Vue Stats équipe (tableau de data coach) ══ -->
         <div id="an-view-scrim">
           <div id="an-stats"></div>
-          <!-- Studio vidéo conservé mais non routé (chantier en pause) -->
-          <div id="scrim-studio-legacy" style="display:none">
-          <div id="scrim-drop" class="vsd-dropzone" style="margin-bottom:18px">
+        </div>
+
+        <!-- ══ Vue Analyse vidéo — studio de codage + pilotage de replay ══ -->
+        <div id="an-view-video" style="display:none">
+          <div id="scrim-drop" class="vsd-dropzone" style="margin-bottom:16px">
             <div class="vsd-dz-ic"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
-            <div style="font-weight:900;font-size:18px;margin-bottom:6px;color:var(--vs-fg-1)">Dépose la vidéo de ton scrim ici</div>
-            <p class="muted" style="max-width:460px;margin:0 auto 4px">Glisse l'enregistrement du scrim (ou clique pour parcourir), puis ouvre le studio pour coder les actions, dessiner sur l'image et monter tes clips.</p>
-            <span class="faint" style="font-size:12px">Vidéo · MP4 / WebM / MOV — la vidéo reste sur ton poste, rien n'est envoyé</span>
+            <div style="font-weight:900;font-size:18px;margin-bottom:6px;color:var(--vs-fg-1)">Déposez l'enregistrement du scrim</div>
+            <p class="muted" style="max-width:460px;margin:0 auto 4px">Le studio s'ouvre directement : codage des actions, télestration, clips.</p>
+            <span class="faint" style="font-size:12px">MP4, WebM, MOV — la vidéo reste sur votre poste, rien n'est envoyé</span>
             <input type="file" id="scrim-input" accept="video/*,.mp4,.webm,.mov,.mkv" style="display:none"/>
           </div>
           <div id="scrim-loaded" class="card" style="display:none;padding:16px 20px;margin-bottom:18px">
@@ -5951,25 +5954,28 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <button class="btn btn-cta" onclick="slOpenStudio()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg> Ouvrir le studio d'analyse</button>
             </div>
           </div>
-          <!-- Pilotage de replay EN DIRECT via l'agent local vs-studio (sans vidéo). -->
+          <!-- ⛔ Pilotage de replay en direct — débranché tant que l'agent local
+               n'est pas distribuable : hors de ce poste, vsliveOffline affiche un
+               chemin de dossier personnel et un « npm start » inexécutable. -->
+          <div id="scrim-live-wrap" style="display:none">
           <div class="card" id="scrim-live" style="padding:0;margin-bottom:18px;overflow:hidden">
             <div style="padding:13px 20px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--vs-forest-600)">
               <span class="vslive-dot" id="vslive-dot"></span>
               <div style="flex:1;min-width:0">
                 <div class="h3" style="font-size:14.5px">Piloter un replay en direct <span class="faint" style="font-weight:400;font-size:11px">— le jeu répond directement, sans passer par une vidéo</span></div>
-                <div class="faint" style="font-size:11.5px" id="vslive-status">Recherche de l'agent local…</div>
+                <div class="faint" style="font-size:11.5px" id="vslive-status">Recherche de l'agent local sur ce poste…</div>
               </div>
               <button class="btn btn-ghost btn-sm" onclick="vsliveInit()" title="Reconnecter">↻</button>
             </div>
             <div id="vslive-body" style="padding:16px 20px"><div class="faint" style="font-size:12px">Connexion…</div></div>
           </div>
+          </div><!-- /scrim-live-wrap -->
 
           <div class="between" style="margin-bottom:10px;flex-wrap:wrap;gap:8px">
             <div class="h3" style="font-size:16px">Sessions d'analyse</div>
-            <span class="faint" style="font-size:12px">Le codage est sauvegardé automatiquement — redépose la même vidéo pour reprendre.</span>
+            <span class="faint" style="font-size:12px">Le codage est enregistré ; redéposez la même vidéo pour reprendre.</span>
           </div>
           <div id="scrim-history"></div>
-          </div><!-- /scrim-studio-legacy -->
         </div>
 
         <div id="an-view-perf" style="display:none">
@@ -6014,7 +6020,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 
         <!-- Barre du studio -->
         <div class="sl-topbar">
-          <button class="btn btn-ghost btn-sm" onclick="slBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Analyse scrim</button>
+          <button class="btn btn-ghost btn-sm" onclick="slBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Analyse vidéo</button>
           <div class="sl-topbar-title">
             <div class="h3" id="sl-title">Studio d'analyse</div>
             <div class="faint" style="font-size:11px" id="sl-subtitle">—</div>
@@ -6066,7 +6072,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <div class="sl-video-empty" id="sl-video-empty">
                 <div class="entry-ico" style="width:40px;height:40px;margin:0 auto 12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></div>
                 <div class="h3" style="font-size:15px;margin-bottom:6px">Aucune vidéo chargée</div>
-                <p class="faint" style="font-size:12px;max-width:300px">Retourne sur l'onglet Analyse scrim et dépose la vidéo du scrim pour commencer.</p>
+                <p class="faint" style="font-size:12px;max-width:300px">Déposez la vidéo du scrim dans l'onglet Analyse vidéo pour commencer.</p>
               </div>
 
               <!-- Scrub bar overlay -->
@@ -7262,7 +7268,7 @@ function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)
    depuis que panel-analyse a perdu sa barre d'onglets jumelle. */
 const AN_TITRE = {
   scrim: 'Stats équipe', perf: 'Replays .rofl', comparer: 'Comparer',
-  roster: 'Roster', timeline: 'Timeline',
+  roster: 'Roster', timeline: 'Timeline', video: 'Analyse vidéo',
 };
 const AN_DESC = {
   scrim: 'Stats Solo Q reprises automatiquement, stats avancées saisies par le coach.',
@@ -7270,8 +7276,9 @@ const AN_DESC = {
   comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte.',
   roster: 'Score d\'équipe, maillon faible, et qui dans votre vivier peut l\'améliorer poste par poste.',
   timeline: 'Une partie classée, minute par minute : tours, dragons, barons et avance d\'or.',
+  video: 'Votre enregistrement du scrim, codé et annoté. Un .rofl ne contient pas de vidéo.',
 };
-function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline') ? 2 : 1; }
+function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline' || tab === 'video') ? 2 : 1; }
 function anSyncTabs(active) {
   // [data-tab] : ne toucher que les onglets Analytics — les barres segmentées
   // d'autres panneaux (CRM…) gèrent leur état actif elles-mêmes.
@@ -7346,7 +7353,7 @@ function anDecorateTabs() {
   const rank = (window.VS_PLAN_RANK[vsPlan()] || 1);
   document.querySelectorAll('.an-tab').forEach(b => {
     const t = b.getAttribute('data-tab');
-    if ((t === 'scrim' || t === 'perf' || t === 'roster' || t === 'timeline') && rank < 2 && !b.querySelector('.an-lock')) {
+    if ((t === 'scrim' || t === 'perf' || t === 'roster' || t === 'timeline' || t === 'video') && rank < 2 && !b.querySelector('.an-lock')) {
       const s = document.createElement('span');
       s.className = 'an-lock'; s.textContent = 'Pro';
       s.style.cssText = 'margin-left:6px;font-size:.6rem;background:var(--surf3);color:var(--sub);border:1px solid var(--border2);border-radius:4px;padding:1px 5px;vertical-align:middle';
@@ -7361,17 +7368,24 @@ function anGoTab(tab) {
   switchPanel('analytics');
   anShowView(tab);
 }
-function anShowView(view) {   // 'scrim' | 'roster' | 'timeline' (vues internes au panel-analytics ; 'perf' = dormant)
-  ['scrim', 'perf', 'roster', 'timeline'].forEach(v => {
+function anShowView(view) {   // 'scrim' | 'video' | 'roster' | 'timeline' (vues internes ; 'perf' = dormant)
+  ['scrim', 'perf', 'roster', 'timeline', 'video'].forEach(v => {
     const el = document.getElementById('an-view-' + v);
     if (el) el.style.display = (v === view) ? '' : 'none';
   });
   anSyncTabs(view);
   if (view === 'roster' && typeof renderRoster === 'function') renderRoster();
   if (view === 'timeline' && typeof tlSyncInputs === 'function') tlSyncInputs();
-  // La vue 'scrim' est désormais le TABLEAU STATS ÉQUIPE (l'analyse vidéo est en
-  // pause ; son studio reste dans le DOM sous #scrim-studio-legacy, non routé).
   if (view === 'scrim' && typeof renderStatsBoard === 'function') renderStatsBoard();
+  /* L'analyse vidéo a sa propre vue. slUiInit branche la zone de dépôt — sans
+     cet appel elle est bien à l'écran mais ne réagit à rien, ce qui était
+     exactement son état. vsliveInit cherche l'agent local, et n'échoue qu'en
+     écrivant dans son propre encadré : le studio vidéo marche sans lui. */
+  if (view === 'video') {
+    if (typeof slUiInit === 'function') slUiInit();
+    if (typeof slRenderHistory === 'function') slRenderHistory();
+    // vsliveInit n'est PAS rappelé : son panneau est masqué (cf. #scrim-live-wrap).
+  }
 }
 function anEnterHub() {   // appelé à l'ouverture de l'onglet Analytics — déjà gardé Pro+ par vsCanAccess('analytics')
   anShowView('scrim');
@@ -22571,7 +22585,7 @@ function slOpenStudio(){
   if(!SL.url){ if(typeof showToast==='function') showToast('Dépose d\'abord une vidéo de scrim.','error'); return; }
   switchPanel('scrimlab');
 }
-function slBackToHub(){ var v=slVideo(); if(v) v.pause(); switchPanel('analytics'); }
+function slBackToHub(){ var v=slVideo(); if(v) v.pause(); anGoTab('video'); }
 function slOnEnterStudio(){
   var t=document.getElementById('sl-title'); if(t) t.textContent = SL.file ? SL.file.name : 'Studio d\'analyse';
   var empty=document.getElementById('sl-video-empty'); if(empty) empty.style.display = SL.url ? 'none' : 'flex';
@@ -23333,8 +23347,8 @@ function vsliveBindKeys(){
   if(VSL_KEYS_BOUND) return; VSL_KEYS_BOUND=true;
   document.addEventListener('keydown', function(e){
     if(!VSL.gameId) return;
-    var scrim=document.getElementById('an-view-scrim');
-    if(!scrim || scrim.style.display==='none') return;              // seulement sur la vue Analyse scrim
+    var scrim=document.getElementById('an-view-video');
+    if(!scrim || scrim.style.display==='none') return;              // seulement sur la vue Analyse vidéo
     if(/input|textarea|select/i.test((e.target.tagName||''))) return; // pas pendant la saisie d'une note
     var c=vslCodes().filter(function(x){return String(x.key)===e.key;})[0];
     if(c){ e.preventDefault(); vsliveCode(c.id); }
