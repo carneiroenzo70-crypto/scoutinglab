@@ -1291,9 +1291,75 @@ body:not(.theme-dark) .rs-pd-pl + .rs-pd-pl{ border-top-color:rgba(31,71,64,.07)
 .rs-pd-plgold{ font-family:var(--font-mono); min-width:40px; flex:none; text-align:right; }
 @media (max-width:560px){ .rs-pd-plname{ display:none; } .rs-pd-plcs{ display:none; } }
 /* ════ Tableau STATS ÉQUIPE (onglet Analytics → Stats équipe) ════ */
-.stb-row{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px 16px; margin-bottom:12px; background:rgba(4,18,15,.28); display:flex; flex-direction:column; gap:12px; }
-body:not(.theme-dark) .stb-row{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
-.stb-row.empty{ opacity:.55; }
+/* ── Stats équipe ──────────────────────────────────────────────────────────
+   La page s'ouvrait sur cinq cartes de 350 px composées à 90 % de champs
+   vides : un formulaire, jamais une lecture. Les chiffres remontent sur la
+   ligne du joueur, la saisie passe derrière un repli qui annonce combien de
+   mesures sont renseignées. Mêmes règles que Seasons : une bande de chiffres,
+   un élément dominant selon l'état, des lignes plutôt qu'une mosaïque. */
+.stb-kpis{ display:flex; flex-wrap:wrap; margin-bottom:16px; overflow:hidden;
+  border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; }
+body:not(.theme-dark) .stb-kpis{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.stb-k{ flex:1 1 160px; min-width:0; padding:12px 18px; display:flex; flex-direction:column; gap:3px;
+  border-left:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .stb-k{ border-left-color:rgba(31,71,64,.12); }
+.stb-k:first-child{ border-left:0; }
+.stb-k .k{ font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--vs-fg-3); }
+.stb-k .v{ font-family:var(--font-display); font-weight:800; font-size:22px; line-height:1.05; color:var(--vs-fg-1);
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.stb-k .v small{ font-size:13px; font-weight:700; color:var(--vs-fg-3); }
+.stb-k .v .na{ color:var(--vs-fg-3); }
+
+.stb-hero{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:16px; padding:16px 18px;
+  border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; }
+body:not(.theme-dark) .stb-hero{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.stb-hero-t{ font-family:var(--font-display); font-weight:800; font-size:17px; color:var(--vs-fg-1); }
+.stb-hero-s{ margin-top:4px; font-size:12.5px; line-height:1.5; color:var(--vs-fg-2); max-width:80ch; }
+.stb-hero-a{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+
+.stb-band{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; overflow:hidden; }
+body:not(.theme-dark) .stb-band{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.stb-p{ padding:12px 16px; }
+.stb-p + .stb-p{ border-top:1px solid rgba(255,255,255,.045); }
+body:not(.theme-dark) .stb-p + .stb-p{ border-top-color:rgba(31,71,64,.08); }
+.stb-p.vide{ opacity:.5; }
+/* Les mesures automatiques se lisent SUR la ligne du joueur, alignées sur une
+   base commune — elles n'ont pas besoin d'une boîte chacune pour exister. */
+/* Colonnes de largeur FIXE : c'est ce qui fait qu'un chiffre se compare d'un
+   poste à l'autre. Avec un simple flex, chaque ligne démarrait ses mesures à
+   une abscisse différente selon la longueur du pseudo — cinq colonnes qui
+   n'en sont pas. Sous 900 px elles se replient en liste. */
+.stb-mes{ margin-left:auto; flex:none; display:grid; grid-template-columns:112px 58px 58px 66px 54px; align-items:baseline; }
+@media (max-width:900px){
+  /* .stb-id ne se replie pas tout seul : sans ce wrap, les mesures débordaient
+     sous la bande, qui les rognait en silence (overflow:hidden). */
+  .stb-id{ flex-wrap:wrap; }
+  .stb-mes{ display:flex; flex-wrap:wrap; gap:16px; margin-left:0; flex:1 0 100%; }
+}
+.stb-m{ display:flex; flex-direction:column; gap:1px; min-width:50px; }
+.stb-m .k{ font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--vs-fg-3); }
+.stb-m .v{ font-family:var(--font-mono); font-weight:800; font-size:14px; color:var(--vs-fg-1); }
+.stb-m .v .na{ color:var(--vs-fg-3); font-weight:600; }
+/* Repli de saisie. Le compteur dit ce qu'on trouvera dessous : sans lui, un
+   repli fermé cache aussi bien six mesures saisies que six champs vides. */
+.stb-det{ margin-top:10px; }
+.stb-det > summary{ cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:8px;
+  padding:3px 0; user-select:none; font-size:10px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--vs-fg-3); }
+.stb-det > summary:hover{ color:var(--vs-emerald-300); }
+body:not(.theme-dark) .stb-det > summary:hover{ color:var(--vs-emerald-500); }
+.stb-det > summary::-webkit-details-marker{ display:none; }
+.stb-det > summary::before{ content:'▸'; font-size:9px; transition:transform .16s var(--ease-out); }
+.stb-det[open] > summary::before{ transform:rotate(90deg); }
+.stb-cnt{ font-family:var(--font-mono); font-size:10px; letter-spacing:0; padding:1px 8px; border-radius:999px;
+  border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); }
+.stb-cnt.plein{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-600); }
+body:not(.theme-dark) .stb-cnt{ border-color:rgba(31,71,64,.18); }
+body:not(.theme-dark) .stb-cnt.plein{ color:var(--vs-emerald-500); }
+.stb-det .stb-adv{ margin-top:11px; }
+.stb-bloc{ margin-top:16px; padding:12px 16px; border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; }
+body:not(.theme-dark) .stb-bloc{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.stb-bloc.stb-det{ margin-top:16px; }
 .stb-id{ display:flex; align-items:center; gap:11px; }
 .stb-id .av{ width:40px; height:40px; border-radius:50%; flex:none; position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
 .stb-id .av img{ width:100%; height:100%; object-fit:cover; display:block; }
@@ -1321,12 +1387,21 @@ body:not(.theme-dark) .stb-tile{ background:rgba(255,255,255,.5); border-color:r
 .stb-f input{ width:100%; height:36px; padding:0 30px 0 11px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-mono); font-size:14px; }
 body:not(.theme-dark) .stb-f input{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .stb-f input:focus{ outline:0; border-color:var(--vs-emerald-500); }
+/* Trente champs encadrés et vides donnaient à la page l'aspect d'un formulaire
+   d'administration. Un champ ne se dessine que s'il porte une valeur — ou
+   qu'on le vise. La classe .rempli est posée au rendu, pas devinée en CSS. */
+.stb-f input{ border-color:transparent; background:transparent; }
+.stb-f input:hover{ background:rgba(255,255,255,.045); border-color:var(--vs-forest-500); }
+.stb-f input:focus{ background:rgba(255,255,255,.055); }
+.stb-f input.rempli{ background:rgba(255,255,255,.05); border-color:var(--vs-forest-500); }
+body:not(.theme-dark) .stb-f input{ border-color:transparent; background:transparent; }
+body:not(.theme-dark) .stb-f input:hover{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.16); }
+body:not(.theme-dark) .stb-f input:focus{ background:rgba(31,71,64,.06); border-color:var(--vs-emerald-500); }
+body:not(.theme-dark) .stb-f input.rempli{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
 .stb-inwrap i{ position:absolute; right:11px; font-style:normal; font-size:11px; color:var(--vs-fg-3); pointer-events:none; }
-.stb-syn{ border:1px solid var(--vs-emerald-500); border-radius:14px; padding:14px 16px; margin-bottom:16px; background:rgba(45,212,167,.05); }
-body:not(.theme-dark) .stb-syn{ background:rgba(45,212,167,.06); border-color:rgba(31,71,64,.18); }
+
 /* Journal de moments clés (timecodes) */
-.stb-journal{ border:1px solid var(--vs-forest-500); border-radius:14px; padding:14px 16px; margin-top:16px; background:rgba(4,18,15,.28); }
-body:not(.theme-dark) .stb-journal{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+
 .stb-jadd{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
 .stb-jadd input, .stb-jadd select{ height:36px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(255,255,255,.05); color:var(--vs-fg-1); font-family:var(--font-sans); font-size:13px; padding:0 10px; }
 body:not(.theme-dark) .stb-jadd input, body:not(.theme-dark) .stb-jadd select{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
@@ -5807,11 +5882,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" onclick="switchPanel('builds')">Builds des pros</button>
         </div>
         <div class="page-head">
-          <div class="eyebrow">Analytics</div>
-          <h2 class="h2" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Performance &amp; data <span class="pill pill-emerald">Replays .rofl</span></h2>
-          <p class="muted">Analyse les parties de tes joueurs, suis ton roster et lis les timelines.</p>
+          <h2 class="h2" id="an-titre">Stats équipe</h2>
+          <p class="muted an-desc" id="an-desc"></p>
         </div>
-        <div id="an-desc" class="an-desc faint" style="font-size:.82rem;margin-bottom:6px;line-height:1.6"></div>
 
         <!-- ══ Vue Stats équipe (tableau de data coach — remplace l'Analyse vidéo) ══ -->
         <div id="an-view-scrim">
@@ -7144,12 +7217,16 @@ function anScoreColor(s) { return s >= 8 ? 'var(--lime)' : s >= 6 ? 'var(--teal)
    Comparer a déménagé dans CRM Agent (rang 1, ouvert à tous) — reste dans ce
    dictionnaire pour sa description, mais n'a plus de barre .an-desc à remplir
    depuis que panel-analyse a perdu sa barre d'onglets jumelle. */
+const AN_TITRE = {
+  scrim: 'Stats équipe', perf: 'Replays .rofl', comparer: 'Comparer',
+  roster: 'Roster', timeline: 'Timeline',
+};
 const AN_DESC = {
-  scrim: 'Studio d\'analyse vidéo de scrims : code les actions en direct (gank, dive, teamfight…), dessine sur l\'image, monte des playlists et lis la matrice — comme les staffs du foot pro.',
-  perf: 'Analyse de vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
-  comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte. Dépend du Scouting (fiches sauvegardées).',
-  roster: 'Votre roster : score d\'équipe, maillon faible, et qui dans votre vivier (scout + CRM + Top 30) peut l\'améliorer poste par poste.',
-  timeline: 'Timeline d\'une partie CLASSÉE (via API Riot) : tours, dragons, barons horodatés + avance d\'or. Les scrims (.rofl) n\'exposent pas les timings.',
+  scrim: 'Stats Solo Q reprises automatiquement, stats avancées saisies par le coach.',
+  perf: 'Vos scrims à partir des fichiers .rofl. Outil autonome — il lui faut juste vos replays.',
+  comparer: 'Comparez 2 à 5 fiches scoutées en radar, côte à côte.',
+  roster: 'Score d\'équipe, maillon faible, et qui dans votre vivier peut l\'améliorer poste par poste.',
+  timeline: 'Une partie classée, minute par minute : tours, dragons, barons et avance d\'or.',
 };
 function anTabRank(tab) { return (tab === 'scrim' || tab === 'perf' || tab === 'roster' || tab === 'timeline') ? 2 : 1; }
 function anSyncTabs(active) {
@@ -7159,6 +7236,9 @@ function anSyncTabs(active) {
     b.classList.toggle('on', b.getAttribute('data-tab') === active);   // chip actif (design maquette)
   });
   document.querySelectorAll('.an-desc').forEach(d => { d.textContent = AN_DESC[active] || ''; });
+  // Le titre suit l'onglet : c'est lui qui dit où on est, pas une chip de 11 px.
+  const _anT = document.getElementById('an-titre');
+  if (_anT && AN_TITRE[active]) _anT.textContent = AN_TITRE[active];
   anSegSlide();
 }
 // Pilule émeraude glissante des barres segmentées (maquette). Positionnée en JS
@@ -7965,14 +8045,88 @@ const RS_SYN = [
   { k: 'obj_setup', label: 'Setup objectifs (vision + timing)', u: '/10' },
   { k: 'early_prio', label: 'Prio early game', u: '/10' }
 ];
-function stbSynergyHtml(roster) {
-  const syn = (roster && roster.synergy) || {};
-  let h = '<div class="stb-syn"><div class="stb-sech">Synergies & duos — saisie coach</div><div class="stb-adv">';
-  RS_SYN.forEach(f => {
-    const val = (syn[f.k] == null ? '' : String(syn[f.k])).replace(/"/g, '&quot;');
-    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap"><input id="syn-' + f.k + '" value="' + val + '" placeholder="—" inputmode="decimal" autocomplete="off">' + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
+function stbRempli(v) { return v != null && String(v).trim() !== ''; }
+/* Combien de mesures coach sont renseignées, sur combien de possibles. Ce compte
+   sert partout : bande de chiffres, replis, phrase d'état. Il ne compte QUE les
+   postes pourvus — un poste vide n'a pas de mesures « manquantes », il n'a pas
+   de joueur, et les additionner ferait mentir le dénominateur. */
+function stbCoachRemplis(roster) {
+  var n = 0, tot = 0;
+  RS_ROLES.forEach(function (role) {
+    var slot = roster.slots[role]; if (!slot || !slot.pseudo) return;
+    var adv = slot.adv || {};
+    (RS_ADV[role] || []).forEach(function (f) { tot++; if (stbRempli(adv[f.k])) n++; });
   });
-  h += '</div></div>';
+  return { n: n, tot: tot };
+}
+/* Les chiffres de l'équipe en BANDE continue, pas en cartes : ils se comparent
+   sur une ligne de base commune (règle posée sur Seasons le 29/09). Aucun n'est
+   fabriqué — « — » quand la donnée n'existe pas. */
+function stbKpisHtml(roster, ts) {
+  var pourvus = RS_ROLES.filter(function (r) { return roster.slots[r] && roster.slots[r].pseudo; }).length;
+  var c = stbCoachRemplis(roster);
+  var na = '<span class="na">—</span>';
+  var cell = function (k, v) {
+    return '<div class="stb-k"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>';
+  };
+  return '<div class="stb-kpis">'
+    + cell('VisionScore équipe', typeof ts.team === 'number' ? String(ts.team).replace('.', ',') : na)
+    + cell('Maillon faible', ts.weakest ? anEsc(RS_ROLE_FULL[ts.weakest] || ts.weakest) : na)
+    + cell('Postes pourvus', pourvus + '<small>/5</small>')
+    + cell('Mesures coach', c.tot ? (c.n + '<small>/' + c.tot + '</small>') : na)
+    + '</div>';
+}
+/* Un élément domine, SELON L'ÉTAT. Roster vide, rien de saisi, ou des mesures
+   en place : ce ne sont pas trois décorations du même bloc, ce sont trois
+   situations où le coach a trois choses différentes à faire. */
+function stbHeroHtml(roster, ts) {
+  var pourvus = RS_ROLES.filter(function (r) { return roster.slots[r] && roster.slots[r].pseudo; }).length;
+  var c = stbCoachRemplis(roster);
+  var titre, phrase, action = '';
+  if (!pourvus) {
+    titre = 'Aucun titulaire dans ce roster';
+    phrase = 'Les stats se calculent sur les cinq titulaires. Ajoutez-les : leurs chiffres Solo Q remontent seuls.';
+    action = '<button class="btn btn-cta btn-sm" onclick="anGoTab(\'roster\')">Ouvrir le roster</button>';
+  } else if (!c.n) {
+    titre = 'Rien de saisi côté coach';
+    phrase = 'Les ' + c.tot + ' mesures ci-dessous ne sortent d\'aucune API : elles viennent de vos scrims. '
+      + 'Dépliez un poste pour commencer.';
+  } else if (ts.weakest) {
+    var pr = ts.perRole[ts.weakest], slot = roster.slots[ts.weakest] || {};
+    var qui = (slot.proName || '').trim() || slot.pseudo || '';
+    titre = 'Poste le plus bas : ' + anEsc(RS_ROLE_FULL[ts.weakest] || ts.weakest)
+      + (qui ? ' — ' + anEsc(qui) : '');
+    phrase = (pr && typeof pr.score === 'number' && typeof ts.team === 'number')
+      ? 'Il note ' + String(pr.score).replace('.', ',') + ' quand l\'équipe est à '
+        + String(ts.team).replace('.', ',') + ' — le plus large écart du roster.'
+      : 'C\'est lui que le barème place le plus bas parmi les cinq.';
+  } else {
+    /* Ni maillon faible ni score : rsResolveScore n'a rien rendu pour aucun des
+       cinq. Le dire, plutôt que répéter le compteur de la bande juste au-dessus. */
+    titre = 'Pas encore de score d\'équipe';
+    phrase = 'Le VisionScore se calcule sur les données Solo Q des titulaires, et aucune n\'a été '
+      + 'récupérée pour ceux-ci. Vérifiez leurs pseudos et leurs tags dans le roster.';
+    action = '<button class="btn btn-ghost btn-sm" onclick="anGoTab(\'roster\')">Ouvrir le roster</button>';
+  }
+  return '<div class="stb-hero"><div style="min-width:0">'
+    + '<div class="stb-hero-t">' + titre + '</div>'
+    + '<div class="stb-hero-s">' + phrase + '</div></div>'
+    + (action ? '<div class="stb-hero-a">' + action + '</div>' : '') + '</div>';
+}
+function stbSynergyHtml(roster) {
+  var syn = (roster && roster.synergy) || {};
+  var nb = RS_SYN.filter(function (f) { return stbRempli(syn[f.k]); }).length;
+  var h = '<details class="stb-det stb-bloc" id="an-stats-syn"><summary>Synergies &amp; duos'
+    + '<span class="stb-cnt' + (nb === RS_SYN.length ? ' plein' : '') + '">' + nb + '/' + RS_SYN.length + '</span>'
+    + '</summary><div class="stb-adv">';
+  RS_SYN.forEach(function (f) {
+    var val = (syn[f.k] == null ? '' : String(syn[f.k])).replace(/"/g, '&quot;');
+    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap">'
+      + '<input id="syn-' + f.k + '"' + (val ? ' class="rempli"' : '') + ' value="' + val
+      + '" placeholder="—" inputmode="decimal" autocomplete="off">'
+      + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
+  });
+  h += '</div></details>';
   return h;
 }
 async function renderStatsBoard() {
@@ -7982,56 +8136,78 @@ async function renderStatsBoard() {
   if (!roster) { box.innerHTML = ''; return; }
   const list = rsAll();
   const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
-  let html = '<p class="muted" style="margin:0 0 14px;font-size:.85rem">Stats Solo Q reprises automatiquement, stats avancées saisies par le coach. Propres à ta structure.</p>';
-  html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">';
+  let html = '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">';
   html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderStatsBoard()">';
   list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
   html += '</select><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>';
   html += '<button onclick="stbSaveAll()" class="btn btn-cta btn-sm" style="margin-left:auto">' + _ic('<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>') + ' Enregistrer les stats coach</button>';
   html += '</div>';
-  html += stbSynergyHtml(roster);
-  box.innerHTML = html + '<div id="an-stats-body" class="faint" style="font-size:.85rem">Calcul des stats…</div>' + stbJournalHtml(roster);
+  box.innerHTML = html + '<div id="an-stats-body" class="faint" style="font-size:.85rem">Calcul des stats…</div>';
   const ts = await rsTeamScore(roster);
-  let body = '', any = false;
-  for (const role of RS_ROLES) { const slot = roster.slots[role]; if (slot && slot.pseudo) any = true; body += stbRow(roster, role, slot, ts.perRole[role]); }
   const el = document.getElementById('an-stats-body'); if (!el) return;
   el.classList.remove('faint');
-  el.innerHTML = any ? body : '<div class="card" style="padding:40px 20px;text-align:center"><div class="h3" style="font-size:1rem;margin-bottom:6px">Roster vide</div><div class="muted" style="font-size:.85rem">Ajoute tes titulaires dans l\'onglet <strong>Roster</strong>, puis reviens ici pour saisir leurs stats avancées.</div></div>';
+  /* Écrit en UNE fois dans le corps déjà en place : ni rendu en cascade, ni
+     appel à renderStatsBoard depuis ce chemin — c'est la boucle rendu →
+     chargement → rendu qui avait figé la salle de draft. */
+  el.innerHTML = stbKpisHtml(roster, ts) + stbHeroHtml(roster, ts)
+    + '<div class="stb-band">'
+    + RS_ROLES.map(function (role) { return stbRow(roster, role, roster.slots[role], ts.perRole[role]); }).join('')
+    + '</div>'
+    + stbSynergyHtml(roster) + stbJournalHtml(roster);
 }
-function stbBaseTiles(pr) {
+/* Les mesures automatiques (Solo Q) SUR la ligne du joueur. Elles portaient
+   chacune une boîte : cinq boîtes par joueur, vingt-cinq sur la page, alors
+   qu'elles se lisent en colonne d'un poste à l'autre. */
+function stbBaseMesures(pr) {
   const raw = pr && pr.raw;
   const rkLbl = (pr && pr.rank) ? pr.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
   const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
-  const tile = (l, v, u) => { const has = v != null && v !== ''; return '<div class="stb-tile"><div class="k">' + l + '</div><div class="v">' + (has ? anEsc(String(v)) + (u ? '<span class="u">' + u + '</span>' : '') : '<span class="na">—</span>') + '</div></div>'; };
-  let h = '<div class="stb-tile"><div class="k">Rang SoloQ</div><div class="v" style="font-size:12.5px;display:flex;align-items:center;gap:5px">'
-    + ((rk && rk.tier) ? rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:800">' + anEsc(rk.label) + '</span>' : '<span class="na">—</span>') + '</div></div>';
-  h += tile('WR SoloQ', pr && pr.wr, '%');
-  h += tile('KDA', raw && raw.kda, '');
-  h += tile('CS/min', raw && raw.csMin, '');
-  h += tile('KP', raw && raw.killPart, '%');
+  const na = '<span class="na">—</span>';
+  const m = (k, v, u) => {
+    const has = v != null && v !== '';
+    return '<div class="stb-m"><span class="k">' + k + '</span><span class="v">'
+      + (has ? anEsc(String(v)) + (u || '') : na) + '</span></div>';
+  };
+  let h = '<div class="stb-m"><span class="k">Rang</span><span class="v" style="display:flex;align-items:center;gap:4px;font-size:12px">'
+    + ((rk && rk.tier) ? rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + '">' + anEsc(rk.label) + '</span>' : na)
+    + '</span></div>';
+  h += m('WR', pr && pr.wr, '%');
+  h += m('KDA', raw && raw.kda, '');
+  h += m('CS/min', raw && raw.csMin, '');
+  h += m('KP', raw && raw.killPart, '%');
   return h;
 }
 function stbRow(roster, role, slot, pr) {
   const full = RS_ROLE_FULL[role] || role;
   if (!slot || !slot.pseudo) {
-    return '<div class="stb-row empty"><div class="stb-id"><span class="rs-rolechip">' + role + '</span><div class="stb-empty faint">' + full + ' — poste vide</div></div></div>';
+    return '<div class="stb-p vide"><div class="stb-id"><span class="rs-rolechip">' + role + '</span>'
+      + '<span class="stb-empty faint">' + full + ' — poste vide</span></div></div>';
   }
-  const proName = (slot.proName || '').trim();
-  const primaire = proName || slot.pseudo;
+  const primaire = (slot.proName || '').trim() || slot.pseudo;
   const score = pr && pr.score;
-  let h = '<div class="stb-row">';
-  h += '<div class="stb-id"><span class="rs-rolechip">' + role + '</span>' + rsAvatarHtml(slot);
-  h += '<div style="min-width:0"><div class="stb-nm">' + anEsc(primaire) + '</div><div class="stb-sq faint">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</div></div>';
-  h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span></div>';
-  h += '<div class="stb-sec"><div class="stb-sech">Base — auto (Solo Q)</div><div class="stb-base">' + stbBaseTiles(pr) + '</div></div>';
   const adv = slot.adv || {};
   const fields = RS_ADV[role] || [];
-  h += '<div class="stb-sec"><div class="stb-sech">Avancé — saisie coach</div><div class="stb-adv">';
+  const nb = fields.filter(f => stbRempli(adv[f.k])).length;
+  let h = '<div class="stb-p">';
+  h += '<div class="stb-id"><span class="rs-rolechip">' + role + '</span>' + rsAvatarHtml(slot);
+  h += '<div style="min-width:0"><div class="stb-nm">' + anEsc(primaire) + '</div><div class="stb-sq faint">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</div></div>';
+  h += '<div class="stb-mes">' + stbBaseMesures(pr) + '</div>';
+  h += '<span style="flex:none">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span></div>';
+  /* La saisie passe derrière un repli — mais le compteur dit ce qu'il y a
+     dessous, sinon un repli fermé cache aussi bien six mesures qu'un vide.
+     Les champs restent dans le DOM : stbSaveAll les lit par identifiant,
+     replis fermés compris. */
+  h += '<details class="stb-det"><summary>Stats avancées'
+    + '<span class="stb-cnt' + (fields.length && nb === fields.length ? ' plein' : '') + '">' + nb + '/' + fields.length + '</span>'
+    + '</summary><div class="stb-adv">';
   fields.forEach(f => {
     const val = (adv[f.k] == null ? '' : String(adv[f.k])).replace(/"/g, '&quot;');
-    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap"><input id="adv-' + role + '-' + f.k + '" value="' + val + '" placeholder="—" inputmode="decimal" autocomplete="off">' + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
+    h += '<label class="stb-f"><span>' + f.label + '</span><span class="stb-inwrap">'
+      + '<input id="adv-' + role + '-' + f.k + '"' + (val ? ' class="rempli"' : '') + ' value="' + val
+      + '" placeholder="—" inputmode="decimal" autocomplete="off">'
+      + (f.u ? '<i>' + f.u + '</i>' : '') + '</span></label>';
   });
-  h += '</div></div></div>';
+  h += '</div></details></div>';
   return h;
 }
 function stbSaveAll() {
@@ -8062,19 +8238,22 @@ function stbParseTime(s) {
 function stbJournalHtml(roster) {
   const j = (roster && roster.journal) || [];
   const types = ['Gank', 'Roam', 'Teamfight', 'Objectif', 'Pick', 'Vision', 'Erreur', 'Autre'];
-  const roles = ['', 'Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
+  const roles = ['Top', 'Jgl', 'Mid', 'ADC', 'Sup'];
   const del = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
   const sorted = j.map((e, i) => ({ e, i })).sort((a, b) => { const ta = stbParseTime(a.e.t), tb = stbParseTime(b.e.t); return (ta == null ? 1e9 : ta) - (tb == null ? 1e9 : tb); });
-  let h = '<div class="stb-journal" id="an-stats-journal"><div class="stb-sech">Journal de moments clés — timecodes pour remonter ta vidéo</div>';
+  /* Ouvert dès qu'il contient quelque chose : un journal vide n'a rien à
+     montrer, un journal rempli est la raison d'ouvrir la page. */
+  let h = '<details class="stb-det stb-bloc" id="an-stats-journal"' + (sorted.length ? ' open' : '') + '>'
+    + '<summary>Moments clés<span class="stb-cnt' + (sorted.length ? ' plein' : '') + '">' + sorted.length + '</span></summary>';
   h += '<div class="stb-jadd">';
   h += '<input id="jn-t" class="stb-jt" placeholder="mm:ss" inputmode="numeric" autocomplete="off">';
   h += '<select id="jn-type" class="stb-jsel">' + types.map(t => '<option>' + t + '</option>').join('') + '</select>';
-  h += '<select id="jn-role" class="stb-jsel"><option value="">Rôle…</option>' + roles.filter(Boolean).map(r => '<option value="' + r + '">' + r + '</option>').join('') + '</select>';
+  h += '<select id="jn-role" class="stb-jsel"><option value="">Rôle…</option>' + roles.map(r => '<option value="' + r + '">' + r + '</option>').join('') + '</select>';
   h += '<input id="jn-note" class="stb-jnote" placeholder="Note (ex. gank bot réussi, TP contré…)" autocomplete="off" onkeydown="if(event.key===\'Enter\')stbJournalAdd()">';
   h += '<button class="btn btn-cta btn-xs" onclick="stbJournalAdd()">Ajouter</button>';
   h += '</div>';
   if (!sorted.length) {
-    h += '<div class="stb-jempty faint">Aucun moment noté. Ajoute un timecode pendant que tu regardes le scrim — tu pourras t\'y repérer dans ta vidéo.</div>';
+    h += '<div class="stb-jempty faint">Notez un timecode en regardant le scrim pour vous y repérer ensuite.</div>';
   } else {
     h += '<div class="stb-jlist">';
     sorted.forEach(({ e, i }) => {
@@ -8086,10 +8265,19 @@ function stbJournalHtml(roster) {
     });
     h += '</div>';
   }
-  h += '</div>';
+  h += '</details>';
   return h;
 }
-function stbJournalReRender() { const el = document.getElementById('an-stats-journal'); if (el) el.outerHTML = stbJournalHtml(rsActive()); }
+/* Le repli se referme si on le reconstruit à l'aveugle : on relit son état
+   AVANT de remplacer le nœud, et on le repose après. Sans ça, ajouter un
+   moment refermait la liste qu'on venait d'alimenter. */
+function stbJournalReRender() {
+  const el = document.getElementById('an-stats-journal'); if (!el) return;
+  const etait = el.open;
+  el.outerHTML = stbJournalHtml(rsActive());
+  const neuf = document.getElementById('an-stats-journal');
+  if (neuf) neuf.open = etait || neuf.open;
+}
 function stbJournalAdd() {
   const r = rsActive(); if (!r) return;
   const gv = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
@@ -10501,6 +10689,22 @@ function ssOppAt(m, role) { var p = (m.oppRoster || []).find(function (x) { retu
 // pseudo affiché quand Leaguepedia désambiguïse deux joueurs homonymes.
 function ssOppLink(m, role) { var p = (m.oppRoster || []).find(function (x) { return x.role === role; }); return p ? (p.link || p.name) : ''; }
 // ── Rendu de l'éditeur ──
+/* Noms de champions pour le champ « champion prévu » de l'avant-match. Écrit dans
+   une <datalist> détachée, jamais dans le panneau : un rendu relancerait le
+   chargement, qui re-rendrait — c'est la boucle qui avait figé la salle de draft. */
+function ssChampDatalist() {
+  var dl = document.getElementById('ss-champ-liste');
+  if (!dl) { dl = document.createElement('datalist'); dl.id = 'ss-champ-liste'; document.body.appendChild(dl); }
+  if (dl.options.length || window._ssChampDlEnVol) return;
+  window._ssChampDlEnVol = true;
+  ssChampList().then(function (liste) {
+    window._ssChampDlEnVol = false;
+    var noms = (liste || []).map(function (x) { return x.name; }).filter(Boolean)
+      .sort(function (a, b) { return a.localeCompare(b, 'fr'); });
+    dl.innerHTML = noms.map(function (x) { return '<option value="' + anEsc(x) + '"></option>'; }).join('');
+  }, function () { window._ssChampDlEnVol = false; });
+}
+
 function ssPlanHtml(m) {
   var p = ssPlanEnsure(m);
   var rows = p.items.map(function (it) {
@@ -10519,6 +10723,7 @@ function ssPlanHtml(m) {
     + '<div class="ss-pl-t">Consignes d\'équipe</div>'
     + '<textarea class="ss-pl-ta" rows="3" placeholder="Objectifs du match, plan de jeu, points de vigilance…" oninput="ssPlanTeamNotes(\'' + m.id + '\',this.value)">' + anEsc(p.teamNotes || '') + '</textarea>'
     + '<div class="ss-pl-t" style="margin-top:16px">Par joueur</div>';
+  ssChampDatalist();
   h += '<div class="ss-pl-band">' + SS_ROLES.map(function (role) {
     var pl = p.players[role], opp = ssOppAt(m, role);
     var meIni = anEsc((pl.me || '?').charAt(0).toUpperCase());
@@ -10543,11 +10748,11 @@ function ssPlanHtml(m) {
       + (opp ? ('<button type="button" class="ss-pl-auto" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
       + '</span><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)"></label>'
       + '<label class="ss-pl-field"><span class="label">Consignes</span><textarea class="ss-pl-ta" rows="2" placeholder="Une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea></label></div>'
-      /* Passerelle vers le calculateur. La cible se déduit du pool adverse (base
-         compét) ; notre pick, lui, n'existe nulle part ailleurs — d'où ce champ. */
+      /* Le pick prévu pour ce poste. Il n'existe nulle part ailleurs — ni dans le
+         roster, ni dans la draft, qui n'a pas encore eu lieu — et il figure sur la
+         feuille envoyée au joueur. */
       + '<div class="ss-pl-tc">'
-        + '<input class="ss-pl-champ" list="ss-champ-liste" value="' + anEsc(pl.champ || '') + '" placeholder="Notre champion (optionnel)" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'champ\',this.value)">'
-        + '<button type="button" class="btn btn-ghost btn-xs" onclick="ssTesterBuild(\'' + m.id + '\',\'' + role + '\')" title="Ouvre le calculateur avec ce matchup préchargé">Tester au calculateur</button>'
+        + '<input class="ss-pl-champ" list="ss-champ-liste" value="' + anEsc(pl.champ || '') + '" placeholder="Notre champion prévu (optionnel)" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'champ\',this.value)">'
       + '</div>'
       + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
@@ -10694,6 +10899,7 @@ function ssSheetText(m, role) {
     var pl = p.players[r] || {}, oppName = ssOppAt(m, r);
     L.push('');
     L.push(r.toUpperCase() + ' — ' + (pl.me || '?') + '  vs  ' + (oppName || '?'));
+    if ((pl.champ || '').trim()) L.push('  Champion prévu : ' + pl.champ.trim());
     if ((pl.matchup || '').trim()) L.push('  Matchup : ' + pl.matchup.trim());
     if ((pl.notes || '').trim()) { L.push('  Consignes :'); pl.notes.split('\n').forEach(function (l) { if (l.trim()) L.push('    - ' + l.trim()); }); }
     // Données live de la base compét — toujours à jour au moment de l'export,
@@ -11003,6 +11209,7 @@ function ssSheetPdf(id, role) {
   var block = function (r) {
     var pl = p.players[r] || {}, oppName = ssOppAt(m, r);
     sect(r + '  —  ' + (pl.me || '?') + '   vs   ' + (oppName || '?'));
+    if ((pl.champ || '').trim()) body('Champion prévu : ' + pl.champ.trim(), 2);
     if ((pl.matchup || '').trim()) body('Matchup : ' + pl.matchup.trim(), 2);
     if ((pl.notes || '').trim()) { pl.notes.split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); }
     if (!(pl.matchup || '').trim() && !(pl.notes || '').trim()) body('(rien de renseigné)', 2);
@@ -24550,54 +24757,6 @@ function tcRemplirDatalist(){
   var noms = Object.keys(T.champions).map(function(id){ return T.champions[id].nom || id; })
              .sort(function(a,b){ return a.localeCompare(b,'fr'); });
   dl.innerHTML = noms.map(function(n){ return '<option value="' + anEsc(n) + '"></option>'; }).join('');
-}
-
-function ssTesterBuild(mid, role){
-  var m = ssData().matches.find(function (x) { return x.id === mid; });
-  if (!m) return;
-  var pl = (ssPlanEnsure(m).players || {})[role] || {};
-  tcCharger().then(function(ok){
-    if (!ok){
-      if (typeof showToast === 'function') showToast('Moteur du calculateur indisponible.', 'error');
-      return;
-    }
-    tcRemplirDatalist();
-    var manques = [];
-
-    var mien = tcTrouverChampion(pl.champ);
-    /* Le moteur couvre maintenant le ROSTER COMPLET : un nom qui ne tombe pas est donc
-       une graphie, plus une lacune de couverture. Le compte est LU dans le moteur et
-       non écrit ici — il a déjà changé une fois (90 → 173), et un nombre en dur dans
-       un message est exactement ce qu'on oublie de mettre à jour. */
-    var nbChamps = Object.keys((window.vsTheorycraft || {}).champions || {}).length;
-    if (pl.champ && !mien) manques.push('« ' + pl.champ + ' » ne correspond à aucun des ' +
-                                        nbChamps + ' champions du moteur');
-    else if (!pl.champ) manques.push('notre champion n\'est pas renseigné');
-
-    /* Cible : le champion le plus joué / au meilleur ratio de l'adversaire, tel que
-       la base compét le rapporte. C'est une PROBABILITÉ, pas une certitude — le
-       message le dit, et le coach peut changer la cible d'un clic. */
-    var b = (typeof ssMatchupBrief === 'function') ? ssMatchupBrief(mid, role) : null;
-    var attendu = b && (b.ban || (b.top || [])[0]);
-    var cible = attendu ? tcTrouverChampion(attendu.name) : null;
-    if (attendu && !cible) manques.push('« ' + attendu.name + ' », le pick le plus probable, est hors du panel');
-    else if (!attendu) manques.push('aucune statistique adverse chargée pour ce poste');
-
-    if (mien) tcEtat.champion = mien;
-    if (cible) tcEtat.cible = cible;
-    switchPanel('theorycraft');
-    setTimeout(function(){
-      if (mien) document.getElementById('tc-champion').value = mien;
-      if (cible) document.getElementById('tc-cible').value = cible;
-      tcRendre();
-      if (typeof showToast === 'function'){
-        var T = window.vsTheorycraft;
-        if (mien && cible) showToast('Matchup chargé : ' + T.champions[mien].nom + ' contre ' +
-          T.champions[cible].nom + ' (pick le plus probable).', 'success');
-        else showToast('Calculateur ouvert. Non repris : ' + manques.join(' ; ') + '.', 'warning');
-      }
-    }, 120);
-  });
 }
 
 /* ── Builds enregistrés ──────────────────────────────────────────────────────
