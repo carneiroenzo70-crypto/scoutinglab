@@ -1537,6 +1537,33 @@ body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,
 /* (Le motif d'étoiles qui traversait les cartes se corrige dans la règle « relief 3D »,
    plus bas : elle porte un ID et un !important, et gagnait contre toute règle posée ici.
    Une déclaration de plus à cet endroit n'aurait servi qu'à faire croire au correctif.) */
+/* ── Une seule convention pour les barres d'onglets ──
+   Le produit en tenait DEUX, opposées : Analytics, CRM, Top 30 et Builds posaient la
+   barre AU-DESSUS du titre, la famille Scouting la posait DESSOUS. À la navigation, le
+   titre sautait de place d'une section à l'autre — c'est ce qui fait qu'un produit a
+   l'air assemblé par plusieurs mains.
+
+   On retient « au-dessus » : la barre est une navigation, elle appartient au haut du
+   panneau, et le titre décrit alors l'onglet sélectionné.
+
+   Posé en `order` plutôt qu'en déplaçant le balisage : dans les quatre panneaux la barre
+   et l'en-tête sont DÉJÀ frères, une règle se relit mieux qu'un bloc déplacé au milieu
+   d'un fichier d'1,5 Mo, et ça se défait en une ligne si la convention change. */
+#panel-scout > .vsd:first-of-type{ display:flex; flex-direction:column; }
+#panel-scout > .vsd > .sc-tabbar,
+#panel-graphs > .vsd-wrap > .sc-tabbar,
+#panel-map > .vsd-wrap > .sc-tabbar,
+#panel-history > .vsd-wrap > .sc-tabbar{ order:-1; }
+/* Mesuré : la barre tombait à 57 px du titre ici, contre 41 px partout ailleurs — l'œil
+   voit le titre sauter en changeant de section. L'écart vient de la marge basse de la
+   barre (16 px), qui s'ajoute au gap du wrapper ; ailleurs elle vaut 0.
+   ⚠️ `!important` est nécessaire, et ce n'est pas du confort : ces barres portent leur
+   marge en style INLINE, qui bat toute règle de feuille. Sans lui, la déclaration est
+   parfaitement ignorée — et silencieusement. */
+#panel-graphs > .vsd-wrap > .sc-tabbar,
+#panel-map > .vsd-wrap > .sc-tabbar,
+#panel-history > .vsd-wrap > .sc-tabbar{ margin-bottom:0 !important; }
+
 /* ── Démarrage guidé (Seasons) ──
    Volontairement sobre : c'est un guide, pas une réclame. Pas de fond coloré, pas
    d'illustration — il doit s'effacer de l'attention dès qu'il est lu, et il disparaît
@@ -6053,9 +6080,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <b id="tc-hyp-pv-v" class="tc-num">100 %</b>
               </label>
               <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
-                Certaines runes et amplifications dépendent du déroulé, pas du build. Le
-                moteur ne les invente pas : à zéro il les refuse en le disant, et ne les
-                chiffre qu'une fois l'hypothèse posée.</p>
+                Certaines runes dépendent du déroulé, pas du build. À zéro, le moteur
+                refuse de les chiffrer plutôt que de les inventer.</p>
             </div>
           </aside>
 
@@ -6084,10 +6110,9 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div class="page-head" style="min-width:0">
             <div class="eyebrow">Theorycraft</div>
             <h2 class="h2">Quel build contre cette équipe</h2>
-            <p class="muted" style="max-width:74ch">Cherchez votre champion, saisissez la
-              composition adverse : le moteur essaie les combinaisons sur le patch courant
-              et vous rend les meilleures qu'il ait trouvées — avec, pour chaque objet, ce
-              qu'il apporte <b>contre ces cinq-là</b>.
+            <p class="muted" style="max-width:74ch">Votre champion, la composition adverse :
+              le moteur rend les meilleures combinaisons du patch, et ce que chaque objet
+              apporte <b>contre ces cinq-là</b>.
               <a href="#" onclick="switchPanel('theorycraft');return false" style="color:var(--vs-emerald-400);text-decoration:none;white-space:nowrap">Calculateur manuel →</a></p>
           </div>
           <div class="tc-patch" id="bo-patch">Chargement du moteur…</div>
@@ -6126,9 +6151,8 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <span class="tc-compte" id="bo-part">part physique déduite : —</span></div>
             <div class="bo-compo" id="bo-compo"></div>
             <p class="faint" style="font-size:11.5px;margin:0;line-height:1.45">
-              La part physique n'est pas un curseur à régler : elle est déduite du type de
-              dégâts des sorts de ces cinq champions. C'est elle qui décide si l'armure ou
-              la résistance magique vaut quelque chose dans ce match.</p>
+              Déduite du type de dégâts des sorts de ces cinq champions, jamais réglée à la
+              main. C'est elle qui décide si l'armure ou la RM sert dans ce match.</p>
             <!-- Deux rangées de boutons ont disparu d'ici, et c'est le point important.
                  On demandait « comment se passe le combat » — quelle part de vos attaques
                  de base portent vraiment. Personne ne peut répondre à ça par un chiffre,
@@ -6148,11 +6172,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
                 <button type="button" data-o="equilibre" onclick="boSetObjectif('equilibre')">Les deux</button>
               </div>
               <p class="faint" style="font-size:11.5px;margin:6px 0 0;line-height:1.45">
-                « Les deux » prend la moyenne géométrique des deux progressions. Sur un
-                porteur de dégâts elle penche lourdement vers la défense — Caitlyn en
-                ressort avec Warmog et Jak'Sho — parce qu'un premier objet défensif double
-                presque les PV effectifs là où un quatrième objet offensif n'ajoute que
-                quelques pourcents. C'est pourquoi le défaut est « faire des dégâts ».</p>
+                Moyenne géométrique des deux progressions. Sur un porteur de dégâts, elle
+                penche lourdement vers la défense — Caitlyn en ressort avec Warmog, un
+                premier objet défensif doublant presque les PV effectifs. D'où le défaut :
+                « faire des dégâts ».</p>
             </details>
           </div>
         </div>
@@ -6175,12 +6198,10 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="page-head">
           <div class="eyebrow">Theorycraft</div>
           <h2 class="h2">Comment le calculateur obtient ses chiffres</h2>
-          <p class="muted" style="max-width:70ch">Un coach qui hésite entre deux objets n'a
-            d'habitude que des sites où les valeurs sont recopiées à la main, et vieillissent
-            d'un patch à l'autre. Le calculateur prend le problème par l'autre bout : il lit
-            les formules du fichier de jeu et les résout sur votre champion, votre niveau,
-            votre build et votre cible. Quand une formule dépend d'une chose qu'il ne peut pas
-            savoir, il ne l'estime pas — il vous la demande.</p>
+          <p class="muted" style="max-width:70ch">Les formules sont lues dans les fichiers du
+            jeu, puis résolues sur votre champion, votre niveau, votre build et votre cible —
+            au lieu d'être recopiées à la main et de vieillir d'un patch à l'autre. Ce que le
+            moteur ne peut pas savoir, il le demande : il ne l'estime jamais.</p>
         </div>
 
         <div class="mo-chiffres" id="mo-chiffres">
