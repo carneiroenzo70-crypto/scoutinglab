@@ -1125,14 +1125,57 @@ body:not(.theme-dark) .dl-sc-c{ background:rgba(31,71,64,.05); border-color:rgba
 
 /* ── Roster (refonte charte) : héro d'équipe + cartes de postes ── */
 .rs-toolbar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px; }
+/* Le groupe de gestion est poussé à droite et séparé du reste : c'est l'écart
+   qui dit « ces commandes-là ne sont pas du même ordre », pas une couleur. */
+.rs-tb-grp{ margin-left:auto; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.rs-tb-loin{ margin-left:10px; }
 .rs-iconbtn{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex:none; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, color .15s, background .15s; }
 .rs-iconbtn:hover{ border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
 .rs-iconbtn.danger:hover{ border-color:rgba(255,90,51,.55); color:var(--vs-red-400); }
 body:not(.theme-dark) .rs-iconbtn{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.14); }
 .rs-hero{ display:flex; align-items:center; gap:18px; padding:18px 22px; flex-wrap:wrap; margin-bottom:14px; }
-.rs-hero-kpis{ margin-left:auto; display:flex; gap:10px; flex-wrap:wrap; }
-.rs-hero-kpis .crm-kpi{ min-width:110px; }
-.rs-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(225px,1fr)); gap:12px; align-items:start; }
+/* Trois chiffres qui se lisent ensemble : une bande, pas trois boîtes. Les
+   .crm-kpi gardent leur mise en forme ailleurs (CRM) — on ne la neutralise
+   qu'ici, où elles voisinent le compteur d'équipe. */
+.rs-hero-kpis{ margin-left:auto; display:flex; flex-wrap:wrap; }
+.rs-hero-kpis .crm-kpi{ min-width:118px; background:none !important; border:0 !important;
+  border-left:1px solid var(--vs-forest-600) !important; border-radius:0 !important;
+  box-shadow:none !important; padding:4px 18px !important; }
+body:not(.theme-dark) .rs-hero-kpis .crm-kpi{ border-left-color:rgba(31,71,64,.14) !important; }
+.rs-hero-kpis .crm-kpi:first-child{ border-left:0 !important; }
+/* La mosaïque devient une bande de cinq lignes : mêmes règles que Seasons et
+   que « Stats équipe ». Cinq cartes de hauteurs inégales ne se comparaient pas. */
+.rs-band{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; overflow:hidden; }
+body:not(.theme-dark) .rs-band{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+/* ⚠️ Ces règles sont écrites AVANT `.rs-card` dans la feuille, et à spécificité
+   égale c'est la dernière qui gagne : `.rs-ligne` seul se faisait reposer
+   `flex-direction:column` par `.rs-card` et les lignes s'empilaient. On passe
+   donc par `.rs-band .rs-ligne` — plus spécifique, indépendant de l'ordre, et
+   sans `!important` qui rendrait la suite impossible à ajuster. */
+.rs-band .rs-ligne{ display:flex; flex-direction:row; align-items:center; gap:12px; padding:12px 16px;
+  border:0; border-radius:0; background:none; transform:none; box-shadow:none; transition:background .14s; }
+.rs-band .rs-ligne + .rs-ligne{ border-top:1px solid rgba(255,255,255,.045); }
+body:not(.theme-dark) .rs-band .rs-ligne + .rs-ligne{ border-top-color:rgba(31,71,64,.08); }
+.rs-band .rs-ligne:hover{ background:rgba(255,255,255,.03); }
+body:not(.theme-dark) .rs-band .rs-ligne:hover{ background:rgba(31,71,64,.04); }
+/* Le maillon faible se signale par un rail, pas par un cadre : dans une bande,
+   un cadre redonnerait à cette ligne l'existence séparée d'une carte. */
+.rs-band .rs-ligne.weak{ box-shadow:inset 3px 0 0 var(--rank-gold,#E6B23E); }
+.rs-band .rs-ligne.rs-compet{ box-shadow:inset 3px 0 0 rgba(45,212,167,.5); }
+.rs-band .rs-ligne.vide{ cursor:pointer; color:var(--vs-fg-3); }
+.rs-band .rs-ligne.vide:hover{ color:var(--vs-emerald-300); }
+.rs-ligne-plus{ width:42px; flex:none; text-align:center; font-size:22px; line-height:1; color:var(--vs-fg-3); }
+.rs-ligne-id{ flex:1 1 auto; min-width:120px; }
+.rs-ligne-mes{ flex:none; width:230px; display:flex; align-items:center; gap:5px; flex-wrap:wrap;
+  font-size:11.5px; color:var(--vs-fg-2); }
+.rs-ligne-g{ flex:none; }
+/* Largeur fixe : le badge de provenance (« SoloQ », « Scout »…) n'a pas la même
+   largeur d'une ligne à l'autre, et la colonne de mesures se décalait d'autant. */
+.rs-ligne-a{ flex:none; width:152px; display:flex; align-items:center; justify-content:flex-end; gap:8px; }
+@media (max-width:860px){
+  .rs-band .rs-ligne{ flex-wrap:wrap; }
+  .rs-ligne-mes{ width:auto; flex:1 0 100%; }
+}
 .rs-card{ border:1px solid var(--vs-forest-500); border-radius:14px; background:rgba(9,37,32,.45); padding:14px 16px; display:flex; flex-direction:column; gap:11px; min-width:0; transition:border-color .15s, transform .15s var(--ease-out), box-shadow .15s; }
 .rs-card:hover{ border-color:var(--vs-emerald-500); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.25); }
 .rs-card.weak{ border-color:rgba(230,178,62,.55); }
@@ -7408,14 +7451,19 @@ async function renderRoster() {
        +  '</div>';
   // Actions secondaires (gestion du roster) : icône seule + tooltip — la barre
   // reste lisible, l'action principale (Instantané/Évolution/Comparer) prime.
+  // Ce qu'on consulte : deux vues qu'on ouvre et referme sans conséquence.
+  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px">Évolution</button>';
+  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px">Comparer</button>';
+  // Ce qu'on gère : rare, donc groupé à droite, en icônes.
+  html += '<div class="rs-tb-grp">';
+  html += '<button onclick="rsUiSnapshot()" class="rs-iconbtn" title="Enregistrer un instantané pour le suivi">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + '</button>';
+  html += '<button onclick="recomputeAllScores()" class="rs-iconbtn" title="Recalculer les scores avec le barème actuel">' + _ic('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>') + '</button>';
   html += '<button onclick="rsUiNew()" class="rs-iconbtn" title="Nouveau roster">' + _ic('<path d="M12 5v14M5 12h14"/>') + '</button>';
   html += '<button onclick="rsUiImportTeam()" class="rs-iconbtn" title="Importer une équipe depuis Leaguepedia">' + _ic('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>') + '</button>';
   html += '<button onclick="rsUiRename()" class="rs-iconbtn" title="Renommer ce roster">' + _ic('<path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z"/>') + '</button>';
-  html += '<button onclick="rsUiDelete()" class="rs-iconbtn danger" title="Supprimer ce roster">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + '</button>';
-  html += '<button onclick="rsUiSnapshot()" class="rs-iconbtn" title="Enregistrer un instantané pour le suivi">' + _ic('<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>') + '</button>';
-  html += '<button onclick="rsToggleEvolution()" class="chip' + (_rsShowEvolution ? ' on' : '') + '" style="padding:8px 12px">Évolution</button>';
-  html += '<button onclick="rsToggleCompare()" class="chip' + (_rsCompare.on ? ' on' : '') + '" style="padding:8px 12px">Comparer</button>';
-  html += '<button onclick="recomputeAllScores()" class="rs-iconbtn" style="margin-left:auto" title="Recalculer les scores avec le barème actuel">' + _ic('<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>') + '</button>';
+  // La suppression sort du groupe : elle ne se range pas à côté de « renommer ».
+  html += '<button onclick="rsUiDelete()" class="rs-iconbtn danger rs-tb-loin" title="Supprimer ce roster">' + _ic('<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>') + '</button>';
+  html += '</div>';
   html += '</div>';
 
   box.innerHTML = html + '<div id="rs-body" class="faint" style="font-size:.85rem">Calcul du roster…</div>';
@@ -7439,7 +7487,7 @@ async function renderRoster() {
      Placé après les cartes, il aurait été sous la ligne de flottaison, donc jamais lu. */
   body += vsdHtml(roster);
 
-  body += '<div class="rs-grid">';
+  body += '<div class="rs-band">';
   for (const role of RS_ROLES) {
     body += rsRenderRoleCard(roster, role, roster.slots[role], ts.perRole[role], cands, ts);
   }
@@ -7491,21 +7539,22 @@ function rsAvatarHtml(slot, extraStyle){
   }
   return '<div class="av av-fallback"' + styleAttr + '><span class="av-ini">' + initial + '</span></div>';
 }
+/* Le roster en LIGNES, pas en mosaïque. Cinq cartes de hauteurs inégales se
+   lisaient chacune pour elle-même ; en lignes, le rang, le winrate et le score
+   se comparent d'un poste à l'autre — c'est la seule raison de les voir
+   ensemble. Les classes .rs-card, .av, .nm, .sub sont conservées : toute leur
+   mise en forme interne vaut encore, seule la disposition change. */
 function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   const score = pr && pr.score;
   const isWeak = ts && ts.weakest === role && typeof score === 'number';
 
-  // Poste vide : carte pointillée, tout le bloc est cliquable.
+  // Poste vide : la ligne entière est cliquable.
   if (!slot || !slot.pseudo) {
-    return '<div class="rs-card empty" onclick="rsUiPick(\'' + role + '\')">'
+    return '<div class="rs-card rs-ligne vide" onclick="rsUiPick(\'' + role + '\')">'
       + '<span class="rs-rolechip">' + role + '</span>'
-      /* `--vs-forest-400` n'existe pas : l'échelle s'arrête à 500. Le « + » héritait donc
-         de la couleur du texte et ressortait en blanc vif au lieu du ton discret voulu.
-         `--vs-fg-3` est le gris-vert atténué de la charte — au plus près de l'intention,
-         et défini dans les deux thèmes. */
-      + '<div style="font-size:24px;line-height:1;color:var(--vs-fg-3);margin:6px 0 2px">+</div>'
-      + '<div style="font-weight:700;font-size:13px">Ajouter un titulaire</div>'
-      + '<div class="faint" style="font-size:10.5px">' + (RS_ROLE_FULL[role] || role) + ' · Pseudo esport</div>'
+      + '<span class="rs-ligne-plus">+</span>'
+      + '<div class="rs-ligne-id"><div class="nm" style="font-size:13px;font-weight:700">Ajouter un titulaire</div>'
+      + '<div class="sub">' + (RS_ROLE_FULL[role] || role) + ' · Pseudo esport</div></div>'
       + '</div>';
   }
 
@@ -7516,30 +7565,26 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   // "DIAMOND II" → "Diamond II" (tier capitalisé, division conservée)
   const rkLbl = (pr && pr.rank) ? pr.rank.split(' ').map((w, i) => i === 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : w).join(' ') : '';
   const rk = rkLbl ? crmRankOf({ rankLbl: rkLbl }) : null;
-  // Toute la carte est cliquable → ouvre la fiche du joueur (« on a juste à appuyer dessus »).
-  let h = '<div class="rs-card rs-card-clk' + (isWeak ? ' weak' : '') + (compet ? ' rs-compet' : '') + '" onclick="rsUiPlayerDetail(\'' + role + '\')" title="Voir le détail du joueur">';
-  h += '<div style="display:flex;align-items:center;gap:8px">';
+  // Toute la ligne est cliquable → ouvre la fiche du joueur.
+  let h = '<div class="rs-card rs-ligne rs-card-clk' + (isWeak ? ' weak' : '') + (compet ? ' rs-compet' : '') + '" onclick="rsUiPlayerDetail(\'' + role + '\')" title="Voir le détail du joueur">';
   h += '<span class="rs-rolechip">' + role + '</span>';
-  if (isWeak) h += '<span class="rs-weakchip">Maillon faible</span>';
-  h += '<span style="margin-left:auto">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
-  h += '</div>';
-  h += '<div class="idrow">';
   h += rsAvatarHtml(slot);
-  h += '<div style="min-width:0;flex:1">';
-  h += '<div class="nm">' + anEsc(primaire) + '</div>';
-  // Sous-ligne 1 : identité secondaire selon le mode.
+  h += '<div class="rs-ligne-id">';
+  h += '<div class="nm">' + anEsc(primaire) + (isWeak ? ' <span class="rs-weakchip">Maillon faible</span>' : '') + '</div>';
+  // Sous-ligne : identité secondaire selon le mode.
   //  · Solo Q  → on montre le pseudo Solo Q (démoté) pour garder le lien.
   //  · Compét  → on N'AFFICHE PAS le pseudo Solo Q : seul le pseudo esport ressort.
   //    (si l'esport n'est pas encore saisi, on invite à le renseigner — jamais inventé.)
+  h += '<div class="sub">';
   if (!compet) {
-    h += '<div class="sub">';
     h += '<span class="rs-sqtag">Solo Q</span><span class="faint" style="font-family:var(--font-mono);font-size:.66rem">' + anEsc(slot.pseudo) + (slot.tag ? '#' + anEsc(slot.tag) : '') + '</span>';
-    h += '</div>';
   } else if (!proName) {
-    h += '<div class="sub"><span class="faint" style="font-size:.66rem">Pseudo esport à renseigner</span></div>';
+    h += '<span class="faint" style="font-size:.66rem">Pseudo esport à renseigner</span>';
   }
-  // Sous-ligne 2 : stats selon le mode. Compét = données saisies (jamais inventées).
-  h += '<div class="sub" style="margin-top:3px">';
+  h += '</div></div>';
+  // Colonne de mesures : c'est elle qui se compare d'une ligne à l'autre. Les
+  // données compét sont SAISIES (jamais inventées) ; à défaut, on le dit.
+  h += '<div class="rs-ligne-mes">';
   if (compet) {
     const c = slot.compet || {};
     const has = ['kda','wr','games','kp'].some(k => c[k] != null && c[k] !== '');
@@ -7557,20 +7602,19 @@ function rsRenderRoleCard(roster, role, slot, pr, cands, ts) {
   } else {
     if (rk && rk.tier) h += rankIcon(rk.tier, 'rank-icon-sm') + '<span style="color:' + rk.color + ';font-weight:700">' + anEsc(rk.label) + '</span>';
     else if (pr && pr.source === 'Scout') h += '<span>Fiche scouting</span>';
-    if (pr && pr.wr != null) h += '<span>· ' + pr.wr + '% WR</span>';
+    if (pr && pr.wr != null) h += '<span class="rs-dot">·</span><span>' + pr.wr + '% WR</span>';
   }
-  h += '</div></div></div>';
-  // Une seule action visible : « Changer » (compacte, ne déclenche pas le détail).
-  // Le roster ne fait que présenter l'équipe ; pour tester d'autres joueurs,
-  // c'est l'outil Comparer. (Plus de « Simuler » ni de suggestions ici.)
-  h += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;row-gap:6px">';
-  h += '<button onclick="event.stopPropagation();rsUiPick(\'' + role + '\')" class="btn btn-ghost rs-changebtn">Changer</button>';
+  h += '</div>';
+  h += '<span class="rs-ligne-g">' + rsGauge(typeof score === 'number' ? score : null, 40) + '</span>';
+  // Une seule action visible : « Changer ». Le roster présente l'équipe ; pour
+  // tester d'autres joueurs, c'est l'outil Comparer.
+  h += '<div class="rs-ligne-a">';
   if (pr && pr.source) h += anSourceBadge(pr.source);
+  h += '<button onclick="event.stopPropagation();rsUiPick(\'' + role + '\')" class="btn btn-ghost rs-changebtn">Changer</button>';
   h += '</div>';
   h += '</div>';
   return h;
 }
-
 function rsUiNew() { const n = prompt('Nom du nouveau roster :', 'Nouveau roster'); if (n) { rsCreate(n.trim()); renderRoster(); } }
 function rsUiRename() { const r = rsActive(); if (!r) return; const n = prompt('Renommer le roster :', r.name); if (n) { rsRename(r.id, n.trim()); renderRoster(); } }
 function rsUiDelete() { const r = rsActive(); if (!r) return; if (confirm('Supprimer le roster « ' + r.name + ' » ?')) { rsDelete(r.id); renderRoster(); } }

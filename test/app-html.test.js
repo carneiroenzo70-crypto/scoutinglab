@@ -1305,3 +1305,77 @@ test('les cinq postes de l\'avant-match sont dans une bande, champs discrets', (
   assert.match(app, /\.ss-pl-band \.ss-pl-mu[^\n]*border-color:transparent/,
     'les champs restent transparents tant qu\'on ne les touche pas');
 });
+
+// ── 22. Analytics : ce qui a été mesuré le 29/09/2026 sur la refonte ──
+// Trois de ces assertions portent sur des DÉFAUTS constatés à l'écran, pas sur
+// un goût : une description fausse, un formulaire à la place d'un tableau de
+// bord, une mosaïque là où les chiffres doivent se comparer ligne à ligne.
+
+test('aucune description d\'onglet ne décrit le studio vidéo', () => {
+  /* AN_DESC.scrim racontait « code les actions en direct, dessine sur l'image,
+     monte des playlists » sur un onglet qui affiche un tableau de stats depuis
+     que le chantier vidéo est en pause. Une phrase fausse coûte plus cher
+     qu'une phrase absente. */
+  const debut = app.indexOf('const AN_DESC = {');
+  assert.ok(debut > 0, 'AN_DESC introuvable');
+  const bloc = app.slice(debut, app.indexOf('};', debut));
+  assert.doesNotMatch(bloc, /playlists|dessine sur l'image|matrice/,
+    'une description d\'onglet décrit encore le studio vidéo');
+});
+
+test('les descriptions d\'onglet Analytics tiennent sous 110 caractères', () => {
+  const debut = app.indexOf('const AN_DESC = {');
+  const bloc = app.slice(debut, app.indexOf('};', debut));
+  const trop = [...bloc.matchAll(/'((?:[^'\\]|\\.)*)'/g)]
+    .map(m => m[1])
+    .filter(s => s.length > 110);
+  assert.deepStrictEqual(trop, [],
+    'une description dépasse 110 caractères (convention du 29/09)');
+});
+
+test('le titre d\'Analytics suit l\'onglet, et n\'annonce plus les .rofl', () => {
+  assert.match(app, /const AN_TITRE = \{/, 'AN_TITRE doit exister');
+  assert.match(app, /getElementById\('an-titre'\)/,
+    'anSyncTabs doit réécrire le titre à chaque changement d\'onglet');
+  const debut = app.indexOf('<div id="panel-analytics"');
+  const tete = app.slice(debut, debut + 1600);
+  assert.doesNotMatch(tete, /Replays \.rofl/,
+    'la pastille annonçait une vue qui n\'est plus routée');
+  assert.doesNotMatch(tete, /class="eyebrow">Analytics/,
+    'le surtitre répétait la navigation ET la barre d\'onglets');
+});
+
+test('« Stats équipe » s\'ouvre sur une lecture, pas sur un formulaire', () => {
+  const debut = app.indexOf('async function renderStatsBoard()');
+  assert.ok(debut > 0, 'renderStatsBoard introuvable');
+  const bloc = app.slice(debut, app.indexOf('function stbBaseMesures(', debut));
+  assert.match(bloc, /stbKpisHtml\(/, 'une bande de chiffres ouvre la vue');
+  assert.match(bloc, /stbHeroHtml\(/, 'un bloc dominant selon l\'état la suit');
+  assert.match(bloc, /class="stb-band"/, 'les postes sont une bande, pas des cartes');
+  // La saisie derrière un repli : c'est elle qui faisait 1 400 px de champs vides.
+  const ligne = app.slice(app.indexOf('function stbRow('), app.indexOf('function stbSaveAll('));
+  assert.match(ligne, /<details class="stb-det">/,
+    'les 30 mesures coach doivent rester derrière un repli');
+  assert.match(ligne, /class="stb-cnt/,
+    'un repli fermé doit annoncer combien de mesures il contient');
+});
+
+test('le roster se lit en lignes comparables, pas en mosaïque', () => {
+  assert.doesNotMatch(app, /rs-grid/, 'la mosaïque .rs-grid ne doit pas revenir');
+  const bloc = app.slice(app.indexOf('function rsRenderRoleCard('), app.indexOf('function rsUiNew('));
+  assert.match(bloc, /rs-ligne/, 'chaque poste est une ligne');
+  /* Les colonnes de largeur FIXE sont ce qui rend deux lignes comparables :
+     avec un flex libre, chaque ligne démarrait ses mesures à une abscisse
+     différente selon la longueur du pseudo. */
+  assert.match(app, /\.rs-ligne-mes\{[^}]*width:230px/,
+    'la colonne de mesures doit garder une largeur fixe');
+});
+
+test('l\'avant-match n\'ouvre plus le calculateur retiré de la navigation', () => {
+  assert.doesNotMatch(app, /ssTesterBuild/,
+    'le calculateur Theorycraft est hors navigation : plus aucune porte vers lui');
+  assert.doesNotMatch(app, /Tester au calculateur/, 'le bouton doit avoir disparu');
+  // Le champ « champion prévu » survit, mais il part sur la feuille.
+  assert.match(app, /Champion prévu : /,
+    'le champion prévu doit figurer sur la feuille, sinon le champ n\'alimente rien');
+});
