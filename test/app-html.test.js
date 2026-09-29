@@ -1152,3 +1152,60 @@ test('le planning porte le nom de notre équipe et reste lisible sans adversaire
   assert.match(t, /PLANNING DE LA SEMAINE — Karmine Corp/);
   assert.match(t, /vs Adversaire/, 'un adversaire non renseigné doit rester une ligne lisible');
 });
+
+/* ── 19. Démarrage guidé (Seasons) ───────────────────────────────────────────────
+   Deux invariants, et le second est une consigne explicite d'Enzo :
+   le bandeau doit disparaître une fois les trois étapes faites, mais « + Saison » et
+   « + Split » ne doivent JAMAIS vivre dedans — ils s'utilisent en cours de saison,
+   longtemps après. Un bandeau qui emporterait ces boutons en s'effaçant les rendrait
+   inatteignables, et personne ne le verrait avant le premier split de mi-saison. */
+function demarrageFn() {
+  const debut = app.indexOf('function ssDemarrage(');
+  assert.ok(debut > 0, 'ssDemarrage introuvable dans app.html');
+  const fin = app.indexOf('function ssRenderCalendar(', debut);
+  assert.ok(fin > debut, 'fin de ssDemarrage introuvable');
+  return new Function(app.slice(debut, fin) + '\nreturn ssDemarrage;')();
+}
+const etatSeasons = (equipe, saisons, matchs) => ({
+  myTeam: equipe ? { name: 'Skill Camp' } : {},
+  seasons: saisons ? [{ id: 'sa1', name: 'S26' }] : [],
+  matches: matchs ? [{ id: 'm1' }] : []
+});
+
+test('le démarrage guidé disparaît une fois les trois étapes faites', () => {
+  const f = demarrageFn();
+  assert.strictEqual(f(etatSeasons(true, true, true)), '', 'rien ne doit rester à l\'écran');
+  assert.ok(f(etatSeasons(false, false, false)).length > 0);
+  assert.ok(f(etatSeasons(true, true, false)).length > 0, 'une seule étape manquante suffit à l\'afficher');
+});
+
+test('un seul bouton est proposé, celui de l\'étape courante', () => {
+  const f = demarrageFn();
+  const boutons = h => (h.match(/<button/g) || []).length;
+  assert.strictEqual(boutons(f(etatSeasons(false, false, false))), 1);
+  assert.strictEqual(boutons(f(etatSeasons(true, false, false))), 1);
+  assert.strictEqual(boutons(f(etatSeasons(true, true, false))), 1);
+  // Proposer « + Match » avant qu'une saison existe mène à une impasse.
+  assert.doesNotMatch(f(etatSeasons(false, false, false)), /ssOpenAddMatch/);
+  assert.doesNotMatch(f(etatSeasons(true, false, false)), /ssOpenAddMatch/);
+  assert.match(f(etatSeasons(true, true, false)), /ssOpenAddMatch/);
+});
+
+test('les étapes franchies sont marquées faites, dans l\'ordre', () => {
+  const f = demarrageFn();
+  const h = f(etatSeasons(true, false, false));
+  assert.match(h, /ss-dem-e fait[\s\S]*Définis ton équipe/, 'l\'équipe définie doit être cochée');
+  assert.match(h, /ss-dem-e courante[\s\S]*Crée ta saison/);
+});
+
+test('« + Saison » et « + Split » restent dans la barre d\'outils, jamais dans le bandeau', () => {
+  const f = demarrageFn();
+  /* Le bandeau peut proposer « + Saison » comme étape — c'est son rôle — mais il
+     disparaît. La barre d'outils, elle, doit porter les deux en permanence. */
+  assert.strictEqual(f(etatSeasons(true, true, true)), '');
+  const debut = app.indexOf('var toolbar = ');
+  assert.ok(debut > 0, 'barre d\'outils introuvable');
+  const barre = app.slice(debut, app.indexOf('var matches =', debut));
+  assert.match(barre, /ssNewSeason\(\)/, '« + Saison » doit vivre dans la barre d\'outils');
+  assert.match(barre, /ssAddSplit\(\)/, '« + Split » doit vivre dans la barre d\'outils');
+});

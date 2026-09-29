@@ -1537,6 +1537,34 @@ body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,
 /* (Le motif d'étoiles qui traversait les cartes se corrige dans la règle « relief 3D »,
    plus bas : elle porte un ID et un !important, et gagnait contre toute règle posée ici.
    Une déclaration de plus à cet endroit n'aurait servi qu'à faire croire au correctif.) */
+/* ── Démarrage guidé (Seasons) ──
+   Volontairement sobre : c'est un guide, pas une réclame. Pas de fond coloré, pas
+   d'illustration — il doit s'effacer de l'attention dès qu'il est lu, et il disparaît
+   tout court une fois les trois étapes faites. */
+.ss-dem{ border:1px solid var(--vs-forest-500); border-radius:14px; background:#0B2D28;
+  padding:14px 16px; margin-bottom:16px; }
+body:not(.theme-dark) .ss-dem{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.14); }
+.ss-dem-h{ font-size:10px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--vs-emerald-300); margin-bottom:10px; }
+.ss-dem-l{ display:flex; flex-direction:column; gap:2px; }
+.ss-dem-e{ display:flex; align-items:center; gap:11px; padding:7px 0; }
+.ss-dem-e + .ss-dem-e{ border-top:1px solid rgba(255,255,255,.04); }
+body:not(.theme-dark) .ss-dem-e + .ss-dem-e{ border-top-color:rgba(31,71,64,.08); }
+/* La pastille porte l'état : numéro à faire, coche une fois fait. */
+.ss-dem-n{ flex:none; width:21px; height:21px; border-radius:50%; display:flex;
+  align-items:center; justify-content:center; font-size:11px; font-weight:700;
+  border:1px solid var(--vs-forest-500); color:var(--vs-fg-3); }
+.ss-dem-e.courante .ss-dem-n{ border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.ss-dem-e.fait .ss-dem-n{ border-color:transparent; background:var(--vs-emerald-500); color:#04211C; }
+.ss-dem-tx{ min-width:0; flex:1; }
+.ss-dem-t{ font-size:13px; font-weight:600; color:var(--vs-fg-1); }
+.ss-dem-e.fait .ss-dem-t{ color:var(--vs-fg-3); text-decoration:line-through; text-decoration-thickness:1px; }
+.ss-dem-p{ font-size:11.5px; color:var(--vs-fg-3); line-height:1.45; }
+.ss-dem-e.fait .ss-dem-p{ display:none; }
+@media (max-width:560px){
+  .ss-dem-e{ flex-wrap:wrap; }
+  .ss-dem-e .btn{ margin-left:32px; }
+}
 /* Badge résultat sur la carte */
 .ss-res{ margin-top:2px; font-family:var(--font-mono); font-weight:800; font-size:11.5px; padding:2px 10px; border-radius:999px; }
 .ss-res.w{ color:#04211C; background:var(--vs-emerald-400); }
@@ -8008,6 +8036,48 @@ function renderSeasons() {
   if (window._ssOpen) { ssRenderMatchDetail(root, window._ssOpen); return; }
   ssRenderCalendar(root);
 }
+/* ── DÉMARRAGE GUIDÉ ─────────────────────────────────────────────────────────────
+   Une structure qui ouvre le produit trouve tous les panneaux vides. Chacun a bien son
+   bouton, mais aucun ne dit par où COMMENCER — alors que définir l'équipe conditionne
+   le roster, les conseils de draft et les feuilles de route : le staff qui saute cette
+   étape voit un outil qui ne parle que de l'adversaire, et croit que c'est tout ce
+   qu'il sait faire.
+
+   ⚠️ Le bandeau disparaît, PAS les commandes. « + Saison » et « + Split » vivent dans
+   la barre d'outils et restent disponibles en permanence — un split s'ajoute en cours
+   de saison, longtemps après que ces trois étapes sont faites. Ne jamais déplacer ces
+   boutons ici : ils deviendraient inatteignables le jour où le bandeau s'efface.
+
+   Un seul bouton à la fois, celui de l'étape courante : proposer « + Match » avant
+   qu'une saison existe mène à une impasse (ssOpenAddMatch a besoin d'une saison). */
+function ssDemarrage(d) {
+  var etapes = [
+    { fait: !!(d.myTeam && d.myTeam.name), t: 'Définis ton équipe',
+      p: 'Elle alimente le roster, les conseils de draft et les feuilles de route.',
+      b: 'Choisir mon équipe', a: 'ssSetMyTeam()' },
+    { fait: d.seasons.length > 0, t: 'Crée ta saison',
+      p: 'Tu pourras y ajouter des splits à tout moment, ensuite.',
+      b: '+ Saison', a: 'ssNewSeason()' },
+    { fait: d.matches.length > 0, t: 'Ajoute tes matchs',
+      p: 'Chaque match ouvre sa préparation, sa draft live et sa feuille de route.',
+      b: '+ Ajouter un match', a: 'ssOpenAddMatch()' }
+  ];
+  if (etapes.every(function (e) { return e.fait; })) return '';
+  var courante = -1;
+  etapes.forEach(function (e, i) { if (courante < 0 && !e.fait) courante = i; });
+  return '<div class="ss-dem">'
+    + '<div class="ss-dem-h">Pour démarrer</div>'
+    + '<div class="ss-dem-l">' + etapes.map(function (e, i) {
+        return '<div class="ss-dem-e' + (e.fait ? ' fait' : (i === courante ? ' courante' : '')) + '">'
+          + '<span class="ss-dem-n">' + (e.fait
+              ? '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+              : (i + 1)) + '</span>'
+          + '<div class="ss-dem-tx"><div class="ss-dem-t">' + e.t + '</div>'
+          + '<div class="ss-dem-p">' + e.p + '</div></div>'
+          + (i === courante ? '<button class="btn btn-cta btn-xs" onclick="' + e.a + '">' + e.b + '</button>' : '')
+          + '</div>';
+      }).join('') + '</div></div>';
+}
 function ssRenderCalendar(root) {
   var d = ssData();
   var team = (d.myTeam && d.myTeam.name) ? d.myTeam : null;
@@ -8017,7 +8087,10 @@ function ssRenderCalendar(root) {
      relancerait le chargement, qui re-rendrait — la boucle qui avait gelé la draft. */
   var canalBtn = '<button class="btn btn-ghost btn-sm" id="ss-canal-btn" onclick="ssCanalOuvrir()">Canal d\'équipe</button>';
   var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Chaque match ouvre sa préparation : roster adverse, pools de champions, draft live.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + canalBtn + '</div></div>';
-  if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; ssCanalCharger(); return; }
+  /* Sans saison, le démarrage guidé REMPLACE la carte « Aucune saison » : les deux
+     disaient la même chose, mais le bandeau montre aussi les deux étapes suivantes —
+     le staff sait où il va au lieu de découvrir le parcours un écran à la fois. */
+  if (!d.seasons.length) { root.innerHTML = head + ssDemarrage(d); ssCanalCharger(); return; }
   var season = ssActiveSeason(d);
   var seasonOpts = d.seasons.map(function (s) { return '<option value="' + s.id + '"' + (s.id === season.id ? ' selected' : '') + '>' + anEsc(s.name) + '</option>'; }).join('');
   var toolbar = '<div class="ss-toolbar">'
@@ -8041,7 +8114,7 @@ function ssRenderCalendar(root) {
     if (upcoming.length) body += secT('À venir', upcoming.length) + '<div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
     if (past.length) body += secT('Passés', past.length, upcoming.length > 0) + '<div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
   }
-  root.innerHTML = head + toolbar + kpis + body;
+  root.innerHTML = head + ssDemarrage(d) + toolbar + kpis + body;
   ssCanalCharger();
   // Résultats réels des matchs passés — récupérés en tâche de fond (une fois).
   past.forEach(function (m) { if (!m.result) ssEnsureResult(m.id); });
