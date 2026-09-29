@@ -1061,3 +1061,94 @@ test('sans la garde, le bloc boucle bel et bien', async () => {
     'sans la garde, les rendus ne s\'arrêtent que sur la borne du test — en production, ' +
     'rien ne les arrête.');
 });
+
+/* ── 18. Planning de la semaine ─────────────────────────────────────────────────────
+   Ce que le staff attend le lundi matin. Trois pièges, tous silencieux :
+   la semaine mal bornée (un match du dimanche soir tombe dehors), un message VIDE quand
+   la semaine est creuse (le staff croit l'outil cassé), et des matchs sortis dans le
+   désordre parce que le calendrier n'est trié nulle part en amont. */
+function planningFns(matches, myTeam) {
+  const debut = app.indexOf('function ssLundiDe(');
+  assert.ok(debut > 0, 'ssLundiDe introuvable dans app.html');
+  const fin = app.indexOf('function ssPlanningOuvrir(', debut);
+  assert.ok(fin > debut, 'fin du bloc planning introuvable');
+  const p2 = n => String(n).padStart(2, '0');
+  return new Function('ssData', 'ssHM',
+    app.slice(debut, fin) + '\nreturn { texte: ssPlanningSemaineTexte, lundi: ssLundiDe };')(
+    () => ({ myTeam: myTeam || { name: 'Skill Camp' }, matches: matches || [] }),
+    d => p2(d.getHours()) + ':' + p2(d.getMinutes()));
+}
+// Un mercredi, pour que « le lundi de la semaine » ait quelque chose à calculer.
+const MERCREDI = new Date(2026, 8, 30, 12, 0, 0);
+const jour = (n, h) => {
+  const d = new Date(2026, 8, 28, h, 0, 0); // lundi 28/09/2026
+  d.setDate(28 + n);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' +
+         String(d.getDate()).padStart(2, '0') + 'T' + String(h).padStart(2, '0') + ':00';
+};
+
+test('la semaine va du lundi au dimanche, quel que soit le jour où on la demande', () => {
+  const { lundi } = planningFns([]);
+  for (let n = 0; n < 7; n++) {
+    const l = lundi(new Date(2026, 8, 28 + n, 15, 0, 0));
+    assert.strictEqual(l.getDate(), 28, 'jour +' + n + ' doit retomber sur le lundi 28');
+    assert.strictEqual(l.getHours(), 0, 'la borne doit partir de minuit');
+  }
+  // Le lundi suivant ouvre bien une nouvelle semaine.
+  assert.strictEqual(lundi(new Date(2026, 9, 5, 9, 0, 0)).getDate(), 5);
+});
+
+test('le dimanche soir est DANS la semaine, le lundi suivant n\'y est pas', () => {
+  const { texte } = planningFns([
+    { id: 'a', date: jour(6, 23), bo: 1, competition: 'LFL', opp: { name: 'DimancheSoir' } },
+    { id: 'b', date: jour(7, 9), bo: 1, competition: 'LFL', opp: { name: 'LundiSuivant' } }
+  ]);
+  const t = texte(MERCREDI);
+  assert.match(t, /DimancheSoir/);
+  assert.doesNotMatch(t, /LundiSuivant/, 'le lundi suivant appartient à la semaine d\'après');
+});
+
+test('les matchs sortent dans l\'ordre du temps, groupés par jour', () => {
+  // Fournis en désordre : rien ne trie le calendrier en amont.
+  const { texte } = planningFns([
+    { id: 'c', date: jour(5, 15), bo: 1, competition: 'LFL', opp: { name: 'Vitality' } },
+    { id: 'b', date: jour(2, 21), bo: 1, competition: 'Coupe', opp: { name: 'BDS' } },
+    { id: 'a', date: jour(2, 18), bo: 3, competition: 'LFL', opp: { name: 'Karmine Corp' } }
+  ]);
+  const t = texte(MERCREDI);
+  assert.ok(t.indexOf('Karmine Corp') < t.indexOf('BDS'), 'même jour : 18h avant 21h');
+  assert.ok(t.indexOf('BDS') < t.indexOf('Vitality'), 'mercredi avant samedi');
+  // Un jour qui porte deux matchs n'est titré qu'une fois.
+  assert.strictEqual((t.match(/Mercredi 30 septembre/g) || []).length, 1);
+  assert.match(t, /18:00\s+vs Karmine Corp\s+·\s+LFL · BO3/);
+});
+
+test('une semaine creuse annonce le prochain match plutôt qu\'un message vide', () => {
+  const { texte } = planningFns([{ id: 'x', date: jour(20, 18), bo: 3, competition: 'LFL', opp: { name: 'GentleMates' } }]);
+  const t = texte(MERCREDI);
+  assert.match(t, /Aucun match cette semaine/);
+  assert.match(t, /Prochain match :.*GentleMates/);
+});
+
+test('un calendrier vide ne promet aucun « prochain match »', () => {
+  const t = planningFns([]).texte(MERCREDI);
+  assert.match(t, /Aucun match cette semaine/);
+  assert.doesNotMatch(t, /Prochain match/, 'annoncer un match inexistant serait pire que rien');
+});
+
+test('une date illisible est ignorée, elle ne casse pas le planning', () => {
+  const { texte } = planningFns([
+    { id: 'k', date: 'pas-une-date', opp: { name: 'Fantome' } },
+    { id: 'a', date: jour(2, 18), bo: 3, competition: 'LFL', opp: { name: 'Karmine Corp' } }
+  ]);
+  const t = texte(MERCREDI);
+  assert.match(t, /Karmine Corp/);
+  assert.doesNotMatch(t, /Fantome|Invalid/);
+});
+
+test('le planning porte le nom de notre équipe et reste lisible sans adversaire nommé', () => {
+  const { texte } = planningFns([{ id: 'a', date: jour(2, 18), bo: 1, opp: {} }], { name: 'Karmine Corp' });
+  const t = texte(MERCREDI);
+  assert.match(t, /PLANNING DE LA SEMAINE — Karmine Corp/);
+  assert.match(t, /vs Adversaire/, 'un adversaire non renseigné doit rester une ligne lisible');
+});

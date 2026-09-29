@@ -1140,6 +1140,13 @@ body:not(.theme-dark) .rs-f input{ background:rgba(255,255,255,.6); border-color
 .rs-f2{ display:flex; gap:10px; }
 .rs-f2 .rs-f{ flex:1; }
 .rs-modal-note{ font-size:10.5px; color:var(--vs-fg-3); line-height:1.4; }
+/* Aperçu d'un message avant publication : police à pas fixe, parce que le texte est
+   aligné à l'espace et que c'est exactement ce que Discord affichera. */
+.ss-apercu{ margin:0; max-height:46vh; overflow:auto; padding:12px 14px; border-radius:10px;
+  border:1px solid var(--vs-forest-500); background:rgba(0,0,0,.22); color:var(--vs-fg-2);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12px; line-height:1.55;
+  white-space:pre-wrap; word-break:break-word; }
+body:not(.theme-dark) .ss-apercu{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.16); }
 .rs-modal-a{ display:flex; justify-content:flex-end; gap:8px; margin-top:4px; }
 /* Carte cliquable dans le roster → ouvre la fiche joueur */
 /* Carte roster cliquable → ouvre la fiche ; le bouton Changer stoppe la propagation. */
@@ -1527,12 +1534,9 @@ body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,
    sans ça, la police plus petite du dernier bloc suffirait à le désaligner encore. */
 .ss-kpi{ display:flex; flex-direction:column; }
 .ss-kpi .v{ margin-top:auto; min-height:26px; display:flex; align-items:center; }
-/* Le motif d'étoiles de la page traversait les cartes : sur fond sombre il passait au
-   milieu des noms d'équipes et des chiffres. Une base opaque le bloque sans toucher aux
-   dégradés posés par-dessus, qui font tout le relief. Le mode clair garde son verre
-   dépoli (règle « relief 3D ») : là, le motif diffusé par le flou ne gêne pas. */
-body.theme-dark .ss-card,
-body.theme-dark .ss-kpi{ background-color:#0A2620; }
+/* (Le motif d'étoiles qui traversait les cartes se corrige dans la règle « relief 3D »,
+   plus bas : elle porte un ID et un !important, et gagnait contre toute règle posée ici.
+   Une déclaration de plus à cet endroit n'aurait servi qu'à faire croire au correctif.) */
 /* Badge résultat sur la carte */
 .ss-res{ margin-top:2px; font-family:var(--font-mono); font-weight:800; font-size:11.5px; padding:2px 10px; border-radius:999px; }
 .ss-res.w{ color:#04211C; background:var(--vs-emerald-400); }
@@ -3722,13 +3726,20 @@ body.theme-dark #panel-seasons .ss-kpi,
 body.theme-dark #panel-scout .dim-header,
 body.theme-dark #panel-scout .dim-body {
   position:relative;
+  /* ⚠️ La COUCHE DU BAS est opaque, et doit le rester.
+     Elle valait rgba(6,30,26,.10) : à 10 %, le motif d'étoiles du fond de page
+     traversait la carte et passait EN PLEIN MILIEU des noms d'équipes et des chiffres.
+     #0B2D28 est exactement la couleur que ce voile donnait une fois fondu sur le fond
+     (rgb(11,47,42)) — le rendu ne change pas, le motif ne traverse plus.
+     Un correctif posé plus bas dans la feuille ne suffit pas : ce sélecteur porte un ID
+     ET un !important, il gagne. C'est ICI qu'il faut corriger.
+     Le backdrop-filter est parti avec : derrière une couche opaque il ne floute plus
+     rien, et il coûtait un calcul de composition par carte à chaque défilement. */
   background:
     radial-gradient(420px 220px at 90% -10%, rgba(45,212,167,.13), transparent 70%),
     linear-gradient(150deg, rgba(255,255,255,.022), rgba(255,255,255,.006) 42%, rgba(7,32,28,.12)),
-    rgba(6,30,26,.10) !important;
+    #0B2D28 !important;
   border:1px solid rgba(255,255,255,.025);
-  -webkit-backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
-          backdrop-filter:blur(3px) saturate(155%) brightness(1.04);
   box-shadow:
     inset 1px 1px 0 rgba(255,255,255,.025),
     inset 0 1px 1px rgba(255,255,255,.018),
@@ -7269,7 +7280,7 @@ function rsUiImportTeam() {
     + '<label class="rs-f"><span>Rechercher l\'équipe</span><input id="ssm-opp" placeholder="Nom de l\'équipe…" autocomplete="off" oninput="ssOppSearch(this.value)"></label>'
     + '<div id="ssm-oppres" class="ss-oppres"></div>'
     + '<div id="ssm-oppsel" class="faint" style="font-size:12px">Aucune équipe sélectionnée.</div>'
-    + '<div class="rs-modal-note">Récupère le nom compétitif, le poste et les vraies stats de chaque titulaire. Le compte Solo Q reste à saisir — Leaguepedia ne le publie pas, on ne l\'invente pas.</div>'
+    + '<div class="rs-modal-note">Récupère nom compétitif, poste et stats réelles. Le compte Solo Q reste à saisir : Leaguepedia ne le publie pas.</div>'
     + '<div class="rs-modal-a"><button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button><button class="btn btn-cta btn-sm" onclick="rsSaveImportTeam()">Importer</button></div></div>';
   ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
   document.body.appendChild(ov);
@@ -7746,7 +7757,7 @@ async function renderStatsBoard() {
   if (!roster) { box.innerHTML = ''; return; }
   const list = rsAll();
   const _ic = (p) => '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>';
-  let html = '<p class="muted" style="margin:0 0 14px;font-size:.85rem">Tableau de performance de l\'équipe — stats de base transférées automatiquement (Solo Q) + stats avancées saisies par le coach, propres à ta structure et non issues de l\'API.</p>';
+  let html = '<p class="muted" style="margin:0 0 14px;font-size:.85rem">Stats Solo Q reprises automatiquement, stats avancées saisies par le coach. Propres à ta structure.</p>';
   html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px">';
   html += '<div class="ctrl select" style="height:40px;width:auto;min-width:170px"><select onchange="rsSetActive(+this.value);renderStatsBoard()">';
   list.forEach(r => { html += '<option value="' + r.id + '"' + (r.id === roster.id ? ' selected' : '') + '>' + anEsc(r.name) + '</option>'; });
@@ -7994,7 +8005,7 @@ function ssRenderCalendar(root) {
      ssCanalMajBouton(), SANS re-rendu de la page : re-rendre au retour du chargement
      relancerait le chargement, qui re-rendrait — la boucle qui avait gelé la draft. */
   var canalBtn = '<button class="btn btn-ghost btn-sm" id="ss-canal-btn" onclick="ssCanalOuvrir()">Canal d\'équipe</button>';
-  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Tes saisons, tes matchs passés et à venir. Chaque match ouvre sa préparation : roster adverse et pools de champions, draft live chronométrée, historique des drafts.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + canalBtn + '</div></div>';
+  var head = '<div class="ss-head"><div><div class="eyebrow">Seasons</div><h2 class="h2">Calendrier compétitif</h2><p class="muted" style="font-size:.85rem">Chaque match ouvre sa préparation : roster adverse, pools de champions, draft live.</p></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' + teamBtn + canalBtn + '</div></div>';
   if (!d.seasons.length) { root.innerHTML = head + '<div class="card" style="padding:48px 20px;text-align:center"><div class="h3" style="margin-bottom:8px">Aucune saison</div><div class="muted" style="margin-bottom:16px">Crée ta première saison pour démarrer ton calendrier.</div><button class="btn btn-cta" onclick="ssNewSeason()">+ Nouvelle saison</button></div>'; ssCanalCharger(); return; }
   var season = ssActiveSeason(d);
   var seasonOpts = d.seasons.map(function (s) { return '<option value="' + s.id + '"' + (s.id === season.id ? ' selected' : '') + '>' + anEsc(s.name) + '</option>'; }).join('');
@@ -8002,7 +8013,8 @@ function ssRenderCalendar(root) {
     + '<div class="ctrl select" style="height:38px;width:auto;min-width:160px"><select onchange="ssSetSeason(this.value)">' + seasonOpts + '</select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>'
     + '<button class="btn btn-ghost btn-sm" onclick="ssNewSeason()">+ Saison</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="ssAddSplit()">+ Split</button>'
-    + '<button class="btn btn-cta btn-sm" style="margin-left:auto" onclick="ssOpenAddMatch()">+ Ajouter un match</button>'
+    + '<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="ssPlanningOuvrir()">Planning de la semaine</button>'
+    + '<button class="btn btn-cta btn-sm" onclick="ssOpenAddMatch()">+ Ajouter un match</button>'
     + '</div>';
   var matches = d.matches.filter(function (m) { return m.seasonId === season.id; }).sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); });
   // Comparaison en heure LOCALE : les dates saisies sont des datetime-local, un
@@ -8200,12 +8212,12 @@ function ssRenderMatchDetail(root, id) {
   }).join('') + '</div>';
   if (tab === 'live') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Draft live <span class="faint" style="font-weight:400;font-size:12px">· BO' + (m.bo || 1) + ((m.bo || 1) > 1 ? ' · fearless' : '') + '</span></h3></div>'
-      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Simulation à la séquence officielle, chronométrée. Depuis 2026 le côté et l\'ordre de draft se choisissent séparément — les quatre combinaisons sont donc jouables.</p>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Séquence officielle, chronométrée. Depuis 2026, le côté et l\'ordre de draft se choisissent séparément.</p>'
       + '<div id="ss-live"></div></div>'
       + '<div class="card" style="padding:16px 20px;margin-top:14px"><div id="ss-histo"></div></div>';
   } else if (tab === 'prematch') {
     h += '<div class="card" style="padding:16px 20px"><div class="between" style="margin-bottom:10px"><h3 class="h3" style="font-size:15px">Roster adverse</h3><button class="btn btn-ghost btn-xs" onclick="ssReloadRoster(\'' + m.id + '\')">Recharger</button></div>'
-      + '<p class="faint" style="font-size:11.5px;margin:-4px 0 12px;line-height:1.55">Chargé automatiquement depuis la base compét. Corrige un nom si l\'équipe a changé de titulaire — c\'est ce roster qui alimente les matchups ci-dessous.</p>'
+      + '<p class="faint" style="font-size:11.5px;margin:-4px 0 12px;line-height:1.55">Chargé depuis la base compét. Corrige un nom si le titulaire a changé — c\'est lui qui alimente les matchups.</p>'
       + '<div id="ss-roster">' + ssRosterHtml(m) + '</div></div>';
     h += '<div class="card" style="padding:16px 20px;margin-top:14px">'
       + '<div class="between" style="margin-bottom:4px;gap:10px;flex-wrap:wrap"><h3 class="h3" style="font-size:15px">Feuille de route</h3>'
@@ -8214,7 +8226,7 @@ function ssRenderMatchDetail(root, id) {
       + '<button class="btn btn-ghost btn-xs" onclick="ssWhatsApp(\'' + m.id + '\')">WhatsApp</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="ssSheetCopy(\'' + m.id + '\')">Copier</button>'
       + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\')">PDF</button></div></div>'
-      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes. « Envoyer dans le canal » publie la feuille dans le salon Discord du staff ; « WhatsApp » ouvre le partage avec le texte déjà écrit. Chaque joueur a aussi sa feuille individuelle avec son matchup.</p>'
+      + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Le déroulé du jour J et les consignes, à publier dans le canal du staff. Chaque poste a aussi sa feuille.</p>'
       + '<div id="ss-plan">' + ssPlanHtml(m) + '</div></div>';
   } else {
     h += '<div class="card" style="padding:16px 20px"><h3 class="h3" style="font-size:15px;margin-bottom:10px">Résultat &amp; draft réelle</h3><div id="ss-result">' + (m.result ? ssResultHtml(m) : '<div class="faint" style="font-size:12.5px">Recherche du résultat dans la base compét…</div>') + '</div></div>';
@@ -9430,7 +9442,7 @@ function dlRenderHisto(m) {
     + (recs.length ? '<button class="btn btn-cta btn-xs" onclick="dlHistoFeuilleFichier(\'' + m.id + '\')" title="Fichier prêt à ouvrir : les deux camps dans leurs couleurs, puis l\'ordre des actions. Dans Google Sheets : Fichier → Importer → Charger. S\'ouvre aussi dans Excel et LibreOffice.">Télécharger la draft</button>' : '')
     + (total ? '<button class="btn btn-ghost btn-xs" onclick="dlHistoFeuilleFichier(null)" title="Toutes les drafts de la structure, tous matchs confondus, dans un seul fichier">Toute la saison (' + total + ')</button>' : '')
     + '</div></div>'
-    + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Chaque game terminée en Draft live est enregistrée automatiquement et partagée avec les coachs de la structure. Une ligne par game dans le tableur : bans et picks dans l\'ordre où ils ont été posés.</p>';
+    + '<p class="faint" style="font-size:11.5px;margin:0 0 12px;line-height:1.55">Chaque game terminée est enregistrée et partagée avec le staff. Une ligne par game : bans et picks dans l\'ordre.</p>';
   if (!recs.length) {
     box.innerHTML = h + '<div class="dl-hi-vide">Aucune draft terminée contre cet adversaire pour l\'instant.</div>';
     return;
@@ -10384,38 +10396,127 @@ function ssCanalDetacher() {
       showToast('Canal détaché.', 'success');
     }).catch(function () { showToast('Impossible de détacher le canal.', 'error'); });
 }
-// Publier la feuille. Pas de canal branché → on ouvre le réglage plutôt que de
-// refuser : le coach a cliqué « Envoyer », il veut envoyer.
-function ssCanalEnvoyer(id, role) {
-  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+/* Publier N'IMPORTE QUEL texte dans le canal. Feuille de route et planning de la semaine
+   passent par ici : deux chemins d'envoi se seraient mis à diverger sur la gestion des
+   erreurs, et c'est justement là qu'un envoi raté doit rester visible.
+   Pas de canal branché → on ouvre le réglage plutôt que de refuser : le coach a cliqué
+   « Envoyer », il veut envoyer. */
+function ssCanalPublier(titre, texte, quoi) {
   if (window._ssCanal && !window._ssCanal.configure) { ssCanalOuvrir(); return; }
-  var d = ssData();
-  var titre = 'Feuille de route' + (role ? ' · ' + role : '') + ' — '
-    + ((d.myTeam && d.myTeam.name) || 'Mon équipe') + ' vs ' + ((m.opp && m.opp.name) || 'Adversaire');
   showToast('Envoi dans le canal…', 'info', 2000);
   fetch('/api/canal', {
     method: 'POST',
     headers: Object.assign({ 'Content-Type': 'application/json' }, vsAuthHeaders()),
-    body: JSON.stringify({ titre: titre, texte: ssSheetText(m, role || null) })
+    body: JSON.stringify({ titre: titre, texte: texte })
   }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, code: r.status, j: j }; }); })
     .then(function (res) {
-      if (res.ok) { showToast('Feuille publiée' + (res.j.libelle ? ' dans ' + res.j.libelle : '') + '.', 'success'); return; }
+      if (res.ok) { showToast((quoi || 'Feuille') + ' publié' + (quoi ? '' : 'e') + (res.j.libelle ? ' dans ' + res.j.libelle : '') + '.', 'success'); return; }
       // 409 = il n'y a pas (ou plus) de canal utilisable : ouvrir le réglage est la
       // suite utile, un simple message laisserait le coach sans rien à faire.
       showToast(res.j && res.j.error ? res.j.error : 'Envoi impossible.', 'error', 7000);
       if (res.code === 409) { window._ssCanal = { configure: false }; ssCanalMajBouton(); ssCanalOuvrir(); }
-    }).catch(function () { showToast('Réseau indisponible — feuille non envoyée.', 'error'); });
+    }).catch(function () { showToast('Réseau indisponible — rien n\'a été envoyé.', 'error'); });
+}
+function ssCanalEnvoyer(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  var d = ssData();
+  ssCanalPublier('Feuille de route' + (role ? ' · ' + role : '') + ' — '
+    + ((d.myTeam && d.myTeam.name) || 'Mon équipe') + ' vs ' + ((m.opp && m.opp.name) || 'Adversaire'),
+    ssSheetText(m, role || null));
 }
 // WhatsApp : partage natif sur mobile (les groupes y sont), wa.me sur ordinateur.
-function ssWhatsApp(id, role) {
-  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
-  var texte = ssSheetText(m, role || null);
-  if (navigator.share) {
-    navigator.share({ text: texte }).catch(function () { /* partage annulé : rien à dire */ });
-    return;
-  }
+function ssPartagerWhatsApp(texte) {
+  if (navigator.share) { navigator.share({ text: texte }).catch(function () { /* partage annulé */ }); return; }
   window.open('https://wa.me/?text=' + encodeURIComponent(texte), '_blank', 'noopener');
 }
+function ssWhatsApp(id, role) {
+  var m = ssData().matches.find(function (x) { return x.id === id; }); if (!m) return;
+  ssPartagerWhatsApp(ssSheetText(m, role || null));
+}
+
+/* ── PLANNING DE LA SEMAINE ──────────────────────────────────────────────────────
+   Ce que le staff attend le lundi matin : qui on joue cette semaine, quel jour, à
+   quelle heure. La semaine est celle du CALENDRIER (lundi → dimanche), pas « les 7
+   prochains jours » : un coach qui publie « le planning de la semaine » un jeudi parle
+   de la semaine en cours, pas de jeudi-à-jeudi. Une semaine sans match n'est pas une
+   erreur — on l'écrit, et on annonce le prochain match, sinon le message serait vide
+   et le staff se demanderait si l'outil a échoué. */
+function ssLundiDe(date) {
+  var l = new Date(date);
+  l.setDate(l.getDate() - ((l.getDay() + 6) % 7));   // getDay: 0 = dimanche
+  l.setHours(0, 0, 0, 0);
+  return l;
+}
+function ssJourLong(d) { return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }); }
+function ssPlanningSemaineTexte(base) {
+  var d = ssData();
+  var me = (d.myTeam && d.myTeam.name) || 'Mon équipe';
+  var lundi = ssLundiDe(base || new Date());
+  var finSemaine = new Date(lundi); finSemaine.setDate(lundi.getDate() + 7);
+  var dim = new Date(lundi); dim.setDate(lundi.getDate() + 6);
+
+  var avecDate = d.matches
+    .map(function (m) { return { m: m, t: new Date(m.date) }; })
+    .filter(function (x) { return !isNaN(x.t); })
+    .sort(function (a, b) { return a.t - b.t; });
+  var semaine = avecDate.filter(function (x) { return x.t >= lundi && x.t < finSemaine; });
+
+  var L = [];
+  L.push('PLANNING DE LA SEMAINE — ' + me);
+  L.push('Du ' + ssJourLong(lundi) + ' au ' + ssJourLong(dim));
+  L.push('');
+  if (!semaine.length) {
+    L.push('Aucun match cette semaine.');
+    var suivant = avecDate.find(function (x) { return x.t >= finSemaine; });
+    if (suivant) {
+      L.push('');
+      L.push('Prochain match : ' + ssJourLong(suivant.t) + ' à ' + ssHM(suivant.t)
+        + ' — ' + ((suivant.m.opp && suivant.m.opp.name) || 'Adversaire')
+        + (suivant.m.competition ? ' (' + suivant.m.competition + ')' : ''));
+    }
+  } else {
+    var jourCourant = '';
+    semaine.forEach(function (x) {
+      var j = ssJourLong(x.t);
+      if (j !== jourCourant) { if (jourCourant) L.push(''); L.push(j.charAt(0).toUpperCase() + j.slice(1)); jourCourant = j; }
+      L.push('  ' + ssHM(x.t) + '  vs ' + ((x.m.opp && x.m.opp.name) || 'Adversaire')
+        + '  ·  ' + (x.m.competition || 'match') + ' · BO' + (x.m.bo || 1));
+    });
+  }
+  L.push('');
+  L.push('— préparé avec VisionScore');
+  return L.join('\n');
+}
+/* Le planning s'ouvre en aperçu AVANT de partir. On publie dans le salon de tout le
+   staff : voir le texte exact qu'on envoie évite le message à rattraper, et vaut mieux
+   que trois boutons de plus dans une barre d'outils déjà chargée. */
+function ssPlanningOuvrir() {
+  var texte = ssPlanningSemaineTexte();
+  var ov = document.createElement('div');
+  ov.className = 'rs-modal-ov';
+  ov.innerHTML =
+      '<div class="rs-modal" style="width:min(560px,94vw)" role="dialog" aria-modal="true">'
+    +   '<div class="rs-modal-h">Planning de la semaine</div>'
+    +   '<pre class="ss-apercu">' + anEsc(texte) + '</pre>'
+    +   '<div class="rs-modal-a">'
+    +     '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Fermer</button>'
+    +     '<button class="btn btn-ghost btn-sm" onclick="ssPlanningCopier()">Copier</button>'
+    +     '<button class="btn btn-ghost btn-sm" onclick="ssPlanningWhatsApp()">WhatsApp</button>'
+    +     '<button class="btn btn-cta btn-sm" onclick="ssPlanningEnvoyer()">Envoyer dans le canal</button>'
+    +   '</div>'
+    + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+  document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { ov.remove(); document.removeEventListener('keydown', esc); } });
+  document.body.appendChild(ov);
+}
+function ssPlanningEnvoyer() {
+  var d = ssData();
+  ssCanalPublier('Planning de la semaine — ' + ((d.myTeam && d.myTeam.name) || 'Mon équipe'),
+    ssPlanningSemaineTexte(), 'Planning');
+  var ov = document.querySelector('.rs-modal-ov'); if (ov) ov.remove();
+}
+function ssPlanningWhatsApp() { ssPartagerWhatsApp(ssPlanningSemaineTexte()); }
+function ssPlanningCopier() { ssCopy(ssPlanningSemaineTexte(), 'Planning copié'); }
 // ── Génération de la feuille (PDF) ──
 // Page claire (elle est faite pour être imprimée / lue sur téléphone), bandeau
 // forêt et titres émeraude : la charte sans fond sombre qui vide les cartouches.
