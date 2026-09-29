@@ -923,39 +923,52 @@ body:not(.theme-dark) .dl-seg{ background:rgba(255,255,255,.6); border-color:rgb
   .dl-setup-c:first-child{ border-top:0; }
   .dl-setup-n{ flex:1 1 100%; }
 }
-.dl-opts{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
-.dl-opt{ flex:1; min-width:210px; text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-2); cursor:pointer; transition:border-color .15s, background .15s; }
-.dl-opt:hover{ border-color:var(--vs-emerald-500); }
-.dl-opt.on{ border-color:var(--vs-emerald-400); background:rgba(45,212,167,.1); }
-.dl-opt-t{ display:block; font-weight:800; font-size:13.5px; color:var(--vs-fg-1); }
-.dl-opt-s{ display:block; font-size:11px; color:var(--vs-fg-3); margin-top:2px; }
-body:not(.theme-dark) .dl-opt{ background:rgba(255,255,255,.5); border-color:rgba(31,71,64,.14); }
 .dl-lobby-row{ display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; }
 .dl-f{ display:flex; flex-direction:column; gap:4px; }
 .dl-f span{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
 .dl-f input{ width:120px; height:36px; padding:0 10px; border-radius:9px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3); color:var(--vs-fg-1); font-family:var(--font-mono); }
 body:not(.theme-dark) .dl-f input{ background:#fff; border-color:rgba(31,71,64,.16); }
-.dl-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
-.dl-game{ font-family:var(--font-display); font-weight:800; font-size:16px; color:var(--vs-fg-1); }
-.dl-turn{ font-size:12px; font-weight:800; letter-spacing:.04em; padding:5px 12px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); }
-.dl-turn.dl-blue{ color:#7DB3FF; border-color:rgba(74,158,232,.5); background:rgba(74,158,232,.1); }
-.dl-turn.dl-red{ color:var(--vs-red-400); border-color:rgba(255,90,51,.5); background:rgba(255,51,0,.08); }
-.dl-clock{ font-family:var(--font-mono); font-weight:800; font-size:26px; color:var(--vs-emerald-300); min-width:64px; }
+/* Bandeau de draft en cours — même grammaire que .dl-setup : UNE bande, des
+   cellules séparées par un filet. Le camp qui drafte et le chrono dominent,
+   parce que sous trente secondes c'est tout ce qu'on cherche des yeux. */
+.dl-bar{ display:flex; align-items:stretch; flex-wrap:wrap; margin-bottom:16px;
+  border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; overflow:hidden; }
+body:not(.theme-dark) .dl-bar{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.dl-bar-c{ padding:10px 18px; min-width:0; display:flex; flex-direction:column; justify-content:center; gap:2px;
+  border-left:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .dl-bar-c{ border-left-color:rgba(31,71,64,.12); }
+.dl-bar-c:first-child{ border-left:0; }
+.dl-bar-k{ font-size:10px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--vs-fg-3); }
+.dl-bar-v{ font-family:var(--font-display); font-weight:800; font-size:17px; line-height:1.15; color:var(--vs-fg-1); white-space:nowrap; }
+.dl-bar-v.dl-blue{ color:#7DB3FF; }
+.dl-bar-v.dl-red{ color:var(--vs-red-400); }
+.dl-bar-acts{ margin-left:auto; flex-direction:row; align-items:center; gap:8px; flex-wrap:wrap; }
+.dl-clock{ font-family:var(--font-mono); font-weight:800; font-size:30px; line-height:1; color:var(--vs-emerald-300); min-width:58px; font-variant-numeric:tabular-nums; }
 .dl-clock.urgent{ color:var(--vs-red-400); }
-.dl-acts{ margin-left:auto; display:flex; gap:8px; flex-wrap:wrap; }
+
 /* Barre de rôles : accès direct à la section de la grille sans défiler, toujours visible
    (collée sous l'en-tête) — c'est ce que demandent des coachs qui pikent/bannissent vite. */
-.dl-rolebar{ position:sticky; top:56px; z-index:40; display:flex; gap:5px; padding:7px; margin-bottom:12px; border:1px solid var(--vs-forest-500); border-radius:12px; background:transparent; }
+.dl-rolebar{ position:sticky; top:56px; z-index:40; display:flex; gap:5px; padding:7px; margin-bottom:16px; border:1px solid var(--vs-forest-500); border-radius:12px; background:transparent; }
 body:not(.theme-dark) .dl-rolebar{ border-color:rgba(31,71,64,.14); }
 .dl-role-b{ flex:1; display:grid; place-items:center; padding:9px 0; border-radius:9px; border:1px solid transparent; background:none; color:#E6B23E; cursor:pointer; transition:.15s; }
 .dl-role-b:hover{ background:rgba(230,178,62,.12); border-color:rgba(230,178,62,.35); }
 .dl-done{ font-size:12.5px; color:var(--vs-emerald-300); margin-bottom:10px; font-weight:700; }
-.dl-sides{ display:flex; gap:12px; flex-wrap:wrap; }
-.dl-side{ flex:1; min-width:270px; border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px; background:rgba(4,18,15,.22); }
-.dl-side-blue{ border-left:3px solid rgba(74,158,232,.65); }
-.dl-side-red{ border-left:3px solid rgba(255,90,51,.6); }
-.dl-side.actif{ border-color:var(--vs-emerald-500); box-shadow:0 0 0 1px rgba(45,212,167,.25); }
-body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
+/* Un affrontement, pas deux fiches : une seule bande, coupée par un filet. La
+   couleur du camp devient un rail en haut de sa moitié — un liseré de carte
+   redonnait à chaque camp une existence séparée qu'il n'a pas. */
+.dl-sides{ display:flex; flex-wrap:wrap; border:1px solid var(--vs-forest-700);
+  border-radius:12px; background:#0B2F2A; overflow:hidden; }
+body:not(.theme-dark) .dl-sides{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.dl-side{ flex:1 1 300px; min-width:0; padding:14px 16px;
+  border-left:1px solid var(--vs-forest-700); border-top:2px solid transparent; }
+body:not(.theme-dark) .dl-side{ border-left-color:rgba(31,71,64,.12); }
+.dl-side:first-child{ border-left:0; }
+.dl-side-blue{ border-top-color:rgba(74,158,232,.7); }
+.dl-side-red{ border-top-color:rgba(255,90,51,.65); }
+.dl-side.actif{ box-shadow:inset 0 0 0 1px rgba(45,212,167,.3); }
+/* Empilés, les deux camps n'ont plus de filet vertical à porter : leur rail
+   de couleur en haut sépare déjà les deux moitiés. */
+@media (max-width:700px){ .dl-side{ border-left:0; } }
 .dl-side-h{ display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
 .dl-side-n{ font-family:var(--font-display); font-weight:800; font-size:14px; color:var(--vs-fg-1); }
 .dl-side-o{ font-size:10.5px; color:var(--vs-fg-3); }
@@ -984,7 +997,7 @@ body:not(.theme-dark) .dl-side{ background:rgba(31,71,64,.04); }
    Ce n'est pas une décoration. Sous chrono, la question « est-ce que je suis en
    fin de phase 1 ou au début de la phase 2 » change complètement la valeur d'un
    ban, et elle se lisait jusqu'ici en comptant les cases des deux colonnes. */
-.dl-seq{ display:flex; gap:3px; margin-bottom:12px; flex-wrap:wrap; }
+.dl-seq{ display:flex; gap:3px; margin-bottom:16px; flex-wrap:wrap; }
 .dl-seq-c{ flex:1 1 0; min-width:16px; height:20px; display:grid; place-items:center;
   font-family:var(--font-mono); font-size:9px; font-weight:800; line-height:1;
   border-radius:4px; border:1px solid var(--vs-forest-600); color:var(--vs-fg-3);
@@ -1005,11 +1018,9 @@ body:not(.theme-dark) .dl-seq-c{ background:rgba(31,71,64,.05); border-color:rgb
 .dl-side-nous .dl-side-qui{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.1); }
 .dl-side-nous{ background:rgba(45,212,167,.045); }
 body:not(.theme-dark) .dl-side-nous{ background:rgba(45,212,167,.07); }
-.dl-opt-cote.dl-cote-blue.on{ border-color:rgba(74,158,232,.75); background:rgba(74,158,232,.12); }
-.dl-opt-cote.dl-cote-red.on{ border-color:rgba(255,90,51,.7); background:rgba(255,51,0,.1); }
 
 /* ── Panneaux d'analyse ──────────────────────────────────────────────────────── */
-.dl-analyse{ display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:12px; margin-top:12px; }
+.dl-analyse{ display:grid; grid-template-columns:repeat(auto-fit,minmax(310px,1fr)); gap:12px; margin-top:16px; }
 .dl-lecture, .dl-conseil{ border:1px solid var(--vs-forest-500); border-radius:12px; padding:12px 14px; background:rgba(4,18,15,.22); min-width:0; }
 body:not(.theme-dark) .dl-lecture, body:not(.theme-dark) .dl-conseil{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.14); }
 .dl-pan-h{ display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:10px; }
@@ -1557,11 +1568,35 @@ body:not(.theme-dark) .ss-pl-av-opp{ background:linear-gradient(135deg,#F7E4DF,#
 .ss-pl-opp{ font-weight:800; font-size:13.5px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px; }
 .ss-pl-acts{ margin-left:auto; display:flex; gap:6px; }
 .ss-pl-field{ display:flex; flex-direction:column; gap:5px; }
-.ss-pl-flabel{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.ss-pl-flabel{ display:flex; align-items:center; gap:10px; }
 .ss-pl-auto{ border:0; background:rgba(45,212,167,.1); color:var(--vs-emerald-300); font-family:var(--font-display); font-weight:700; font-size:9.5px; letter-spacing:.03em; text-transform:none; padding:3px 10px; border-radius:999px; cursor:pointer; transition:.14s; white-space:nowrap; }
 .ss-pl-auto:hover{ background:rgba(45,212,167,.18); }
 body:not(.theme-dark) .ss-pl-auto{ background:rgba(15,161,118,.1); color:var(--vs-emerald-500); }
 .ss-pl-mu{ width:100%; box-sizing:border-box; }
+/* Les cinq postes forment UNE bande, pas cinq fiches : la feuille se relit poste
+   après poste, et cinq cadres empilés donnaient cinq débuts de lecture. */
+.ss-pl-band{ border:1px solid var(--vs-forest-700); border-radius:12px; background:#0B2F2A; overflow:hidden; }
+body:not(.theme-dark) .ss-pl-band{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.ss-pl-band .ss-pl-player{ border:0; border-radius:0; margin:0; background:none; padding:14px 16px; gap:9px; }
+.ss-pl-duo{ display:grid; grid-template-columns:1fr 1fr; gap:12px; align-items:start; }
+@media (max-width:820px){ .ss-pl-duo{ grid-template-columns:1fr; } }
+.ss-pl-band .ss-pl-player + .ss-pl-player{ border-top:1px solid rgba(255,255,255,.045); }
+body:not(.theme-dark) .ss-pl-band .ss-pl-player + .ss-pl-player{ border-top-color:rgba(31,71,64,.08); }
+/* Champs discrets jusqu'au survol : on RELIT une feuille de route bien plus
+   souvent qu'on ne la modifie. Même traitement que le déroulé de la journée. */
+.ss-pl-band .ss-pl-mu, .ss-pl-band .ss-pl-ta, .ss-pl-band .ss-pl-champ{ border-color:transparent; background:transparent; }
+.ss-pl-band .ss-pl-mu:hover, .ss-pl-band .ss-pl-ta:hover, .ss-pl-band .ss-pl-champ:hover{ background:rgba(255,255,255,.045); border-color:var(--vs-forest-500); }
+.ss-pl-band .ss-pl-mu:focus, .ss-pl-band .ss-pl-ta:focus, .ss-pl-band .ss-pl-champ:focus{ background:rgba(255,255,255,.055); border-color:var(--vs-emerald-500); }
+body:not(.theme-dark) .ss-pl-band .ss-pl-mu:hover, body:not(.theme-dark) .ss-pl-band .ss-pl-ta:hover,
+body:not(.theme-dark) .ss-pl-band .ss-pl-champ:hover{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.16); }
+body:not(.theme-dark) .ss-pl-band .ss-pl-mu:focus, body:not(.theme-dark) .ss-pl-band .ss-pl-ta:focus,
+body:not(.theme-dark) .ss-pl-band .ss-pl-champ:focus{ background:rgba(31,71,64,.06); }
+/* Vingt boutons de poids égal (quatre par poste) saturaient la page : ils
+   s'effacent jusqu'au survol du poste. Sans survol — tactile — ils restent là. */
+.ss-pl-band .ss-pl-acts{ opacity:.4; transition:opacity .15s var(--ease-out); }
+.ss-pl-band .ss-pl-player:hover .ss-pl-acts,
+.ss-pl-band .ss-pl-player:focus-within .ss-pl-acts{ opacity:1; }
+@media (hover:none){ .ss-pl-band .ss-pl-acts{ opacity:1; } }
 /* Stats compétitives de l'adversaire (repliées par défaut, base compét) —
    panneau imbriqué distinct une fois ouvert, pas du texte nu sous le résumé. */
 .ss-cs-det{ margin-top:2px; padding-top:9px; border-top:1px solid var(--vs-forest-600); }
@@ -9997,16 +10032,21 @@ function dlJumpRole(r) {
 function dlBoardHtml() {
   var s = _dlState, g = s.games[s.gameIndex], step = VSDraft.currentStep(s);
   var termine = s.status === 'done';
-  var h = '<div class="dl-top">';
-  h += '<div class="dl-game">Game ' + (s.gameIndex + 1) + '<span class="faint"> / ' + s.format.bo + '</span></div>';
+  var cel = function (k, v) {
+    return '<div class="dl-bar-c"><span class="dl-bar-k">' + k + '</span><span class="dl-bar-v">' + v + '</span></div>';
+  };
+  var h = '<div class="dl-bar">';
+  h += cel('Game', (s.gameIndex + 1) + ' <span class="faint">/ ' + s.format.bo + '</span>');
   if (step) {
     var qui = step.by === 'first' ? s.sides.first : s.sides.second;
-    h += '<div class="dl-turn dl-' + qui + '">' + (step.type === 'ban' ? 'Ban' : 'Pick') + ' — ' + (qui === 'blue' ? 'Bleu' : 'Rouge') + '</div>';
-    h += '<div class="dl-clock" id="dl-clock">--</div>';
+    h += '<div class="dl-bar-c"><span class="dl-bar-k">Au tour de</span>'
+      + '<span class="dl-bar-v dl-' + qui + '">' + (step.type === 'ban' ? 'Ban' : 'Pick') + ' ' + dlNomCote(qui)
+      + (qui === dlNotreCote() ? ' <span class="faint">· nous</span>' : '') + '</span></div>';
+    h += '<div class="dl-bar-c"><span class="dl-bar-k">Temps</span><span class="dl-clock" id="dl-clock">--</span></div>';
   } else {
-    h += '<div class="dl-turn">Game terminée</div>';
+    h += cel('État', 'Game terminée');
   }
-  h += '<div class="dl-acts">';
+  h += '<div class="dl-bar-c dl-bar-acts">';
   if (!step && s.status !== 'done') h += '<button class="btn btn-cta btn-sm" onclick="dlNextGame()">Game suivante</button>';
   if (s.format.bo === 1) h += '<button class="btn btn-ghost btn-sm" onclick="dlReplay()">Rejouer</button>';
   h += dlBarreSalleHtml();
@@ -10479,7 +10519,7 @@ function ssPlanHtml(m) {
     + '<div class="ss-pl-t">Consignes d\'équipe</div>'
     + '<textarea class="ss-pl-ta" rows="3" placeholder="Objectifs du match, plan de jeu, points de vigilance…" oninput="ssPlanTeamNotes(\'' + m.id + '\',this.value)">' + anEsc(p.teamNotes || '') + '</textarea>'
     + '<div class="ss-pl-t" style="margin-top:16px">Par joueur</div>';
-  h += SS_ROLES.map(function (role) {
+  h += '<div class="ss-pl-band">' + SS_ROLES.map(function (role) {
     var pl = p.players[role], opp = ssOppAt(m, role);
     var meIni = anEsc((pl.me || '?').charAt(0).toUpperCase());
     var oppIni = anEsc((opp || '?').charAt(0).toUpperCase());
@@ -10498,10 +10538,11 @@ function ssPlanHtml(m) {
         + '<button class="btn btn-ghost btn-xs" onclick="ssSheetPdf(\'' + m.id + '\',\'' + role + '\')">PDF</button>'
         + '</div>'
       + '</div>'
+      + '<div class="ss-pl-duo">'
       + '<label class="ss-pl-field"><span class="label ss-pl-flabel">Matchup'
       + (opp ? ('<button type="button" class="ss-pl-auto" title="Génère le matchup à partir des stats compétitives réelles de ' + anEsc(opp) + '" onclick="ssMatchupSuggest(\'' + m.id + '\',\'' + role + '\')">Suggestion auto</button>') : '')
       + '</span><input class="ss-pl-mu" value="' + anEsc(pl.matchup || '') + '" placeholder="Champions à attendre en face, style de jeu…" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'matchup\',this.value)"></label>'
-      + '<label class="ss-pl-field"><span class="label">Consignes</span><textarea class="ss-pl-ta" rows="2" placeholder="Une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea></label>'
+      + '<label class="ss-pl-field"><span class="label">Consignes</span><textarea class="ss-pl-ta" rows="2" placeholder="Une par ligne" oninput="ssPlanPl(\'' + m.id + '\',\'' + role + '\',\'notes\',this.value)">' + anEsc(pl.notes || '') + '</textarea></label></div>'
       /* Passerelle vers le calculateur. La cible se déduit du pool adverse (base
          compét) ; notre pick, lui, n'existe nulle part ailleurs — d'où ce champ. */
       + '<div class="ss-pl-tc">'
@@ -10510,7 +10551,7 @@ function ssPlanHtml(m) {
       + '</div>'
       + (opp ? ('<details class="ss-cs-det"><summary>Stats compétitives de ' + anEsc(opp) + '</summary><div id="ss-cs-' + role + '" class="ss-cs-body">' + ssCompetStatsHtml(m.id, role) + '</div></details>') : '')
       + '</div>';
-  }).join('');
+  }).join('') + '</div>';
   return h;
 }
 // ── Stats compétitives de l'adversaire (base compét Leaguepedia) ──

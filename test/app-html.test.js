@@ -1264,3 +1264,44 @@ test('une panne réseau ne grave pas les logos comme introuvables', () => {
     'le marquage « introuvable » doit venir APRÈS la sortie sur réponse absente, ' +
     'sinon une panne réseau est mémorisée comme une absence de fichier');
 });
+
+// ── 21. Draft en cours et avant-match : les règles de disposition validées ──
+// Ces trois assertions verrouillent ce qui a été mesuré le 29/09/2026, pas un goût :
+// une bande là où il y avait des cartes, et des classes mortes qui ne reviennent pas.
+
+test('le plateau de draft affiche UNE bande, pas une ligne de badges', () => {
+  const debut = app.indexOf('function dlBoardHtml(');
+  assert.ok(debut > 0, 'dlBoardHtml introuvable');
+  const bloc = app.slice(debut, app.indexOf('function dlSideHtml(', debut));
+  assert.match(bloc, /class="dl-bar"/, 'le bandeau de draft est une bande .dl-bar');
+  assert.doesNotMatch(bloc, /class="dl-top"|class="dl-turn|class="dl-acts"/,
+    'les anciens badges empilés ne doivent pas revenir');
+  // Le chrono reste identifiable : dlStartTimer écrit dedans toutes les secondes.
+  assert.match(bloc, /id="dl-clock"/, 'le chrono garde son identifiant');
+});
+
+test('les deux camps forment une seule bande, sans carte par camp', () => {
+  const regle = app.match(/\n\.dl-side\{[^}]*\}/);
+  assert.ok(regle, 'la règle .dl-side est introuvable');
+  assert.doesNotMatch(regle[0], /border-radius/,
+    'un rayon sur .dl-side reconstituerait deux cartes dans la bande');
+  assert.match(regle[0], /border-left:1px solid/,
+    'les deux moitiés se séparent par un filet, pas par un écart');
+});
+
+test('aucune classe .dl-opt ne subsiste — ni en CSS, ni à l\'écran', () => {
+  /* Le lobby les a remplacées par la bande .dl-setup. Une règle orpheline finit par
+     être recopiée ailleurs et ramène les quatre cartes qu'on vient d'enlever. */
+  assert.doesNotMatch(app, /\.dl-opt[-.\s{:]/,
+    'du CSS mort .dl-opt* subsiste');
+});
+
+test('les cinq postes de l\'avant-match sont dans une bande, champs discrets', () => {
+  const debut = app.indexOf('function ssPlanHtml(');
+  const bloc = app.slice(debut, app.indexOf('// ── Stats compétitives', debut));
+  assert.match(bloc, /class="ss-pl-band"/, 'les postes sont enveloppés dans une bande');
+  assert.match(bloc, /class="ss-pl-duo"/,
+    'Matchup et Consignes se lisent côte à côte pour un même poste');
+  assert.match(app, /\.ss-pl-band \.ss-pl-mu[^\n]*border-color:transparent/,
+    'les champs restent transparents tant qu\'on ne les touche pas');
+});
