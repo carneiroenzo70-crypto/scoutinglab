@@ -1419,3 +1419,10 @@ test('sortir du studio ramène sur l\'onglet d\'où l\'on vient', () => {
   assert.match(ligne, /anGoTab\('video'\)/,
     'switchPanel repasse par anEnterHub, qui forcerait « Stats équipe »');
 });
+
+test('aucun chemin de poste personnel n\'est écrit dans le fichier servi', () => {
+  /* app.html est servi publiquement : ce qui y est écrit est lisible, même
+     quand le bloc qui le contient n'est jamais rendu. */
+  assert.doesNotMatch(app, /C:\\+Users\\+[A-Za-z0-9_.-]+/,
+    'un chemin de dossier personnel est écrit dans app.html');
+});
