@@ -1313,6 +1313,69 @@ body:not(.theme-dark) .ss-sec-t{ color:var(--vs-emerald-500); }
 .ss-sec-t::after{ content:''; flex:1; height:1px; background:linear-gradient(90deg,var(--vs-forest-500),transparent); }
 .ss-sec-n{ font-family:var(--font-mono); font-size:10.5px; font-weight:700; color:var(--vs-fg-3); background:rgba(45,212,167,.1); border-radius:999px; padding:1px 7px; letter-spacing:0; }
 .ss-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(212px,1fr)); gap:13px; }
+
+/* ══ LE PROCHAIN MATCH DOMINE ══
+   Douze blocs de même poids ne guident personne. Le jour J, un staff ne cherche qu'une
+   chose : le prochain match et par où l'ouvrir. Il prend donc la largeur, avec ses deux
+   actions immédiates — et quand il n'y en a pas, c'est l'historique qui remonte. */
+.ss-hero{ position:relative; overflow:hidden; display:flex; align-items:center; gap:26px; flex-wrap:wrap;
+  padding:24px 26px; margin-bottom:28px; border:1px solid var(--vs-forest-600); border-radius:14px;
+  background:linear-gradient(104deg, rgba(45,212,167,.10), rgba(45,212,167,0) 56%), #0B2F2A; }
+body:not(.theme-dark) .ss-hero{ background:linear-gradient(104deg, rgba(45,212,167,.12), rgba(45,212,167,0) 56%), #FFFFFF; border-color:rgba(31,71,64,.14); }
+.ss-hero-l{ flex:1 1 320px; min-width:0; }
+.ss-hero-k{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:10.5px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--vs-emerald-400); }
+.ss-hero-j{ letter-spacing:.02em; text-transform:none; font-size:11.5px; font-weight:700; color:#04211C; background:var(--vs-emerald-400); border-radius:999px; padding:3px 11px; }
+.ss-hero-vs{ display:flex; align-items:center; gap:13px; margin-top:15px; flex-wrap:wrap; }
+.ss-hero-x{ font-family:var(--font-mono); font-size:12px; color:var(--vs-fg-3); }
+.ss-hero-name{ font-family:var(--font-display); font-weight:700; font-size:26px; line-height:1.05;
+  letter-spacing:.015em; text-transform:uppercase; color:var(--vs-fg-1); }
+.ss-hero-meta{ margin-top:13px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13px; color:var(--vs-fg-2); }
+.ss-hero-sep{ color:var(--vs-forest-500); }
+.ss-hero-a{ flex:none; display:flex; flex-direction:column; gap:9px; }
+.ss-hero-a .btn{ justify-content:center; white-space:nowrap; }
+.ss-hero-vide{ font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:.015em; text-transform:uppercase; color:var(--vs-fg-1); }
+
+/* ══ LE CALENDRIER EN LIGNES ══
+   Neuf matchs en mosaïque obligent à balayer en zigzag. En colonne, chaque information
+   a SA colonne — adversaire, compétition, format, date, état — et la liste se parcourt
+   d'un coup d'œil. C'est ce qui fait qu'un tableau se lit sans effort. */
+.ss-list{ border:1px solid var(--vs-forest-700); border-radius:12px; overflow:hidden; background:#0B2F2A; }
+body:not(.theme-dark) .ss-list{ background:rgba(31,71,64,.035); border-color:rgba(31,71,64,.12); }
+.ss-row{ display:flex; align-items:center; gap:16px; padding:13px 20px; cursor:pointer;
+  border-top:1px solid rgba(255,255,255,.05); transition:background .14s var(--ease-out); }
+body:not(.theme-dark) .ss-row{ border-top-color:rgba(31,71,64,.09); }
+.ss-row:first-child{ border-top:0; }
+.ss-row:hover{ background:rgba(45,212,167,.055); }
+.ss-row:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:-2px; }
+.ss-row-name{ flex:1 1 auto; min-width:0; font-family:var(--font-display); font-weight:700; font-size:14.5px;
+  letter-spacing:.015em; text-transform:uppercase; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-row-comp{ flex:none; width:158px; font-size:12px; color:var(--vs-fg-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ss-row-bo{ flex:none; width:40px; font-family:var(--font-mono); font-size:11.5px; color:var(--vs-fg-3); }
+.ss-row-date{ flex:none; width:176px; text-align:right; font-size:12.5px; color:var(--vs-fg-2);
+  font-variant-numeric:tabular-nums; text-transform:capitalize; }
+.ss-row-state{ flex:none; width:142px; display:flex; justify-content:flex-end; }
+.ss-row-go{ flex:none; display:flex; color:var(--vs-fg-3); opacity:0; transition:opacity .14s var(--ease-out); }
+.ss-row:hover .ss-row-go{ opacity:1; }
+/* Sous 900 px, compétition et format sortent avant la date : c'est l'adversaire et
+   l'état qu'on lit sur un téléphone, le reste s'obtient en ouvrant le match. */
+@media (max-width:900px){
+  .ss-row-comp, .ss-row-bo, .ss-row-go{ display:none; }
+  .ss-row-date{ width:auto; }
+  .ss-row-state{ width:auto; }
+}
+@media (max-width:620px){
+  /* « Ici Japon Corp. Esport » à 26 px déborde d'un écran de téléphone : le nom
+     redescend, et le bloc garde sa hiérarchie sans forcer de coupure. */
+  .ss-hero{ padding:20px 18px; gap:18px; }
+  .ss-hero-name{ font-size:20px; }
+  .ss-hero-vs{ gap:11px; }
+  .ss-row{ flex-wrap:wrap; gap:10px; padding:13px 16px; }
+  .ss-row-name{ flex:1 1 100%; order:1; }
+  .ss-row-date{ order:2; text-align:left; }
+  .ss-row-state{ order:3; margin-left:auto; }
+  .ss-hero-a{ flex:1 1 100%; flex-direction:row; }
+  .ss-hero-a .btn{ flex:1; }
+}
 /* Carte de match : accent d'état (--ss-acc) posé en JS — émeraude à venir,
    ambre le jour J, vert/rouge selon le résultat pour les matchs passés. */
 .ss-card{ position:relative; overflow:hidden; border:1px solid var(--vs-forest-500); border-radius:15px; padding:15px 14px 13px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:9px;
@@ -1518,11 +1581,17 @@ body:not(.theme-dark) .ss-champrole-t{ color:var(--vs-emerald-500); }
 .ss-champ img{ width:40px; height:40px; border-radius:7px; }
 .ss-champ span{ font-size:8px; color:var(--vs-fg-3); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 /* KPIs (haut du calendrier) */
-.ss-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:12px; margin-bottom:22px; }
-.ss-kpi{ position:relative; overflow:hidden; border:1px solid var(--vs-forest-500); border-radius:13px; padding:13px 16px;
-  background:linear-gradient(160deg, rgba(9,32,27,.6), rgba(4,18,15,.3)); }
-body:not(.theme-dark) .ss-kpi{ background:linear-gradient(160deg, rgba(31,71,64,.06), rgba(31,71,64,.02)); border-color:rgba(31,71,64,.12); }
-.ss-kpi::before{ content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,var(--vs-emerald-500),transparent 78%); opacity:.5; }
+/* ── Bande de chiffres ──
+   Quatre cartes autonomes sont devenues UNE bande à filets. Des chiffres se comparent
+   quand ils partagent une ligne de base ; encadré séparément, chacun redevient une
+   petite affiche isolée et l'œil doit sauter de l'une à l'autre. */
+.ss-kpis{ display:flex; align-items:stretch; flex-wrap:wrap; margin-bottom:24px;
+  border:1px solid var(--vs-forest-700); border-radius:12px; overflow:hidden; background:#0B2F2A; }
+body:not(.theme-dark) .ss-kpis{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.ss-kpi{ position:relative; flex:1 1 170px; min-width:0; padding:18px 22px;
+  border:0; border-left:1px solid var(--vs-forest-700); border-radius:0; background:transparent; }
+body:not(.theme-dark) .ss-kpi{ border-left-color:rgba(31,71,64,.12); }
+.ss-kpi:first-child{ border-left:0; }
 .ss-kpi .k{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
 .ss-kpi .v{ font-family:var(--font-mono); font-weight:800; font-size:22px; color:var(--vs-fg-1); margin-top:3px; line-height:1.15; }
 .ss-kpi .s{ font-size:10.5px; color:var(--vs-fg-3); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -3777,7 +3846,6 @@ body:not(.theme-dark) #t50-table.thead-collee thead th {
    inchangée — et étendre le traitement à une page de plus tient en un mot. */
 body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card,
 body.theme-dark #panel-seasons .ss-card,
-body.theme-dark #panel-seasons .ss-kpi,
 body.theme-dark #panel-scout .dim-header,
 body.theme-dark #panel-scout .dim-body {
   position:relative;
@@ -3806,7 +3874,6 @@ body.theme-dark #panel-scout .dim-body {
 /* liseré de périmètre uniforme + reflet directionnel */
 body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card::before,
 body.theme-dark #panel-seasons .ss-card::before,
-body.theme-dark #panel-seasons .ss-kpi::before,
 body.theme-dark #panel-scout .dim-header::before,
 body.theme-dark #panel-scout .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
@@ -3822,7 +3889,6 @@ body.theme-dark #panel-scout .dim-body::before {
 }
 body.theme-dark :is(#panel-scout, #panel-top50, #panel-seasons) .card > *,
 body.theme-dark #panel-seasons .ss-card > *,
-body.theme-dark #panel-seasons .ss-kpi > *,
 body.theme-dark #panel-scout .dim-header > *,
 body.theme-dark #panel-scout .dim-body > * { position:relative; z-index:1; }
 /* le survol doit rester perceptible malgré les ombres du verre */
@@ -3857,7 +3923,6 @@ body.theme-dark #panel-scout .dim-header:hover {
    sont posés en !important plus haut (règle « relief 3D », l.698-701). */
 body:not(.theme-dark) .vsd .card,
 body:not(.theme-dark) #panel-seasons .ss-card,
-body:not(.theme-dark) #panel-seasons .ss-kpi,
 body:not(.theme-dark) .vsd .dim-section,
 body:not(.theme-dark) .vsd .dim-section .dim-header,
 body:not(.theme-dark) .vsd .dim-section .dim-body {
@@ -3880,7 +3945,6 @@ body:not(.theme-dark) .vsd .dim-section .dim-body {
 /* liseré de périmètre — vert sombre ici, cf. écart n°1 */
 body:not(.theme-dark) .vsd .card::before,
 body:not(.theme-dark) #panel-seasons .ss-card::before,
-body:not(.theme-dark) #panel-seasons .ss-kpi::before,
 body:not(.theme-dark) .vsd .dim-section .dim-header::before,
 body:not(.theme-dark) .vsd .dim-section .dim-body::before {
   content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
@@ -3896,7 +3960,6 @@ body:not(.theme-dark) .vsd .dim-section .dim-body::before {
 }
 body:not(.theme-dark) .vsd .card > *,
 body:not(.theme-dark) #panel-seasons .ss-card > *,
-body:not(.theme-dark) #panel-seasons .ss-kpi > *,
 body:not(.theme-dark) .vsd .dim-section .dim-header > *,
 body:not(.theme-dark) .vsd .dim-section .dim-body > * { position:relative; z-index:1; }
 body:not(.theme-dark) .vsd .card:hover,
@@ -8236,13 +8299,17 @@ function ssRenderCalendar(root) {
   var past = matches.filter(function (m) { return (m.date || '') < now; });
   var kpis = ssKpisHtml(matches, upcoming, past, team);
   var secT = function (label, n, top) { return '<div class="ss-sec-t"' + (top ? ' style="margin-top:24px"' : '') + '>' + label + '<span class="ss-sec-n">' + n + '</span></div>'; };
+  /* Le prochain match passe AVANT les listes : c'est la seule chose qu'un staff cherche
+     le jour J. Il reste aussi dans « À venir » — la liste est le calendrier complet, et
+     l'en retirer ferait croire qu'il manque un match. */
+  var hero = matches.length ? ssHeroHtml(upcoming[0] || null, team, season) : '';
   var body = '';
   if (!matches.length) body = '<div class="card" style="padding:40px 20px;text-align:center"><div class="muted">Aucun match dans cette saison. Clique « Ajouter un match ».</div></div>';
   else {
-    if (upcoming.length) body += secT('À venir', upcoming.length) + '<div class="ss-grid">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
-    if (past.length) body += secT('Passés', past.length, upcoming.length > 0) + '<div class="ss-grid">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+    if (upcoming.length) body += secT('À venir', upcoming.length) + '<div class="ss-list">' + upcoming.map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
+    if (past.length) body += secT('Passés', past.length, upcoming.length > 0) + '<div class="ss-list">' + past.slice().reverse().map(function (m) { return ssMatchCard(m, team, season); }).join('') + '</div>';
   }
-  root.innerHTML = head + ssDemarrage(d) + toolbar + kpis + body;
+  root.innerHTML = head + ssDemarrage(d) + toolbar + kpis + hero + body;
   ssCanalCharger();
   // Résultats réels des matchs passés — récupérés en tâche de fond (une fois).
   past.forEach(function (m) { if (!m.result) ssEnsureResult(m.id); });
@@ -8301,15 +8368,56 @@ function ssMatchCard(m, team, season) {
   } else if (n === 0) pill = '<span class="ss-pill j0">Aujourd\'hui · ' + anEsc(ssTimeStr(m.date)) + '</span>';
   else if (n !== null && n > 0) pill = '<span class="ss-pill jx">J-' + n + '</span>';
   else if (isPast) pill = '<span class="ss-pill none">Résultat en attente</span>';
-  return '<div class="ss-card' + (isPast ? ' ss-card-past' : '') + (n === 0 ? ' ss-card-today' : '') + '" id="sscard-' + m.id + '" style="--ss-acc:' + ssMatchAccent(m) + '" onclick="ssOpenMatch(\'' + m.id + '\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\')ssOpenMatch(\'' + m.id + '\')">'
-    + '<div class="ss-card-top"><span class="ss-comp">' + anEsc(m.competition || '') + (split ? ('<span class="ss-split">' + anEsc(split) + '</span>') : '') + '</span><span class="ss-bo">BO' + (m.bo || 1) + '</span></div>'
-    + '<div class="ss-vs">' + ssLogoImg(team || { name: '?' }, 38) + '<span class="ss-vs-x">vs</span>' + ssLogoImg(m.opp, 38) + '</div>'
-    + '<div class="ss-oppname">' + anEsc((m.opp && m.opp.name) || '—') + '</div>'
-    + '<div class="ss-date">' + anEsc(ssDateStr(m.date)) + ' · ' + anEsc(ssTimeStr(m.date)) + '</div>'
-    + '<div class="ss-card-foot">' + pill + '</div>'
-    + '<span class="ss-card-go">Préparer<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>'
+  /* Une LIGNE, plus une carte. Notre propre écusson ne s'y répète pas : il est le même
+     sur chaque ligne, donc il n'informe de rien et vole la place de l'adversaire. */
+  var comp = [m.competition || '', split].filter(Boolean).join(' · ');
+  return '<div class="ss-row" id="sscard-' + m.id + '" onclick="ssOpenMatch(\'' + m.id + '\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\')ssOpenMatch(\'' + m.id + '\')">'
+    + ssLogoImg(m.opp, 34)
+    + '<span class="ss-row-name">' + anEsc((m.opp && m.opp.name) || '—') + '</span>'
+    + '<span class="ss-row-comp">' + anEsc(comp) + '</span>'
+    + '<span class="ss-row-bo">BO' + (m.bo || 1) + '</span>'
+    + '<span class="ss-row-date">' + anEsc(ssDateStr(m.date)) + ' · ' + anEsc(ssTimeStr(m.date)) + '</span>'
+    + '<span class="ss-row-state">' + pill + '</span>'
+    + '<span class="ss-row-go"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></span>'
     + '</div>';
 }
+/* ── LE PROCHAIN MATCH, EN TÊTE ──────────────────────────────────────────────────
+   La hiérarchie suit l'ÉTAT, elle n'est pas figée : un match approche, il prend la
+   largeur avec ses deux actions immédiates ; il n'y en a pas, le bloc porte l'action
+   d'en ajouter et l'historique remonte. Un tiret dans une carte vide n'aide personne. */
+function ssHeroHtml(next, team, season) {
+  if (!next) {
+    return '<div class="ss-hero">'
+      + '<div class="ss-hero-l">'
+      +   '<div class="ss-hero-k">Prochain match</div>'
+      +   '<div class="ss-hero-vide" style="margin-top:13px">Aucun match programmé</div>'
+      +   '<div class="ss-hero-meta">Ajoute ton prochain adversaire : sa préparation et sa draft s\'ouvrent avec lui.</div>'
+      + '</div>'
+      + '<div class="ss-hero-a"><button class="btn btn-cta btn-sm" onclick="ssOpenAddMatch()">+ Ajouter un match</button></div>'
+      + '</div>';
+  }
+  var split = '';
+  if (season) { var sp = season.splits.find(function (x) { return x.id === next.splitId; }); split = sp ? sp.name : ''; }
+  var meta = [next.competition || '', split, 'BO' + (next.bo || 1),
+              ssDateStr(next.date) + ' · ' + ssTimeStr(next.date)].filter(Boolean);
+  return '<div class="ss-hero">'
+    + '<div class="ss-hero-l">'
+    +   '<div class="ss-hero-k">Prochain match<span class="ss-hero-j">' + anEsc(ssCountdownLabel(next.date)) + '</span></div>'
+    +   '<div class="ss-hero-vs">' + ssLogoImg(team || { name: '?' }, 44) + '<span class="ss-hero-x">vs</span>' + ssLogoImg(next.opp, 44)
+    +     '<span class="ss-hero-name">' + anEsc((next.opp && next.opp.name) || '—') + '</span></div>'
+    +   '<div class="ss-hero-meta">' + meta.map(function (t, i) {
+            return (i ? '<span class="ss-hero-sep">·</span>' : '') + '<span>' + anEsc(t) + '</span>';
+          }).join('') + '</div>'
+    + '</div>'
+    + '<div class="ss-hero-a">'
+    +   '<button class="btn btn-cta btn-sm" onclick="ssOpenMatch(\'' + next.id + '\')">Ouvrir la draft</button>'
+    +   '<button class="btn btn-ghost btn-sm" onclick="ssOuvrirFeuille(\'' + next.id + '\')">Feuille de route</button>'
+    + '</div>'
+    + '</div>';
+}
+// Le second bouton du bloc ouvre le match DIRECTEMENT sur sa feuille de route : sans
+// ça, il faudrait rouvrir la draft puis changer d'onglet pour la trouver.
+function ssOuvrirFeuille(id) { window._ssOpen = id; window._ssTab = 'prematch'; renderSeasons(); }
 function ssNewSeason() { var d = ssData(); var yr = new Date().getFullYear(); var name = prompt('Nom de la saison :', 'Saison ' + (yr % 100) + '-' + ((yr + 1) % 100)); if (!name) return; var s = { id: ssId(), name: name.trim(), splits: [{ id: ssId(), name: 'Split 1' }] }; d.seasons.push(s); d.activeSeason = s.id; ssWrite(d); renderSeasons(); }
 function ssSetSeason(id) { var d = ssData(); d.activeSeason = id; ssWrite(d); renderSeasons(); }
 function ssAddSplit() { var d = ssData(); var s = ssActiveSeason(d); if (!s) return; var name = prompt('Nom du split :', 'Split ' + ((s.splits.length || 0) + 1)); if (!name) return; s.splits.push({ id: ssId(), name: name.trim() }); ssWrite(d); renderSeasons(); }
