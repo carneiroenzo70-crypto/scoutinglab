@@ -1675,3 +1675,49 @@ test('feuille de route et comparaison : pied de page numéroté sur chaque page'
 test('Ctrl+P sur une fiche lance le rapport officiel, pas l\'ancien export', () => {
   assert.match(codeSeul, /if \(fiche\) \{ e\.preventDefault\(\); generateOfficialReport\(\); \}/);
 });
+
+test('candidatures : le texte du formulaire public est échappé, jamais injecté', () => {
+  const carte = extraireFonction('crmCandidateCardHtml');
+  // Aucun champ du formulaire concaténé brut.
+  for (const champ of ['pseudo', 'tag', 'role', 'age', 'pays', 'rank', 'experience', 'contact']) {
+    assert.doesNotMatch(carte, new RegExp("'\\s*\\+\\s*c\\." + champ + "\\b"), 'c.' + champ + ' doit passer par e()');
+  }
+  // Les boutons ne reçoivent que l'index, jamais le texte du candidat.
+  assert.doesNotMatch(carte, /crmVerifyRank\('/);
+  assert.match(carte, /crmVerifierCandidat\(' \+ i \+ '\)/);
+  assert.match(extraireFonction('crmVerifyRank'), /anEsc\(declaredRank/);
+});
+
+test('CRM : le mot « semi-pro » n\'est plus proposé comme niveau de structure', () => {
+  const ligne = codeSeul.match(/const CRM_TIERS = \[[^\]]*\]/)[0];
+  assert.doesNotMatch(ligne, /semi/i);
+  assert.match(extraireFonction('crmLoad'), /'Semi-pro'.*'Autre'/, 'les structures existantes sont migrées');
+});
+
+test('CRM : le pipeline est l\'onglet d\'entrée, dans les trois barres sœurs', () => {
+  assert.match(codeSeul, /'\/crm': '\/crm\/pipeline'/);
+  for (const id of ['id="crm-tabs"', 'id="top50-tabs"', 'id="analyse-tabs"']) {
+    const i = app.indexOf(id), barre = app.slice(i, app.indexOf('</div>', i));
+    assert.ok(barre.indexOf('>Pipeline<') < barre.indexOf('>Candidatures<') && barre.indexOf('>Candidatures<') < barre.indexOf('>Structures<'), id + ' : même ordre partout');
+  }
+});
+
+test('CRM : relances datées, relues dans les deux formats', () => {
+  const f = extraireFonction('crmRelanceDate');
+  assert.match(f, /\(\\d\{4\}\)-\(\\d\{2\}\)-\(\\d\{2\}\)/, 'format du champ date');
+  assert.match(f, /\(\\d\{1,2\}\)\\\/\(\\d\{1,2\}\)\\\/\(\\d\{2,4\}\)/, 'ancienne saisie JJ/MM/AAAA');
+  assert.match(extraireFonction('crmRelanceEtat'), /'signe'.*'ecarte'/, 'un dossier clos n\'a plus de relance');
+  assert.doesNotMatch(codeSeul, /function crmSetRelance/, 'plus de saisie libre par invite');
+});
+
+test('matching : plus de score composite qui mélangeait deux échelles', () => {
+  const m = extraireFonction('crmRunMatching');
+  assert.doesNotMatch(m, /scoreCompat|bonusAge|\* ?0\.55/);
+  assert.match(m, /crmScoreNum\(p\)/, 'scores ramenés sur 100 des deux côtés');
+  assert.match(m, /crm-match-rule/, 'la règle de tri est écrite à l\'écran');
+});
+
+test('fiche prospect : pas de radar fabriqué sans dimensions, pas de rang inventé au comparateur', () => {
+  assert.match(extraireFonction('crmRenderFiche'), /aDims \?/);
+  assert.doesNotMatch(extraireFonction('crmSendToCompare'), /'Diamond'/);
+});
