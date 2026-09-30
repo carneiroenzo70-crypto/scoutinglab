@@ -774,6 +774,104 @@ body:not(.theme-dark) .sl-rep-sel{ background:rgba(255,255,255,.6); border-color
 .sl-matrix-table td.zero{ color:var(--vs-fg-3); opacity:.4; font-family:var(--font-mono); }
 .sl-hist-row{ display:flex; align-items:center; gap:12px; padding:11px 14px; min-width:0; }
 .sl-hist-row + .sl-hist-row{ border-top:1px solid var(--vs-forest-600); }
+/* ════ Studio vidéo — passe du 30/09/2026 ════════════════════════════════════
+   Mesuré à 1440×900 avant : studio de 1205 px de haut, transport sur deux
+   lignes, timeline de dix pistes dont six vides. On ne voyait JAMAIS la vidéo
+   et la timeline en même temps — c'est pourtant la propriété de base d'un
+   poste de codage (Sportscode, Nacsport) : on code en regardant les deux. */
+.sr-only{ position:absolute !important; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+
+/* La vidéo se dimensionne sur la HAUTEUR disponible (470 px = en-tête, barre du
+   studio, transport et une timeline de quelques pistes), et sa largeur en
+   découle au 16:9 — plus de bandes noires latérales. 300 px de plancher. */
+.sl-video-wrap{ max-height:none; width:min(100%, calc(max(300px, 100vh - 470px) * 16 / 9)); margin-inline:auto; }
+.sl-code-panel{ max-height:calc(max(300px, 100vh - 470px) + 66px); }
+
+/* Transport : une ligne. */
+.sl-transport{ gap:5px; }
+.sl-seek{ height:30px; min-width:36px; padding:0 8px; border-radius:8px; border:1px solid var(--vs-forest-500); background:transparent;
+  color:var(--vs-fg-2); font:700 11.5px/1 var(--font-mono); cursor:pointer; transition:color .14s, border-color .14s, background-color .14s; flex:none; }
+.sl-seek:hover{ color:var(--vs-fg-1); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.08); }
+.sl-speed-sel{ display:inline-flex; flex:none; }
+.sl-speed-sel select{ height:30px; padding:0 10px; border-radius:8px; border:1px solid var(--vs-forest-500); background:rgba(4,18,15,.3);
+  color:var(--vs-fg-1); font:700 11.5px/1 var(--font-mono); cursor:pointer; }
+.sl-speed-sel select option{ background:var(--vs-forest-800); color:var(--vs-fg-1); }
+body:not(.theme-dark) .sl-speed-sel select{ background:#fff; border-color:rgba(31,71,64,.16); }
+
+/* Règle graduée. */
+.sl-regle-row{ margin-bottom:2px; }
+.sl-regle{ position:relative; height:20px; min-width:0; cursor:pointer; border-bottom:1px solid var(--vs-forest-600); }
+body:not(.theme-dark) .sl-regle{ border-bottom-color:rgba(31,71,64,.14); }
+.sl-regle-t{ position:absolute; bottom:0; width:1px; height:6px; background:var(--vs-fg-3); pointer-events:none; }
+.sl-regle-t i{ position:absolute; bottom:7px; left:3px; font-style:normal; font-family:var(--font-mono); font-size:9.5px; font-weight:600; color:var(--vs-fg-3); white-space:nowrap; }
+.sl-regle-row .sl-tl-name .lbl{ font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--vs-fg-3); }
+.sl-tl-vide{ font-size:12px; color:var(--vs-fg-3); padding:8px 2px; }
+
+/* Codage : le bouton s'allume (remplace la notification par touche). */
+@keyframes slHit{ 0%{ box-shadow:0 0 0 3px rgba(255,255,255,.95), 0 0 22px 2px var(--cbg); } 100%{ box-shadow:0 0 0 0 rgba(255,255,255,0), 0 0 0 0 transparent; } }
+.sl-code-btn.hit{ animation:slHit .55s var(--ease-out); }
+@media (prefers-reduced-motion: reduce){ .sl-code-btn.hit{ animation:none; outline:2px solid #fff; outline-offset:1px; } }
+
+/* Favori : un état, pas un glyphe. */
+#sl-detail-star.on{ color:var(--rank-gold,#E6B23E); border-color:color-mix(in srgb, var(--rank-gold,#E6B23E) 50%, transparent); }
+#sl-detail-star.on svg{ fill:currentColor; }
+
+/* Raccourcis repliés : ils prenaient la place des labels. */
+.sl-kbd-det{ margin-top:16px; }
+.sl-kbd-det > summary{ cursor:pointer; list-style:none; }
+.sl-kbd-det > summary::-webkit-details-marker{ display:none; }
+.sl-kbd-det > summary::after{ content:''; width:6px; height:6px; margin-left:4px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(-45deg); transition:transform .15s; }
+.sl-kbd-det[open] > summary::after{ transform:rotate(45deg); }
+
+/* Liste des clips. */
+.sl-clips-tete{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 14px; border-bottom:1px solid var(--vs-forest-600); }
+body:not(.theme-dark) .sl-clips-tete{ border-bottom-color:rgba(31,71,64,.1); }
+.sl-clips-outils{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.vsd .sl-clips-q{ height:32px; width:230px; padding:0 10px; gap:7px; }
+.vsd .sl-clips-q input{ font-size:13px; }
+.vsd .sl-clips-code{ height:32px; width:170px; padding:0 10px; }
+.vsd .sl-clips-code select{ font-size:13px; }
+#sl-clips-star svg{ margin-right:2px; }
+#sl-clips-star.on svg{ fill:currentColor; }
+.sl-clips{ max-height:330px; overflow-y:auto; overscroll-behavior:contain; }
+.sl-clip{ display:grid; grid-template-columns:118px 76px 128px minmax(0,1.1fr) minmax(0,2fr) 18px; align-items:center; gap:14px;
+  min-height:46px; padding:6px 14px 6px 18px; border-top:1px solid var(--vs-forest-700); cursor:pointer; position:relative; transition:background-color .12s; }
+body:not(.theme-dark) .sl-clip{ border-top-color:rgba(31,71,64,.08); }
+.sl-clip:first-child{ border-top:0; }
+.sl-clip::before{ content:''; position:absolute; left:6px; top:9px; bottom:9px; width:3px; border-radius:3px; background:var(--c); }
+.sl-clip:hover{ background:rgba(45,212,167,.05); }
+.sl-clip.sel{ background:rgba(45,212,167,.11); }
+.sl-clip.sel .sl-clip-code{ color:var(--vs-emerald-300); }
+.sl-clip:focus-visible{ outline:2px solid #2DD4A7; outline-offset:-2px; }
+.sl-clip-code{ font-weight:700; font-size:13px; color:var(--vs-fg-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sl-clip-t{ font-family:var(--font-mono); font-size:12px; color:var(--vs-fg-2); display:flex; flex-direction:column; gap:2px; line-height:1.1; }
+.sl-clip-t em{ font-style:normal; font-size:10.5px; font-weight:700; color:var(--vs-emerald-300); }
+body:not(.theme-dark) .sl-clip-t em{ color:var(--vs-emerald-500); }
+.sl-clip-ctx{ min-width:0; overflow:hidden; }
+.sl-clip-labels{ display:flex; gap:4px; flex-wrap:wrap; min-width:0; }
+.sl-clip-labels span{ font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:999px; border:1px solid var(--vs-forest-500); color:var(--vs-fg-2); white-space:nowrap; }
+.sl-clip-note{ font-size:12.5px; color:var(--vs-fg-2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.sl-clip-star{ color:var(--rank-gold,#E6B23E); display:grid; place-items:center; }
+.sl-clip-star svg{ fill:currentColor; }
+.sl-clips-vide{ padding:20px 14px; font-size:12.5px; color:var(--vs-fg-3); text-align:center; }
+@media (max-width:1000px){
+  .sl-clip{ grid-template-columns:100px 70px minmax(0,1fr) 18px; }
+  .sl-clip-ctx, .sl-clip-labels{ display:none; }
+  .vsd .sl-clips-q{ width:100%; }
+}
+
+/* Portable (861–1040 px) : l'ancienne règle empilait le panneau de codage SOUS
+   la vidéo dès 1040 px, et la timeline tombait à 1176 px sur un écran de 768.
+   Le panneau reste à droite, plus étroit ; on n'empile qu'en dessous de 860 px. */
+@media (max-width:1040px) and (min-width:861px){
+  .sl-main{ grid-template-columns:minmax(0,1fr) minmax(0,232px); }
+  .sl-code-btn{ padding:8px 8px 7px; font-size:12px; }
+}
+
+/* Matrice : descripteurs regroupés. */
+.sl-matrix-table th.grp{ font-size:9.5px; letter-spacing:.14em; color:var(--vs-emerald-300); background:rgba(4,18,15,.22); }
+body:not(.theme-dark) .sl-matrix-table th.grp{ color:var(--vs-emerald-500); background:rgba(31,71,64,.04); }
+.sl-matrix-table .g0{ border-left:2px solid var(--vs-forest-500); }
 /* Trim des bornes du clip (in/out façon Sportscode) */
 .sl-trim{ display:inline-flex; align-items:center; gap:4px; }
 .sl-trim-lbl{ font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--vs-fg-3); }
@@ -4469,6 +4567,13 @@ body:not(.theme-dark) .hd-kbd{ background:rgba(31,71,64,.05); }
 @media (max-width:1180px){
   .hd .hd-cmdk{ min-width:0; width:32px; padding:0; justify-content:center; }
   .hd .hd-cmdk-txt, .hd .hd-cmdk .hd-kbd{ display:none; }
+  /* À 1024 px, « CRM AGENT » et « Solo Q » passaient sur deux lignes et le
+     bouton de déconnexion sortait de l'écran (mesuré : 24 px de débordement). */
+  .hd .hd-nav-item{ font-size:13px; padding:8px 10px; white-space:nowrap; }
+  .hd .hd-modebtn{ white-space:nowrap; padding:0 9px; }
+}
+@media (max-width:1100px){
+  .hd .hd-plan{ display:none; }
 }
 @media (max-width:760px){
   .hd .hd-plan{ display:none; }
@@ -6305,6 +6410,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
     <div id="panel-scrimlab" class="panel">
       <div class="vsd" style="max-width:1780px;margin:0 auto;padding:14px 12px 30px">
 
+        <div id="sl-live" class="sr-only" role="status" aria-live="polite"></div>
         <!-- Barre du studio -->
         <div class="sl-topbar">
           <button class="btn btn-ghost btn-sm" onclick="slBackToHub()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg> Analyse vidéo</button>
@@ -6377,10 +6483,10 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
               <button class="sl-iconbtn" onclick="slPlayPause()" id="sl-play-btn" title="Lecture / Pause (Espace)"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" id="sl-play-icon"><polygon points="6 3 21 12 6 21 6 3"/></svg></button>
               <div class="sl-transport-sep"></div>
               <button class="sl-iconbtn" onclick="slStepFrame(-1)" title="Image précédente (,)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg></button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(-2)" title="-2 s (←)">‹2s</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(-10)" title="-10 s (Maj+←)">‹10s</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(10)" title="+10 s (Maj+→)">10s›</button>
-              <button class="btn btn-ghost btn-sm" onclick="slSeek(2)" title="+2 s (→)">2s›</button>
+              <button class="sl-seek" onclick="slSeek(-10)" title="−10 s (Maj+←)">−10</button>
+              <button class="sl-seek" onclick="slSeek(-2)" title="−2 s (←)">−2</button>
+              <button class="sl-seek" onclick="slSeek(2)" title="+2 s (→)">+2</button>
+              <button class="sl-seek" onclick="slSeek(10)" title="+10 s (Maj+→)">+10</button>
               <button class="sl-iconbtn" onclick="slStepFrame(1)" title="Image suivante (.)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
               <span class="sl-time" id="sl-time">00:00 / 00:00</span>
               <span class="sl-time-jeu" id="sl-time-jeu" title="Temps de jeu — calez le chrono sur 0:00 pour l'obtenir">jeu —</span>
@@ -6390,14 +6496,15 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
                 <input type="range" id="sl-vol-slider" min="0" max="1" step="0.05" value="1" oninput="slSetVolume(this.value)">
               </div>
               <div class="sl-transport-sep"></div>
-              <span class="faint" style="font-size:10.5px">Vitesse</span>
-              <div class="rolepills" style="gap:4px">
-                <button class="chip sl-speed" data-s="0.25" onclick="slSetSpeed(0.25)">×0.25</button>
-                <button class="chip sl-speed" data-s="0.5" onclick="slSetSpeed(0.5)">×0.5</button>
-                <button class="chip sl-speed on" data-s="1" onclick="slSetSpeed(1)">×1</button>
-                <button class="chip sl-speed" data-s="1.5" onclick="slSetSpeed(1.5)">×1.5</button>
-                <button class="chip sl-speed" data-s="2" onclick="slSetSpeed(2)">×2</button>
-              </div>
+              <!-- Cinq pastilles de vitesse (240 px) faisaient passer le transport sur
+                   deux lignes à 1440 px. Une liste : même choix, 64 px. -->
+              <label class="sl-speed-sel" title="Vitesse de lecture">
+                <span class="sr-only">Vitesse</span>
+                <select id="sl-speed" onchange="slSetSpeed(parseFloat(this.value))">
+                  <option value="0.25">×0,25</option><option value="0.5">×0,5</option>
+                  <option value="1" selected>×1</option><option value="1.5">×1,5</option><option value="2">×2</option>
+                </select>
+              </label>
               <div class="sl-transport-sep"></div>
               <button class="sl-iconbtn" onclick="slToggleFullscreen()" id="sl-fs-btn" title="Plein écran (F)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
             </div>
@@ -6412,7 +6519,8 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
             <div id="sl-code-editor" style="display:none;margin-top:10px;padding:10px;border:1px solid var(--vs-forest-500);border-radius:10px;background:rgba(4,18,15,.35)"></div>
             <div class="sl-panel-label" style="margin-top:16px">Labels <span class="hint">— clip sélectionné</span></div>
             <div id="sl-labels"></div>
-            <div class="sl-panel-label" style="margin-top:16px">Raccourcis</div>
+            <details class="sl-kbd-det">
+            <summary class="sl-panel-label">Raccourcis clavier</summary>
             <div class="sl-kbd-grid">
               <kbd>Espace</kbd><span>Lecture / pause</span>
               <kbd>←/→</kbd><span>±2 s</span>
@@ -6423,7 +6531,9 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
               <kbd>M</kbd><span>Couper le son</span>
               <kbd>F</kbd><span>Plein écran</span>
               <kbd>Suppr</kbd><span>Supprimer le clip</span>
+              <kbd>[ / ]</kbd><span>Clip précédent / suivant</span>
             </div>
+            </details>
           </div>
         </div>
 
@@ -6455,6 +6565,21 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
           </div>
         </div>
 
+        <!-- Liste des clips — le « trieur » de Sportscode, la playlist de Hudl.
+             La timeline dit QUAND ; la liste dit QUOI, et se filtre. -->
+        <div class="card sl-clips-card" style="padding:0;margin-top:12px">
+          <div class="sl-clips-tete">
+            <div class="label" style="font-size:10px">Clips <span class="faint" id="sl-clips-n" style="letter-spacing:0;text-transform:none;font-weight:600"></span></div>
+            <div class="sl-clips-outils">
+              <div class="ctrl sl-clips-q"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg><input id="sl-clips-q" placeholder="Label, note, code…" oninput="slFiltreClips('q', this.value)" aria-label="Filtrer les clips"></div>
+              <div class="ctrl select sl-clips-code"><select id="sl-clips-code" onchange="slFiltreClips('code', this.value)" aria-label="Filtrer par code"></select><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></div>
+              <button class="chip" id="sl-clips-star" onclick="slFiltreClips('star')" aria-pressed="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg> Favoris</button>
+              <button class="btn btn-secondary btn-sm" onclick="slLireFiltre()" title="Enchaîner les clips affichés"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg> Lire la sélection</button>
+            </div>
+          </div>
+          <div id="sl-clips" class="sl-clips" role="list"></div>
+        </div>
+
         <!-- Barre de détail du clip sélectionné -->
         <div class="card" id="sl-detail" style="display:none;padding:12px 14px;margin-top:12px">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -6473,9 +6598,9 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
             </span>
             <div id="sl-detail-labels" style="display:flex;gap:5px;flex-wrap:wrap"></div>
             <div style="flex:1;min-width:160px"><div class="ctrl" style="height:34px"><input id="sl-detail-note" placeholder="Note du clip…" oninput="slNoteInput(this.value)"></div></div>
-            <button class="btn btn-ghost btn-sm" onclick="slPlaySelected()">▶ Rejouer</button>
-            <button class="btn btn-ghost btn-sm" id="sl-detail-star" onclick="slToggleStar()">☆ Favori</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="slDeleteSelected()">✕ Supprimer</button>
+            <button class="btn btn-ghost btn-sm" onclick="slPlaySelected()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 4 20 12 6 20 6 4"/></svg> Rejouer</button>
+            <button class="btn btn-ghost btn-sm" id="sl-detail-star" onclick="slToggleStar()" aria-pressed="false"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg> <span>Favori</span></button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="slDeleteSelected()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M9 6V4h6v2"/></svg> Supprimer</button>
           </div>
         </div>
 
@@ -6498,7 +6623,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
             </div>
             <div class="fld" style="min-width:150px" title="À quel moment de TA VIDÉO le chrono du jeu affiche 0:00 (sync vidéo ↔ données)">
               <div class="label" style="font-size:10px">0:00 du jeu à (mm:ss vidéo)</div>
-              <div class="ctrl" style="height:38px"><input id="sl-riot-offset" placeholder="00:00" value="00:00" style="font-family:var(--font-mono)"></div>
+              <div class="ctrl" style="height:38px"><input id="sl-riot-offset" placeholder="non calé" onchange="slOffsetDepuisChamp(this.value)" style="font-family:var(--font-mono)"></div>
             </div>
             <button class="btn btn-cta btn-sm" id="sl-riot-search" onclick="slRiotSearch()" style="height:38px">Chercher les parties</button>
           </div>
@@ -23034,6 +23159,9 @@ function slEffacerChrono(){
   slSave(); slRenderChrono(); slRenderTimeline(); slRenderDetail(); slRenderReperes();
 }
 function slRenderChrono(){
+  // Le champ du panneau Riot reflète le même calage (cf. slParseOffset).
+  var champ = document.getElementById('sl-riot-offset');
+  if (champ && document.activeElement !== champ) champ.value = (slOffset() == null) ? '' : slFmt(slOffset());
   var el = document.getElementById('sl-chrono'); if (!el) return;
   var o = slOffset();
   el.innerHTML = (o == null)
@@ -23041,7 +23169,7 @@ function slRenderChrono(){
       + '<button class="sl-chrono-b" onclick="slCalerChrono()" title="Amenez la vidéo à l\'instant où le jeu affiche 0:00, puis cliquez">Caler sur 0:00</button>'
     : '<span class="sl-chrono-k">Jeu</span><span class="sl-chrono-v" id="sl-chrono-v">0:00</span>'
       + '<button class="sl-chrono-b" onclick="slCalerChrono()" title="Recaler sur la position actuelle">Recaler</button>'
-      + '<button class="sl-chrono-x" onclick="slEffacerChrono()" title="Oublier le calage">✕</button>';
+      + '<button class="sl-chrono-x" onclick="slEffacerChrono()" title="Oublier le calage" aria-label="Oublier le calage"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
 }
 
 /* ══════════ LES REPÈRES DE JEU ══════════
@@ -23164,7 +23292,7 @@ function slRenderHistory(){
       '<div class="faint" style="font-size:11.5px">'+new Date(s.updated).toLocaleDateString('fr-FR')+' · '+(s.dur?slFmt(s.dur)+' · ':'')+s.clips+' clip'+(s.clips>1?'s':'')+(cur?' · <span style="color:var(--vs-emerald-300)">chargée</span>':'')+'</div></div>'+
       (cur? '<button class="btn btn-cta btn-sm" onclick="slOpenStudio()">Ouvrir le studio</button>'
           : '<button class="btn btn-secondary btn-sm" onclick="slResume(\''+s.sig.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">Reprendre</button>')+
-      '<button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" onclick="slDeleteSession(\''+s.sig.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">✕</button>'+
+      '<button class="btn btn-ghost btn-sm" style="color:var(--vs-red-400);border-color:rgba(255,90,51,.3)" title="Supprimer la session" aria-label="Supprimer la session" onclick="slDeleteSession(\''+s.sig.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M9 6V4h6v2"/></svg></button>'+
     '</div>';
   }).join('')+'</div>';
 }
@@ -23210,7 +23338,7 @@ function slRenderCodeEditor(){
       '<input type="text" class="sl-ce-name" value="'+String(c.label).replace(/"/g,'&quot;')+'" onchange="slEditCode('+i+',\'label\',this.value)" title="Nom du code">'+
       '<input type="number" class="sl-ce-num" min="0" max="60" value="'+c.lead+'" onchange="slEditCode('+i+',\'lead\',this.value)" title="Lead : secondes capturées AVANT le clic">'+
       '<input type="number" class="sl-ce-num" min="1" max="60" value="'+c.lag+'" onchange="slEditCode('+i+',\'lag\',this.value)" title="Lag : secondes capturées APRÈS le clic">'+
-      '<button class="sl-iconbtn" style="width:26px;height:26px;color:var(--vs-red-400)" onclick="slRemoveCode('+i+')" title="Supprimer ce code">✕</button>'+
+      '<button class="sl-iconbtn" style="width:26px;height:26px;color:var(--vs-red-400)" onclick="slRemoveCode('+i+')" title="Supprimer ce code" aria-label="Supprimer ce code"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>'+
     '</div>';
   }).join('')+
   '<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'+
@@ -23268,8 +23396,13 @@ function slCode(codeId){
   var end=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? Math.min(SL.dur, t+c.lag) : (t+c.lag);
   var inst={ id:Date.now()+Math.random().toString(36).slice(2,6), code:codeId, t0:Math.max(0,t-c.lead), t1:end, labels:[], note:'', star:false };
   SL.instances.push(inst); SL.sel=inst.id;
-  slRenderTimeline(); slRenderDetail(); slSave();
-  if(typeof showToast==='function') showToast(c.label+' codé à '+slFmt(t),'success');
+  slRenderTimeline(); slRenderDetail(); slSave(); slUpdateCodeCounts(); slRenderScrubMarks();
+  /* Une notification par touche en codage live, c'était dix toasts empilés par
+     minute sur la vidéo. Le bouton s'allume, le compteur monte, et l'annonce
+     part à la région « live » pour les lecteurs d'écran. */
+  var b=document.getElementById('sl-code-'+codeId);
+  if(b){ b.classList.remove('hit'); void b.offsetWidth; b.classList.add('hit'); }
+  var live=document.getElementById('sl-live'); if(live) live.textContent=c.label+' codé à '+slFmt(t)+(slOffset()!=null?' (jeu '+slFmtJeu(t)+')':'');
 }
 function slSelInst(){ return SL.instances.find(function(i){ return i.id===SL.sel; }) || null; }
 function slSelect(id, loop){
@@ -23287,7 +23420,12 @@ function slSyncLabelChips(){
   var i=slSelInst();
   document.querySelectorAll('.sl-label-chip').forEach(function(b){ b.classList.toggle('on', !!(i && i.labels.indexOf(b.getAttribute('data-l'))>=0)); });
 }
-function slNoteInput(vl){ var i=slSelInst(); if(i){ i.note=vl; slSave(); } }
+function slNoteInput(vl){
+  var i=slSelInst(); if(!i) return;
+  i.note=vl; slSave();
+  // La ligne de la liste suit la frappe sans tout reconstruire (le focus reste dans le champ).
+  var r=document.querySelector('.sl-clip[data-id="'+i.id+'"] .sl-clip-note'); if(r) r.textContent=vl;
+}
 function slTrim(which, d){
   var i=slSelInst(); if(!i) return;
   if(which==='t0') i.t0=Math.max(0, Math.min(i.t1-.5, i.t0+d));
@@ -23303,11 +23441,100 @@ function slDeleteSelected(){
 }
 function slPlaySelected(){ if(SL.sel) slSelect(SL.sel,false); }
 
+/* ── Liste des clips ── */
+SL.filtre = { q:'', code:'', star:false };
+function slClipsFiltres(){
+  var f = SL.filtre;
+  var besoin = String(f.q || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return SL.instances.filter(function(i){
+    if (f.star && !i.star) return false;
+    if (f.code && i.code !== f.code) return false;
+    if (!besoin) return true;
+    var foin = (slCodeOf(i.code).label + ' ' + i.labels.join(' ') + ' ' + (i.note || '')).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return besoin.split(/\s+/).every(function(mot){ return foin.indexOf(mot) >= 0; });
+  }).sort(function(a, b){ return a.t0 - b.t0; });
+}
+function slFiltreClips(cle, val){
+  if (cle === 'star') SL.filtre.star = !SL.filtre.star;
+  else SL.filtre[cle] = val;
+  var b = document.getElementById('sl-clips-star');
+  if (b) { b.classList.toggle('on', SL.filtre.star); b.setAttribute('aria-pressed', SL.filtre.star ? 'true' : 'false'); }
+  slRenderClips();
+}
+function slRenderClips(){
+  var el = document.getElementById('sl-clips'); if (!el) return;
+  // Liste des codes du filtre : reconstruite seulement si elle a changé.
+  var sel = document.getElementById('sl-clips-code');
+  if (sel) {
+    var codes = slAllCodesInUse().filter(function(c){ return SL.instances.some(function(i){ return i.code === c.id; }); });
+    var sig = codes.map(function(c){ return c.id; }).join('|');
+    if (sel.getAttribute('data-sig') !== sig) {
+      sel.innerHTML = '<option value="">Tous les codes</option>' + codes.map(function(c){ return '<option value="' + anEsc(c.id) + '">' + anEsc(c.label) + '</option>'; }).join('');
+      sel.setAttribute('data-sig', sig);
+      if (SL.filtre.code && !codes.some(function(c){ return c.id === SL.filtre.code; })) SL.filtre.code = '';
+      sel.value = SL.filtre.code;
+    }
+  }
+  var liste = slClipsFiltres();
+  var nb = document.getElementById('sl-clips-n');
+  if (nb) nb.textContent = SL.instances.length ? (liste.length === SL.instances.length ? SL.instances.length + '' : liste.length + ' sur ' + SL.instances.length) : '';
+  if (!SL.instances.length) { el.innerHTML = '<div class="sl-clips-vide">Les clips codés s\'affichent ici, dans l\'ordre du match.</div>'; return; }
+  if (!liste.length) { el.innerHTML = '<div class="sl-clips-vide">Aucun clip ne correspond au filtre.</div>'; return; }
+  el.innerHTML = liste.map(function(i){
+    var cd = slCodeOf(i.code), jeu = slOffset() != null ? '<em>jeu ' + slFmtJeu(i.t0) + '</em>' : '';
+    return '<div class="sl-clip' + (SL.sel === i.id ? ' sel' : '') + '" role="listitem" tabindex="0" data-id="' + i.id + '"'
+      + ' onclick="slSelect(\'' + i.id + '\',false)" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();slSelect(\'' + i.id + '\',false)}"'
+      + (SL.sel === i.id ? ' aria-current="true"' : '') + ' style="--c:' + cd.color + '">'
+      + '<span class="sl-clip-code">' + anEsc(cd.label) + '</span>'
+      + '<span class="sl-clip-t">' + slFmt(i.t0) + jeu + '</span>'
+      + '<span class="sl-clip-ctx">' + slContexteClip(i) + '</span>'
+      + '<span class="sl-clip-labels">' + i.labels.map(function(l){ return '<span>' + anEsc(l) + '</span>'; }).join('') + '</span>'
+      + '<span class="sl-clip-note">' + anEsc(i.note || '') + '</span>'
+      + '<span class="sl-clip-star' + (i.star ? ' on' : '') + '" aria-label="' + (i.star ? 'Favori' : '') + '">' + (i.star ? '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg>' : '') + '</span>'
+      + '</div>';
+  }).join('');
+}
+function slLireFiltre(){
+  var liste = slClipsFiltres();
+  if (!liste.length) { if (typeof showToast === 'function') showToast('Aucun clip à lire avec ce filtre.', 'info'); return; }
+  SL.queue = liste.map(function(i){ return i.id; }); SL.qIdx = -1; slQueueNext();
+}
+/* Clip précédent / suivant (touches [ et ]), dans l'ordre du match. */
+function slClipVoisin(sens){
+  var liste = SL.instances.slice().sort(function(a, b){ return a.t0 - b.t0; });
+  if (!liste.length) return;
+  var k = liste.findIndex(function(i){ return i.id === SL.sel; });
+  if (k < 0) { var v = slVideo(), t = v ? v.currentTime : 0; k = sens > 0 ? -1 : liste.length; liste.forEach(function(i, j){ if (sens > 0 ? i.t0 <= t : i.t0 < t) k = sens > 0 ? j : j + 1; }); }
+  var cible = liste[Math.max(0, Math.min(liste.length - 1, k + sens))];
+  if (cible) slSelect(cible.id, false);
+}
+
 /* ── Timeline (lignes par code) ── */
+/* Règle graduée au-dessus des pistes. En temps de JEU dès que le chrono est
+   calé (0:00, 5:00, 10:00… — les repères que tout joueur a en tête), en temps
+   vidéo sinon. Même grille que les pistes : même abscisse pour le même instant. */
+function slRegleHtml(dur){
+  var o = slOffset(), jeu = (o != null);
+  var pas = [15, 30, 60, 120, 300, 600].find(function(p){ return dur / p <= 12; }) || 900;
+  var ticks = [], debut = jeu ? Math.ceil(-o / pas) * pas : 0;
+  for (var g = debut; (jeu ? g + o : g) <= dur + .01; g += pas) {
+    var tv = jeu ? g + o : g; if (tv < 0) continue;
+    var m = Math.floor(Math.abs(g) / 60), s = Math.floor(Math.abs(g) % 60);
+    ticks.push('<span class="sl-regle-t" style="left:' + (tv / dur * 100).toFixed(3) + '%"><i>' + (g < 0 ? '-' : '') + m + ':' + (s < 10 ? '0' : '') + s + '</i></span>');
+  }
+  return '<div class="sl-tl-row sl-regle-row"><div class="sl-tl-name"><span class="lbl">' + (jeu ? 'Temps de jeu' : 'Temps vidéo') + '</span></div>'
+    + '<div class="sl-regle" onclick="slTrackClick(event)" title="Cliquer pour aller à cet instant">' + ticks.join('')
+    + '<span class="sl-tl-playhead" data-ph style="left:0%"></span></div></div>';
+}
 function slRenderTimeline(){
   var el=document.getElementById('sl-timeline'); if(!el) return;
   var dur=(SL.dur && isFinite(SL.dur) && SL.dur>1) ? SL.dur : Math.max(60, SL.instances.reduce(function(m,i){ return Math.max(m,i.t1); },0)*1.15);
-  el.innerHTML = slAllCodesInUse().map(function(c){
+  /* Seuls les codes UTILISÉS ont une piste : dix lignes dont six vides
+     prenaient 256 px et repoussaient la vidéo hors de l'écran. */
+  var utilises = slAllCodesInUse().filter(function(c){ return SL.instances.some(function(i){ return i.code === c.id; }); });
+  el.innerHTML = slRegleHtml(dur) + (utilises.length ? '' :
+    '<div class="sl-tl-row"><div class="sl-tl-name"></div><div class="sl-tl-vide">Aucun clip pour l\'instant — codez avec les boutons de droite ou les touches 1 à 0.</div></div>')
+  + utilises.map(function(c){
     var list=SL.instances.filter(function(i){ return i.code===c.id; });
     return '<div class="sl-tl-row"><div class="sl-tl-name"><span class="dot" style="background:'+c.color+'"></span><span class="lbl">'+c.label+'</span><span class="c">'+list.length+'</span></div>'+
       '<div class="sl-tl-track" data-code="'+c.id+'" onclick="slTrackClick(event)">'+
@@ -23320,6 +23547,8 @@ function slRenderTimeline(){
       '</div></div>';
   }).join('');
   var sub=document.getElementById('sl-subtitle'); if(sub) sub.textContent = SL.instances.length+' clip(s) · codage auto-sauvegardé';
+  // La timeline est le point de rendu commun : la liste des clips suit.
+  slRenderClips();
 }
 function slTrackClick(e){
   var v=slVideo(); if(!v) return;
@@ -23340,7 +23569,7 @@ function slRenderDetail(){
   var cx=document.getElementById('sl-detail-ctx'); if(cx) cx.innerHTML = slContexteClip(i);
   var pl=document.getElementById('sl-detail-labels'); if(pl) pl.innerHTML=i.labels.map(function(l){ return '<span class="pill pill-emerald" style="font-size:10.5px">'+l+'</span>'; }).join('')||'<span class="faint" style="font-size:11px">aucun label</span>';
   var pn=document.getElementById('sl-detail-note'); if(pn && pn.value!==i.note) pn.value=i.note||'';
-  var ps=document.getElementById('sl-detail-star'); if(ps) ps.textContent=(i.star?'★ Favori':'☆ Favori');
+  var ps=document.getElementById('sl-detail-star'); if(ps){ ps.classList.toggle('on', !!i.star); ps.setAttribute('aria-pressed', i.star?'true':'false'); }
   slSyncLabelChips();
 }
 
@@ -23361,7 +23590,7 @@ function slStepFrame(dir){
   SL.loop=null; SL.queue=null; slSyncPlayUi();
 }
 function slSeek(dt){ var v=slVideo(); if(!v||!SL.url) return; v.currentTime=Math.max(0,Math.min(SL.dur||1e9, v.currentTime+dt)); SL.loop=null; SL.queue=null; }
-function slSetSpeed(s){ var v=slVideo(); if(v) v.playbackRate=s; document.querySelectorAll('.sl-speed').forEach(function(b){ b.classList.toggle('on', parseFloat(b.getAttribute('data-s'))===s); }); }
+function slSetSpeed(s){ var v=slVideo(); if(v) v.playbackRate=s; var sel=document.getElementById('sl-speed'); if(sel && parseFloat(sel.value)!==s) sel.value=String(s); }
 function slSetVolume(v2){ var v=slVideo(); if(!v) return; v.volume=parseFloat(v2); v.muted=(v.volume===0); slUpdateVolumeUi(); try{ localStorage.setItem('vs_scrim_vol', v.volume); }catch(e){} }
 function slToggleMute(){ var v=slVideo(); if(!v) return; v.muted=!v.muted; if(!v.muted && v.volume===0) v.volume=.6; slUpdateVolumeUi(); }
 function slUpdateVolumeUi(){
@@ -23521,13 +23750,23 @@ function slQueueNext(){
 function slToggleMatrix(){
   var el=document.getElementById('sl-matrix'); if(!el) return;
   if(el.style.display!=='none'){ el.style.display='none'; return; }
-  var html='<table class="sl-matrix-table"><tr><th>Code</th>'+SL_LABELS.map(function(l){ return '<th>'+l+'</th>'; }).join('')+'<th>Total</th><th>Durée</th></tr>';
-  slAllCodesInUse().forEach(function(c){
+  /* Dix-neuf colonnes de labels sans regroupement se lisaient mal : une ligne
+     d'en-tête porte désormais le descripteur (Rôle, Camp, Issue, Phase, Cause),
+     et un filet plus marqué sépare les groupes. Seuls les codes utilisés ont
+     une ligne. */
+  var debutGroupe = {};
+  SL_LABEL_GROUPS.forEach(function(g){ debutGroupe[g.items[0]] = true; });
+  var html='<table class="sl-matrix-table"><tr><th rowspan="2">Code</th>'
+    + SL_LABEL_GROUPS.map(function(g){ return '<th class="grp" colspan="'+g.items.length+'">'+g.t+'</th>'; }).join('')
+    + '<th rowspan="2">Total</th><th rowspan="2">Durée</th></tr><tr>'
+    + SL_LABELS.map(function(l){ return '<th'+(debutGroupe[l]?' class="g0"':'')+'>'+l+'</th>'; }).join('')+'</tr>';
+  slAllCodesInUse().filter(function(c){ return SL.instances.some(function(i){ return i.code===c.id; }); }).forEach(function(c){
     var list=SL.instances.filter(function(i){ return i.code===c.id; });
     var durTot=list.reduce(function(s,i){ return s+(i.t1-i.t0); },0);
     html+='<tr><th style="color:'+c.color+'">'+c.label+'</th>'+SL_LABELS.map(function(l){
       var n=list.filter(function(i){ return i.labels.indexOf(l)>=0; }).length;
-      return n? '<td class="hit" onclick="slPlayFilter(\''+c.id+'\',\''+l+'\')">'+n+'</td>' : '<td class="zero">·</td>';
+      var g0 = debutGroupe[l] ? ' g0' : '';
+      return n? '<td class="hit'+g0+'" onclick="slPlayFilter(\''+c.id+'\',\''+l+'\')">'+n+'</td>' : '<td class="zero'+g0+'">·</td>';
     }).join('')+(list.length? '<td class="hit" onclick="slPlayFilter(\''+c.id+'\',null)">'+list.length+'</td>':'<td class="zero">·</td>')+
     (durTot? '<td style="font-family:var(--font-mono);color:var(--vs-fg-2)">'+slFmt(durTot)+'</td>':'<td class="zero">·</td>')+'</tr>';
   });
@@ -23554,11 +23793,25 @@ function slRiotStatus(msg){
   if(!msg){ el.style.display='none'; return; }
   el.style.display=''; el.textContent=msg;
 }
-function slParseOffset(){
-  var raw=(document.getElementById('sl-riot-offset')||{}).value||'0:0';
-  var m=raw.trim().match(/^(\d{1,3})[:h'](\d{1,2})$/) || raw.trim().match(/^(\d+)$/);
-  if(!m) return 0;
-  return m[2]!==undefined ? (parseInt(m[1])*60+parseInt(m[2])) : parseInt(m[1]);
+/* ⚠️ Le studio avait DEUX chronos de jeu qui ne se parlaient pas : « Caler sur
+   0:00 » (SL.offset) pilotait le rail des repères et le temps de jeu affiché,
+   tandis que le champ « 0:00 du jeu à » du panneau Riot pilotait le fil
+   d'événements, la vue 2D et l'auto-codage. Deux réglages différents, et le
+   rail plaçait le drake à un endroit, le fil à un autre — sans rien signaler.
+   Il n'y a plus qu'une source : SL.offset. Le champ en est un reflet éditable. */
+function slParseOffset(){ return slOffset() != null ? slOffset() : 0; }
+function slLireMmSs(raw){
+  var s = String(raw || '').trim();
+  var m = s.match(/^(\d{1,3})[:h'](\d{1,2})$/) || s.match(/^(\d+)$/);
+  if (!m) return null;
+  return m[2] !== undefined ? (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) : parseInt(m[1], 10);
+}
+function slOffsetDepuisChamp(raw){
+  var s = slLireMmSs(raw);
+  if (s == null) { if (typeof showToast === 'function') showToast('Format attendu : mm:ss (ex. 01:32)', 'warning'); slRenderChrono(); return; }
+  SL.offset = s;
+  slSave(); slRenderChrono(); slRenderTimeline(); slRenderDetail(); slRenderReperes();
+  if (typeof slRenderRiotFeed === 'function' && SL.riotFeed) slRenderRiotFeed();
 }
 async function slRiotSearch(){
   var raw=(document.getElementById('sl-riot-id').value||'').trim();
@@ -23602,6 +23855,12 @@ async function slRiotSearch(){
   btn.disabled=false;
 }
 async function slRiotPick(matchId, puuid, regional){
+  // Sans calage, l'auto-codage suppose que la vidéo commence au 0:00 du jeu —
+  // on le DIT, et on l'inscrit dans le chrono pour qu'il soit visible et corrigeable.
+  if (slOffset() == null) {
+    SL.offset = 0; slSave(); slRenderChrono();
+    if (typeof showToast === 'function') showToast('Chrono non calé : la vidéo est supposée commencer au 0:00 du jeu. Recalez-le si besoin.', 'warning');
+  }
   slRiotStatus('Chargement de la timeline du match…');
   try{
     var match=await riotFetch('https://'+regional+'.api.riotgames.com/lol/match/v5/matches/'+matchId);
@@ -23609,7 +23868,8 @@ async function slRiotPick(matchId, puuid, regional){
     var n=slRiotGenerate(match, tl, puuid);
     var m=slRiotBuildFeed(match, tl, puuid);
     slRiotStatus(null);
-    if(typeof showToast==='function') showToast(n+' clips auto-codés · '+m+' événements dans la timeline officielle ✔','success');
+    slRenderReperes();
+    if(typeof showToast==='function') showToast(n+' clips auto-codés · '+m+' événements dans la timeline officielle','success');
   }catch(err){ slRiotStatus((err&&err.message)||'Erreur timeline'); }
 }
 /* ── Timeline officielle du match : liste d'événements cliquable (Étape 1+3 du constat) ── */
@@ -24262,6 +24522,8 @@ document.addEventListener('keydown', function(e){
   else if(e.key==='Escape'){ slSetTool(''); }
   else if(e.key==='s'||e.key==='S'){ slToggleStar(); }
   else if(e.key==='Delete'||e.key==='Backspace'){ slDeleteSelected(); }
+  else if(e.key==='['){ e.preventDefault(); slClipVoisin(-1); }
+  else if(e.key===']'){ e.preventDefault(); slClipVoisin(1); }
   else { var c=SL_CODES.find(function(x){ return x.key===e.key; }); if(c && SL.url) slCode(c.id); }
 });
 

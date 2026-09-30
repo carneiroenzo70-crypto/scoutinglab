@@ -1577,6 +1577,52 @@ test('le routeur ne réécrit pas l\'adresse avant de l\'avoir lue', () => {
   assert.ok(dem.indexOf('demarre = true') < dem.indexOf('noter()'), 'demarre doit passer à vrai AVANT la première écriture');
 });
 
+/* ── 25. Studio vidéo ────────────────────────────────────────────────────────── */
+
+test('le studio n\'a qu\'un seul chrono de jeu', () => {
+  /* « Caler sur 0:00 » (SL.offset) pilotait le rail des repères ; le champ du
+     panneau Riot pilotait le fil d'événements, la vue 2D et l'auto-codage. Deux
+     réglages, et le drake apparaissait à deux endroits différents. */
+  assert.match(extraireFonction('slParseOffset'), /slOffset\(\)/, 'slParseOffset doit lire SL.offset');
+  assert.doesNotMatch(extraireFonction('slParseOffset'), /getElementById/, 'plus de lecture directe du champ');
+  assert.match(app, /id="sl-riot-offset"[^>]*onchange="slOffsetDepuisChamp\(this\.value\)"/);
+  assert.doesNotMatch(app, /id="sl-riot-offset"[^>]*value="00:00"/, 'un 00:00 par défaut ferait croire à un calage');
+  assert.match(extraireFonction('slRenderChrono'), /sl-riot-offset/, 'le champ doit refléter le calage');
+});
+
+test('coder une action n\'empile pas une notification par touche', () => {
+  const corps = extraireFonction('slCode');
+  assert.doesNotMatch(corps, /showToast/, 'dix toasts par minute sur la vidéo en codage live');
+  assert.match(corps, /classList\.add\('hit'\)/);
+  assert.match(corps, /sl-live/, 'l\'annonce passe par la région live');
+});
+
+test('la timeline n\'affiche que les codes utilisés, sous une règle graduée', () => {
+  const corps = extraireFonction('slRenderTimeline');
+  assert.match(corps, /slRegleHtml\(dur\)/);
+  assert.match(corps, /SL\.instances\.some/, 'une piste par code UTILISÉ');
+  assert.match(corps, /slRenderClips\(\)/, 'la liste des clips suit chaque rendu');
+});
+
+test('la liste des clips existe et se filtre', () => {
+  assert.match(app, /id="sl-clips"/);
+  const f = extraireFonction('slClipsFiltres');
+  assert.match(f, /f\.star/); assert.match(f, /f\.code/); assert.match(f, /normalize\('NFD'\)/);
+  assert.match(app, /else if\(e\.key==='\['\)\{ e\.preventDefault\(\); slClipVoisin\(-1\); \}/);
+});
+
+test('le transport tient sur une ligne : la vitesse est une liste', () => {
+  assert.match(app, /<select id="sl-speed" onchange="slSetSpeed\(parseFloat\(this\.value\)\)">/);
+  assert.doesNotMatch(app, /class="chip sl-speed"/);
+});
+
+test('la barre de détail du clip n\'utilise plus de glyphes', () => {
+  const debut = app.indexOf('id="sl-detail"');
+  const bloc = app.slice(debut, app.indexOf('</div>\r\n        </div>', debut));
+  assert.doesNotMatch(bloc, /[▶☆★✕]/);
+  assert.doesNotMatch(extraireFonction('slRenderDetail'), /[☆★]/);
+});
+
 test('sur téléphone, .main peut rétrécir sous la largeur de son contenu', () => {
   /* Mesuré à 375 px : la page s'élargissait à 530 px, parce qu'un élément flex a
      pour largeur minimale celle de son contenu. */
