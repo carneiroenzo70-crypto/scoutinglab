@@ -1520,7 +1520,7 @@ test('le filtre du lien partagé ne laisse passer que des données attendues', (
 
 test('chaque écran a une adresse, et la navigation l\'écrit', () => {
   const nav = app.slice(app.indexOf('NAVIGATION — routes d\'URL'));
-  for (const route of ['/seasons', '/analytics/stats', '/analytics/video', '/scouting', '/crm/pipeline', '/crm/comparer', '/crm/top30']) {
+  for (const route of ['/seasons', '/analytics/stats', '/analytics/video', '/scouting', '/scouting/pipeline', '/scouting/comparer', '/scouting/top30', '/players']) {
     assert.ok(nav.includes("'" + route + "'"), 'route manquante : ' + route);
   }
   assert.match(nav, /history\.pushState/, 'une navigation doit créer une entrée d\'historique');
@@ -1695,7 +1695,7 @@ test('CRM : le mot « semi-pro » n\'est plus proposé comme niveau de structure
 });
 
 test('CRM : le pipeline est l\'onglet d\'entrée, dans les trois barres sœurs', () => {
-  assert.match(codeSeul, /'\/crm': '\/crm\/pipeline'/);
+  assert.match(codeSeul, /'\/scouting': '\/scouting\/pipeline'/);
   for (const id of ['id="crm-tabs"', 'id="top50-tabs"', 'id="analyse-tabs"']) {
     const i = app.indexOf(id), barre = app.slice(i, app.indexOf('</div>', i));
     assert.ok(barre.indexOf('>Pipeline<') < barre.indexOf('>Candidatures<') && barre.indexOf('>Candidatures<') < barre.indexOf('>Structures<'), id + ' : même ordre partout');
@@ -1720,4 +1720,13 @@ test('matching : plus de score composite qui mélangeait deux échelles', () => 
 test('fiche prospect : pas de radar fabriqué sans dimensions, pas de rang inventé au comparateur', () => {
   assert.match(extraireFonction('crmRenderFiche'), /aDims \?/);
   assert.doesNotMatch(extraireFonction('crmSendToCompare'), /'Diamond'/);
+});
+
+test('menu : Seasons · Analytics · Players · Scouting, et les anciens liens restent valides', () => {
+  assert.match(app, /id="nav-scout"[^>]*>[\s\S]*?<\/svg> Players<\/button>/);
+  assert.match(app, /id="nav-crm"[^>]*>[\s\S]*?<\/svg> Scouting<\/button>/);
+  assert.doesNotMatch(codeSeul, />\s*CRM Agent\s*</, 'plus de « CRM Agent » affiché');
+  for (const [ancien, neuf] of [['/crm/pipeline', '/scouting/pipeline'], ['/crm/comparer', '/scouting/comparer'], ['/scouting/carte', '/players/carte']]) {
+    assert.ok(codeSeul.includes("'" + ancien + "': '" + neuf + "'"), 'alias manquant ' + ancien);
+  }
 });
