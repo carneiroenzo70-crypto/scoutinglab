@@ -974,6 +974,11 @@ body:not(.theme-dark) .sl-matrix-table th.grp{ color:var(--vs-emerald-500); back
 body:not(.theme-dark) .crm-fiche textarea{ background:#fff; border-color:rgba(31,71,64,.16); }
 /* Entonnoir du pipeline : chaque étape est un filtre. */
 .crm-funnel{ display:flex; gap:8px; flex-wrap:wrap; }
+/* Guide de la page Players (3 étapes numérotées, sans glyphes ①②③). */
+.ob-etapes{ list-style:none; margin:0; padding:0; display:flex; gap:8px; flex-wrap:wrap; }
+.ob-etapes li{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; padding:5px 12px 5px 5px; border:1px solid var(--vs-forest-500); border-radius:999px; color:var(--vs-fg-1); }
+.ob-n{ width:20px; height:20px; border-radius:50%; display:inline-grid; place-items:center; font-size:11px; font-weight:800; background:var(--vs-emerald-400); color:#04211C; font-family:var(--font-mono); }
+body:not(.theme-dark) .ob-etapes li{ border-color:rgba(31,71,64,.16); }
 .crm-funnel-st{ flex:1 1 118px; display:flex; flex-direction:column; align-items:flex-start; gap:2px; padding:10px 14px 10px 16px; border-radius:12px; border:1px solid var(--vs-forest-500); background:rgba(9,37,32,.35); color:var(--vs-fg-2); cursor:pointer; text-align:left; position:relative; overflow:hidden; transition:border-color .15s, background .15s; font:inherit; }
 .crm-funnel-st::before{ content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--st, var(--vs-fg-3)); }
 .crm-funnel-st .n{ font-family:var(--font-mono); font-size:20px; font-weight:800; color:var(--vs-fg-1); line-height:1.15; }
@@ -5170,16 +5175,15 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
           <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
             <div class="entry-ico" style="width:40px;height:40px;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21.4 8 14 2 9.4h7.6z"/></svg></div>
             <div style="flex:1;min-width:200px">
-              <div class="h3" style="font-size:16px">Bienvenue sur VisionScore</div>
-              <div class="muted" style="font-size:13px;line-height:1.6;margin:3px 0 12px">Votre outil de scouting LoL. Pour analyser un joueur :</div>
-              <div class="chip-row" style="display:flex;gap:8px;flex-wrap:wrap">
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">①</span>&nbsp;Entrez le pseudo <span class="faint">(ex. Caliste#EUW9)</span></span>
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">②</span>&nbsp;Sélectionnez le rôle</span>
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">③</span>&nbsp;Importer</span>
-                <span class="chip"><span style="color:var(--vs-emerald-300);font-weight:800">④</span>&nbsp;Résultats</span>
-              </div>
+              <div class="h3" style="font-size:16px">Analyser un joueur en trois gestes</div>
+              <div class="muted" style="font-size:13px;line-height:1.6;margin:3px 0 12px">La fiche SPES, le VisionScore sur 100 et le rapport PDF sortent des parties classées du joueur.</div>
+              <ol class="ob-etapes">
+                <li><span class="ob-n">1</span>Son Riot ID <span class="faint">(ex. Caliste #EUW9)</span></li>
+                <li><span class="ob-n">2</span>Son rôle</li>
+                <li><span class="ob-n">3</span>Importer ses parties</li>
+              </ol>
             </div>
-            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('onboarding-banner').style.display='none';localStorage.setItem('ob_dismissed','1')" title="Fermer" style="flex:none;padding:6px 10px">✕</button>
+            <button class="btn btn-ghost btn-sm" onclick="vsOnboardingFermer()" title="Ne plus afficher" aria-label="Ne plus afficher ce guide" style="flex:none;padding:6px 10px"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
           </div>
         </div>
       </div>
@@ -5202,7 +5206,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
 
           <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px">
             <div class="fld">
-              <div class="label">Summoner name</div>
+              <div class="label">Riot ID <span class="faint" style="text-transform:none;letter-spacing:0;font-weight:500">(pseudo)</span></div>
               <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="d-pseudo" placeholder="Akashinho" autocomplete="off" oninput="onIdentityChange()"/></div>
             </div>
             <div class="fld">
@@ -13663,6 +13667,7 @@ function buildResults() {
   vsSetAvatarPhoto('vsd-avatar', window.vsProfileIconId, _initial);
   setTxt('vsd-name', pseudo);
   setTxt('vsd-tag', tagRaw ? ('#' + tagRaw) : '');
+  if (typeof vsOnboardingMaj === 'function') vsOnboardingMaj();   // fiche remplie par le code (démo, lien partagé, historique)
   setHtml('vsd-rank-icon', rankIcon(rank, 'rank-icon-sm'));
   const RANK_COL = { Iron:'--rank-iron', Bronze:'--rank-bronze', Silver:'--rank-silver', Gold:'--rank-gold', Platinum:'--rank-platinum', Emerald:'--rank-emerald', Diamond:'--rank-diamond', Master:'--rank-master', Grandmaster:'--rank-grandmaster', Challenger:'--rank-challenger' };
   const rnm = document.getElementById('vsd-rank-name');
@@ -14178,6 +14183,7 @@ async function top50FetchAges(prospects) {
 }
 
 function onIdentityChange() {
+  if (typeof vsOnboardingMaj === 'function') vsOnboardingMaj();
   const pseudo = document.getElementById('d-pseudo')?.value.trim() || '';
   const tag    = document.getElementById('d-tag')?.value.trim() || 'EUW';
   const age    = document.getElementById('d-age')?.value || '';
@@ -22065,15 +22071,21 @@ document.addEventListener('click', e => {
   }
 });
 
-// ── Onboarding : masquer si déjà vu ──────────────────────────
-(function() {
-  try {
-    if (localStorage.getItem('ob_dismissed') === '1') {
-      const b = document.getElementById('onboarding-banner');
-      if (b) b.style.display = 'none';
-    }
-  } catch(_) {}
-})();
+// ── Guide de la page Players ─────────────────────────────────
+/* Visible tant qu'aucun joueur n'est chargé (c'était l'intention écrite dans le
+   balisage, jamais codée : le guide restait au-dessus d'une fiche déjà remplie),
+   et plus jamais une fois fermé. */
+function vsOnboardingMaj() {
+  const b = document.getElementById('onboarding-banner'); if (!b) return;
+  let ferme = false; try { ferme = localStorage.getItem('ob_dismissed') === '1'; } catch (_) {}
+  const pseudo = (document.getElementById('d-pseudo')?.value || '').trim();
+  b.style.display = (ferme || pseudo) ? 'none' : '';
+}
+function vsOnboardingFermer() {
+  try { localStorage.setItem('ob_dismissed', '1'); } catch (_) {}
+  vsOnboardingMaj();
+}
+vsOnboardingMaj();
 
 buildAllDims();
 buildStatsGrid();
