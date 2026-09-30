@@ -1745,3 +1745,18 @@ test('l\'ancien export PDF, remplacé par le rapport officiel, a disparu', () =>
   assert.doesNotMatch(codeSeul, /function exportPDF\(/);
   assert.doesNotMatch(codeSeul, /exportPDF\(\)/);
 });
+
+test('le VisionScore s\'affiche sur 100 partout, et sa couleur ne dépend pas de l\'échelle', () => {
+  // La couleur recevait des notes sur 100 avec des seuils sur 10 : tout sortait vert.
+  const coul = extraireFonction('anScoreColor');
+  assert.match(coul, /if \(s > 10\) s = s \/ 10;/);
+  assert.match(extraireFonction('vsNote100'), /x <= 10 \? x \* 10 : x/);
+  // Fiche, Top 30, historique, comparateur, rapport PDF.
+  assert.match(codeSeul, /setTxt\('vsd-gauge-val', g100 !== null \? String\(g100\) : '—'\)/);
+  assert.match(codeSeul, /const vs = isNaN\(vsNum\) \? '—' : String\(vsNote100\(vsNum\)\);/);
+  assert.match(codeSeul, /h\.score !== null \? vsNote100\(h\.score\) : '—'/);
+  assert.doesNotMatch(codeSeul, /s\.global\?\.toFixed\(2\)|parseFloat\(s\.global\)\.toFixed\(2\)/, 'plus de note globale sur 10 dans le comparateur');
+  const rapport = extraireFonction('generateOfficialReport');
+  assert.match(rapport, /put\(p1, '\/100'/, 'le « /10 » du modèle est remplacé');
+  assert.doesNotMatch(rapport, /gScore\.toFixed\(2\)\+'\/10'/);
+});

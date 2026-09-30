@@ -284,6 +284,11 @@ Menu : **Seasons · Analytics · Players · Scouting**.
   réécrites vers la nouvelle forme sans entrée d'historique.
 - Dans l'UI on dit « pipeline », plus « CRM ».
 
+**Échelle du VisionScore (décidé le 30/09/2026)** : calculé sur 10 (`globalScore`),
+**toujours affiché sur 100** (fiche, Top 30, historique, pipeline, comparateur, PDF).
+Passer par `vsNote100()` (accepte les deux échelles : ≤ 10 = sur 10). Les 5 dimensions
+du radar restent sur 10. `anScoreColor` accepte aussi les deux échelles.
+
 ## Conventions
 
 - Zéro dépendance npm côté API (crypto natif + `fetch`). Ne pas introduire de framework.
