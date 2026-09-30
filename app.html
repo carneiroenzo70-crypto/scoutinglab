@@ -11384,8 +11384,10 @@ function ssCompetStatsHtml(mid, role) {
   if (s.champPool && s.champPool.length) {
     h += '<div class="ss-cs-t">Pool de champions</div><div class="ss-cs-pool">' + s.champPool.map(function (c) {
       var tag = brief && brief.ban && brief.ban.name === c.name ? '<span class="ss-cs-tag ban">Ban prioritaire</span>' : (brief && brief.weak && brief.weak.name === c.name ? '<span class="ss-cs-tag weak">Point faible</span>' : '');
-      return '<div class="ss-cs-champrow">' + ssRealChampImg(c.name) + '<span class="ss-cs-cn">' + anEsc(c.name) + '</span><span class="faint">' + c.games + ' games</span><span class="ss-cs-wr' + (c.wr >= 55 ? ' hi' : (c.wr < 45 ? ' lo' : '')) + '">' + c.wr + '% WR</span>' + tag + '</div>';
-    }).join('') + '</div>';
+      return '<div class="ss-cs-champrow">' + ssRealChampImg(c.name) + '<span class="ss-cs-cn">' + anEsc(c.name) + '</span><span class="faint">' + c.games + ' games</span>' +
+        (c.games >= DL_WR_MIN_GAMES ? '<span class="ss-cs-wr' + (c.wr >= 55 ? ' hi' : (c.wr < 45 ? ' lo' : '')) + '">' + c.wr + '% WR</span>' : '<span class="ss-cs-wr faint" title="Pas de pourcentage sous ' + DL_WR_MIN_GAMES + ' games">—</span>') + tag + '</div>';
+    }).join('') + '</div>' +
+      '<div class="faint" style="font-size:10.5px;margin-top:6px;line-height:1.5">Ban prioritaire : son champion gagnant le plus joué (≥ ' + DL_WR_MIN_GAMES + ' games, ≥ 50 %). Point faible : ≥ ' + SS_BRIEF_MIN_FAIBLE + ' games sous 45 %.</div>';
   }
   if (s.byEvent && s.byEvent.length) {
     h += '<div class="faint" style="font-size:10.5px;margin-top:6px">Compétitions récentes : ' + s.byEvent.map(function (e) { return anEsc(e.event) + ' (' + e.games + ')'; }).join(' · ') + '</div>';
@@ -11422,6 +11424,19 @@ function ssRetryCompet(mid) {
 // Toujours recalculé au moment de l'affichage/export à partir du CACHE live —
 // jamais figé dans m.plan — pour rester à jour si le roster adverse ou les
 // stats changent (nouveau match publié, correction de roster…).
+/* Seuils d'honnêteté du brief (mêmes principes que la salle de draft) :
+   - pas de pourcentage sous DL_WR_MIN_GAMES games — sur 2 games, une défaite
+     fait passer de 100 % à 50 % ;
+   - « Ban prioritaire » = le champion le PLUS JOUÉ parmi ceux qu'il gagne
+     (≥ DL_WR_MIN_GAMES games, ≥ 50 %). Trier sur le winrate d'abord faisait passer
+     un 3/3 devant un 14/20 ; et à défaut on bannissait pool[0], parfois 1 game ;
+   - « Point faible » exige SS_BRIEF_MIN_FAIBLE games sous 45 %. Il sortait sur
+     2 games : une seule mauvaise série suffisait à « identifier » une faiblesse.
+   Rien ne passe les seuils → rien n'est affiché. On tait plutôt qu'inventer. */
+var SS_BRIEF_MIN_FAIBLE = 5;
+function ssChampStat(c) {
+  return c.games >= DL_WR_MIN_GAMES ? (c.games + 'g, ' + c.wr + ' % WR') : (c.games + 'g');
+}
 function ssMatchupBrief(mid, role) {
   var cache = (window._ssCompetCache || {})[mid]; if (!cache) return null;
   var m = ssData().matches.find(function (x) { return x.id === mid; }); if (!m) return null;
@@ -11429,10 +11444,10 @@ function ssMatchupBrief(mid, role) {
   var s = cache[ssCompetKey(ssOppLink(m, role))];
   if (!s || s === SS_ERR) return null;
   var pool = (s.champPool || []).slice();
-  var sample = pool.filter(function (c) { return c.games >= 2; });
-  var ban = sample.slice().sort(function (a, b) { return b.wr - a.wr || b.games - a.games; })[0] || pool[0] || null;
-  var weakPool = sample.filter(function (c) { return !ban || c.name !== ban.name; });
-  var weak = weakPool.slice().sort(function (a, b) { return a.wr - b.wr || b.games - a.games; })[0] || null;
+  var ban = pool.filter(function (c) { return c.games >= DL_WR_MIN_GAMES && c.wr >= 50; })
+    .sort(function (a, b) { return b.games - a.games || b.wr - a.wr; })[0] || null;
+  var weak = pool.filter(function (c) { return c.games >= SS_BRIEF_MIN_FAIBLE && c.wr < 45 && (!ban || c.name !== ban.name); })
+    .sort(function (a, b) { return a.wr - b.wr || b.games - a.games; })[0] || null;
   var recent = (s.games || []).slice(0, 5);   // déjà trié du plus récent au plus ancien (requête DESC)
   var wins = recent.filter(function (g) { return g.win; }).length;
   return { name: name, stats: s, top: pool.slice(0, 3), ban: ban, weak: weak, recent: recent, recentForm: recent.length ? (wins + 'V–' + (recent.length - wins) + 'D') : '' };
@@ -11444,9 +11459,9 @@ function ssMatchupSuggest(mid, role) {
   var b = ssMatchupBrief(mid, role);
   if (!b) { if (typeof showToast === 'function') showToast('Pas encore de données pour ce joueur — attends le chargement ou réessaie.', 'warning'); return; }
   var L = [];
-  if (b.top.length) L.push('Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', ') + '.');
-  if (b.ban) L.push('Priorité ban : ' + b.ban.name + ' (' + b.ban.wr + '% WR sur ' + b.ban.games + ' games).');
-  if (b.weak) L.push('Point faible identifié : ' + b.weak.name + ' (' + b.weak.wr + '% WR sur ' + b.weak.games + ' games) — cibler si drafté en face.');
+  if (b.top.length) L.push('Pool : ' + b.top.map(function (c) { return c.name + ' (' + ssChampStat(c) + ')'; }).join(', ') + '.');
+  if (b.ban) L.push('Priorité ban : ' + b.ban.name + ' (' + b.ban.games + ' games, ' + b.ban.wr + ' % WR — son champion gagnant le plus joué).');
+  if (b.weak) L.push('Point faible : ' + b.weak.name + ' (' + b.weak.wr + ' % WR sur ' + b.weak.games + ' games) — à laisser passer ou cibler s\'il le sort.');
   if (b.recentForm) L.push('Forme récente : ' + b.recentForm + ' sur les ' + b.recent.length + ' derniers matchs (' + b.recent.map(function (g) { return g.champ + ' (' + (g.win ? 'V' : 'D') + ')'; }).join(', ') + ').');
   L.push('KDA saison ' + b.stats.kda + ' · ' + b.stats.csAvg + ' CS · ' + b.stats.visionAvg + ' vision en moyenne.');
   ssPlanSet(mid, function (p) { if (p.players[role]) p.players[role].matchup = L.join(' '); });
@@ -11498,7 +11513,7 @@ function ssSheetText(m, role) {
     // indépendamment de ce que le coach a (ou non) recopié dans « Matchup ».
     var b = ssMatchupBrief(m.id, r);
     if (b) {
-      if (b.top.length) L.push('  Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', '));
+      if (b.top.length) L.push('  Pool : ' + b.top.map(function (c) { return c.name + ' (' + ssChampStat(c) + ')'; }).join(', '));
       if (b.ban) L.push('  Ban prioritaire : ' + b.ban.name + ' (' + b.ban.wr + '% WR / ' + b.ban.games + 'g)');
       if (b.weak) L.push('  Point faible : ' + b.weak.name + ' (' + b.weak.wr + '% WR / ' + b.weak.games + 'g)');
       if (b.recentForm) L.push('  Forme récente : ' + b.recentForm + ' (' + b.recent.map(function (g) { return g.champ + ' ' + (g.win ? 'V' : 'D'); }).join(', ') + ')');
@@ -11828,7 +11843,7 @@ function ssSheetPdf(id, role) {
     // libre ci-dessus — c'est le brief chiffré que le coach ne doit pas recopier).
     var b = ssMatchupBrief(m.id, r);
     if (b) {
-      if (b.top.length) body('Pool : ' + b.top.map(function (c) { return c.name + ' (' + c.games + 'g, ' + c.wr + '%WR)'; }).join(', '), 2);
+      if (b.top.length) body('Pool : ' + b.top.map(function (c) { return c.name + ' (' + ssChampStat(c) + ')'; }).join(', '), 2);
       if (b.ban) body('Ban prioritaire : ' + b.ban.name + ' (' + b.ban.wr + '% WR / ' + b.ban.games + 'g)', 2, true);
       if (b.weak) body('Point faible : ' + b.weak.name + ' (' + b.weak.wr + '% WR / ' + b.weak.games + 'g)', 2);
       if (b.recentForm) body('Forme récente : ' + b.recentForm + ' (' + b.recent.map(function (g) { return g.champ + ' ' + (g.win ? 'V' : 'D'); }).join(', ') + ')', 2);
@@ -15399,665 +15414,6 @@ document.addEventListener('keydown', e => {
 // ════════════════════════════════════════════════════════════
 // ① EXPORT PDF
 // ════════════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════════
-// EXPORT PDF v2 PRO — Radar canvas + Charts embarqués
-// ═══════════════════════════════════════════════════════════
-async function exportPDF() {
-  if (!window.jspdf) { showToast('Librairie PDF non chargée — vérifiez votre connexion internet', 'error'); return; }
-
-  // Feedback
-  showToast('Génération du rapport PDF…', 'info');
-  const btn = document.querySelector('[onclick="exportPDF()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Génération…'; }
-
-  await new Promise(r => setTimeout(r, 80)); // Laisser le UI se mettre à jour
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-  // ── Helpers ────────────────────────────────────────────────
-
-  function _getChartImg(canvasId) {
-    try { const c = document.getElementById(canvasId); return c ? c.toDataURL('image/png') : null; }
-    catch(e) { return null; }
-  }
-
-  function _getAvatarImg() {
-    try {
-      const img = document.querySelector('#pc-avatar img');
-      if (!img || !img.complete || !img.naturalWidth) return null;
-      const cv = document.createElement('canvas');
-      cv.width = img.naturalWidth; cv.height = img.naturalHeight;
-      cv.getContext('2d').drawImage(img, 0, 0);
-      return cv.toDataURL('image/png');
-    } catch(e) { return null; }
-  }
-
-  function _drawRadarPNG(scores, size) {
-    size = size || 260;
-    const cv = document.createElement('canvas');
-    cv.width = size; cv.height = size;
-    const ctx = cv.getContext('2d');
-    const cx = size/2, cy = size/2, r = size*0.36, N = 5;
-    const labels  = ['Stats','Objectifs','Impact','Progression','Discipline'];
-    const dotClrs = ['#4A9EFF','#F5A623','#2DD4BF','#C084FC','#FF7A5A'];
-    const ang = i => Math.PI*2*i/N - Math.PI/2;
-    // bg
-    ctx.fillStyle = '#0B2F2A'; ctx.fillRect(0,0,size,size);
-    // grid rings
-    for (let ring=2; ring<=10; ring+=2) {
-      ctx.beginPath();
-      for (let i=0;i<N;i++) {
-        const a=ang(i), d=r*ring/10;
-        i===0 ? ctx.moveTo(cx+Math.cos(a)*d, cy+Math.sin(a)*d)
-              : ctx.lineTo(cx+Math.cos(a)*d, cy+Math.sin(a)*d);
-      }
-      ctx.closePath();
-      ctx.strokeStyle = ring===10 ? 'rgba(45,212,167,0.22)' : 'rgba(100,120,160,0.18)';
-      ctx.lineWidth = ring===10 ? 1 : 0.7; ctx.stroke();
-    }
-    // spokes
-    for (let i=0;i<N;i++) {
-      const a=ang(i);
-      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(a)*r, cy+Math.sin(a)*r);
-      ctx.strokeStyle='rgba(100,120,160,0.20)'; ctx.lineWidth=0.7; ctx.stroke();
-    }
-    // data polygon
-    ctx.beginPath();
-    for (let i=0;i<N;i++) {
-      const v=Math.max(0,Math.min(10,scores[i]||0)), a=ang(i), d=r*v/10;
-      i===0 ? ctx.moveTo(cx+Math.cos(a)*d,cy+Math.sin(a)*d)
-            : ctx.lineTo(cx+Math.cos(a)*d,cy+Math.sin(a)*d);
-    }
-    ctx.closePath();
-    ctx.fillStyle='rgba(45,212,167,0.15)'; ctx.fill();
-    ctx.strokeStyle='#2DD4A7'; ctx.lineWidth=2; ctx.stroke();
-    // dots + labels
-    ctx.font = 'bold 11px Arial'; ctx.textAlign='center';
-    for (let i=0;i<N;i++) {
-      const v=Math.max(0,Math.min(10,scores[i]||0)), a=ang(i), d=r*v/10;
-      ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d,cy+Math.sin(a)*d,4,0,Math.PI*2);
-      ctx.fillStyle=dotClrs[i]; ctx.fill();
-      const lx=cx+Math.cos(a)*(r+22), ly=cy+Math.sin(a)*(r+22);
-      ctx.fillStyle=dotClrs[i]; ctx.fillText(labels[i],lx,ly+4);
-    }
-    // center score
-    const gs = scores.filter(v=>v!==null&&v!==undefined);
-    if (gs.length) {
-      const avg = gs.reduce((a,b)=>a+b,0)/gs.length;
-      ctx.font='bold 18px Arial'; ctx.fillStyle='rgba(223,226,239,0.9)';
-      ctx.fillText(avg.toFixed(1),cx,cy+6);
-    }
-    return cv.toDataURL('image/png');
-  }
-
-  function _drawSparklinePNG(matches, w, h) {
-    w=w||380; h=h||56;
-    const cv = document.createElement('canvas');
-    cv.width=w; cv.height=h;
-    const ctx = cv.getContext('2d');
-    ctx.fillStyle='#0F3A34'; ctx.fillRect(0,0,w,h);
-    if (!matches || matches.length < 2) {
-      ctx.fillStyle='rgba(100,120,160,0.4)'; ctx.font='12px Arial';
-      ctx.textAlign='center'; ctx.fillText('Données insuffisantes',w/2,h/2+5);
-      return cv.toDataURL('image/png');
-    }
-    const pad=8, iw=w-pad*2, ih=h-pad*2, step=iw/(matches.length-1);
-    // baseline
-    ctx.strokeStyle='rgba(100,120,160,0.15)'; ctx.lineWidth=1;
-    ctx.beginPath(); ctx.moveTo(pad,h/2); ctx.lineTo(w-pad,h/2); ctx.stroke();
-    // connect line
-    ctx.beginPath();
-    matches.forEach((m,i) => {
-      const x=pad+i*step, win=m.win===true||m.win===1, y=win?pad+ih*0.2:pad+ih*0.8;
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    });
-    ctx.strokeStyle='rgba(45,212,167,0.4)'; ctx.lineWidth=1.5; ctx.stroke();
-    // dots
-    matches.forEach((m,i) => {
-      const x=pad+i*step, win=m.win===true||m.win===1, y=win?pad+ih*0.2:pad+ih*0.8;
-      ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2);
-      ctx.fillStyle=win?'#2DD4A7':'#E81950'; ctx.fill();
-    });
-    // W/L labels at ends
-    ctx.font='bold 10px Arial'; ctx.textAlign='left'; ctx.fillStyle='rgba(100,120,160,0.6)';
-    ctx.fillText('← plus ancien',pad,h-2);
-    ctx.textAlign='right'; ctx.fillText('récent →',w-pad,h-2);
-    return cv.toDataURL('image/png');
-  }
-
-  // ── Données joueur ──────────────────────────────────────
-  const pseudo   = document.getElementById('d-pseudo')?.value?.trim() || 'Joueur';
-  const tag      = document.getElementById('d-tag')?.value?.trim() || 'EUW';
-  const age      = document.getElementById('d-age')?.value || '';
-  const rankIdx  = parseInt(document.getElementById('d-rank')?.value || 6);
-  const ranks    = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
-  const rankName = ranks[rankIdx] || 'Diamond';
-  const dateStr  = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
-  const globalVal = (typeof globalScore === 'function') ? globalScore() : null;
-  const W = 210, H = 297, M = 14;
-
-  // ── Palette ──────────────────────────────────────────────
-  const C = {
-    bg:    [8,  11, 16],
-    bg2:   [12, 16, 24],
-    bg3:   [18, 23, 34],
-    bg4:   [22, 28, 42],
-    lime:  [28, 196,122],
-    teal:  [21, 168,120],
-    amber: [212,113,74],
-    red:   [232, 25, 75],
-    white: [223,226,239],
-    sub:   [72,  82,106],
-    sub2:  [138,144,160],
-    blue:   [74, 158,255],
-    gold:   [245,166, 35],
-    emerald:[  0,194,122],
-    purple: [192,132,252],
-    plat:   [200,202,212],
-  };
-
-  const scoreColor = (v) => {
-    if (v === null || v === undefined) return C.sub;
-    if (v >= 9.0) return C.gold;
-    if (v >= 8.0) return C.emerald;
-    if (v >= 7.0) return C.lime;
-    if (v >= 5.5) return C.blue;
-    if (v >= 4.0) return C.amber;
-    return C.red;
-  };
-  const verdictText = (v) =>
-    v === null   ? 'Données insuffisantes'
-    : v >= 9.0  ? 'Recruter maintenant — Talent d\'exception'
-    : v >= 8.0  ? 'Tryout prioritaire — Profil très solide'
-    : v >= 7.0  ? 'Tryout recommandé — Bon profil compétitif'
-    : v >= 6.0  ? 'À suivre 30 jours — Potentiel identifié'
-    : v >= 5.0  ? 'Pas encore prêt — Profil en construction'
-    : 'Niveau insuffisant — Trop tôt pour le circuit compétitif';
-
-  const DIM_COLORS = [C.blue,[245,166,35],[45,212,191],[192,132,252],[255,122,90]];
-  const DIM_LABELS = ['D1 · Stats','D2 · Objectifs','D3 · Impact','D4 · Progression','D5 · Discipline'];
-  const f = (typeof getRoleFields==='function') ? getRoleFields() : {};
-  const dimKeys  = ['d1','d2','d3','d4','d5'];
-  const dimScores = dimKeys.map(k => (typeof dimAvg==='function'&&f[k]) ? dimAvg(f[k]) : null);
-
-  // Pre-render assets
-  const avatarImg    = _getAvatarImg();
-  const radarImg     = _drawRadarPNG(dimScores.map(v => v??0));
-  const kdaImg       = _getChartImg('chart-kda');
-  const wrImg        = _getChartImg('chart-wr');
-  const recentMatches = (typeof matchHistory!=='undefined') ? matchHistory.slice(0,20) : [];
-  const sparklineData = recentMatches.map(m => {
-    try { return { win: getParticipant(m)?.win === true }; } catch(e) { return { win: false }; }
-  });
-  const sparklineImg = _drawSparklinePNG(sparklineData);
-
-  // Helper: page header
-  const ML = M + 4; // left margin after the 4mm strip
-  function _hdr(doc, title) {
-    // Dark header band
-    doc.setFillColor(...C.bg2); doc.rect(4, 0, W-4, 17, 'F');
-    // VisionScore logo in header
-    doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    doc.setTextColor(...C.lime); doc.text('Vision', ML, 11);
-    const _hw = doc.getTextWidth('Vision');
-    doc.setTextColor(...C.white); doc.text('Score', ML+_hw, 11);
-    // Separator dot
-    doc.setTextColor(...C.sub); doc.setFontSize(7);
-    doc.text('  ·  '+pseudo.toUpperCase()+'  ·  '+currentRole, ML+_hw+doc.getTextWidth('Score'), 11);
-    // Title right-aligned
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-    doc.setTextColor(...C.plat); doc.text(title, W-M, 11, {align:'right'});
-    // Lime accent rule
-    doc.setDrawColor(...C.lime); doc.setLineWidth(0.4);
-    doc.line(4, 17, W, 17);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // PAGE 1 — COVER PREMIUM
-  // ══════════════════════════════════════════════════════════
-  // ── Background
-  doc.setFillColor(...C.bg); doc.rect(0, 0, W, H, 'F');
-
-  // ── Left accent strip (identité visuelle VisionScore)
-  doc.setFillColor(...C.lime); doc.rect(0, 0, 4, H, 'F');
-
-  // ── Top accent bar
-  doc.setFillColor(...C.lime); doc.rect(4, 0, W-4, 2.5, 'F');
-
-  // ── Header band
-  doc.setFillColor(10,14,22); doc.rect(4, 2.5, W-4, 50, 'F');
-  doc.setFillColor(12,20,18); doc.rect(110, 2.5, W-110, 50, 'F');
-
-  // ── LOGO VisionScore
-  doc.setFont('helvetica','bold'); doc.setFontSize(22);
-  doc.setTextColor(...C.lime); doc.text('Vision', M+4, 22);
-  const _vw = doc.getTextWidth('Vision');
-  doc.setTextColor(...C.white); doc.text('Score', M+4+_vw, 22);
-  doc.setFont('helvetica','normal'); doc.setFontSize(7);
-  doc.setTextColor(...C.plat); doc.text('Scouting Intelligence · Structures Esport', M+4, 30);
-  doc.setFontSize(6); doc.setTextColor(...C.sub);
-  doc.text('Rapport confidentiel · ' + dateStr, M+4, 37);
-
-  // ── Avatar + rank (top-right)
-  if (avatarImg) {
-    try { doc.addImage(avatarImg,'PNG',W-M-22,5,22,22,'','FAST'); } catch(e){}
-    doc.setDrawColor(...C.lime); doc.setLineWidth(0.7);
-    doc.rect(W-M-22,5,22,22,'S');
-  }
-  doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
-  doc.setTextColor(...C.lime); doc.text(rankName, W-M, 33, {align:'right'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
-  doc.setTextColor(...C.plat); doc.text(currentRole, W-M, 40, {align:'right'});
-
-  // ── Separator
-  doc.setDrawColor(30,40,55); doc.setLineWidth(0.5); doc.line(4, 54, W, 54);
-  doc.setFillColor(...C.lime); doc.rect(4, 54, 32, 0.5, 'F');
-
-  // ── Player name block
-  const cx = W/2 + 2;
-  doc.setFont('helvetica','bold'); doc.setFontSize(34);
-  doc.setTextColor(...C.white); doc.text(pseudo, cx, 92, {align:'center'});
-  doc.setFont('helvetica','normal'); doc.setFontSize(10);
-  doc.setTextColor(...C.plat);
-  doc.text('#'+tag+'  ·  '+currentRole+'  ·  '+rankName+(age?'  ·  '+age+' ans':''), cx, 102, {align:'center'});
-
-  // ── Score hero circle (double ring)
-  const gc = scoreColor(globalVal);
-  doc.setFillColor(...C.bg2); doc.circle(cx, 140, 30, 'F');
-  doc.setDrawColor(...gc); doc.setLineWidth(2); doc.circle(cx, 140, 30, 'S');
-  doc.setDrawColor(gc[0],gc[1],gc[2]); doc.setLineWidth(0.35);
-  doc.circle(cx, 140, 34, 'S');
-  if (globalVal !== null) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(36); doc.setTextColor(...gc);
-    doc.text(globalVal.toFixed(1), cx, 148, {align:'center'});
-  }
-  doc.setFont('helvetica','normal'); doc.setFontSize(7);
-  doc.setTextColor(...C.plat); doc.text('SCORE SPES / 10', cx, 158, {align:'center'});
-
-  // ── Verdict
-  doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.setTextColor(...gc); doc.text(verdictText(globalVal), cx, 169, {align:'center'});
-
-  // ── Tier badge
-  if (globalVal !== null) {
-    const TIER_DEFS_P1 = [
-      {min:9.0,lbl:'S — ÉLITE'},{min:8.0,lbl:'A+ — EXCELLENT'},{min:7.0,lbl:'A — TRÈS BON'},
-      {min:6.0,lbl:'B+ — BON'},{min:5.0,lbl:'B — CORRECT'},{min:0,lbl:'C — À DÉVELOPPER'},
-    ];
-    const td1 = TIER_DEFS_P1.find(t => globalVal >= t.min);
-    const tierW1=62, tierH1=9, tierX1=cx-tierW1/2, tierY1=174;
-    doc.setFillColor(...C.bg3); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'F');
-    doc.setDrawColor(...gc); doc.setLineWidth(0.4); doc.roundedRect(tierX1,tierY1,tierW1,tierH1,2,2,'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...gc);
-    doc.text(td1.lbl, cx, tierY1+6.2, {align:'center'});
-  }
-
-  // ── Perf / Potentiel sub-cards
-  const perf = typeof window._scorePerf!=='undefined' ? window._scorePerf : null;
-  const pot  = typeof window._scorePotentiel!=='undefined' ? window._scorePotentiel : null;
-  if (perf!==null && pot!==null) {
-    const cW=42, cH=22, cY=186;
-    const bx1=cx-cW-2, bx2=cx+2;
-    doc.setFillColor(...C.bg3); doc.roundedRect(bx1,cY,cW,cH,2,2,'F');
-    doc.setDrawColor(...scoreColor(perf)); doc.setLineWidth(0.3);
-    doc.roundedRect(bx1,cY,cW,cH,2,2,'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...scoreColor(perf));
-    doc.text(perf.toFixed(1),bx1+cW/2,cY+13,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.plat);
-    doc.text('Performance',bx1+cW/2,cY+19.5,{align:'center'});
-
-    doc.setFillColor(...C.bg3); doc.roundedRect(bx2,cY,cW,cH,2,2,'F');
-    doc.setDrawColor(...C.lime); doc.setLineWidth(0.3);
-    doc.roundedRect(bx2,cY,cW,cH,2,2,'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...C.lime);
-    doc.text(pot.toFixed(1),bx2+cW/2,cY+13,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.plat);
-    doc.text('Potentiel',bx2+cW/2,cY+19.5,{align:'center'});
-  }
-
-  // ── Dimension mini-strip
-  const stripY = 220;
-  doc.setFont('helvetica','bold'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-  doc.text('SCORES PAR DIMENSION', cx, stripY, {align:'center'});
-  const stripW = (W-M*2-4-16)/5;
-  dimKeys.forEach((k,i) => {
-    const bx=M+4+i*(stripW+4), rgb=DIM_COLORS[i], v=dimScores[i];
-    doc.setFillColor(...C.bg3); doc.roundedRect(bx,stripY+3,stripW,16,1.5,1.5,'F');
-    doc.setFillColor(...rgb); doc.rect(bx,stripY+3,stripW,1.5,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(...rgb);
-    doc.text(v!==null?v.toFixed(1):'—',bx+stripW/2,stripY+13,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.plat);
-    doc.text(DIM_LABELS[i].replace(/^D\d · /,''),bx+stripW/2,stripY+17.5,{align:'center'});
-  });
-
-  // ── Footer
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
-  doc.text('Document confidentiel · destiné aux structures esport uniquement · ne pas diffuser', cx, 272, {align:'center'});
-  doc.text('VisionScore · Rapport généré le '+dateStr, cx, 278, {align:'center'});
-  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
-
-  // ══════════════════════════════════════════════════════════
-  // PAGE 2 — DASHBOARD : Radar + Dimensions + Stats + Champions
-  // ══════════════════════════════════════════════════════════
-  doc.addPage();
-  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
-  _hdr(doc,'DASHBOARD ANALYTIQUE');
-  let y = 22;
-
-  // Radar (left) + Dimension bars (right)
-  const radarMM = 70;
-  if (radarImg) {
-    try { doc.addImage(radarImg,'PNG',M-2,y,radarMM,radarMM,'','FAST'); } catch(e){}
-  }
-  const dimX = M+radarMM+4, dimW = W-M-radarMM-8;
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-  doc.text('PROFIL DIMENSIONNEL',dimX,y+3);
-  let dy = y+8;
-  dimKeys.forEach((k,i) => {
-    const v=dimScores[i], rgb=DIM_COLORS[i];
-    const bw2 = v!==null ? dimW*v/10 : 0;
-    doc.setFillColor(...C.bg3); doc.roundedRect(dimX,dy,dimW,9,1,1,'F');
-    if (v!==null && bw2>0) { doc.setFillColor(...rgb); doc.roundedRect(dimX,dy,bw2,9,1,1,'F'); }
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
-    doc.text(DIM_LABELS[i],dimX+3,dy+6);
-    if (v!==null) { doc.setTextColor(...rgb); doc.text(v.toFixed(1)+'/10',dimX+dimW-2,dy+6,{align:'right'}); }
-    dy+=11.5;
-  });
-  dy+=2;
-  if (globalVal!==null) {
-    const gcol=scoreColor(globalVal);
-    doc.setFillColor(...C.bg4); doc.roundedRect(dimX,dy,dimW,12,1.5,1.5,'F');
-    doc.setDrawColor(...gcol); doc.setLineWidth(0.3); doc.roundedRect(dimX,dy,dimW,12,1.5,1.5,'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(...gcol);
-    doc.text('Score global : '+globalVal.toFixed(2)+' / 10',dimX+dimW/2,dy+7.5,{align:'center'});
-  }
-  y = Math.max(y+radarMM+4, dy+16);
-
-  // Key stats
-  const apiStats = [
-    {id:'kda',lbl:'KDA',dec:2},
-    {id:'winrate',lbl:'Win Rate',dec:1,unit:'%'},
-    {id:'cs_min',lbl:'CS/min',dec:2},
-    {id:'kill_part',lbl:'Kill Part.',dec:1,unit:'%'},
-    {id:'dmg_share',lbl:'Dmg Share',dec:1,unit:'%'},
-    {id:'vision',lbl:'Vision Score',dec:1},
-    {id:'dpm',lbl:'DPM',dec:0},
-    {id:'chal_wards_killed',lbl:'Wards/g',dec:2},
-  ];
-  const validStats = apiStats.map(s => {
-    const v=rawData[s.id];
-    return (v!==undefined&&!isNaN(v)) ? {lbl:s.lbl,val:parseFloat(v).toFixed(s.dec)+(s.unit||'')} : null;
-  }).filter(Boolean);
-  if (validStats.length) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-    doc.text('STATISTIQUES CLÉS — 20 DERNIÈRES PARTIES',M,y); y+=4;
-    const sw=(W-M*2-(validStats.length-1)*3)/validStats.length;
-    validStats.forEach((s,i) => {
-      const bx=M+i*(sw+3);
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,sw,16,1.5,1.5,'F');
-      doc.setFillColor(...C.lime); doc.rect(bx,y,sw,1.5,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(...C.lime);
-      doc.text(s.val,bx+sw/2,y+9,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
-      doc.text(s.lbl,bx+sw/2,y+14,{align:'center'});
-    });
-    y+=20;
-  }
-
-  // Playstyle badges
-  const styleEl2 = document.getElementById('playstyle-content');
-  if (styleEl2 && styleEl2.children.length) {
-    const badges2 = Array.from(styleEl2.querySelectorAll('span')).map(el=>el.textContent.trim()).filter(t=>t.length>2).slice(0,5);
-    if (badges2.length) {
-      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-      doc.text('STYLE DE JEU DÉTECTÉ',M,y); y+=4;
-      badges2.forEach((b,bi) => {
-        const bx=M+bi*40;
-        doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,36,8,1.5,1.5,'F');
-        doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.teal);
-        doc.text(b.slice(0,16),bx+18,y+5.5,{align:'center'});
-      });
-      y+=12;
-    }
-  }
-
-  // Champion pool
-  const champs=(typeof champHistory!=='undefined'?champHistory:[]).slice(0,6);
-  if (champs.length) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-    doc.text('POOL DE CHAMPIONS',M,y); y+=4;
-    const cw=(W-M*2-(champs.length-1)*3)/champs.length;
-    champs.forEach((c,i) => {
-      const bx=M+i*(cw+3), rgb=DIM_COLORS[i%5];
-      doc.setFillColor(...C.bg3); doc.roundedRect(bx,y,cw,18,2,2,'F');
-      doc.setFillColor(...rgb); doc.rect(bx,y,cw,2,'F');
-      doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.white);
-      doc.text(c.name.slice(0,12),bx+cw/2,y+9.5,{align:'center'});
-      doc.setFont('helvetica','normal'); doc.setFontSize(6); doc.setTextColor(...C.sub);
-      doc.text(c.games+'G  ·  '+(c.wr||'?')+'%',bx+cw/2,y+15.5,{align:'center'});
-    });
-    y+=22;
-  }
-  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
-
-  // ══════════════════════════════════════════════════════════
-  // PAGE 3 — CHARTS & FORME RÉCENTE
-  // ══════════════════════════════════════════════════════════
-  doc.addPage();
-  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
-  _hdr(doc,'ÉVOLUTION & STATISTIQUES');
-  y=22;
-
-  // KDA + WR charts side by side
-  const chartH=52, chartW=(W-M*2-6)/2;
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-  doc.text('RATIO KDA — 20 PARTIES',M,y);
-  doc.setFillColor(...C.bg3); doc.roundedRect(M,y+3,chartW,chartH,2,2,'F');
-  if (kdaImg) { try { doc.addImage(kdaImg,'PNG',M,y+3,chartW,chartH,'','FAST'); } catch(e){} }
-  else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.sub);
-    doc.text('Graphique non disponible',M+chartW/2,y+3+chartH/2,{align:'center'});
-  }
-
-  const wrX=M+chartW+6;
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-  doc.text('WIN RATE — 20 PARTIES',wrX,y);
-  doc.setFillColor(...C.bg3); doc.roundedRect(wrX,y+3,chartW,chartH,2,2,'F');
-  if (wrImg) { try { doc.addImage(wrImg,'PNG',wrX,y+3,chartW,chartH,'','FAST'); } catch(e){} }
-  else {
-    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(...C.sub);
-    doc.text('Graphique non disponible',wrX+chartW/2,y+3+chartH/2,{align:'center'});
-  }
-  y+=chartH+10;
-
-  // Recent form sparkline
-  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-  doc.text('FORME RÉCENTE — '+recentMatches.length+' DERNIÈRES PARTIES',M,y);
-  const wins2=sparklineData.filter(m=>m.win===true).length;
-  if (recentMatches.length>0) {
-    const gcSpark=wins2/recentMatches.length>=0.5?C.lime:C.amber;
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...gcSpark);
-    doc.text(wins2+'V / '+(recentMatches.length-wins2)+'D',W-M,y,{align:'right'});
-  }
-  doc.setFillColor(...C.bg3); doc.roundedRect(M,y+3,W-M*2,18,2,2,'F');
-  if (sparklineImg) { try { doc.addImage(sparklineImg,'PNG',M,y+3,W-M*2,18,'','FAST'); } catch(e){} }
-  y+=26;
-
-  // Full criteria table
-  const allRows=[];
-  dimKeys.forEach((k,di) => {
-    if (!f[k]) return;
-    f[k].forEach(field => {
-      if (!field.label && !field.lbl) return;
-      const sc=(typeof computeFieldScore==='function') ? computeFieldScore(field) : null;
-      allRows.push([DIM_LABELS[di].slice(0,2), field.lbl||field.label, sc!==null?sc.toFixed(2):'—']);
-    });
-  });
-  if (allRows.length) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(...C.sub);
-    doc.text('TABLEAU DE CRITÈRES COMPLET',M,y); y+=3;
-    doc.autoTable({
-      startY:y,
-      head:[['Dim.','Critère','Score /10']],
-      body:allRows,
-      theme:'plain',
-      headStyles:{fillColor:C.bg2,textColor:C.sub,fontSize:6.5,fontStyle:'bold',cellPadding:2.5},
-      bodyStyles:{fontSize:6.5,cellPadding:2.5,textColor:C.white,fillColor:C.bg3},
-      alternateRowStyles:{fillColor:C.bg2},
-      columnStyles:{0:{cellWidth:10},1:{cellWidth:'auto'},2:{cellWidth:20,halign:'right',fontStyle:'bold'}},
-      margin:{left:M,right:M},
-      didParseCell:(data) => {
-        if (data.section==='body'&&data.column.index===2&&data.cell.text[0]!=='—') {
-          data.cell.styles.textColor = scoreColor(parseFloat(data.cell.text[0]));
-        }
-      }
-    });
-  }
-  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
-
-  // ══════════════════════════════════════════════════════════
-  // PAGE 4 — RECOMMANDATION & NOTES AGENT
-  // ══════════════════════════════════════════════════════════
-  doc.addPage();
-  doc.setFillColor(...C.bg); doc.rect(0,0,W,H,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,W,2.5,'F');
-  doc.setFillColor(...C.lime); doc.rect(0,0,4,H,'F');
-  _hdr(doc,'RECOMMANDATION AGENT');
-  y=22;
-
-  // Hero synthesis block
-  const gc3=scoreColor(globalVal);
-  const TIER_DEFS_P4 = [
-    {min:9.0,lbl:'S — ÉLITE'},{min:8.0,lbl:'A+ — EXCELLENT'},{min:7.0,lbl:'A — TRÈS BON'},
-    {min:6.0,lbl:'B+ — BON'},{min:5.0,lbl:'B — CORRECT'},{min:0,lbl:'C — À DÉVELOPPER'},
-  ];
-  const tierDef4 = globalVal!==null ? TIER_DEFS_P4.find(t => globalVal >= t.min) : null;
-  doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,36,3,3,'F');
-  doc.setFillColor(...gc3); doc.rect(M,y,3,36,'F');
-  doc.setFont('helvetica','bold'); doc.setFontSize(22); doc.setTextColor(...gc3);
-  doc.text(globalVal!==null?globalVal.toFixed(1)+'/10':'—',M+9,y+20);
-  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(...C.white);
-  const synLines=doc.splitTextToSize(verdictText(globalVal),W-M*2-52);
-  doc.text(synLines,M+48,y+10);
-  if (tierDef4) {
-    const tw4=50, th4=7.5, tx4=M+48, ty4=y+16;
-    doc.setFillColor(...C.bg4); doc.roundedRect(tx4,ty4,tw4,th4,1.5,1.5,'F');
-    doc.setDrawColor(...gc3); doc.setLineWidth(0.3); doc.roundedRect(tx4,ty4,tw4,th4,1.5,1.5,'S');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...gc3);
-    doc.text(tierDef4.lbl, tx4+tw4/2, ty4+5.2, {align:'center'});
-  }
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.plat);
-  doc.text('Score SPES · Méthode propriétaire · Données API Riot Games officielles',M+48,y+30);
-  y+=42;
-
-  // 2-col: strengths / weaknesses
-  const colW2=(W-M*2-6)/2, colR=M+colW2+6;
-  const items2=[];
-  dimKeys.forEach(k => {
-    if (!f[k]) return;
-    f[k].forEach(field => {
-      const sc=(typeof computeFieldScore==='function')?computeFieldScore(field):null;
-      if (sc!==null) items2.push({label:field.lbl||field.label,score:sc});
-    });
-  });
-  items2.sort((a,b)=>b.score-a.score);
-  const strengths=items2.slice(0,4);
-  const weaknesses=[...items2].reverse().slice(0,4);
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-  doc.setTextColor(...C.lime); doc.text('POINTS FORTS',M,y);
-  doc.setTextColor(...C.amber); doc.text('AXES DE DÉVELOPPEMENT',colR,y);
-  y+=5;
-
-  const iH=9;
-  strengths.forEach((item,idx) => {
-    const rgb=scoreColor(item.score);
-    doc.setFillColor(...C.bg3); doc.roundedRect(M,y+idx*iH,colW2,iH-1,1,1,'F');
-    doc.setFillColor(...rgb); doc.rect(M,y+idx*iH,2,iH-1,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
-    doc.text(item.label.slice(0,26),M+4,y+idx*iH+5.5);
-    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1),M+colW2-2,y+idx*iH+5.5,{align:'right'});
-  });
-  weaknesses.forEach((item,idx) => {
-    const rgb=item.score<5?C.red:C.amber;
-    doc.setFillColor(...C.bg3); doc.roundedRect(colR,y+idx*iH,colW2,iH-1,1,1,'F');
-    doc.setFillColor(...rgb); doc.rect(colR,y+idx*iH,2,iH-1,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(6.5); doc.setTextColor(...C.white);
-    doc.text(item.label.slice(0,26),colR+4,y+idx*iH+5.5);
-    doc.setTextColor(...rgb); doc.text(item.score.toFixed(1),colR+colW2-2,y+idx*iH+5.5,{align:'right'});
-  });
-  y+=Math.max(strengths.length,weaknesses.length)*iH+8;
-
-  // Agent notes (CRM)
-  const agentNotes = document.getElementById('note-agent')?.value?.trim()
-    || document.querySelector('textarea[name="noteAgent"]')?.value?.trim()
-    || document.querySelector('.note-agent-textarea')?.value?.trim()
-    || '';
-  if (agentNotes) {
-    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.sub);
-    doc.text('NOTES DE L\'AGENT SCOUT',M,y); y+=4;
-    const noteH=Math.min(32, 8+doc.splitTextToSize(agentNotes,W-M*2-6).length*4);
-    doc.setFillColor(...C.bg3); doc.roundedRect(M,y,W-M*2,noteH,2,2,'F');
-    doc.setDrawColor(...C.sub); doc.setLineWidth(0.12); doc.roundedRect(M,y,W-M*2,noteH,2,2,'S');
-    doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(...C.white);
-    const nLines=doc.splitTextToSize(agentNotes,W-M*2-6);
-    doc.text(nLines.slice(0,7),M+3,y+7);
-    y+=noteH+6;
-  }
-
-  // External links
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.sub);
-  doc.text('LIENS DE RÉFÉRENCE',M,y); y+=4;
-  const server2=tag?.toLowerCase()||'euw';
-  const cleanName=encodeURIComponent(pseudo);
-  const links2=[
-    {lbl:'OP.GG',url:`op.gg/summoners/${server2}/${cleanName}-${tag}`},
-    {lbl:'U.GG',url:`u.gg/lol/profile/${server2}1/${cleanName}-${tag}`},
-    {lbl:'Porofessor',url:`porofessor.gg/live/${server2}/${cleanName}-${tag}`},
-  ];
-  links2.forEach((lk,li) => {
-    const lx=M+li*62;
-    doc.setFillColor(...C.bg3); doc.roundedRect(lx,y,58,10,1.5,1.5,'F');
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(...C.blue);
-    doc.text(lk.lbl,lx+29,y+5.5,{align:'center'});
-    doc.setFont('helvetica','normal'); doc.setFontSize(5.5); doc.setTextColor(...C.sub);
-    doc.text(lk.url.slice(0,36),lx+29,y+9,{align:'center'});
-  });
-  y+=16;
-
-  // Methodology note
-  doc.setFillColor(9,17,11); doc.roundedRect(M,y,W-M*2,30,2,2,'F');
-  doc.setDrawColor(...C.teal); doc.setLineWidth(0.18); doc.roundedRect(M,y,W-M*2,30,2,2,'S');
-  doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(...C.teal);
-  doc.text('MÉTHODOLOGIE SPES',M+4,y+8);
-  doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.plat);
-  const method='Ce rapport est généré automatiquement via l\'API officielle Riot Games. Le score SPES est calculé sur seuils absolus par rôle — non relatifs au rang — et couvre 5 dimensions : statistiques individuelles (D1), objectifs collectifs (D2), impact sur la partie (D3), courbe de progression (D4) et données d\'entretien (D5). La dimension D5 intègre des éléments non-API qui nécessitent un entretien complémentaire.';
-  const mLines=doc.splitTextToSize(method,W-M*2-8);
-  doc.text(mLines,M+4,y+16);
-  doc.setFillColor(...C.lime); doc.rect(0,H-2.5,W,2.5,'F');
-
-  // ── FOOTER all pages ──────────────────────────────────────
-  const pages=doc.getNumberOfPages();
-  for (let p=1;p<=pages;p++) {
-    doc.setPage(p);
-    doc.setFillColor(...C.bg2); doc.rect(0,H-9,W,6,'F');
-    doc.setFillColor(...C.lime); doc.rect(0,H-9,2,6,'F');
-    doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...C.sub);
-    doc.text('VisionScore · Document confidentiel · '+dateStr,M+2,H-5);
-    doc.text(p+' / '+pages,W-M,H-5,{align:'right'});
-  }
-
-  // ── Save ──────────────────────────────────────────────────
-  if (btn) { btn.disabled=false; btn.textContent='Exporter PDF'; }
-  const fname='VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+currentRole+'_'+new Date().toISOString().slice(0,10)+'.pdf';
-  doc.save(fname);
-  showToast('Rapport PDF pro exporté — '+fname,'success');
-}
 // ════════════════════════════════════════════════════════════
 // RAPPORT OFFICIEL — Template PDF VisionScore
 // ════════════════════════════════════════════════════════════

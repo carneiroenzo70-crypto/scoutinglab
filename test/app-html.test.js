@@ -1730,3 +1730,18 @@ test('menu : Seasons · Analytics · Players · Scouting, et les anciens liens r
     assert.ok(codeSeul.includes("'" + ancien + "': '" + neuf + "'"), 'alias manquant ' + ancien);
   }
 });
+
+test('brief d\'avant-match : pas de « point faible » ni de pourcentage sur deux games', () => {
+  const b = extraireFonction('ssMatchupBrief');
+  assert.doesNotMatch(b, /games >= 2\b/, 'l\'ancien seuil de 2 games');
+  assert.doesNotMatch(b, /\|\| pool\[0\]/, 'plus de ban par défaut sur le premier champion venu');
+  assert.match(b, /DL_WR_MIN_GAMES/);
+  assert.match(b, /SS_BRIEF_MIN_FAIBLE/);
+  assert.match(extraireFonction('ssChampStat'), /DL_WR_MIN_GAMES/);
+  assert.doesNotMatch(codeSeul, /c\.games \+ 'g, ' \+ c\.wr \+ '%WR\)'/, 'pool affiché sans seuil');
+});
+
+test('l\'ancien export PDF, remplacé par le rapport officiel, a disparu', () => {
+  assert.doesNotMatch(codeSeul, /function exportPDF\(/);
+  assert.doesNotMatch(codeSeul, /exportPDF\(\)/);
+});

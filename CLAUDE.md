@@ -172,8 +172,9 @@ Spec détaillée : `docs/superpowers/specs/2026-07-19-multitenant-storage-design
 
 | Module | État |
 |---|---|
-| Scouting (fiche joueur), Top 50, Comparer, Roster | ✅ en service |
-| CRM pipeline / structures | ✅ en service |
+| Players (fiche joueur, graphiques, carte, historique) | ✅ en service |
+| Scouting (pipeline, candidatures, structures, matching, Top 30, Comparer) | ✅ en service |
+| Roster | ✅ en service |
 | Candidatures | ✅ par compte — chaque structure branche son Google Form sur `/api/candidates?to=<ingestKey>` (code visible dans l'onglet) |
 | Avant-match | 🟠 marche, mais fragile (rate-limit Leaguepedia) |
 | Salle de draft (préparation + live) | ✅ moteur de règles testé ; méta et pools adverses désormais **datés** (cf. ci-dessous) |
@@ -237,8 +238,9 @@ Côté client, un seul point d'entrée : `dlRoleNous()` / `dlRoleEux()`.
 - **Seuils d'honnêteté** : `DL_CONTRE_MIN` (3 games) pour un contre, `DL_WR_MIN_GAMES`
   (3) avant d'afficher un pourcentage, `DL_POOL_MIN_GAMES` (2) pour entrer dans la liste
   de bans. En dessous : on montre le volume et on tait le pourcentage.
-  *(Le brief d'avant-match, lui, commet encore cette faute — « point faible identifié »
-  sur 2 games dans `ssMatchupBrief`. Chantier ouvert.)*
+  Le brief d'avant-match (`ssMatchupBrief`) suit les mêmes règles depuis le 30/09/2026 :
+  ban = champion gagnant le plus joué (≥ `DL_WR_MIN_GAMES` games, ≥ 50 %), point faible
+  = ≥ `SS_BRIEF_MIN_FAIBLE` (5) games sous 45 %, pas de % sous le seuil (`ssChampStat`).
 
 ### 🗂️ Historique des drafts (Draft live → Google Sheets)
 
@@ -267,6 +269,20 @@ la pause de 1400 ms dans `fetchMatchesInBatches` (`app.html`) → les imports de
 parties passeront de ~2 min à quelques secondes.
 
 ---
+
+## Noms du menu (renommés le 30/09/2026)
+
+Menu : **Seasons · Analytics · Players · Scouting**.
+- **Players** = l'ancien « Scouting » : fiche joueur, graphiques, carte, historique
+  (panneaux `scout`, `graphs`, `map`, `history` ; adresses `#/players/…`).
+- **Scouting** = l'ancien « CRM Agent » : pipeline (onglet d'entrée), candidatures,
+  structures, matching, Top 30, Comparer (panneaux `crm`, `top50`, `analyse` ;
+  adresses `#/scouting/…`).
+- Les identifiants internes n'ont PAS changé (`crm*`, `nav-crm`, `nav-scout`,
+  clés `spes_crm_*`, domaine `crm`) : ne pas les renommer, ça casserait le stockage.
+- Les anciennes adresses (`#/crm/…`, `#/scouting/carte…`) sont des alias du routeur,
+  réécrites vers la nouvelle forme sans entrée d'historique.
+- Dans l'UI on dit « pipeline », plus « CRM ».
 
 ## Conventions
 
