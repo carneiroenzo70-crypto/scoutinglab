@@ -1632,3 +1632,46 @@ test('sur téléphone, .main peut rétrécir sous la largeur de son contenu', ()
   assert.doesNotMatch(app, /bar\.style\.cssText='position:fixed;left:0;right:0;bottom:0/);
   assert.match(app, /#vs-demo-bar\{ position:fixed;/);
 });
+
+test('l\'en-tête n\'a plus de bascule Compét / Solo Q (elle ne changeait rien)', () => {
+  assert.doesNotMatch(codeSeul, /hd-modesw|hd-modebtn/, 'ni balisage ni CSS résiduel');
+  assert.doesNotMatch(codeSeul, /'act:mode'/, 'plus d\'entrée de palette non plus');
+  // Les bascules qui AGISSENT restent : celle du roster.
+  assert.match(app, /class="rs-modesw"/);
+});
+
+test('graphiques : aucun LP inventé, winrate borné, courbes sans rebond', () => {
+  const lp = extraireFonction('buildChartLP');
+  assert.doesNotMatch(lp.replace(/\/\*[\s\S]*?\*\//g, ''), /\+=\s*20|-=\s*18/, 'plus de +20 / −18 inventés');
+  assert.match(app, /Bilan net cumulé/);
+  assert.match(extraireFonction('vsChartTheme'), /cubicInterpolationMode = 'monotone'/,
+    'une spline libre dépasse 100 % et invente des creux');
+  assert.match(codeSeul, /min: ?0, max: ?100/);
+});
+
+test('les PDF ne vont rien chercher hors de nos fichiers', () => {
+  const rapport = extraireFonction('generateOfficialReport');
+  assert.doesNotMatch(rapport.replace(/\/\/.*$/gm, ''), /unpkg|jsdelivr|cdnjs/);
+  assert.match(rapport, /\/assets\/vendor\/pdf-lib-1\.17\.1\.min\.js/);
+});
+
+test('un pseudo non latin ne casse plus les PDF', () => {
+  // La police standard des PDF (WinAnsi) lève une erreur sur 페이커.
+  assert.match(extraireFonction('vsPdfTexte'), /codePointAt/);
+  assert.match(extraireFonction('vsJsPdfLigne'), /addImage/, 'hors latin, la ligne passe en image');
+  for (const f of ['ssSheetPdf', 'exportComparaison']) {
+    assert.match(extraireFonction(f), /vsJsPdfLigne\(/, f + ' doit écrire les noms via vsJsPdfLigne');
+  }
+});
+
+test('feuille de route et comparaison : pied de page numéroté sur chaque page', () => {
+  for (const f of ['ssSheetPdf', 'exportComparaison']) {
+    const corps = extraireFonction(f);
+    assert.match(corps, /getNumberOfPages\(\)/, f);
+    assert.match(corps, /'Page ' \+ pg \+ ' \/ ' \+/, f);
+  }
+});
+
+test('Ctrl+P sur une fiche lance le rapport officiel, pas l\'ancien export', () => {
+  assert.match(codeSeul, /if \(fiche\) \{ e\.preventDefault\(\); generateOfficialReport\(\); \}/);
+});

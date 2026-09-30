@@ -1351,12 +1351,6 @@ body:not(.theme-dark) .rs-card .av .av-ini{ color:var(--vs-emerald-500); }
 .rs-stat{ font-size:11px; color:var(--vs-fg-2); white-space:nowrap; }
 .rs-stat b{ color:var(--vs-fg-1); font-weight:800; }
 .rs-dot{ color:var(--vs-forest-500); margin:0 1px; }
-/* Bascule GLOBALE Compét / Solo Q dans l'en-tête du site (compacte) */
-.hd-modesw{ display:inline-flex; padding:2px; gap:2px; border:1px solid var(--border2); border-radius:7px; background:var(--surf2); }
-.hd-modebtn{ border:0; background:transparent; color:var(--sub2); font-family:monospace; font-size:10px; letter-spacing:.04em; padding:4px 9px; border-radius:5px; cursor:pointer; transition:color .15s, background .15s; }
-.hd-modebtn.on{ background:var(--lime); color:#04211C; font-weight:700; }
-.hd-modebtn:not(.on):hover{ color:var(--text); }
-@media (max-width:900px){ .hd-modesw{ display:none; } }
 /* Bascule Compét / Solo Q dans l'en-tête du roster */
 .rs-modesw{ display:inline-flex; padding:3px; gap:2px; border:1px solid var(--vs-forest-500); border-radius:10px; background:rgba(4,18,15,.4); }
 body:not(.theme-dark) .rs-modesw{ background:rgba(255,255,255,.4); border-color:rgba(31,71,64,.14); }
@@ -2925,7 +2919,11 @@ body.theme-dark .hd {
   box-shadow: none !important;
 }
 body.theme-dark .dim-header { background: rgba(15,19,32,.5) !important; }
-body.theme-dark .card-title { color: rgba(184,196,224,.35) !important; }
+/* Titres de cartes : ils étaient forcés à 35 % d'opacité, dans un gris-BLEU
+   étranger à la charte — illisibles (contraste ≈ 2:1) et prioritaires sur la
+   couleur que prévoit le design (.vsd .card-title). Ramenés au texte
+   secondaire de la charte. */
+body.theme-dark .card-title { color: var(--vs-fg-2, #A9C4BD) !important; }
 body.theme-dark .map-tooltip { background: rgba(8,11,16,.95) !important; box-shadow: none !important; }
 body.theme-dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,.08) !important; }
 body.theme-dark ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.14) !important; }
@@ -4548,8 +4546,6 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 body:not(.theme-dark) .hd .hd-cmdk{ background:rgba(31,71,64,.04); }
 body:not(.theme-dark) .hd-kbd{ background:rgba(31,71,64,.05); }
 
-.hd .hd-modesw{ height:32px; padding:3px; gap:2px; border-radius:9px; align-items:stretch; box-sizing:border-box; }
-.hd .hd-modebtn{ font:600 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:0; padding:0 11px; border-radius:6px; }
 
 /* Le statut du serveur se TAIT quand tout va bien : un point, et le détail au
    survol. Il ne prend la parole — et de la place — que lorsqu'il a quelque
@@ -4570,7 +4566,6 @@ body:not(.theme-dark) .hd-kbd{ background:rgba(31,71,64,.05); }
   /* À 1024 px, « CRM AGENT » et « Solo Q » passaient sur deux lignes et le
      bouton de déconnexion sortait de l'écran (mesuré : 24 px de débordement). */
   .hd .hd-nav-item{ font-size:13px; padding:8px 10px; white-space:nowrap; }
-  .hd .hd-modebtn{ white-space:nowrap; padding:0 9px; }
 }
 @media (max-width:1100px){
   .hd .hd-plan{ display:none; }
@@ -4842,12 +4837,10 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
       <span class="hd-cmdk-txt">Rechercher</span>
       <kbd class="hd-kbd" id="hd-cmdk-kbd">Ctrl K</kbd>
     </button>
-    <!-- Toggle GLOBAL Compét / Solo Q — présent sur toutes les pages (socle
-         vsDataMode). Reflète et pilote le même mode que le roster. -->
-    <div class="hd-modesw" role="group" aria-label="Mode de données du site" title="Analyser en compétitif ou en Solo Q — partout sur le site">
-      <button data-vsmode="compet" onclick="vsSetDataMode('compet')" class="hd-modebtn">Compét</button>
-      <button data-vsmode="soloq" onclick="vsSetDataMode('soloq')" class="hd-modebtn">Solo Q</button>
-    </div>
+    <!-- Le toggle GLOBAL Compét / Solo Q a quitté l'en-tête le 30/09/2026 (demande
+         d'Enzo : « il ne change rien »). Vérifié : le mode ne pilote que le Roster et
+         la Timeline, qui portent chacun LEUR interrupteur. Sur toutes les autres
+         pages, un bouton qui se dit « partout sur le site » et n'agit sur rien. -->
     <!-- Toggle Dark / Light -->
     <button id="theme-toggle" class="hd-ctl hd-ctl-ico" onclick="toggleTheme()" title="Basculer thème sombre/clair" aria-label="Passer en thème clair">
       <span id="theme-toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
@@ -5773,7 +5766,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
         <!-- View tabs -->
         <div class="view-tabs">
           <button class="view-tab active" onclick="setGraphTab('performance',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Performance</button>
-          <button class="view-tab" onclick="setGraphTab('progression',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Progression rang</button>
+          <button class="view-tab" onclick="setGraphTab('progression',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12"/></svg> Bilan &amp; champions</button>
           <button class="view-tab" onclick="setGraphTab('activite',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Activité</button>
           <button class="view-tab" onclick="setGraphTab('progression_temp',this)" style="display:inline-flex;align-items:center;gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Évolution</button>
         </div>
@@ -5799,7 +5792,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
         <!-- TAB: Progression rang -->
         <div id="gtab-progression" style="display:none">
           <div class="graph-grid-full card" style="margin-bottom:12px">
-            <div class="card-title">Estimation progression LP (basée sur WR glissant)</div>
+            <div class="card-title">Bilan net cumulé — victoires moins défaites</div>
             <div class="chart-wrap"><canvas id="chart-lp" class="chart-canvas" height="200"></canvas></div>
           </div>
           <div class="card">
@@ -5821,7 +5814,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
         <!-- TAB: Activité -->
         <div id="gtab-activite" style="display:none">
           <div class="card" style="margin-bottom:12px">
-            <div class="card-title">Heatmap activité — Jour × Heure (UTC)</div>
+            <div class="card-title">Activité — jour × heure (heure locale)</div>
             <div id="heatmap-container"></div>
             <div class="heatmap-legend">
               <span>Moins actif</span>
@@ -11689,6 +11682,23 @@ function ssPlanningEnvoyer() {
 }
 function ssPlanningWhatsApp() { ssPartagerWhatsApp(ssPlanningSemaineTexte()); }
 function ssPlanningCopier() { ssCopy(ssPlanningSemaineTexte(), 'Planning copié'); }
+/* Écrit une ligne dans un PDF jsPDF. La police intégrée ne connaît que
+   l'alphabet latin : un pseudo coréen devenait « Ó˜ÇtÎä » et la ligne entière
+   s'espaçait lettre par lettre. Hors latin, le navigateur dessine la ligne
+   (il a les polices CJK) et on l'insère en image, à la même taille. */
+function vsJsPdfLigne(doc, txt, x, y, taillePt, gras, couleur){
+  txt = String(txt == null ? '' : txt);
+  if (typeof vsPdfTexte !== 'function' || vsPdfTexte(txt) === txt) { doc.text(txt, x, y); return; }
+  var ech = 4, px = taillePt * 1.333 * ech;
+  var cv = document.createElement('canvas'), cx = cv.getContext('2d');
+  var police = (gras ? '700 ' : '400 ') + px + 'px "Helvetica Neue", Arial, "Malgun Gothic", "Microsoft YaHei", "Noto Sans CJK", sans-serif';
+  cx.font = police; cv.width = Math.ceil(cx.measureText(txt).width) + 4; cv.height = Math.ceil(px * 1.3);
+  cx.font = police; cx.fillStyle = 'rgb(' + (couleur || [38,38,38]).join(',') + ')'; cx.textBaseline = 'alphabetic';
+  cx.fillText(txt, 0, px);
+  var mmParPx = 25.4 / 96 / ech;                       // 96 px CSS par pouce
+  var w = cv.width * mmParPx, h = cv.height * mmParPx;
+  doc.addImage(cv.toDataURL('image/png'), 'PNG', x, y - px * mmParPx, w, h);
+}
 // ── Génération de la feuille (PDF) ──
 // Page claire (elle est faite pour être imprimée / lue sur téléphone), bandeau
 // forêt et titres émeraude : la charte sans fond sombre qui vide les cartouches.
@@ -11702,31 +11712,33 @@ function ssSheetPdf(id, role) {
   var doc = new window.jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   var W = 210, M = 16, y = 0;
   var page = function () { doc.addPage(); y = M; };
-  var need = function (h) { if (y + h > 285) page(); };
+  var need = function (h) { if (y + h > 281) page(); };   // 281 : le pied de page occupe 287-292
   // Bandeau
   doc.setFillColor(11, 47, 42); doc.rect(0, 0, W, 30, 'F');
   doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
   doc.text('FEUILLE DE ROUTE', M, 13);
   doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-  doc.text(me + '  vs  ' + opp, M, 20);
+  vsJsPdfLigne(doc, me + '  vs  ' + opp, M, 20, 11, false, [255, 255, 255]);
   doc.setFontSize(8.5); doc.setTextColor(160, 205, 195);
   doc.text((m.competition || '') + '  ·  BO' + (m.bo || 1) + '  ·  ' + when, M, 26);
   if (role) {
-    var who = (p.players[role] && p.players[role].me) ? (role + ' — ' + p.players[role].me) : role;
+    // Le rôle en capitales, le pseudo tel quel (c'est un identifiant).
+    var who = role.toUpperCase() + ((p.players[role] && p.players[role].me) ? ('  ·  ' + p.players[role].me) : '');
     doc.setFillColor(45, 212, 167); doc.rect(0, 30, W, 9, 'F');
     doc.setTextColor(4, 33, 28); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-    doc.text(who.toUpperCase(), M, 36.2);
+    vsJsPdfLigne(doc, who, M, 36.2, 9.5, true, [4, 33, 28]);
     y = 48;
   } else y = 40;
-  var sect = function (title) {
+  // garderCasse : un pseudo est un identifiant, on ne le passe pas en capitales.
+  var sect = function (title, garderCasse) {
     need(14); doc.setTextColor(21, 128, 106); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-    doc.text(title.toUpperCase(), M, y);
+    vsJsPdfLigne(doc, garderCasse ? title : title.toUpperCase(), M, y, 9.5, true, [21, 128, 106]);
     doc.setDrawColor(45, 212, 167); doc.setLineWidth(0.4); doc.line(M, y + 1.8, W - M, y + 1.8);
     y += 8;
   };
   var body = function (txt, indent, bold) {
     doc.setTextColor(38, 38, 38); doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(9.5);
-    doc.splitTextToSize(String(txt), W - M * 2 - (indent || 0)).forEach(function (l) { need(6); doc.text(l, M + (indent || 0), y); y += 4.9; });
+    doc.splitTextToSize(String(txt), W - M * 2 - (indent || 0)).forEach(function (l) { need(6); vsJsPdfLigne(doc, l, M + (indent || 0), y, 9.5, bold, [38, 38, 38]); y += 4.9; });
   };
   sect('Déroulé de la journée');
   var items = p.items.filter(function (it) { return (it.time || it.label); });
@@ -11736,14 +11748,14 @@ function ssSheetPdf(id, role) {
     doc.setFont('courier', 'bold'); doc.setFontSize(9.5); doc.setTextColor(11, 47, 42);
     doc.text(it.time || '--:--', M, y);
     doc.setFont('helvetica', 'normal'); doc.setTextColor(38, 38, 38);
-    doc.text(String(it.label || ''), M + 16, y);
+    vsJsPdfLigne(doc, String(it.label || ''), M + 16, y, 9.5, false, [38, 38, 38]);
     y += 5.6;
   });
   y += 3;
   if ((p.teamNotes || '').trim()) { sect("Consignes d'équipe"); (p.teamNotes || '').split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); y += 3; }
   var block = function (r) {
     var pl = p.players[r] || {}, oppName = ssOppAt(m, r);
-    sect(r + '  —  ' + (pl.me || '?') + '   vs   ' + (oppName || '?'));
+    sect(r.toUpperCase() + '  ·  ' + (pl.me || 'joueur à définir') + '  vs  ' + (oppName || 'adversaire à définir'), true);
     if ((pl.champ || '').trim()) body('Champion prévu : ' + pl.champ.trim(), 2);
     if ((pl.matchup || '').trim()) body('Matchup : ' + pl.matchup.trim(), 2);
     if ((pl.notes || '').trim()) { pl.notes.split('\n').forEach(function (l) { if (l.trim()) body('•  ' + l.trim(), 2); }); }
@@ -11760,8 +11772,15 @@ function ssSheetPdf(id, role) {
     y += 3;
   };
   if (role) block(role); else SS_ROLES.forEach(block);
-  need(10); doc.setTextColor(140, 140, 140); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
-  doc.text('Préparé avec VisionScore — visionscore.gg', M, Math.min(y + 4, 290));
+  // Pied de page sur CHAQUE page, numéroté : une feuille imprimée se trie.
+  var nbPages = doc.getNumberOfPages(), fait = new Date().toLocaleDateString('fr-FR');
+  for (var pg = 1; pg <= nbPages; pg++) {
+    doc.setPage(pg);
+    doc.setDrawColor(220, 226, 224); doc.setLineWidth(0.2); doc.line(M, 287, W - M, 287);
+    doc.setTextColor(140, 140, 140); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    doc.text('Préparé avec VisionScore · ' + fait, M, 291.5);
+    doc.text('Page ' + pg + ' / ' + nbPages, W - M, 291.5, { align: 'right' });
+  }
   var safe = function (s) { return String(s).replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, ''); };
   doc.save('feuille-de-route-' + safe(opp) + (role ? ('-' + safe(role)) : '-equipe') + '.pdf');
   if (typeof showToast === 'function') showToast('PDF généré', 'success');
@@ -14438,45 +14457,159 @@ function buildDimBars(cols) {
     '<div class="label" style="font-size:10.5px;margin-bottom:14px">Détail par dimension <span class="faint" style="font-weight:400;text-transform:none;letter-spacing:0">— sur 10, meilleur en couleur</span></div>' +
     '<div class="an-dimbars">'+blocks+'</div></div>';
 }
+/* Export PDF de la comparaison. Même grammaire que la feuille de route :
+   bandeau, sections titrées, pied numéroté sur chaque page. Le document doit
+   se lire sans l'écran — classement, dimensions en barres, stats côte à côte,
+   le meilleur de chaque ligne en gras. */
 async function exportComparaison() {
   if (!analyseSlots.length) { showToast('Ajoute au moins une fiche avant d\'exporter.', 'info'); return; }
   if (!window.jspdf) { showToast('Librairie PDF non chargée — vérifie ta connexion.', 'error'); return; }
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const em = [45, 212, 167];
-  doc.setFillColor(11, 47, 42); doc.rect(0, 0, 210, 30, 'F');
-  doc.setTextColor(...em); doc.setFontSize(16); doc.setFont('helvetica', 'bold');
-  doc.text('VisionScore — Comparaison de prospects', 14, 13);
-  doc.setTextColor(220, 235, 230); doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-  doc.text(new Date().toLocaleDateString('fr-FR') + ' · ' + analyseSlots.length + ' joueur(s)', 14, 21);
-  let y = 42;
-  const dimLbls = ['Stats pures', 'Objectifs', 'Impact carte', 'Progression', 'Discipline'];
-  analyseSlots.forEach((s, i) => {
-    const g = anScore100(s);
-    doc.setDrawColor(200, 210, 205); doc.roundedRect(14, y - 6, 182, 34, 2, 2);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(20, 40, 35);
-    doc.text(s.pseudo + (s.tag && s.tag !== '—' ? ' #' + s.tag : ''), 20, y + 1);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 105, 100);
-    doc.text((s.role || '?') + ' · ' + (s.rankLbl || '—') + (s.age && s.age !== '—' ? ' · ' + s.age + ' ans' : ''), 20, y + 7);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(...(g >= 70 ? em : g >= 50 ? [230, 180, 88] : [255, 90, 51]));
-    doc.text(String(g != null ? g : '—'), 186, y + 3, { align: 'right' });
-    doc.setFontSize(6.5); doc.setTextColor(120, 135, 130); doc.text('VISIONSCORE', 186, y + 8, { align: 'right' });
-    // Dimensions D1..D5
-    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
-    ['d1','d2','d3','d4','d5'].forEach((k, j) => {
-      const v = parseFloat((s.dimScores || {})[k]);
-      const x = 20 + j * 35;
-      doc.setTextColor(120, 135, 130); doc.text(dimLbls[j], x, y + 16);
-      doc.setTextColor(20, 40, 35); doc.setFont('helvetica', 'bold');
-      doc.text(isFinite(v) ? v.toFixed(1) + '/10' : '—', x, y + 22);
-      doc.setFont('helvetica', 'normal');
-    });
-    y += 42;
-    if (y > 250 && i < analyseSlots.length - 1) { doc.addPage(); y = 20; }
+  const W = 210, M = 16;
+  const FONCE = [11, 47, 42], EMERAUDE = [21, 128, 106], TEXTE = [38, 38, 38], DOUX = [120, 135, 130];
+  const rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  const cols = analyseSlots.map((s, i) => ({ s, i, g: anScore100(s), coul: rgb(PLAYER_COLORS[i] || '#2DD4A7') }));
+  const nom = s => (s.pseudo || '?') + (s.tag && s.tag !== '—' ? ' #' + s.tag : '');
+  let y = 0;
+  const page = () => { doc.addPage(); y = M + 4; };
+  const need = h => { if (y + h > 281) page(); };
+  const sect = (titre, note) => {
+    need(16); doc.setTextColor(...EMERAUDE); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+    doc.text(titre.toUpperCase(), M, y);
+    if (note) { doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...DOUX); doc.text(note, W - M, y, { align: 'right' }); }
+    doc.setDrawColor(45, 212, 167); doc.setLineWidth(0.4); doc.line(M, y + 1.8, W - M, y + 1.8);
+    y += 8;
+  };
+  // Même échelle de décision qu'à l'écran (score sur 100).
+  const verdict = g => g == null ? '—' : g >= 80 ? 'Recruter' : g >= 65 ? 'À suivre' : g >= 50 ? 'Tryout' : 'Pas prêt';
+  const couleurScore = g => g == null ? DOUX : g >= 70 ? EMERAUDE : g >= 50 ? [176, 122, 20] : [200, 60, 40];
+
+  // ── Bandeau ──
+  const roles = [...new Set(analyseSlots.map(s => s.role || '?'))];
+  const equipe = (typeof ssData === 'function' && ssData().myTeam && ssData().myTeam.name) || '';
+  doc.setFillColor(...FONCE); doc.rect(0, 0, W, 30, 'F');
+  doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(15);
+  doc.text('COMPARAISON DE PROSPECTS', M, 13);
+  doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
+  vsJsPdfLigne(doc, (equipe ? equipe + '  ·  ' : '') + (roles.length === 1 ? 'Poste ' + roles[0] : 'Postes ' + roles.join(', ')), M, 20, 11, false, [255, 255, 255]);
+  doc.setFontSize(8.5); doc.setTextColor(160, 205, 195);
+  doc.text(new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) + '  ·  ' + analyseSlots.length + ' joueur' + (analyseSlots.length > 1 ? 's' : ''), M, 26);
+  y = 42;
+  if (roles.length > 1) {
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(176, 122, 20);
+    doc.text('Postes différents : les scores ne se comparent pas terme à terme (barèmes par rôle).', M, y - 3);
+    y += 4;
+  }
+
+  // ── Classement ──
+  sect('Classement', 'score VisionScore sur 100');
+  [...cols].sort((a, b) => (b.g ?? -1) - (a.g ?? -1)).forEach((c, pos) => {
+    need(15);
+    doc.setFillColor(...c.coul); doc.circle(M + 3, y - 1.2, 2.6, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text(String(pos + 1), M + 3, y - 0.1, { align: 'center' });
+    doc.setTextColor(...TEXTE); doc.setFontSize(11);
+    vsJsPdfLigne(doc, nom(c.s), M + 9, y, 11, true, TEXTE);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DOUX);
+    doc.text([c.s.role || '?', c.s.rankLbl || '—', c.s.age && c.s.age !== '—' ? c.s.age + ' ans' : ''].filter(Boolean).join('  ·  '), M + 9, y + 5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...couleurScore(c.g));
+    doc.text(c.g != null ? String(c.g) : '—', W - M - 24, y + 2, { align: 'right' });
+    doc.setFontSize(8.5); doc.text(verdict(c.g), W - M, y + 1, { align: 'right' });
+    doc.setDrawColor(226, 232, 230); doc.setLineWidth(0.2); doc.line(M, y + 8.5, W - M, y + 8.5);
+    y += 14;
   });
-  doc.setFontSize(7.5); doc.setTextColor(150, 160, 155);
-  doc.text('Généré par VisionScore — visionscore.gg — données API Riot Games', 14, 288);
-  doc.save('visionscore-comparaison.pdf');
+  y += 2;
+
+  // ── Dimensions ──
+  const dims = [['d1', 'Stats pures'], ['d2', 'Objectifs'], ['d3', 'Impact carte'], ['d4', 'Progression'], ['d5', 'Discipline']];
+  const barX = M + 42, barW = W - M - 14 - barX;
+  sect('Détail par dimension', 'sur 10 · meilleur en gras');
+  dims.forEach(([k, lbl]) => {
+    const vals = cols.map(c => { const v = parseFloat((c.s.dimScores || {})[k]); return isFinite(v) ? v : null; });
+    const best = Math.max(...vals.map(v => v == null ? -1 : v));
+    need(6 + cols.length * 4.6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TEXTE);
+    doc.text(lbl, M, y + 2.6);
+    cols.forEach((c, j) => {
+      const v = vals[j], yy = y + j * 4.6;
+      doc.setFillColor(236, 241, 239); doc.roundedRect(barX, yy, barW, 3, 1, 1, 'F');
+      if (v != null && v > 0) { doc.setFillColor(...c.coul); doc.roundedRect(barX, yy, Math.max(2, barW * Math.min(v, 10) / 10), 3, 1, 1, 'F'); }
+      const top = v != null && v === best;
+      doc.setFont('helvetica', top ? 'bold' : 'normal'); doc.setFontSize(8); doc.setTextColor(...(top ? TEXTE : DOUX));
+      doc.text(v != null ? v.toFixed(1) : '—', W - M, yy + 2.5, { align: 'right' });
+    });
+    y += cols.length * 4.6 + 4;
+  });
+  // Légende des couleurs
+  need(8);
+  let lx = M;
+  cols.forEach(c => {
+    doc.setFillColor(...c.coul); doc.circle(lx + 1.3, y - 1, 1.3, 'F');
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...TEXTE);
+    const txt = c.s.pseudo || '?';
+    vsJsPdfLigne(doc, txt, lx + 4, y, 8, false, TEXTE);
+    lx += 8 + Math.min(40, doc.getTextWidth(vsPdfTexte(txt)) + 4);
+  });
+  y += 8;
+
+  // ── Statistiques clés (seulement si au moins une fiche en a) ──
+  const lignes = [
+    ['KDA', s => s.stats && s.stats.kda, 2, ''],
+    ['Winrate', s => s.stats && s.stats.winrate, 1, ' %'],
+    ['CS/min', s => s.stats && s.stats.cs_min, 2, ''],
+    ['Kill participation', s => s.stats && s.stats.kill_part, 1, ' %'],
+    ['Part des dégâts', s => s.stats && s.stats.dmg_share, 1, ' %'],
+    ['Vision', s => s.stats && s.stats.vision, 1, ''],
+    ['Solo kills', s => s.adv && s.adv.soloKills, 2, ''],
+  ].map(([lbl, f, dec, u]) => ({ lbl, dec, u, vals: cols.map(c => { const v = parseFloat(f(c.s)); return isFinite(v) ? v : null; }) }))
+   .filter(l => l.vals.some(v => v != null));
+  if (lignes.length) {
+    const colW = (W - M * 2 - 44) / cols.length;
+    sect('Statistiques clés', 'meilleur de chaque ligne en gras');
+    need(8);
+    cols.forEach((c, j) => {
+      const cx = M + 44 + colW * j + colW / 2;
+      doc.setFillColor(...c.coul); doc.rect(cx - colW / 2 + 2, y - 4, colW - 4, 0.9, 'F');
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(...TEXTE);
+      const p = String(c.s.pseudo || '?');
+      if (vsPdfTexte(p) === p) doc.text(doc.splitTextToSize(p, colW - 4)[0], cx, y, { align: 'center' });
+      else vsJsPdfLigne(doc, p, cx - Math.min(colW - 4, doc.getTextWidth(vsPdfTexte(p))) / 2, y, 8.5, true, TEXTE);
+    });
+    y += 6;
+    lignes.forEach((l, r) => {
+      need(7);
+      if (r % 2 === 0) { doc.setFillColor(245, 248, 247); doc.rect(M, y - 4.2, W - M * 2, 6.4, 'F'); }
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DOUX);
+      doc.text(l.lbl, M + 2, y);
+      const best = Math.max(...l.vals.map(v => v == null ? -Infinity : v));
+      l.vals.forEach((v, j) => {
+        const top = v != null && v === best && l.vals.filter(x => x != null).length > 1;
+        doc.setFont('helvetica', top ? 'bold' : 'normal'); doc.setTextColor(...(top ? EMERAUDE : TEXTE));
+        doc.text(v != null ? v.toFixed(l.dec) + l.u : '—', M + 44 + colW * j + colW / 2, y, { align: 'center' });
+      });
+      y += 6.4;
+    });
+    y += 4;
+  } else {
+    need(10);
+    doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(...DOUX);
+    doc.text('Statistiques détaillées indisponibles : fiches venues du CRM, sans import de parties.', M, y);
+    y += 8;
+  }
+
+  // ── Pied de page numéroté sur chaque page ──
+  const nb = doc.getNumberOfPages(), fait = new Date().toLocaleDateString('fr-FR');
+  for (let pg = 1; pg <= nb; pg++) {
+    doc.setPage(pg);
+    doc.setDrawColor(220, 226, 224); doc.setLineWidth(0.2); doc.line(M, 287, W - M, 287);
+    doc.setTextColor(140, 140, 140); doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
+    doc.text('Préparé avec VisionScore · ' + fait + ' · données API Riot Games', M, 291.5);
+    doc.text('Page ' + pg + ' / ' + nb, W - M, 291.5, { align: 'right' });
+  }
+  const sur = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const noms = analyseSlots.map(s => sur(s.pseudo)).filter(Boolean).slice(0, 3).join('-vs-');
+  doc.save('comparaison-' + (noms || 'prospects') + '.pdf');
   showToast('PDF de comparaison exporté', 'success');
 }
 
@@ -15866,16 +15999,20 @@ async function exportPDF() {
 // ════════════════════════════════════════════════════════════
 async function generateOfficialReport() {
   if (!window.PDFLib) {
-    // Charger pdf-lib dynamiquement si pas encore présent
+    // Charger pdf-lib s'il n'est pas encore là (balise defer pas encore exécutée).
+    // ⚠️ Depuis NOS fichiers : ce repli allait le chercher sur unpkg, soit un script
+    // tiers exécuté dans une page authentifiée — exactement ce que la règle
+    // « aucun script tiers » (assets/vendor/LICENCES.md) avait supprimé.
     await new Promise((resolve,reject)=>{
       const s=document.createElement('script');
-      s.src='https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js';
+      s.src='/assets/vendor/pdf-lib-1.17.1.min.js';
       s.onload=resolve; s.onerror=reject; document.head.appendChild(s);
     }).catch(()=>{});
     if (!window.PDFLib) { showToast('pdf-lib non chargé — vérifiez la connexion', 'error'); return; }
   }
   const btn = document.querySelector('[onclick="generateOfficialReport()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Génération…'; }
+  const btnHtml = btn ? btn.innerHTML : '';   // rendu tel quel à la fin (icône comprise)
+  if (btn) { btn.disabled = true; btn.textContent = 'Génération…'; }
   showToast('Génération du rapport officiel…', 'info');
 
   try {
@@ -15929,14 +16066,14 @@ async function generateOfficialReport() {
             const canvas = inst.canvas;
             const origW = canvas.width, origH = canvas.height;
             // Rendu 900×350 (AR 2.57:1 naturel pour charts) → pas d'étirement
-            inst.resize(900, 600);  // AR 1.5:1 remplit mieux le cadre
+            // 640×427 (3:2, le format du cadre). Fond TRANSPARENT : un fond blanc
+            // recouvrait le trait arrondi du cadre dessiné par le modèle.
+            inst.resize(640, 427);
             await new Promise(r => setTimeout(r, 120));
             const bg = document.createElement('canvas');
-            bg.width = 900; bg.height = 600;
+            bg.width = 640; bg.height = 427;
             const bctx = bg.getContext('2d');
-            bctx.fillStyle = '#FFFFFF';
-            bctx.fillRect(0, 0, 900, 350);
-            bctx.drawImage(canvas, 0, 0, 900, 600);
+            bctx.drawImage(canvas, 0, 0, 640, 427);
             dataUrl = bg.toDataURL('image/png');
             inst.resize(origW || 600, origH || 200);
           } catch(_) {
@@ -16008,11 +16145,18 @@ async function generateOfficialReport() {
 
     // ── Helpers draw ──────────────────────────────────────
     const cov = (pg,x,y,w,h) => pg.drawRectangle({x,y,width:w,height:h,color:W});
-    const put = (pg,t,x,y,sz,fn,col) => pg.drawText(String(t),{x,y,size:sz,font:fn,color:col});
+    const put = (pg,t,x,y,sz,fn,col) => pg.drawText(vsPdfTexte(t),{x,y,size:sz,font:fn,color:col});
     const mid = (pg,t,cx,y,sz,fn,col) => {
-      const tw=fn.widthOfTextAtSize(String(t),sz); put(pg,t,cx-tw/2,y,sz,fn,col);
+      const tw=fn.widthOfTextAtSize(vsPdfTexte(t),sz); put(pg,t,cx-tw/2,y,sz,fn,col);
     };
-    // Formatage robuste sans tiret cadratin (non rendu en Helvetica intégré)
+    const fontI = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
+    /* Pied de page : le modèle écrit « Tout droits réservés » (faute) et une
+       date 00/00/0000. On le couvre et on le réécrit, date comprise. */
+    const piedDePage = (pg, numero) => {
+      cov(pg, 20, 4, 300, 17);
+      const txt = 'VisionScore · Tous droits réservés · Document confidentiel · ' + dateStr;
+      put(pg, txt, 25, 12, 8.5, fontI, SUB);
+    };
     const fmt = (v, dec=1) => (v!==undefined && v!==null && !isNaN(+v)) ? (+v).toFixed(dec) : '-';
 
     // ════════════════════════════════════════════════════════
@@ -16028,7 +16172,10 @@ async function generateOfficialReport() {
     //                              "Rapport confidentiel 00/00/0000"       top=108.1
     //    Covers: pdfplumber top ≥ 85 → y+h ≥ 842-85=757, y=706 → h=51 suffisant
     cov(p1, 24, 706, 260, 58);
-    put(p1, 'VisionScore — Scouting',         25, 744, 9.5, fontB, BLK);
+    // Le modèle prévoyait le NOM DE LA STRUCTURE : on le prend dans Seasons.
+    let structure = '';
+    try { const dd = (typeof ssData === 'function') ? ssData() : null; structure = (dd && dd.myTeam && dd.myTeam.name) ? dd.myTeam.name : ''; } catch(_) {}
+    put(p1, structure ? structure + ' — Scouting' : 'VisionScore — Scouting', 25, 744, 9.5, fontB, BLK);
     put(p1, 'Rapport confidentiel — '+dateStr, 25, 722,   9, fontR, SUB);
 
     // 2. Badge rang + rôle (coin supérieur droit)
@@ -16061,14 +16208,30 @@ async function generateOfficialReport() {
     //    y+h ≥ 842-155.9=686.1 → cov y=648 h=40 (688) ✓ — largeur réduite à 380 pour ne pas empiéter sur le logo rang
     cov(p1, 100, 648, 360, 40);
     const nSz = Math.max(14, Math.min(24, 24 - Math.max(0, pseudo.length-12)));
-    const nW = fontB.widthOfTextAtSize(pseudo, nSz);
-    put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
+    if (vsPdfTexte(pseudo) === pseudo) {
+      const nW = fontB.widthOfTextAtSize(pseudo, nSz);
+      put(p1, pseudo, 297 - nW/2, 662, nSz, fontB, BLK);
+    } else {
+      /* Pseudo hors alphabet latin (페이커, 小虎…) : la police intégrée du PDF ne
+         l'écrit pas. Le navigateur, lui, sait : on le dessine sur un canvas et on
+         l'insère en image — le nom reste exact au lieu de devenir « ??? ». */
+      const cv = document.createElement('canvas'), ech = 4, taille = nSz * ech;
+      const cx2 = cv.getContext('2d');
+      cx2.font = '700 ' + taille + 'px "Helvetica Neue", Arial, "Malgun Gothic", "Microsoft YaHei", "Noto Sans CJK", sans-serif';
+      cv.width = Math.ceil(cx2.measureText(pseudo).width) + 8; cv.height = Math.ceil(taille * 1.35);
+      cx2.font = '700 ' + taille + 'px "Helvetica Neue", Arial, "Malgun Gothic", "Microsoft YaHei", "Noto Sans CJK", sans-serif';
+      cx2.fillStyle = '#10121A'; cx2.textBaseline = 'alphabetic';
+      cx2.fillText(pseudo, 4, taille);
+      const nomImg = await pdfDoc.embedPng(await (await fetch(cv.toDataURL('image/png'))).arrayBuffer());
+      const lw = cv.width / ech, lh = cv.height / ech;
+      p1.drawImage(nomImg, { x: 297 - lw / 2, y: 662 - (lh - nSz), width: lw, height: lh });
+    }
     // Badge rang — dessiné APRÈS coverage player name pour ne pas être masqué
     mid(p1, badge, 527, 655, 11.5, fontB, BLK);
 
     // Label "KDA" template — pdfplumber top=637.8 → y_baseline=192.1
     // Couvrir + redessiner pour uniformiser police avec Stat4/5/6
-    cov(p1, 415, 188, 26, 17);
+    cov(p1, 413, 188, 38, 17);   // élargi : un caractère du modèle dépassait à droite
     mid(p1, 'KDA', 430, 193, 8.5, fontB, BLK);
     // Label "CS/min" template — pdfplumber top=717.4 → y_baseline=112.5
     cov(p1, 409, 108, 50, 19);
@@ -16138,7 +16301,16 @@ async function generateOfficialReport() {
       ADC:[{id:'dmg_share',lbl:'Dmg Share%'}, {id:'dpm',      lbl:'DPM'},      {id:'winrate',lbl:'Win Rate%'}],
       Sup:[{id:'vision',   lbl:'Vision/g'},   {id:'kill_part',lbl:'Kill Pt.%'},{id:'chal_wards_killed',lbl:'Wards/g'}],
     };
-    const rs = (rsMap[currentRole]||rsMap.Mid).map(s => ({
+    /* Trois cases, trois VRAIES valeurs : une stat absente de l'import (ex.
+       Obj.Score) laissait un « - » dans une cible. On complète avec la
+       suivante disponible, sans jamais inventer. */
+    const secours = [{id:'vision',lbl:'Vision/g'},{id:'dmg_share',lbl:'Dmg Share%'},{id:'dpm',lbl:'DPM'},
+                     {id:'winrate',lbl:'Win Rate%'},{id:'chal_first_blood',lbl:'First Blood%'},{id:'vision_min',lbl:'Vision/min'}];
+    const dispo = s => rawData[s.id] !== undefined && rawData[s.id] !== null && !isNaN(+rawData[s.id]);
+    const choix = (rsMap[currentRole]||rsMap.Mid).filter(dispo);
+    secours.forEach(s => { if (choix.length < 3 && dispo(s) && !choix.some(x => x.id === s.id)) choix.push(s); });
+    while (choix.length < 3) choix.push((rsMap[currentRole]||rsMap.Mid)[choix.length]);
+    const rs = choix.slice(0,3).map(s => ({
       lbl: s.lbl,
       val: fmt(rawData[s.id], 1)
     }));
@@ -16174,10 +16346,8 @@ async function generateOfficialReport() {
     cov(p1, 508, 29, 72, 16);
     mid(p1, rs[2].lbl, 524, 36, 8.5, fontB, BLK);
 
-    // 9. Footer page 1 — date "00/00/0000" pdfplumber x=258.3 top=821.3
-    // Cover précis (x=254-310) pour ne pas empiéter sur le texte RGPD à gauche
-    cov(p1, 254, 7, 52, 14);
-    put(p1, dateStr, 255, 12, 9, fontR, rgb(0.42, 0.46, 0.56));
+    // 9. Pied de page 1
+    piedDePage(p1, 1);
 
     // ════════════════════════════════════════════════════════
     // PAGE 2
@@ -16246,25 +16416,34 @@ async function generateOfficialReport() {
           if (img) p2.drawImage(img, {x:imgX, y:cy, width:cSz, height:cSz});
         }
       } catch(_){}
-      const stTxt = c.games+'G  '+c.wr+'%  KDA '+c.kda;
+      const stTxt = c.games+' parties · '+c.wr+'% · KDA '+c.kda;
       const stW   = fontR.widthOfTextAtSize(stTxt, 7.5);
       put(p2, stTxt, ccx - stW/2, cy-16, 9, fontB, BLK);
     }
 
-    // Graphiques — zone template pdfplumber top≈335-575
-    // code_cy = 907 - (pdfplumber_top + height) = 907 - (335+240) = 332
-    // Assurer que les charts sont rendus (panel peut être masqué)
-    const _gPanel = document.getElementById('panel-graphs');
-    const _gWasHidden = _gPanel && !_gPanel.classList.contains('active');
-    if (_gWasHidden) {
-      _gPanel.style.visibility = 'hidden';
-      _gPanel.style.display = 'block';
-      if (typeof buildGraphs === 'function') buildGraphs();
-      await new Promise(r => setTimeout(r, 500));
+    // Emplacements de champions non remplis : le modèle y laissait
+    // « Nb - WR - KDA » et deux étoiles vides.
+    for (let ci = champs.length; ci < 8; ci++) {
+      const ccx = cColCx[ci%4], cy = cRowY[Math.floor(ci/4)];
+      cov(p2, ccx - 68, cy - 26, 136, 110);
     }
-    const kdaBuf2    = await canvasToBuf('chart-kda');
-    const champsBuf2 = await canvasToBuf('chart-multi') || await canvasToBuf('chart-champs');
-    if (_gWasHidden && _gPanel) { _gPanel.style.display = ''; _gPanel.style.visibility = ''; }
+
+    // Graphiques — zone template pdfplumber top≈335-575
+    // Construits en version IMPRESSION (encre sombre, sans animation), puis
+    // l'écran est rendu tel quel. Sans parties importées : un message dans le
+    // cadre au lieu d'un cadre vide.
+    let kdaBuf2 = null, champsBuf2 = null;
+    if (matchHistory.length) {
+      await vsGraphiquesPourImpression(async () => {
+        kdaBuf2    = await canvasToBuf('chart-kda');
+        champsBuf2 = await canvasToBuf('chart-multi');
+      });
+    } else {
+      [[142, 'Ratio KDA'], [431, 'CS/min · Vision · Kill part.']].forEach(([cx]) => {
+        mid(p2, 'Disponible après l’import des parties', cx, 390, 9, fontI, SUB);
+        mid(p2, '(Fiche joueur, bouton « Importer »)', cx, 376, 8, fontI, SUB);
+      });
+    }
     if (kdaBuf2) {
       const kdaImg2 = await pdfDoc.embedPng(new Uint8Array(kdaBuf2)).catch(()=>null);
       if (kdaImg2) {
@@ -16274,9 +16453,9 @@ async function generateOfficialReport() {
         const ar = kdaImg2.height / kdaImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
         // Aligné sous le label "RATIO KDA" (PDF-lib y=507), hauteur proportionnelle
-        const kdaH = Math.round(258 * kdaImg2.height / kdaImg2.width);
-        const kdaY = Math.max(260, 507 - kdaH);
-        p2.drawImage(kdaImg2, {x:13, y:kdaY, width:258, height:kdaH});
+        // DANS le cadre du modèle (mesuré sur le rendu : x 25→275, y 298→487) —
+        // l'image débordait en haut et à droite, par-dessus le trait.
+        p2.drawImage(kdaImg2, {x:31, y:307, width:238, height:Math.round(238 * kdaImg2.height / kdaImg2.width)});
       }
     }
     if (champsBuf2) {
@@ -16284,9 +16463,7 @@ async function generateOfficialReport() {
       if (champsImg2) {
         const ar = champsImg2.height / champsImg2.width;
         const h = Math.round(Math.min(240, 258 * ar));
-        const csH = Math.round(258 * champsImg2.height / champsImg2.width);
-        const csY = Math.max(260, 507 - csH);
-        p2.drawImage(champsImg2, {x:302, y:csY, width:258, height:csH});
+        p2.drawImage(champsImg2, {x:329, y:307, width:238, height:Math.round(238 * champsImg2.height / champsImg2.width)});
       }
     }
 
@@ -16321,44 +16498,44 @@ async function generateOfficialReport() {
 
     // Bilan — template "Lorem ipsum" pdfplumber top=746.8-789 → PDF-lib y≈53-83
     const VERDICTS = [
-      [9.5,"Profil elite. Recrutement immediat : niveau pro confirme, impact direct sur le circuit."],
-      [8.5,"Profil d'exception. Recrutement prioritaire : potentiel competitif immediat, tryout urgent."],
-      [7.5,"Profil tres solide. Tryout prioritaire : architecture de jeu adaptee au circuit competitif."],
-      [6.5,"Bon profil competitif. Tryout recommande : base technique suffisante, progression visible."],
-      [5.5,"Profil en developpement. Potentiel identifie : a monitorer 30 jours avant decision."],
-      [4.5,"Profil limite. Travail specifique requis sur les dimensions cles avant tout tryout."],
-      [0,"Niveau insuffisant. Developpement individuel necessaire avant toute integration en circuit."],
+      // Accents rétablis : la police intégrée (WinAnsi) les écrit très bien.
+      [9.5,"Profil élite. Recrutement immédiat : niveau pro confirmé, impact direct sur le circuit."],
+      [8.5,"Profil d'exception. Recrutement prioritaire : potentiel compétitif immédiat, tryout urgent."],
+      [7.5,"Profil très solide. Tryout prioritaire : architecture de jeu adaptée au circuit compétitif."],
+      [6.5,"Bon profil compétitif. Tryout recommandé : base technique suffisante, progression visible."],
+      [5.5,"Profil en développement. Potentiel identifié : à suivre 30 jours avant décision."],
+      [4.5,"Profil limite. Travail spécifique requis sur les dimensions clés avant tout tryout."],
+      [0,"Niveau insuffisant. Développement individuel nécessaire avant toute intégration en circuit."],
     ];
-    const dimNames = ['Stats','Objectifs','Impact','Progression','Entretien'];
+    // « Discipline », comme en page 1 — le bilan disait « Entretien ».
+    const dimNames = ['Stats','Objectifs','Impact','Progression','Discipline'];
     const bestDimIdx = dimScores.reduce((bi,v,i)=>v!==null&&(bi<0||v>(dimScores[bi]??0))?i:bi,-1);
     const worstDimIdx = dimScores.reduce((bi,v,i)=>v!==null&&(bi<0||v<(dimScores[bi]??10))?i:bi,-1);
     const verdict = gScore!==null
       ? (VERDICTS.find(([m])=>gScore>=m)?.[1]||'')
-      : 'Importez les donnees Riot API pour generer le bilan.';
-    const statsLine = 'Stats cles : KDA '+kdaV+', CS/min '+csV+', Kill Part. '+kpV+'.';
+      : 'Importez les données Riot pour générer le bilan.';
+    const statsLine = 'Stats clés : KDA '+kdaV+', CS/min '+csV+', Kill Part. '+kpV+'.';
     const dimLine = (bestDimIdx>=0&&worstDimIdx>=0&&bestDimIdx!==worstDimIdx)
       ? 'Point fort : '+dimNames[bestDimIdx]+' '+fmt(dimScores[bestDimIdx],1)+'/10. Axe critique : '+dimNames[worstDimIdx]+' '+fmt(dimScores[worstDimIdx],1)+'/10.'
       : '';
     const scoreLine = 'Score SPES : '+(gScore!==null?gScore.toFixed(2)+'/10':'-')+' ('+roleLbl+' '+rankName+').';
     const bilanFull = [verdict, statsLine, dimLine, scoreLine].filter(Boolean).join(' ');
     const bilanLines=[]; let cur='';
-    bilanFull.split(' ').forEach(w=>{
+    vsPdfTexte(bilanFull).split(' ').forEach(w=>{
       const t=cur?cur+' '+w:w;
-      if(fontR.widthOfTextAtSize(t,8.5)>468&&cur){bilanLines.push(cur);cur=w;}else cur=t;
+      if(fontR.widthOfTextAtSize(t,9.5)>468&&cur){bilanLines.push(cur);cur=w;}else cur=t;
     }); if(cur)bilanLines.push(cur);
     cov(p2, 44, 38, 512, 68);
-    bilanLines.slice(0,4).forEach((line,i)=>put(p2,line,47,85-i*12,8.5,fontR,BLK));
+    bilanLines.slice(0,4).forEach((line,i)=>put(p2,line,47,86-i*13.5,9.5,fontR,BLK));
 
-    // Footer page 2 — date (même correction que page 1)
-    cov(p2, 254, 7, 52, 14);
-    put(p2, dateStr, 255, 12, 9, fontR, rgb(0.42, 0.46, 0.56));
+    piedDePage(p2, 2);
 
     // ── Sauvegarde ──────────────────────────────────────────
     const outB = await pdfDoc.save();
     const blob = new Blob([outB], {type:'application/pdf'});
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const fname = 'VisionScore_'+pseudo.replace(/[^a-zA-Z0-9]/g,'_')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
+    const fname = 'VisionScore_'+(pseudo.replace(/[^a-zA-Z0-9]/g,'_').replace(/_+/g,'_').replace(/^_|_$/g,'') || 'joueur')+'_'+rankName+'_'+new Date().toISOString().slice(0,10)+'.pdf';
     a.href=url; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
     // Ouvre aussi le PDF dans un onglet pour l'afficher tout de suite
     try{ window.open(url, '_blank'); }catch(_){}
@@ -16369,7 +16546,7 @@ async function generateOfficialReport() {
     showToast('Erreur PDF : '+err.message, 'error');
     console.error('[PDF]', err);
   } finally {
-    if (btn) { btn.disabled=false; btn.innerHTML='Rapport officiel'; }
+    if (btn) { btn.disabled=false; btn.innerHTML=btnHtml; }
   }
 }
 // ════════════════════════════════════════════════════════════
@@ -17719,6 +17896,7 @@ function setGraphTab(tab, btn) {
   document.querySelectorAll('.view-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   // Build content for specific tabs
+  if (typeof vsChartTheme === 'function') vsChartTheme();
   if (tab === 'progression') { buildChartLP(); buildChartChamps(); }
   if (tab === 'activite')    { buildHeatmap(); buildChartWeekday(); buildChartDuration(); }
   if (tab === 'progression_temp') buildProgressionTemp();
@@ -17948,7 +18126,13 @@ function exitPresentationMode() {
 // Keyboard shortcut: Escape closes presentation mode
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') exitPresentationMode();
-  if (e.key === 'p' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); exportPDF(); }
+  /* Ctrl+P = le MÊME rapport que le bouton « Export PDF » (il en produisait un
+     autre, d'une autre mise en page), et seulement sur une fiche chargée :
+     ailleurs, l'impression du navigateur reste à l'utilisateur. */
+  if (e.key === 'p' && (e.ctrlKey || e.metaKey)) {
+    const fiche = document.getElementById('panel-scout')?.classList.contains('active') && (document.getElementById('d-pseudo')?.value || '').trim();
+    if (fiche) { e.preventDefault(); generateOfficialReport(); }
+  }
 });
 
 // ── Hook detectPlaystyle into applyApiField ────────────────
@@ -20599,43 +20783,122 @@ function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
 
+/* ── Thème des graphiques ─────────────────────────────────────────────────
+   Les graphiques vivaient dans une autre charte : infobulle BLANCHE sur fond
+   forêt, grilles bleu-gris (rgba(100,120,160)), police « DM Mono » chargée
+   depuis Google Fonts pour ce seul usage. Ils prennent désormais les couleurs
+   du site, dans les deux thèmes, et se reconstruisent au changement de thème.
+   ⚠️ CHART_DEFAULTS est MUTÉ en place par vsChartTheme() : chaque graphique
+   l'étale (...) à sa création, il faut donc l'appeler AVANT de construire. */
+var VS_CHART_SANS = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+var VS_CHART_MONO = "'SFMono-Regular',ui-monospace,Menlo,monospace";
+function vsChartCouleurs(){
+  /* Impression (PDF) : papier blanc, donc encre sombre — quel que soit le thème
+     de l'écran. Sans ça, un graphique fait en thème sombre arrivait dans le
+     rapport avec des graduations vert pâle sur blanc. */
+  if (window.VS_CHART_IMPRESSION) return { texte:'#26332F', faible:'#52625E', grille:'rgba(14,42,38,.10)', infoFond:'#fff', infoBord:'#ccc', infoTitre:'#000', infoCorps:'#333', ref:'rgba(14,42,38,.35)' };
+  var sombre = document.body.classList.contains('theme-dark');
+  return sombre
+    ? { texte:'#A9C4BD', faible:'#6E8C85', grille:'rgba(169,196,189,.08)', infoFond:'rgba(7,33,29,.97)', infoBord:'rgba(45,212,167,.35)', infoTitre:'#F0F4F8', infoCorps:'#A9C4BD', ref:'rgba(240,244,248,.18)' }
+    : { texte:'#4E6A64', faible:'#879D98', grille:'rgba(31,71,64,.08)', infoFond:'rgba(255,255,255,.98)', infoBord:'rgba(15,161,118,.35)', infoTitre:'#0E2A26', infoCorps:'#4E6A64', ref:'rgba(14,42,38,.22)' };
+}
 const CHART_DEFAULTS = {
   responsive: true,
   maintainAspectRatio: true,
-  animation: { duration: 700, easing: 'easeOutQuart' },
+  animation: { duration: 500, easing: 'easeOutQuart' },
+  interaction: { mode: 'index', intersect: false },
   plugins: {
     legend: { display: false },
     tooltip: {
-      backgroundColor: 'rgba(255,255,255,.97)',
-      borderColor: 'rgba(45,212,167,.28)',
       borderWidth: 1,
-      titleColor: '#1A2038',
-      bodyColor: '#5A6880',
-      titleFont: { family: 'DM Mono', size: 11, weight: '700' },
-      bodyFont: { family: 'DM Mono', size: 11 },
-      padding: 12,
-      cornerRadius: 8,
+      titleFont: { family: VS_CHART_SANS, size: 12, weight: '700' },
+      bodyFont: { family: VS_CHART_MONO, size: 11.5 },
+      padding: 11,
+      cornerRadius: 9,
       caretSize: 5,
       caretPadding: 8,
       displayColors: false,
-      boxShadow: '0 4px 16px rgba(100,120,160,.18)',
     }
   },
   scales: {
     x: {
-      grid: { color: 'rgba(100,120,160,.08)', drawBorder: false },
+      grid: { drawBorder: false, display: false },
       border: { display: false },
-      ticks: { color: '#8A9BB8', font: { family: 'DM Mono', size: 10 }, maxTicksLimit: 12 }
+      ticks: { font: { family: VS_CHART_MONO, size: 10.5 }, maxTicksLimit: 10, maxRotation: 0 }
     },
     y: {
-      grid: { color: 'rgba(100,120,160,.10)', drawBorder: false },
+      grid: { drawBorder: false },
       border: { display: false },
-      ticks: { color: '#8A9BB8', font: { family: 'DM Mono', size: 10 } }
+      ticks: { font: { family: VS_CHART_MONO, size: 10.5 }, padding: 6 }
     }
   }
 };
+function vsChartTheme(){
+  var k = vsChartCouleurs();
+  // En impression, pas d'animation : la capture se faisait 120 ms après le
+  // dessin, pendant une animation de 500 ms — graphique photographié à moitié.
+  CHART_DEFAULTS.animation = window.VS_CHART_IMPRESSION ? false : { duration: 500, easing: 'easeOutQuart' };
+  /* En impression, le canvas (640 px) est réduit à ~240 pt : à 10,5 px, les
+     graduations tombaient à 4 pt. 15 px → ~6 pt, la taille d'une légende papier. */
+  var corps = window.VS_CHART_IMPRESSION ? 15 : 10.5;
+  CHART_DEFAULTS.scales.x.ticks.font.size = corps;
+  CHART_DEFAULTS.scales.y.ticks.font.size = corps;
+  var tp = CHART_DEFAULTS.plugins.tooltip;
+  tp.backgroundColor = k.infoFond; tp.borderColor = k.infoBord; tp.titleColor = k.infoTitre; tp.bodyColor = k.infoCorps;
+  CHART_DEFAULTS.scales.x.ticks.color = k.faible;
+  CHART_DEFAULTS.scales.y.ticks.color = k.faible;
+  CHART_DEFAULTS.scales.y.grid.color = k.grille;
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = VS_CHART_SANS;
+    Chart.defaults.color = k.texte;
+    /* Courbes MONOTONES : le lissage « tension » dépassait les points et
+       dessinait des valeurs jamais atteintes (un win rate glissant à 84 %
+       entre deux mesures à 80 %). Monotone lisse sans jamais inventer. */
+    Chart.defaults.elements.line.cubicInterpolationMode = 'monotone';
+  }
+  return k;
+}
+/* Construit les graphiques en version IMPRESSION, laisse `capture` les
+   photographier, puis rend l'écran tel qu'il était. Utilisé par les PDF. */
+async function vsGraphiquesPourImpression(capture){
+  const panneau = document.getElementById('panel-graphs');
+  const masque = panneau && !panneau.classList.contains('active');
+  if (masque) { panneau.style.visibility = 'hidden'; panneau.style.display = 'block'; }
+  window.VS_CHART_IMPRESSION = true;
+  try {
+    vsChartTheme();
+    if (matchHistory.length) { buildChartKDA(); buildChartMulti(); buildChartWR(); }
+    await new Promise(r => setTimeout(r, 60));
+    return await capture();
+  } finally {
+    window.VS_CHART_IMPRESSION = false;
+    vsChartTheme();
+    if (matchHistory.length) { buildChartKDA(); buildChartMulti(); buildChartWR(); }
+    if (masque) { panneau.style.display = ''; panneau.style.visibility = ''; }
+  }
+}
+/* Texte → police PDF intégrée (WinAnsi : alphabet latin, accents compris).
+   ⚠️ Un pseudo coréen, un nom d'équipe avec un emoji : pdf-lib LÈVE une
+   exception sur tout caractère hors WinAnsi, et c'était TOUT l'export qui
+   échouait. On remplace ce qui ne s'écrit pas, on n'échoue plus. */
+function vsPdfTexte(s){
+  const permis = '—–·’‘“”…€•';
+  return String(s == null ? '' : s).normalize('NFC').replace(/[\s\S]/g, ch => {
+    const cp = ch.codePointAt(0);
+    if (cp === 10 || (cp >= 32 && cp <= 126) || (cp >= 160 && cp <= 255) || permis.indexOf(ch) >= 0) return ch;
+    return /\s/.test(ch) ? ' ' : '?';
+  });
+}
+
+/* Légende commune : pastilles lisibles, dans la couleur du texte du thème. */
+function vsChartLegende(extra){
+  return Object.assign({ display:true, position:'top', align:'end',
+    labels:{ color: vsChartCouleurs().texte, font:{ family: VS_CHART_SANS, size: window.VS_CHART_IMPRESSION ? 15 : 11.5, weight:'600' },
+             boxWidth: 10, boxHeight: 10, padding: 14, usePointStyle: true } }, extra || {});
+}
 
 function buildGraphs() {
+  vsChartTheme();
   if (!matchHistory.length) {
     document.getElementById('graphs-empty').style.display = 'block';
     document.getElementById('graphs-summary').style.display = 'none';
@@ -20699,7 +20962,28 @@ function buildChartKDA() {
     return parseFloat((w.reduce((a,b) => a + b.y, 0) / w.length).toFixed(2));
   });
 
+  /* Une partie sans mort donne un KDA de K+A : un seul 19 écrasait les
+     quarante-neuf autres barres dans le bas du graphique. L'axe s'arrête au
+     90e centile (×1,4, 8 au minimum) ; une barre qui dépasse est coupée
+     au plafond et porte sa VRAIE valeur au-dessus. Rien n'est caché. */
+  const tries = data.map(d => d.y).sort((a, b) => a - b);
+  const p90 = tries.length ? tries[Math.min(tries.length - 1, Math.floor(tries.length * 0.9))] : 8;
+  // Pair : un plafond impair (11) faisait se chevaucher les graduations 10 et 11.
+  const plafond = Math.max(8, Math.ceil(p90 * 1.4 / 2) * 2);
+  const k = vsChartCouleurs();
+  const etiquettesCoupees = {
+    id: 'vsKdaCoupe',
+    afterDatasetsDraw(chart) {
+      const meta = chart.getDatasetMeta(0), ctx = chart.ctx;
+      ctx.save();
+      ctx.font = '700 10px ' + VS_CHART_MONO; ctx.fillStyle = k.texte; ctx.textAlign = 'center';
+      meta.data.forEach((bar, i) => { if (data[i] && data[i].y > plafond) ctx.fillText(String(data[i].y), bar.x, chart.chartArea.top + 10); });
+      ctx.restore();
+    }
+  };
+
   chartInstances['kda'] = new Chart(canvas, {
+    plugins: [etiquettesCoupees],
     type: 'bar',
     data: {
       labels: data.map(d => 'G'+d.x),
@@ -20708,24 +20992,20 @@ function buildChartKDA() {
           type: 'bar',
           label: 'KDA',
           data: data.map(d => d.y),
-          backgroundColor: data.map(d => d.win ? 'rgba(45,212,167,.18)' : 'rgba(255,51,0,.14)'),
-          borderColor: data.map(d => d.win ? 'rgba(45,212,167,.65)' : 'rgba(255,51,0,.55)'),
-          borderWidth: 1.5,
-          borderRadius: 4,
+          backgroundColor: data.map(d => d.win ? 'rgba(45,212,167,.55)' : 'rgba(255,90,51,.5)'),
+          borderWidth: 0,
+          borderRadius: 3,
           borderSkipped: false,
+          maxBarThickness: 14,
         },
         {
           type: 'line',
-          label: 'Tendance',
+          label: 'Moyenne sur 5 parties',
           data: smoothed,
-          borderColor: '#2DD4A7',
-          borderWidth: 2.5,
+          borderColor: k.texte,
+          borderWidth: 2,
           pointRadius: 0,
-          pointHoverRadius: 5,
-          pointHoverBackgroundColor: '#2DD4A7',
-          pointHoverBorderColor: '#060810',
-          pointHoverBorderWidth: 2,
-          tension: 0.45,
+          pointHoverRadius: 4,
           fill: false,
           order: -1,
         }
@@ -20733,12 +21013,18 @@ function buildChartKDA() {
     },
     options: {
       ...CHART_DEFAULTS,
-      plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
+      scales: { ...CHART_DEFAULTS.scales, y: { ...CHART_DEFAULTS.scales.y, min: 0, max: plafond } },
+      plugins: { ...CHART_DEFAULTS.plugins,
+        // La couleur des barres voulait dire quelque chose — encore fallait-il le dire.
+        legend: vsChartLegende({ labels: { ...vsChartLegende().labels, generateLabels: () => [
+          { text: 'Victoire', fillStyle: 'rgba(45,212,167,.8)', strokeStyle: 'transparent', pointStyle: 'rect', fontColor: k.texte },
+          { text: 'Défaite', fillStyle: 'rgba(255,90,51,.75)', strokeStyle: 'transparent', pointStyle: 'rect', fontColor: k.texte },
+          { text: 'Moyenne sur 5 parties', fillStyle: k.texte, strokeStyle: k.texte, pointStyle: 'line', lineWidth: 2, fontColor: k.texte }
+        ] } }),
+        tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
         callbacks: {
-          title: ctx => `Partie ${ctx[0].dataIndex + 1}`,
-          label: ctx => ctx.datasetIndex === 0
-            ? `KDA  ${ctx.raw}  ·  ${data[ctx.dataIndex]?.win ? '▲ Victoire' : '▼ Défaite'}`
-            : `Tendance  ${ctx.raw}`,
+          title: ctx => `Partie ${ctx[0].dataIndex + 1} · ${data[ctx[0].dataIndex]?.win ? 'victoire' : 'défaite'}`,
+          label: ctx => ctx.datasetIndex === 0 ? `KDA ${ctx.raw}` : `Moyenne ${ctx.raw}`,
         }
       }}
     }
@@ -20783,15 +21069,13 @@ function buildChartWR() {
         },
         fill: true,
         borderWidth: 2.5,
-        pointRadius: 3.5,
-        pointHoverRadius: 6,
-        pointBackgroundColor: wrData.map(v => v >= 55 ? '#2DD4A7' : v >= 50 ? '#D4714A' : '#FF3300'),
-        pointBorderColor: 'transparent',
-        tension: 0.42,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: lineColor,
       }, {
         label: '50%',
         data: labels.map(() => 50),
-        borderColor: 'rgba(255,255,255,.1)',
+        borderColor: vsChartCouleurs().ref,
         borderWidth: 1,
         borderDash: [5, 5],
         pointRadius: 0,
@@ -20802,8 +21086,10 @@ function buildChartWR() {
       ...CHART_DEFAULTS,
       scales: {
         ...CHART_DEFAULTS.scales,
-        y: { ...CHART_DEFAULTS.scales.y, min: 20, max: 80,
-          ticks: { ...CHART_DEFAULTS.scales.y.ticks, callback: v => v+'%' }
+        /* 0–100, et non 20–80 : l'axe tronqué écrêtait toute série au-delà de
+           80 % (et sous 20 %) — dix victoires sur dix s'affichaient « 80 % ». */
+        y: { ...CHART_DEFAULTS.scales.y, min: 0, max: 100,
+          ticks: { ...CHART_DEFAULTS.scales.y.ticks, stepSize: 25, callback: v => v+'%' }
         }
       },
       plugins: { ...CHART_DEFAULTS.plugins, tooltip: { ...CHART_DEFAULTS.plugins.tooltip,
@@ -20901,23 +21187,12 @@ function buildChartMulti() {
       ...CHART_DEFAULTS,
       plugins: {
         ...CHART_DEFAULTS.plugins,
-        legend: {
-          display: true,
-          labels: {
-            color: '#6A7080',
-            font: { family: 'DM Mono', size: 10 },
-            boxWidth: 10,
-            boxHeight: 2,
-            padding: 18,
-            usePointStyle: true,
-            pointStyle: 'line',
-          }
-        }
+        legend: vsChartLegende()
       },
       scales: {
         x: CHART_DEFAULTS.scales.x,
-        y: { ...CHART_DEFAULTS.scales.y, position:'left', title:{ display:true, text:'CS/min', color:'#4A9EFF', font:{family:'DM Mono',size:10} } },
-        y2: { ...CHART_DEFAULTS.scales.y, position:'right', grid:{ drawOnChartArea:false, color:'rgba(255,255,255,.02)' }, title:{ display:true, text:'% / Score', color:'#2DD4BF', font:{family:'DM Mono',size:10} } }
+        y: { ...CHART_DEFAULTS.scales.y, position:'left', title:{ display:true, text:'CS/min', color:'#4A9EFF', font:{family:VS_CHART_MONO,size:10} } },
+        y2: { ...CHART_DEFAULTS.scales.y, position:'right', grid:{ drawOnChartArea:false, color:'rgba(255,255,255,.02)' }, title:{ display:true, text:'% / Score', color:'#2DD4BF', font:{family:VS_CHART_MONO,size:10} } }
       }
     }
   });
@@ -20928,13 +21203,17 @@ function buildChartLP() {
   const canvas = document.getElementById('chart-lp');
   if (!canvas) return;
 
-  // Estimate LP progression: +20 per win, -18 per loss, cumulative from 0
+  /* ⚠️ Ce graphique affichait des « LP estimés » : +20 par victoire, −18 par
+     défaite, deux constantes inventées (les gains réels dépendent du MMR et
+     varient d'une partie à l'autre). Le titre ajoutait « basée sur WR
+     glissant », ce qui était faux aussi. On trace ce que les données disent
+     VRAIMENT : le bilan net cumulé, victoires moins défaites. */
   const reversed = matchHistory.slice().reverse();
   let lp = 0;
   const lpData = reversed.map(m => {
     const p = getParticipant(m);
     if (!p) return lp;
-    lp += p.win ? 20 : -18;
+    lp += p.win ? 1 : -1;
     return lp;
   });
 
@@ -20950,7 +21229,7 @@ function buildChartLP() {
     data:{
       labels: reversed.map((_,i) => 'G'+(i+1)),
       datasets:[{
-        label:'LP estimés',
+        label:'Bilan net',
         data: lpData,
         borderColor: lineColor,
         backgroundColor: function(ctx) {
@@ -20974,7 +21253,7 @@ function buildChartLP() {
       },{
         label:'Référence',
         data: reversed.map(() => 0),
-        borderColor:'rgba(255,255,255,.09)',
+        borderColor: vsChartCouleurs().ref,
         borderWidth: 1,
         borderDash: [6, 4],
         pointRadius: 0,
@@ -20986,10 +21265,10 @@ function buildChartLP() {
       plugins:{ ...CHART_DEFAULTS.plugins, tooltip:{ ...CHART_DEFAULTS.plugins.tooltip,
         callbacks:{
           title: ctx => `Partie ${ctx[0].dataIndex + 1}`,
-          label: ctx => ctx.datasetIndex === 0 ? `LP  ${ctx.raw > 0 ? '+':''}${ctx.raw}` : null,
+          label: ctx => ctx.datasetIndex === 0 ? `Bilan  ${ctx.raw > 0 ? '+':''}${ctx.raw}` : null,
           afterLabel: ctx => {
             if (ctx.datasetIndex !== 0) return null;
-            return trend >= 0 ? `↑ Tendance haussière (+${trend} LP total)` : `↓ Tendance baissière (${trend} LP total)`;
+            return 'Sur la période : ' + (trend >= 0 ? '+' : '') + trend + ' (victoires − défaites)';
           }
         }
       }},
@@ -21026,7 +21305,7 @@ function buildChartChamps() {
     },
     options:{
       ...CHART_DEFAULTS,
-      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{ color:'#6A7080', font:{family:'DM Mono',size:10}, boxWidth:10, boxHeight:2, padding:18, usePointStyle:true, pointStyle:'rect' } } },
+      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{ color:vsChartCouleurs().texte, font:{family:VS_CHART_MONO,size:10}, boxWidth:10, boxHeight:2, padding:18, usePointStyle:true, pointStyle:'rect' } } },
       scales:{
         x: CHART_DEFAULTS.scales.x,
         y:{ ...CHART_DEFAULTS.scales.y, position:'left', min:0, max:100, ticks:{...CHART_DEFAULTS.scales.y.ticks, callback:v=>v+'%'} },
@@ -21118,7 +21397,7 @@ function buildChartWeekday() {
     },
     options:{
       ...CHART_DEFAULTS,
-      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{color:'#8A9090',font:{family:'DM Mono',size:10},boxWidth:12,padding:12} } },
+      plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:true, labels:{color:vsChartCouleurs().texte,font:{family:VS_CHART_MONO,size:10},boxWidth:12,padding:12} } },
       scales:{
         x: CHART_DEFAULTS.scales.x,
         y:{ ...CHART_DEFAULTS.scales.y, position:'left' },
@@ -21148,7 +21427,7 @@ function buildChartDuration() {
     },
     options:{
       ...CHART_DEFAULTS,
-      plugins:{ ...CHART_DEFAULTS.plugins, legend:{display:true,labels:{color:'#8A9090',font:{family:'DM Mono',size:10},boxWidth:12,padding:12}} },
+      plugins:{ ...CHART_DEFAULTS.plugins, legend:{display:true,labels:{color:vsChartCouleurs().texte,font:{family:VS_CHART_MONO,size:10},boxWidth:12,padding:12}} },
       scales:{
         x: CHART_DEFAULTS.scales.x,
         y:{ ...CHART_DEFAULTS.scales.y, ticks:{...CHART_DEFAULTS.scales.y.ticks,callback:v=>v+'m'} }
@@ -22126,6 +22405,15 @@ function toggleTheme() {
 }
 function toggleThemeMaintenant() {
   const isDark = document.body.classList.toggle('theme-dark');
+  // Les couleurs d'un graphique sont figées à sa création : on reconstruit.
+  setTimeout(function(){
+    const g = document.getElementById('panel-graphs');
+    if (g && g.classList.contains('active') && typeof buildGraphs === 'function') {
+      buildGraphs();
+      const actif = document.querySelector('.view-tab.active');
+      if (actif) actif.click();
+    }
+  }, 0);
   document.getElementById('theme-toggle')?.setAttribute('aria-label', isDark ? 'Passer en thème clair' : 'Passer en thème sombre');
   localStorage.setItem('vs-theme', isDark ? 'dark' : 'light');
   const icon = document.getElementById('theme-toggle-icon');
@@ -26215,19 +26503,18 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
   }
   function commandesActions(){
     var sombre = document.body.classList.contains('theme-dark');
-    var compet = window.vsDataMode === 'compet';
     var p = pseudoCourant();
     var a = [
       { id:'act:scouter', titre:'Scouter un nouveau joueur', sous:'Scouting', groupe:'Actions', ico:'plus', mots:'importer pseudo riot fiche nouveau',
         faire: function(){ vsAllerA('/scouting'); setTimeout(function(){ var el = document.getElementById('d-pseudo'); if (el) { el.focus(); el.select(); } }, 120); } },
       { id:'act:theme', titre: sombre ? 'Passer en thème clair' : 'Passer en thème sombre', sous:'Apparence', groupe:'Actions', ico:'theme', mots:'theme clair sombre dark light apparence',
-        faire: function(){ toggleTheme(); } },
-      { id:'act:mode', titre: compet ? 'Passer les données en Solo Q' : 'Passer les données en compétitif', sous:'Données', groupe:'Actions', ico:'mode', mots:'solo q compet competitif mode donnees',
-        faire: function(){ vsSetDataMode(compet ? 'soloq' : 'compet'); } }
+        faire: function(){ toggleTheme(); } }
+      // Plus d'action « mode de données » : il ne sert qu'au Roster et à la
+      // Timeline, qui ont leur propre interrupteur (cf. en-tête).
     ];
     if (p) {
       a.push({ id:'act:pdf', titre:'Exporter la fiche en PDF', sous:p, groupe:'Actions', ico:'pdf', mots:'pdf export telecharger imprimer', kbd: MAC ? '⌘ P' : 'Ctrl P',
-               faire: function(){ exportPDF(); } });
+               faire: function(){ vsAllerA('/scouting'); generateOfficialReport(); } });
       a.push({ id:'act:lien', titre:'Copier le lien de la fiche', sous:p, groupe:'Actions', ico:'lien', mots:'partager lien url envoyer coach',
                faire: function(){ shareByURL(); } });
       a.push({ id:'act:save', titre:'Sauvegarder la fiche', sous:p, groupe:'Actions', ico:'save', mots:'enregistrer historique', kbd: MAC ? '⌘ S' : 'Ctrl S',
