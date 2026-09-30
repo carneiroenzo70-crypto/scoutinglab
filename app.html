@@ -414,7 +414,7 @@ function applyPlanGating(){
   if(lg && !document.getElementById('vs-plan-badge')){
     var b=document.createElement('span'); b.id='vs-plan-badge';
     var pl=vsPlan(); b.textContent=pl.charAt(0).toUpperCase()+pl.slice(1);
-    b.style.cssText='display:inline-flex;align-items:center;padding:4px 9px;margin-right:6px;border-radius:8px;font-family:monospace;font-size:10px;letter-spacing:.04em;background:var(--lime-dim,rgba(45,212,167,.10));color:var(--lime,#2DD4A7);border:1px solid var(--lime-bd,rgba(45,212,167,.30))';
+    b.className='hd-plan'; b.title='Votre offre VisionScore';
     lg.parentNode.insertBefore(b,lg);
   }
   if (typeof anDecorateTabs === 'function') anDecorateTabs();
@@ -675,6 +675,55 @@ button:hover .vs-star, .btn:hover .vs-star{ transform:rotate(144deg); }
 .sl-transport{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:10px; min-width:0; }
 .sl-transport-sep{ width:1px; align-self:stretch; background:var(--vs-forest-500); margin:2px 2px; flex:none; }
 .sl-time{ font-family:var(--font-mono); font-size:12.5px; color:var(--vs-fg-2); margin-left:2px; white-space:nowrap; }
+/* ── Le chrono de jeu ─────────────────────────────────────────────────────
+   Le temps de jeu ne se met pas au même niveau que le temps vidéo : c'est lui
+   qu'on cherche. Il est en émeraude quand il existe, éteint quand le chrono
+   n'est pas calé — jamais approximé. */
+.sl-time-jeu{ font-family:var(--font-mono); font-size:12.5px; font-weight:800; color:var(--vs-fg-3);
+  white-space:nowrap; padding:2px 8px; border-radius:7px; border:1px solid transparent; }
+.sl-time-jeu.on{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-600); background:rgba(45,212,167,.08); }
+body:not(.theme-dark) .sl-time-jeu.on{ color:var(--vs-emerald-500); }
+.sl-chrono{ display:flex; align-items:center; gap:8px; padding:5px 10px 5px 12px; border-radius:10px;
+  border:1px solid var(--vs-forest-600); background:rgba(4,18,15,.35); }
+body:not(.theme-dark) .sl-chrono{ background:rgba(31,71,64,.05); border-color:rgba(31,71,64,.14); }
+.sl-chrono-k{ font-size:9.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--vs-fg-3); }
+.sl-chrono-v{ font-family:var(--font-mono); font-weight:800; font-size:17px; line-height:1; color:var(--vs-emerald-300); min-width:52px; }
+body:not(.theme-dark) .sl-chrono-v{ color:var(--vs-emerald-500); }
+.sl-chrono-off{ font-size:11.5px; color:var(--vs-fg-3); }
+.sl-chrono-b{ border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2);
+  font-family:var(--font-sans); font-size:11px; font-weight:700; padding:4px 10px; border-radius:7px; cursor:pointer; transition:.14s; }
+.sl-chrono-b:hover{ border-color:var(--vs-emerald-500); color:var(--vs-emerald-300); }
+.sl-chrono-x{ border:0; background:none; color:var(--vs-fg-3); cursor:pointer; font-size:12px; padding:2px 4px; line-height:1; }
+.sl-chrono-x:hover{ color:var(--vs-red-400); }
+
+/* ── Le rail des repères de jeu ───────────────────────────────────────────
+   Une seule ligne sous la timeline. C'est elle qui répond à « où étions-nous
+   trente secondes avant le drake » — la question de toute revue de scrim, et
+   celle qu'aucun outil de sport ne sait poser. */
+/* Le rail porte la grille de .sl-tl-row : même colonne de noms, même piste,
+   donc la même abscisse pour le même instant que les clips au-dessus. */
+.sl-rep-bar{ margin-top:10px; padding-top:10px; border-top:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .sl-rep-bar{ border-top-color:rgba(31,71,64,.1); }
+.sl-rep-rail{ position:relative; min-width:0; height:26px; border-radius:6px;
+  background:rgba(4,18,15,.3); border:1px solid var(--vs-forest-700); }
+body:not(.theme-dark) .sl-rep-rail{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.1); }
+.sl-rep{ position:absolute; top:50%; transform:translate(-50%,-50%); width:19px; height:19px; border-radius:6px;
+  display:grid; place-items:center; cursor:pointer; background:var(--c); color:#04120F;
+  font-family:var(--font-display); font-weight:800; font-size:10px; transition:transform .12s var(--ease-out); }
+.sl-rep:hover{ transform:translate(-50%,-50%) scale(1.18); }
+/* Un repère posé par le coach se distingue d'un fait relevé par la timeline
+   officielle : pointillé contre plein. Ne jamais les confondre à l'œil. */
+.sl-rep:not(.riot){ background:transparent; color:var(--c); border:1.5px dashed var(--c); }
+.sl-rep.eux{ opacity:.62; }
+.sl-rep i{ font-style:normal; }
+.sl-rep-vide{ position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:11px; color:var(--vs-fg-3); }
+.sl-rep-add{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.sl-rep-sel{ height:28px; padding:0 8px; border-radius:7px; border:1px solid var(--vs-forest-500);
+  background:rgba(4,18,15,.3); color:var(--vs-fg-2); font-family:var(--font-sans); font-size:11.5px; }
+body:not(.theme-dark) .sl-rep-sel{ background:rgba(255,255,255,.6); border-color:rgba(31,71,64,.16); }
+/* Le contexte d'un clip, dans sa barre de détail. */
+.sl-ctx{ font-size:11px; font-weight:700; padding:3px 9px; border-radius:999px;
+  color:var(--c); border:1px solid var(--c); background:color-mix(in srgb, var(--c) 12%, transparent); white-space:nowrap; }
 .sl-iconbtn{ width:32px; height:32px; border-radius:8px; border:1px solid var(--vs-forest-500); background:transparent; color:var(--vs-fg-2); cursor:pointer; display:grid; place-items:center; transition:all .14s var(--ease-out); flex:none; }
 .sl-iconbtn:hover{ color:var(--vs-fg-1); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.08); }
 .sl-iconbtn.on{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-500); background:rgba(45,212,167,.14); }
@@ -4365,10 +4414,219 @@ body.theme-dark :is(#panel-scout, #panel-top50) .ctrl.select select:-webkit-auto
 ::-webkit-scrollbar-thumb { background:rgba(100,120,160,.22); border-radius:2px; }
 ::-webkit-scrollbar-thumb:hover { background:rgba(100,120,160,.38); }
 
-/* ── Focus ring custom ── */
+/* ── Focus ring custom ── (renforcé dans #vs-finitions, plus bas) */
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline:1.5px solid rgba(45,212,167,.4);
   outline-offset:2px;
+}
+</style>
+<style id="vs-finitions">
+/* ════ FINITIONS — en-tête, focus, palette de commandes, défilement ════
+   Dernière feuille de la page, À DESSEIN : ces règles harmonisent des composants
+   dont les styles sont répartis sur trois couches antérieures (maquette, v3,
+   « ultra pro »). Elles gagnent par l'ordre et une spécificité égale ou juste
+   supérieure — jamais par !important, qui rendrait la couche suivante impossible. */
+
+/* ── En-tête : une seule famille de contrôles, une seule hauteur ──────────────
+   Il y avait cinq contrôles et cinq tailles (19, 25, 27, 34 px), en monospace
+   10 px : on lisait « API OK » comme un bouton et « Quitter » comme un statut. */
+.hd .hd-tools{ display:flex; gap:8px; align-items:center; }
+.hd .hd-ctl{ height:32px; display:inline-flex; align-items:center; gap:8px; padding:0 11px; border-radius:9px;
+  border:1px solid var(--border2); background:transparent; color:var(--sub2);
+  font:600 12px/1 'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:0; cursor:pointer;
+  transition:color .15s, border-color .15s, background-color .15s; }
+.hd .hd-ctl:hover{ color:var(--text); border-color:rgba(45,212,167,.45); background:rgba(45,212,167,.06); }
+.hd .hd-ctl svg{ width:15px; height:15px; flex:none; }
+.hd .hd-ctl-ico{ width:32px; padding:0; justify-content:center; }
+.hd #theme-toggle-lbl, .hd #btn-logout > span{ display:none; }
+.hd #btn-logout:hover{ color:var(--vs-red-400,#FF5A33); border-color:rgba(255,90,51,.4); background:rgba(255,90,51,.06); }
+
+/* La recherche : large, parce que c'est l'entrée principale au clavier. */
+.hd .hd-cmdk{ min-width:232px; justify-content:flex-start; color:var(--sub); background:rgba(255,255,255,.035); }
+.hd .hd-cmdk-txt{ flex:1; text-align:left; font-weight:500; }
+.hd-kbd{ display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 6px;
+  border-radius:5px; border:1px solid var(--border2,rgba(110,140,133,.35)); background:rgba(255,255,255,.04);
+  color:var(--sub2,#A9C4BD); font:600 10.5px/1 'SFMono-Regular',ui-monospace,Menlo,monospace; letter-spacing:0; white-space:nowrap; }
+body:not(.theme-dark) .hd .hd-cmdk{ background:rgba(31,71,64,.04); }
+body:not(.theme-dark) .hd-kbd{ background:rgba(31,71,64,.05); }
+
+.hd .hd-modesw{ height:32px; padding:3px; gap:2px; border-radius:9px; align-items:stretch; box-sizing:border-box; }
+.hd .hd-modebtn{ font:600 11.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:0; padding:0 11px; border-radius:6px; }
+
+/* Le statut du serveur se TAIT quand tout va bien : un point, et le détail au
+   survol. Il ne prend la parole — et de la place — que lorsqu'il a quelque
+   chose à dire (connexion en cours, hors ligne). */
+.hd #backend-status{ height:32px; box-sizing:border-box; padding:0 11px; border-radius:9px; gap:7px;
+  font:600 11px/1 'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:0; background:transparent; border-color:var(--border2); }
+.hd #backend-status:has(#backend-dot.online){ width:32px; padding:0; justify-content:center; }
+.hd #backend-status:has(#backend-dot.online) #backend-txt{ display:none; }
+.hd #backend-dot{ width:7px; height:7px; }
+
+.hd .hd-plan{ height:32px; box-sizing:border-box; display:inline-flex; align-items:center; padding:0 11px; border-radius:9px;
+  font:700 10.5px/1 'Helvetica Neue',Helvetica,Arial,sans-serif; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--lime,#2DD4A7); border:1px solid rgba(45,212,167,.3); background:rgba(45,212,167,.08); }
+
+@media (max-width:1180px){
+  .hd .hd-cmdk{ min-width:0; width:32px; padding:0; justify-content:center; }
+  .hd .hd-cmdk-txt, .hd .hd-cmdk .hd-kbd{ display:none; }
+}
+@media (max-width:760px){
+  .hd .hd-plan{ display:none; }
+}
+
+/* ── Téléphone : plus aucun défilement horizontal ──────────────────────────────
+   Mesuré à 375 px : la page s'élargissait à 530 px. Cause unique et classique :
+   .main est un élément flex (dans .shell), dont la largeur minimale par défaut
+   est celle de son CONTENU — il refusait de rétrécir sous la grille du
+   formulaire joueur. min-width:0 lui rend le droit de tenir dans l'écran. */
+.shell > .main{ min-width:0; }
+/* Même défaut, un cran plus bas : un élément de GRILLE a lui aussi pour largeur
+   minimale celle de son contenu. Le tableau du champion pool (462 px) élargissait
+   sa carte au-delà de la grille (347 px), donc de l'écran. */
+.vsd .grid > *, .vsd-dims-grid > *{ min-width:0; }
+@media (max-width:640px){
+  /* Un tableau trop large défile DANS sa carte, jamais la page entière. */
+  .vsd-pool-grid > .card{ overflow-x:auto; }
+}
+@media (max-width:640px){
+  .hd .hd-nav{ display:none; }          /* largeur 0 de toute façon : le menu ☰ prend le relais */
+}
+@media (max-width:480px){
+  /* Les grilles à colonnes en style inline ne cèdent qu'à !important (cf. règle
+     à 640 px dans #vsd-design, même motif). minmax(0,…) : une colonne ne
+     s'élargit jamais à la taille d'un libellé. */
+  .vsd .grid[style*="repeat("]{ grid-template-columns:minmax(0,1fr) !important; }
+  .hd .hd-tools{ gap:6px; }
+  /* Le thème reste à un geste dans la palette ; le statut serveur ne parle
+     que s'il y a un problème. */
+  .hd #theme-toggle, .hd #backend-status:has(#backend-dot.online){ display:none; }
+  /* Lignes de notation : libellé + valeur + jauge de 120 px + note = 354 px pour
+     297 disponibles. La jauge raccourcit, le libellé peut passer à la ligne. */
+  .vsd .dim-body{ padding-left:16px; padding-right:16px; }
+  .vsd .dim-row{ gap:10px; }
+  .vsd .dim-row .dim-row-label{ min-width:0; }
+  .vsd .dim-row .dim-bar-track{ width:72px; flex:0 1 72px; }
+  /* La recommandation : un badge insécable de 219 px écrasait la phrase dans
+     une colonne de 88 px. Elle passe dessous, sur toute la largeur. */
+  .scout-decision{ flex-wrap:wrap; }
+  .scout-decision .scout-decision-text{ flex:1 1 100%; min-width:0; }
+}
+
+/* ── Focus clavier : visible, net, et seulement au clavier ─────────────────────
+   L'ancien anneau (1,5 px à 40 % d'opacité) disparaissait sur les surfaces
+   émeraude. 2 px pleins, décalés : lisible sur tous les fonds, dans les deux
+   thèmes. Les champs de saisie gardent leur propre halo (déjà présent). */
+button:focus-visible, a:focus-visible, summary:focus-visible, [role="tab"]:focus-visible, [tabindex]:not([tabindex="-1"]):focus-visible{
+  outline:2px solid #2DD4A7; outline-offset:2px; }
+body:not(.theme-dark) button:focus-visible, body:not(.theme-dark) a:focus-visible,
+body:not(.theme-dark) summary:focus-visible, body:not(.theme-dark) [tabindex]:not([tabindex="-1"]):focus-visible{ outline-color:#0FA176; }
+/* Cible du lien d'évitement : reçoit le focus pour la lecture, sans cadre. */
+#contenu:focus{ outline:none; }
+
+/* Lien d'évitement : le premier Tab de la page mène au contenu, pas à travers
+   les douze contrôles de l'en-tête. Invisible jusqu'au focus. */
+.vs-evitement{ position:fixed; top:10px; left:10px; z-index:100001; transform:translateY(-160%);
+  padding:10px 16px; border-radius:10px; background:#2DD4A7; color:#04231D; font:700 13px/1 'Helvetica Neue',Helvetica,Arial,sans-serif;
+  text-decoration:none; transition:transform .15s; }
+.vs-evitement:focus{ transform:none; }
+
+/* ── Barres de défilement : 3 px étaient impossibles à attraper ────────────────
+   10 px de zone de prise, 4 px de pouce visible (bordure transparente), plein
+   au survol. */
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background-color:rgba(110,140,133,.32); border:3px solid transparent; background-clip:padding-box; border-radius:10px; }
+::-webkit-scrollbar-thumb:hover{ background-color:rgba(110,140,133,.6); }
+@supports (-moz-appearance:none){ html{ scrollbar-width:thin; scrollbar-color:rgba(110,140,133,.4) transparent; } }
+
+/* ── CRM, thème clair : les tuiles de chiffres gardaient le fond forêt à 35 %,
+   soit un pavé gris où le libellé (--vs-fg-3) disparaissait. ── */
+body:not(.theme-dark) .crm-kpi{ background:rgba(255,255,255,.72); border-color:rgba(31,71,64,.12); }
+
+/* ── Bannière du mode démo ── */
+#vs-demo-bar{ position:fixed; left:0; right:0; bottom:0; z-index:900; display:flex; align-items:center; justify-content:center;
+  gap:16px; flex-wrap:wrap; padding:10px 18px; background:rgba(11,47,42,.96); border-top:1px solid var(--lime,#2DD4A7);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); color:#F0F4F8; font-size:13px; box-shadow:0 -8px 24px rgba(0,0,0,.35); }
+#vs-demo-bar a.btn{ text-decoration:none; flex:none; }
+@media (max-width:560px){
+  /* Une ligne de texte courte + le bouton : ~64 px au lieu de ~200. */
+  #vs-demo-bar{ gap:10px; padding:8px 12px; font-size:12px; flex-wrap:nowrap; justify-content:space-between; }
+  #vs-demo-bar .vs-demo-bar-txt{ min-width:0; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+}
+
+/* ── Notifications : jamais sous la bannière du mode démo ── */
+body.vs-demo-mode #toast-stack{ bottom:78px; }
+
+/* ── Mouvement réduit : les entrées de panneau ne glissent plus ── */
+@media (prefers-reduced-motion: reduce){
+  .panel.active{ animation:none; }
+  .spes-toast{ animation:none; }
+  ::view-transition-old(root), ::view-transition-new(root){ animation:none; }
+}
+/* Fondu du changement de thème (View Transitions) : court, sans glissement. */
+::view-transition-old(root), ::view-transition-new(root){ animation-duration:.22s; }
+
+/* ── Palette de commandes ─────────────────────────────────────────────────── */
+.vs-cmdk{ position:fixed; inset:0; z-index:100000; display:flex; justify-content:center; align-items:flex-start;
+  padding:min(14vh,120px) 16px 16px; }
+.vs-cmdk[hidden]{ display:none; }
+.vs-cmdk-voile{ position:absolute; inset:0; background:rgba(3,14,12,.62); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  opacity:0; transition:opacity .14s linear; }
+.vs-cmdk-boite{ position:relative; width:min(640px,100%); max-height:min(560px,calc(100vh - 32px)); display:flex; flex-direction:column;
+  border-radius:16px; border:1px solid var(--vs-forest-500); background:linear-gradient(180deg, rgba(20,63,57,.97), rgba(11,47,42,.98));
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.7), 0 0 0 1px rgba(45,212,167,.06), inset 0 1px 0 rgba(255,255,255,.04);
+  overflow:hidden; opacity:0; transform:translateY(-6px) scale(.985); transition:opacity .14s linear, transform .18s var(--ease-out); }
+.vs-cmdk.on .vs-cmdk-voile, .vs-cmdk.on .vs-cmdk-boite{ opacity:1; }
+.vs-cmdk.on .vs-cmdk-boite{ transform:none; }
+body:not(.theme-dark) .vs-cmdk-voile{ background:rgba(14,42,38,.28); }
+body:not(.theme-dark) .vs-cmdk-boite{ background:#FFFFFF; border-color:rgba(31,71,64,.14); box-shadow:0 30px 80px -24px rgba(14,42,38,.35); }
+
+.vs-cmdk-tete{ display:flex; align-items:center; gap:12px; padding:0 16px; height:58px; flex:none;
+  border-bottom:1px solid var(--vs-forest-600); color:var(--vs-fg-3); }
+body:not(.theme-dark) .vs-cmdk-tete{ border-bottom-color:rgba(31,71,64,.1); }
+.vs-cmdk-tete svg{ width:18px; height:18px; }
+.vs-cmdk .vs-cmdk-champ{ flex:1; min-width:0; height:100%; border:0; outline:0; background:transparent; box-shadow:none;
+  color:var(--vs-fg-1); font:500 16px/1.2 var(--font-sans); padding:0; }
+.vs-cmdk .vs-cmdk-champ::placeholder{ color:var(--vs-fg-3); }
+
+.vs-cmdk-liste{ overflow-y:auto; overscroll-behavior:contain; padding:6px 8px 8px; flex:1; }
+.vs-cmdk-groupe{ padding:12px 10px 6px; font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--vs-fg-3); }
+.vs-cmdk-item{ display:flex; align-items:center; gap:12px; min-height:46px; padding:6px 10px; border-radius:10px; cursor:pointer;
+  color:var(--vs-fg-2); position:relative; }
+.vs-cmdk-item[aria-selected="true"]{ background:rgba(45,212,167,.1); color:var(--vs-fg-1); }
+.vs-cmdk-item[aria-selected="true"]::before{ content:''; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:3px; background:var(--vs-emerald-400); }
+body:not(.theme-dark) .vs-cmdk-item[aria-selected="true"]{ background:rgba(15,161,118,.08); }
+.vs-cmdk-ico{ flex:none; width:32px; height:32px; display:grid; place-items:center; border-radius:9px;
+  border:1px solid var(--vs-forest-600); background:rgba(4,18,15,.3); color:var(--vs-fg-2); }
+body:not(.theme-dark) .vs-cmdk-ico{ background:rgba(31,71,64,.04); border-color:rgba(31,71,64,.12); }
+.vs-cmdk-item[aria-selected="true"] .vs-cmdk-ico{ color:var(--vs-emerald-300); border-color:var(--vs-emerald-600); }
+.vs-cmdk-txt{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; }
+.vs-cmdk-titre{ font-size:14px; font-weight:600; color:var(--vs-fg-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vs-cmdk-titre mark{ background:none; color:var(--vs-emerald-300); text-decoration:underline; text-decoration-thickness:1.5px; text-underline-offset:3px; }
+.vs-cmdk-tag{ font-family:var(--font-mono); font-size:11px; font-weight:500; color:var(--vs-fg-3); }
+.vs-cmdk-sous{ font-size:12px; color:var(--vs-fg-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.vs-cmdk-note{ flex:none; font-family:var(--font-mono); font-weight:800; font-size:13px; color:var(--vs-emerald-300); }
+.vs-cmdk-pro{ flex:none; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; padding:3px 7px; border-radius:6px;
+  color:var(--rank-gold,#E6B23E); border:1px solid color-mix(in srgb, var(--rank-gold,#E6B23E) 45%, transparent); }
+.vs-cmdk-kbds{ flex:none; display:inline-flex; gap:4px; }
+.vs-cmdk-vide{ padding:28px 16px; text-align:center; color:var(--vs-fg-2); font-size:13.5px; line-height:1.6; }
+.vs-cmdk-vide span{ color:var(--vs-fg-3); font-size:12.5px; }
+.vs-cmdk-aide{ display:flex; align-items:center; justify-content:space-between; gap:16px; min-height:40px; padding:4px 10px;
+  border-radius:8px; color:var(--vs-fg-2); font-size:13.5px; }
+.vs-cmdk-aide:nth-child(odd){ background:rgba(4,18,15,.18); }
+body:not(.theme-dark) .vs-cmdk-aide:nth-child(odd){ background:rgba(31,71,64,.035); }
+.vs-cmdk-pied{ flex:none; display:flex; align-items:center; gap:18px; padding:10px 16px; border-top:1px solid var(--vs-forest-600);
+  font-size:11.5px; color:var(--vs-fg-3); }
+body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
+.vs-cmdk-pied span{ display:inline-flex; align-items:center; gap:5px; }
+.vs-cmdk-pied-d{ margin-left:auto; }
+@media (max-width:560px){
+  .vs-cmdk{ padding-top:12px; }
+  .vs-cmdk-pied{ display:none; }
+  .vs-cmdk-kbds{ display:none; }
+}
+@media (prefers-reduced-motion: reduce){
+  .vs-cmdk-voile, .vs-cmdk-boite{ transition:none; transform:none; }
 }
 </style>
 <!-- ══ CES QUATRE BIBLIOTHÈQUES SONT SERVIES PAR VISIONSCORE ═══════════════════════
@@ -4401,6 +4659,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 </head>
 
 <body class="landing-active">
+<a class="vs-evitement" href="#contenu" onclick="var m=document.getElementById('contenu'); if(m){ event.preventDefault(); m.focus(); }">Aller au contenu</a>
 
 <!-- ════ HEADER ════ -->
 <!-- Fond ambiant réactif au rôle (Scouter / Résultats) -->
@@ -4471,7 +4730,13 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- Le menu « Plus » a disparu le 29/09/2026 : il ne portait plus que deux entrées.
          Historique est un sous-onglet du Scouting, Builds des pros un onglet d'Analytics. -->
   </nav>
-  <div style="display:flex;gap:6px;align-items:center">
+  <div class="hd-tools">
+    <!-- Palette de commandes : tout le site au clavier (Ctrl K, ou « / »). -->
+    <button type="button" class="hd-ctl hd-cmdk" id="hd-cmdk" onclick="vsCmdkOuvrir()" aria-label="Rechercher une page, un joueur ou une action" aria-haspopup="dialog" aria-keyshortcuts="Control+K">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
+      <span class="hd-cmdk-txt">Rechercher</span>
+      <kbd class="hd-kbd" id="hd-cmdk-kbd">Ctrl K</kbd>
+    </button>
     <!-- Toggle GLOBAL Compét / Solo Q — présent sur toutes les pages (socle
          vsDataMode). Reflète et pilote le même mode que le roster. -->
     <div class="hd-modesw" role="group" aria-label="Mode de données du site" title="Analyser en compétitif ou en Solo Q — partout sur le site">
@@ -4479,11 +4744,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <button data-vsmode="soloq" onclick="vsSetDataMode('soloq')" class="hd-modebtn">Solo Q</button>
     </div>
     <!-- Toggle Dark / Light -->
-    <button id="theme-toggle" onclick="toggleTheme()" title="Basculer thème sombre/clair"
-      style="background:none;border:1px solid var(--border2);border-radius:6px;cursor:pointer;
-             padding:5px 8px;display:flex;align-items:center;gap:4px;
-             color:var(--sub2);font-family:monospace;font-size:10px;letter-spacing:.04em;
-             transition:all .18s;">
+    <button id="theme-toggle" class="hd-ctl hd-ctl-ico" onclick="toggleTheme()" title="Basculer thème sombre/clair" aria-label="Passer en thème clair">
       <span id="theme-toggle-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
       <span id="theme-toggle-lbl">Sombre</span>
     </button>
@@ -4491,11 +4752,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
       <span id="backend-dot" class="checking"></span>
       <span id="backend-txt">API…</span>
     </div>
-    <button id="btn-logout" onclick="vsLogout()" title="Se déconnecter"
-            style="background:var(--surf2);border:1px solid var(--border);border-radius:8px;
-                   padding:5px 8px;display:flex;align-items:center;gap:4px;cursor:pointer;
-                   color:var(--sub2);font-family:monospace;font-size:10px;letter-spacing:.04em;
-                   transition:all .18s;">
+    <button id="btn-logout" class="hd-ctl hd-ctl-ico" onclick="vsLogout()" title="Se déconnecter" aria-label="Se déconnecter">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       <span>Quitter</span>
     </button>
@@ -4594,7 +4851,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   <!-- ══ Watermark emblème VisionScore (logo mark) — fond des rubriques, comme la landing ══ -->
   <div class="logo-bg" aria-hidden="true"><div class="logo-bg-wash"></div><div class="logo-bg-icon"></div><div class="logo-bg-icon echo"></div></div>
 
-  <main class="main">
+  <main class="main" id="contenu" tabindex="-1">
 
     <!-- ══ PANEL : SCOUT ══ -->
     <!-- ══ PANEL : ACCUEIL ══ -->
@@ -5613,6 +5870,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <button class="an-tab chip" onclick="crmGoTo('candidatures')">Candidatures</button>
           <button class="an-tab chip" onclick="crmGoTo('matching')">Matching</button>
           <button class="an-tab chip on">Top 30</button>
+          <button class="an-tab chip" onclick="anGoTab('comparer')">Comparer</button>
         </div>
 
         <!-- Page head -->
@@ -5743,7 +6001,18 @@ button:focus-visible, input:focus-visible, select:focus-visible {
     <!-- ══ PANEL : ANALYSE MULTI-JOUEURS (Comparer — désormais un onglet de CRM Agent) ══ -->
     <div id="panel-analyse" class="panel">
       <div class="vsd vsd-wrap" style="max-width:1280px;margin:0 auto;padding:24px 8px 64px;gap:16px">
-        <button class="btn btn-ghost btn-sm" onclick="switchPanel('crm')" style="align-self:flex-start"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg> Retour au CRM Agent</button>
+        <!-- Comparer est un onglet du CRM Agent : il porte la même barre que ses
+             voisins (Structures… Top 30) au lieu d'un bouton « Retour » qu'on ne
+             trouvait nulle part ailleurs. Même jeu d'onglets = la pilule glisse
+             d'un panneau à l'autre (cf. anSegSlide). -->
+        <div class="rolepills an-tabbar" id="analyse-tabs">
+          <button class="an-tab chip" onclick="crmGoTo('structures')">Structures</button>
+          <button class="an-tab chip" onclick="crmGoTo('pipeline')">Pipeline</button>
+          <button class="an-tab chip" onclick="crmGoTo('candidatures')">Candidatures</button>
+          <button class="an-tab chip" onclick="crmGoTo('matching')">Matching</button>
+          <button class="an-tab chip" onclick="switchPanel('top50')">Top 30</button>
+          <button class="an-tab chip on">Comparer</button>
+        </div>
         <!-- Head Comparaison (maquette 05) + export -->
         <div class="between" style="flex-wrap:wrap;gap:14px;align-items:flex-end">
           <div class="page-head" style="min-width:0">
@@ -6043,6 +6312,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
             <div class="h3" id="sl-title">Studio d'analyse</div>
             <div class="faint" style="font-size:11px" id="sl-subtitle">—</div>
           </div>
+          <div class="sl-chrono" id="sl-chrono"></div>
           <div style="flex:1;min-width:8px"></div>
           <div class="sl-topbar-actions">
             <span class="sl-saved" id="sl-saved" style="font-size:10.5px;font-weight:700"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sauvegardé</span>
@@ -6113,6 +6383,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
               <button class="btn btn-ghost btn-sm" onclick="slSeek(2)" title="+2 s (→)">2s›</button>
               <button class="sl-iconbtn" onclick="slStepFrame(1)" title="Image suivante (.)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg></button>
               <span class="sl-time" id="sl-time">00:00 / 00:00</span>
+              <span class="sl-time-jeu" id="sl-time-jeu" title="Temps de jeu — calez le chrono sur 0:00 pour l'obtenir">jeu —</span>
               <div style="flex:1;min-width:6px"></div>
               <div class="sl-vol">
                 <button class="sl-iconbtn" id="sl-mute-btn" onclick="slToggleMute()" title="Muet (M)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sl-vol-icon"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></button>
@@ -6160,9 +6431,28 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="card" style="padding:12px;margin-top:12px">
           <div class="between" style="margin-bottom:8px">
             <div class="label" style="font-size:10px">Timeline de codage</div>
-            <span class="faint" style="font-size:11px" id="sl-tl-hint">Clique sur un clip pour le rejouer · double-clic = lecture en boucle</span>
+            <div class="sl-rep-add">
+              <span class="faint" style="font-size:11px" id="sl-tl-hint">Clic = rejouer · double-clic = boucle</span>
+              <select id="sl-repere-type" class="sl-rep-sel" title="Type de repère">
+                <option value="drake">Drake</option>
+                <option value="heraut">Héraut</option>
+                <option value="baron">Baron</option>
+                <option value="tour">Tour</option>
+                <option value="inhib">Inhibiteur</option>
+                <option value="larves">Larves</option>
+                <option value="ace">Ace</option>
+              </select>
+              <button class="btn btn-ghost btn-xs" onclick="slAjouterRepere()" title="Poser un repère à la position de lecture (clic droit sur un repère pour le retirer)">Poser un repère</button>
+            </div>
           </div>
           <div class="sl-timeline" id="sl-timeline"></div>
+          <!-- Rail des repères de jeu : les objectifs réellement survenus (timeline
+               officielle) et ceux que le coach pose sur un scrim. Aucune table de
+               spawns en dur — elle serait fausse au premier changement de saison. -->
+          <div class="sl-rep-bar sl-tl-row">
+            <div class="sl-tl-name"><span class="lbl">Repères de jeu</span></div>
+            <div class="sl-rep-rail" id="sl-reperes"></div>
+          </div>
         </div>
 
         <!-- Barre de détail du clip sélectionné -->
@@ -6170,6 +6460,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <span class="pill pill-emerald" id="sl-detail-code">—</span>
             <span class="stat-v" style="font-size:13px" id="sl-detail-time">—</span>
+            <span id="sl-detail-ctx"></span>
             <span class="sl-trim" title="Ajuster le début du clip">
               <span class="sl-trim-lbl">Début</span>
               <button class="sl-iconbtn" style="width:26px;height:26px" onclick="slTrim('t0',-1)">−</button>
@@ -6407,6 +6698,7 @@ button:focus-visible, input:focus-visible, select:focus-visible {
         <div class="rolepills an-tabbar">
           <button class="an-tab chip" onclick="anGoTab('scrim')">Stats équipe</button>
           <button class="an-tab chip" onclick="anGoTab('roster')">Roster</button>
+          <button class="an-tab chip" onclick="anGoTab('video')">Analyse vidéo</button>
           <button class="an-tab chip" onclick="anGoTab('timeline')">Timeline</button>
           <button class="an-tab chip on" onclick="switchPanel('builds')">Builds des pros</button>
         </div>
@@ -12675,7 +12967,7 @@ function scColor(s) {
 
 function pctLabel(val, thr) {
   if (!thr || val === null) return '';
-  if (val >= thr.elite) return '<span class="top">🔝 top 5%</span>';
+  if (val >= thr.elite) return '<span class="top">top 5 %</span>';
   if (val >= thr.good)  return '<span class="top">top 20%</span>';
   if (val >= thr.avg)   return '<span class="mid">dans la norme</span>';
   if (val >= thr.bad)   return '<span class="low">en dessous moy.</span>';
@@ -12821,7 +13113,7 @@ function updateGlobal() {
     if (perfMoy != null && (perfMoy - rankScore) >= 1.5) {
       const gap = (perfMoy - rankScore).toFixed(1);
       souscoteEl.style.display = 'flex';
-      souscoteEl.innerHTML = '📈 <strong>Potentiel sous-estimé +' + gap + ' pts</strong> — Stats moyennes ('
+      souscoteEl.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg> <strong>Potentiel sous-estimé +' + gap + ' pts</strong> — Stats moyennes ('
         + perfMoy.toFixed(1) + '/10) nettement au-dessus du rang ' + RANK_NAMES[rankIdx];
     } else {
       souscoteEl.style.display = 'none';
@@ -12874,8 +13166,8 @@ function updateGlobal() {
       const age = ageEl ? parseInt(ageEl.value) : 0;
       const gap = (pot - perf).toFixed(1);
       const txt = age <= 16
-        ? '🔥 <strong>PÉPITE EXCEPTIONNELLE</strong> · Potentiel +' + gap + ' pts au-dessus des stats actuelles'
-        : '✨ <strong>TALENT À SUIVRE</strong> · Potentiel +' + gap + ' pts de progression détecté';
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg> <strong>PÉPITE EXCEPTIONNELLE</strong> · Potentiel +' + gap + ' pts au-dessus des stats actuelles'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg> <strong>TALENT À SUIVRE</strong> · Potentiel +' + gap + ' pts de progression détecté';
       pepiteEl.innerHTML = txt;
     }
   }
@@ -14060,7 +14352,7 @@ async function exportComparaison() {
   doc.setFontSize(7.5); doc.setTextColor(150, 160, 155);
   doc.text('Généré par VisionScore — visionscore.gg — données API Riot Games', 14, 288);
   doc.save('visionscore-comparaison.pdf');
-  showToast('PDF de comparaison exporté ✔', 'success');
+  showToast('PDF de comparaison exporté', 'success');
 }
 
 function buildAnalysePanel() {
@@ -14480,7 +14772,9 @@ function shareByURL() {
   try {
     const json    = JSON.stringify(snapshot);
     const b64     = btoa(unescape(encodeURIComponent(json)));
-    const url     = window.location.origin + window.location.pathname + '?spes=' + b64;
+    // encodeURIComponent : le base64 contient des « + », qu'une URL lit comme des
+    // espaces — le lien arrivait corrompu chez le destinataire.
+    const url     = window.location.origin + window.location.pathname + '?spes=' + encodeURIComponent(b64);
 
     // Copie dans le presse-papier
     navigator.clipboard.writeText(url).then(() => {
@@ -14509,16 +14803,55 @@ function ouvrirVueDepuisURL(){
   if (vue && VS_VUES_URL.indexOf(vue) >= 0 && typeof switchPanel === 'function') switchPanel(vue);
 }
 
+/* ⚠️ Un lien ?spes= est écrit par N'IMPORTE QUI et s'ouvre dans une session
+   connectée. Son contenu finit dans des innerHTML (nom, rôle, champions, défis) :
+   sans filtre, un lien fabriqué exécutait du script chez le coach qui clique — et
+   le jeton de session est dans ce navigateur. Tant que la fonction était morte, le
+   risque l'était aussi ; en la rebranchant, on filtre à l'entrée, par LISTE
+   BLANCHE : ce qui n'est pas explicitement attendu est jeté, pas échappé. */
+function vsPartageAssaini(s) {
+  if (!s || typeof s !== 'object' || Array.isArray(s)) return null;
+  const txt = (v, max) => (typeof v === 'string' || typeof v === 'number')
+    ? String(v).replace(/[<>"'&`\\\u0000-\u001f]/g, '').trim().slice(0, max) : '';
+  const num = v => { const x = (typeof v === 'number') ? v : (typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN); return Number.isFinite(x) ? x : null; };
+  const entier = (v, min, max, def) => { const x = num(v); return (x !== null && Math.floor(x) === x && x >= min && x <= max) ? x : def; };
+  const nombres = (o, maxCles) => {
+    const r = {};
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return r;
+    Object.keys(o).slice(0, maxCles).forEach(k => {
+      if (!/^[A-Za-z][A-Za-z0-9_]{0,48}$/.test(k)) return;
+      const x = num(o[k]); if (x !== null) r[k] = x;
+    });
+    return r;
+  };
+  const pseudo = txt(s.pseudo, 32);
+  if (!pseudo) return null;
+  const role = (typeof s.role === 'string' && typeof ROLE_WEIGHTS === 'object' && Object.prototype.hasOwnProperty.call(ROLE_WEIGHTS, s.role)) ? s.role : null;
+  const champs = Array.isArray(s.champs) ? s.champs.slice(0, 6)
+    .filter(c => c && typeof c.name === 'string' && /^[A-Za-z0-9][A-Za-z0-9 .]{0,23}$/.test(c.name))   // « Lee Sin », « Dr. Mundo » ; jamais d'apostrophe (chaînes onclick)
+    .map(c => ({ name: c.name, games: entier(c.games, 0, 100000, 0), wr: num(c.wr) ?? 0, kda: num(c.kda) ?? 0 })) : [];
+  const adv = nombres(s.adv, 400);
+  return {
+    pseudo, tag: txt(s.tag, 8), age: txt(s.age, 3), nat: txt(s.nat, 24),
+    rankIdx: entier(s.rankIdx, 0, 9, -1), rankPrev: entier(s.rankPrev, -1, 9, -1),
+    role, rawData: nombres(s.rawData, 200), champs,
+    adv: Object.keys(adv).length ? adv : null
+  };
+}
+
 // Charge une fiche depuis un paramètre URL ?spes=...
 function loadFromURL() {
   const params = new URLSearchParams(window.location.search);
-  const b64 = params.get('spes');
+  // Les liens émis avant la correction portent des « + » bruts, que
+  // URLSearchParams a changés en espaces : on les rétablit (le base64 ne
+  // contient jamais d'espace, l'opération est donc sans ambiguïté).
+  const b64 = (params.get('spes') || '').replace(/ /g, '+');
   if (!b64) return;
 
   try {
     const json = decodeURIComponent(escape(atob(b64)));
-    const snap = JSON.parse(json);
-    if (!snap?.pseudo) return;
+    const snap = vsPartageAssaini(JSON.parse(json));
+    if (!snap?.pseudo) { showToast('Ce lien de fiche est illisible ou incomplet', 'warning'); return; }
 
     // Remplir les champs identité
     const set = (id, val) => { const el = document.getElementById(id); if (el && val !== undefined && val !== '') el.value = val; };
@@ -14556,13 +14889,17 @@ function loadFromURL() {
     updateVerdict();
     updateRadar();
     buildStatsGrid();
-loadFromURL(); // Charge depuis URL si ?spes= présent
-ouvrirVueDepuisURL(); // Ouvre la rubrique demandée si ?vue= présent
+    /* ⚠️ Les deux appels de démarrage (loadFromURL, ouvrirVueDepuisURL) étaient
+       collés ICI, à l'intérieur de la fonction qu'ils devaient lancer — depuis le
+       tout premier dépôt. Rien ne les exécutait donc jamais : le lien du bouton
+       « Partager » (?spes=) et les liens ?vue= ouvraient l'application sans rien
+       charger, sans la moindre erreur. Ils vivent désormais dans le routeur
+       (script « NAVIGATION », en bas de page), qui les lance une fois tout prêt. */
 
     buildResults();
 
-    // Afficher un toast
-    showToast(`📂 Fiche de ${snap.pseudo} chargée depuis le lien`, 'teal');
+    // Afficher un toast (pas d'emoji dans l'UI produit)
+    showToast('Fiche de ' + anEsc(snap.pseudo) + ' chargée depuis le lien', 'teal');
 
     // Nettoyer l'URL
     window.history.replaceState({}, '', window.location.pathname);
@@ -14572,6 +14909,7 @@ ouvrirVueDepuisURL(); // Ouvre la rubrique demandée si ?vue= présent
 
   } catch(e) {
     console.error('Erreur chargement depuis URL:', e);
+    showToast('Ce lien de fiche est illisible — demandez-en un nouveau à son auteur', 'warning');
   }
 }
 
@@ -14587,6 +14925,8 @@ function showToast(msg, type = 'success', dur = 3500) {
   if (!stack) {
     stack = document.createElement('div');
     stack.id = 'toast-stack';
+    stack.setAttribute('role', 'status');
+    stack.setAttribute('aria-live', 'polite');
     document.body.appendChild(stack);
   }
 
@@ -14606,16 +14946,22 @@ function showToast(msg, type = 'success', dur = 3500) {
   t.innerHTML = `
     <span class="spes-toast-icon">${icon}</span>
     <span class="spes-toast-msg">${msg}</span>
-    <button class="spes-toast-close" onclick="this.closest('.spes-toast').remove()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    <button class="spes-toast-close" aria-label="Fermer la notification" onclick="this.closest('.spes-toast').remove()"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
   stack.appendChild(t);
 
   // Max 4 toasts simultanés
   while (stack.children.length > 4) stack.removeChild(stack.firstChild);
 
-  setTimeout(() => {
+  // Un toast qu'on est en train de lire ne disparaît pas sous le pointeur : le
+  // compte à rebours s'arrête au survol et repart en entier à la sortie.
+  let _tDepart = null;
+  const _tArmer = () => { clearTimeout(_tDepart); _tDepart = setTimeout(() => {
     t.classList.add('out');
     setTimeout(() => t.remove(), 320);
-  }, dur);
+  }, dur); };
+  t.addEventListener('mouseenter', () => clearTimeout(_tDepart));
+  t.addEventListener('mouseleave', _tArmer);
+  _tArmer();
 }
 
 // ═══════════════════════════════════════════════
@@ -14657,7 +15003,7 @@ function spesPrompt(msg, defaultVal = '', placeholder = '') {
     const safeDefault = String(defaultVal).replace(/"/g, '&quot;');
     overlay.innerHTML = `
       <div class="spes-modal-box" role="dialog" aria-modal="true">
-        <div class="spes-modal-title">✏️ Saisie</div>
+        <div class="spes-modal-title">Saisie</div>
         <div class="spes-modal-msg">${msg}</div>
         <input class="spes-modal-input" id="sm-input" type="text"
           value="${safeDefault}" placeholder="${placeholder}"/>
@@ -15898,7 +16244,7 @@ async function generateOfficialReport() {
     showToast('Erreur PDF : '+err.message, 'error');
     console.error('[PDF]', err);
   } finally {
-    if (btn) { btn.disabled=false; btn.innerHTML='📄 Rapport Officiel'; }
+    if (btn) { btn.disabled=false; btn.innerHTML='Rapport officiel'; }
   }
 }
 // ════════════════════════════════════════════════════════════
@@ -16103,7 +16449,7 @@ function crmRenderStructures() {
           '</div>' +
           '<div style="display:flex;gap:.375rem">' +
             '<button onclick="crmAddPlayerToStructure(' + s.id + ')" style="font-size:.72rem;background:var(--lime-dim);border:1px solid var(--lime-bd);border-radius:4px;padding:2px 9px;color:var(--lime);cursor:pointer">+ Joueur</button>' +
-            '<button onclick="crmEditStructure(' + s.id + ')" style="font-size:.72rem;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--sub2);cursor:pointer">✏️</button>' +
+            '<button onclick="crmEditStructure(' + s.id + ')" style="font-size:.72rem;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;color:var(--sub2);cursor:pointer" title="Modifier la structure" aria-label="Modifier la structure"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></button>' +
             '<button onclick="crmDeleteStructure(' + s.id + ')" style="font-size:.72rem;background:none;border:1px solid rgba(255,90,74,.3);border-radius:4px;padding:2px 8px;color:var(--red);cursor:pointer">✕</button>' +
           '</div>' +
         '</div>' +
@@ -16142,7 +16488,7 @@ function crmAddPlayerToStructure(structureId) {
   overlay.innerHTML =
     '<div class="card" style="padding:1.5rem;width:100%;max-width:440px">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">' +
-        '<div class="h3" style="font-size:1rem">➕ Ajouter au pipeline<br><span class="faint" style="font-size:.75rem;font-weight:400">→ ' + struct.nom + '</span></div>' +
+        '<div class="h3" style="font-size:1rem">Ajouter au pipeline<br><span class="faint" style="font-size:.75rem;font-weight:400">→ ' + struct.nom + '</span></div>' +
         '<button onclick="document.getElementById(\'crm-player-modal\').remove()" style="background:none;border:none;color:var(--sub);cursor:pointer;font-size:1.1rem">✕</button>' +
       '</div>' +
       (playerOptions ? '<div style="font-size:.72rem;color:var(--sub);margin-bottom:.25rem;letter-spacing:.06em;text-transform:uppercase">Depuis votre liste</div>' + playerOptions : '') +
@@ -16327,7 +16673,7 @@ function crmRenderPipeline() {
   // Table
   const list = crmFiltered();
   if (!list.length) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le scouting (bouton ⭐), le Top 30, ou « Nouvelle fiche ».') + '</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2.5rem;color:var(--vs-fg-3);font-size:.85rem">' + (crmPipeline.length ? 'Aucun prospect ne correspond aux filtres.' : 'Pipeline vide — ajoute des fiches depuis le scouting (bouton « Ajouter au CRM »), le Top 30, ou « Nouvelle fiche ».') + '</td></tr>';
     document.getElementById('crm-fiche').style.display = 'none';
     return;
   }
@@ -16461,7 +16807,7 @@ function crmImportMenu(){
   // CSV : fichier avec en-têtes pseudo,tag,role,score,age,region,rank (souples).
   // Scouting : rappel du flux bouton ⭐ sur la fiche.
   document.getElementById('crm-csv-input')?.click();
-  if (typeof showToast === 'function') showToast('Choisis un CSV (pseudo, tag, role, score, age, region, rank) — ou utilise ⭐ « Ajouter au CRM » depuis une fiche scouting.', 'info');
+  if (typeof showToast === 'function') showToast('Choisis un CSV (pseudo, tag, role, score, age, region, rank) — ou utilise « Ajouter au CRM » depuis une fiche scouting.', 'info');
 }
 function crmImportCsvFile(file){
   if (!file) return;
@@ -16736,8 +17082,8 @@ async function crmVerifyRank(pseudo, tag, declaredRank, cardId) {
     const soloQ = (Array.isArray(league) ? league : []).find(e => e.queueType === 'RANKED_SOLO_5x5');
 
     if (!soloQ) {
-      if (out) out.innerHTML = '<span style="color:var(--amber);font-size:.72rem">⚠️ Non classé en SoloQ cette saison</span>';
-      if (btn) { btn.textContent = '🔍 Vérifier'; btn.disabled = false; }
+      if (out) out.innerHTML = '<span style="color:var(--amber);font-size:.72rem">Non classé en SoloQ cette saison</span>';
+      if (btn) { btn.textContent = 'Vérifier'; btn.disabled = false; }
       return;
     }
 
@@ -16746,7 +17092,7 @@ async function crmVerifyRank(pseudo, tag, declaredRank, cardId) {
     const color = tierOk ? 'var(--lime)' : 'var(--red)';
 
     if (out) out.innerHTML = '<span style="color:' + color + ';font-size:.75rem">' +
-      (tierOk ? '✅ Rang confirmé : ' : '⚠️ Rang réel : ') + '<strong>' + realRank + '</strong>' +
+      (tierOk ? 'Rang confirmé : ' : 'Rang réel : ') + '<strong>' + realRank + '</strong>' +
       (!tierOk ? '<br><span style="color:var(--sub);font-size:.68rem">Déclaré : ' + declaredRank + '</span>' : '') +
       '</span>';
     if (btn) btn.style.display = 'none';
@@ -16762,8 +17108,8 @@ async function crmVerifyRank(pseudo, tag, declaredRank, cardId) {
       crmRenderPipeline();
     }
   } catch(err) {
-    if (out) out.innerHTML = '<span style="color:var(--red);font-size:.72rem">❌ ' + err.message + '</span>';
-    if (btn) { btn.textContent = '🔍 Vérifier'; btn.disabled = false; }
+    if (out) out.innerHTML = '<span style="color:var(--red);font-size:.72rem">Échec : ' + anEsc(err.message) + '</span>';
+    if (btn) { btn.textContent = 'Vérifier'; btn.disabled = false; }
   }
 }
 
@@ -21392,18 +21738,49 @@ function renderPositions(ctx, size) {
   ctx.setLineDash([]);
 }
 
+/* Icônes d'événements de jeu, AU TRAIT, en données de chemin SVG (viewBox 24).
+   Pas d'emoji dans l'UI produit : ils prenaient la couleur et la forme du
+   système (un dragon vert sous Windows, orange sous macOS) et juraient avec la
+   charte. Le même tracé sert au DOM (vsIcoEvt) et au canvas de la carte (Path2D,
+   qui lit directement ces chaînes) — une seule source, deux rendus. */
+var VS_ICO_EVT = {
+  drake:  ['M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z'],
+  baron:  ['M2 5l3 11h14l3-11-6 6-4-7-4 7z', 'M5 20h14'],
+  heraut: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z', 'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0'],
+  larves: ['M9 7.1V6a3 3 0 0 1 6 0v1.1', 'M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v3c0 3.3-2.7 6-6 6z', 'M12 20v-9', 'M6 13H2', 'M22 13h-4'],
+  tour:   ['M6 21V8L4 6V3h3v2h2V3h6v2h2V3h3v3l-2 2v13z', 'M10 21v-4h4v4'],
+  inhib:  ['M6 3h12l4 6-10 12L2 9z', 'M2 9h20'],
+  kill:   ['M14.5 17.5 3 6V3h3l11.5 11.5', 'M13 19l6-6', 'M16 16l4 4', 'M19 21l2-2'],
+  sang:   ['M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5S12.5 5.5 12 3c-.5 2.5-2 4.9-4 6.5S5 13 5 15a7 7 0 0 0 7 7z'],
+  cible:  ['M4 12a8 8 0 1 0 16 0a8 8 0 1 0-16 0', 'M9 12a3 3 0 1 0 6 0a3 3 0 1 0-6 0']
+};
+function vsIcoEvt(cle, taille){
+  var d = VS_ICO_EVT[cle] || VS_ICO_EVT.cible, s = taille || 14;
+  return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    + d.map(function(p){ return '<path d="' + p + '"/>'; }).join('') + '</svg>';
+}
+function vsIcoEvtCanvas(ctx, cle, cx, cy, taille, couleur){
+  var d = VS_ICO_EVT[cle] || VS_ICO_EVT.cible;
+  ctx.save();
+  ctx.translate(cx - taille / 2, cy - taille / 2);
+  ctx.scale(taille / 24, taille / 24);
+  ctx.strokeStyle = couleur; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  d.forEach(function(p){ ctx.stroke(new Path2D(p)); });
+  ctx.restore();
+}
+
 function renderObjectives(ctx, size) {
   const filtered = filterByPhase(mapData.objectives, currentMapPhase);
   const types = {
-    'DRAGON':           { emoji:'🐉', color:'#F5A623' },
-    'BARON_NASHOR':     { emoji:'⚔️', color:'#C084FC' },
-    'RIFTHERALD':       { emoji:'🔮', color:'#2DD4BF' },
-    'HORDE':            { emoji:'⚡', color:'#4A9EFF' },
+    'DRAGON':           { ico:'drake',  color:'#F5A623' },
+    'BARON_NASHOR':     { ico:'baron',  color:'#C084FC' },
+    'RIFTHERALD':       { ico:'heraut', color:'#2DD4BF' },
+    'HORDE':            { ico:'larves', color:'#4A9EFF' },
   };
 
   filtered.forEach(p => {
     const [cx, cy] = mapCoordToCanvas(p.x, p.y, size);
-    const t = types[p.type] || { emoji:'❓', color:'#8A9090' };
+    const t = types[p.type] || { ico:'cible', color:'#8A9090' };
 
     // Outer ring
     ctx.strokeStyle = p.isAlly
@@ -21418,11 +21795,10 @@ function renderObjectives(ctx, size) {
     ctx.fillStyle = p.isAlly ? 'rgba(45,212,167,.15)' : 'rgba(255,51,0,.12)';
     ctx.fill();
 
-    // Emoji
-    ctx.font = `${size*0.025}px serif`;
+    // Icône au trait (Path2D), dans la couleur de l'objectif
+    vsIcoEvtCanvas(ctx, t.ico, cx, cy, size * 0.026, t.color);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(t.emoji, cx, cy);
 
     // Phase label
     ctx.font = `${size*0.012}px DM Mono`;
@@ -21614,8 +21990,18 @@ if (window.location.protocol === 'file:') {
 
 // ── More menu nav ────────────────────────────────────────────
 // ── THEME TOGGLE ─────────────────────────────────────────
+/* Le basculement de thème repeignait les 628 éléments visibles d'un coup : un
+   flash blanc plein écran. La View Transitions API fait un fondu enchaîné de
+   l'ancienne capture vers la nouvelle — navigateurs récents seulement, et jamais
+   si l'utilisateur a demandé moins d'animations. Ailleurs : bascule immédiate. */
 function toggleTheme() {
+  const calme = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (document.startViewTransition && !calme) { document.startViewTransition(toggleThemeMaintenant); return; }
+  toggleThemeMaintenant();
+}
+function toggleThemeMaintenant() {
   const isDark = document.body.classList.toggle('theme-dark');
+  document.getElementById('theme-toggle')?.setAttribute('aria-label', isDark ? 'Passer en thème clair' : 'Passer en thème sombre');
   localStorage.setItem('vs-theme', isDark ? 'dark' : 'light');
   const icon = document.getElementById('theme-toggle-icon');
   const lbl  = document.getElementById('theme-toggle-lbl');
@@ -22403,7 +22789,7 @@ function top50ToggleView() {
   const isPriv = priv.style.display !== 'none';
   priv.style.display = isPriv ? 'none' : 'block';
   pub.style.display  = isPriv ? 'block' : 'none';
-  if (btn) btn.textContent = isPriv ? '🔒 Vue privée' : '👁 Vue publique';
+  if (btn) btn.textContent = isPriv ? 'Vue privée' : 'Vue publique';
 }
 
 function top50Export() {
@@ -22518,18 +22904,29 @@ checkBackendStatus();
    ════════════════════════════════════════════════════════════════ */
 var SL = {
   file:null, url:null, sig:null, dur:0, sel:null, tool:'', color:'#2DD4A7',
-  drawing:null, loop:null, queue:null, qIdx:0, instances:[], drawings:[], raf:0, uiReady:false
+  drawing:null, loop:null, queue:null, qIdx:0, instances:[], drawings:[], raf:0, uiReady:false,
+  // offset = instant VIDÉO où le chrono du jeu affiche 0:00. null = non calé,
+  // et on n'affiche alors AUCUN temps de jeu plutôt qu'un temps approximatif.
+  offset:null, reperes:[]
 };
+/* Les dix codes par défaut. Leur COULEUR n'est pas décorative : c'est elle qui
+   identifie la ligne sur la timeline, le repère sur la barre de lecture et la
+   colonne dans la matrice — c'est la convention de Sportscode et de Nacsport, et
+   sous chrono on reconnaît une couleur avant de lire un mot. Elles sont donc
+   restées franches, mais reprises dans les accents de la charte (émeraude, or,
+   bleu, violet, brique) plutôt que dans un nuancier étranger au site.
+   ⚠️ Un coach qui a personnalisé ses codes garde les siens : slLoadCodes lit
+   d'abord localStorage. Ce tableau ne vaut que pour une première ouverture. */
 var SL_DEFAULT_CODES = [
-  { id:'gank',      label:'Gank',         color:'#1FA97C', lead:8,  lag:6, key:'1' },
-  { id:'dive',      label:'Dive',         color:'#C2410C', lead:6,  lag:6, key:'2' },
-  { id:'teamfight', label:'Teamfight',    color:'#7C3AED', lead:10, lag:8, key:'3' },
-  { id:'skirmish',  label:'Skirmish',     color:'#B45309', lead:6,  lag:6, key:'4' },
-  { id:'objectif',  label:'Objectif',     color:'#1D6FD1', lead:12, lag:8, key:'5' },
+  { id:'gank',      label:'Gank',         color:'#2DD4A7', lead:8,  lag:6, key:'1' },
+  { id:'dive',      label:'Dive',         color:'#FF5A33', lead:6,  lag:6, key:'2' },
+  { id:'teamfight', label:'Teamfight',    color:'#8A60FF', lead:10, lag:8, key:'3' },
+  { id:'skirmish',  label:'Skirmish',     color:'#E6B23E', lead:6,  lag:6, key:'4' },
+  { id:'objectif',  label:'Objectif',     color:'#4A9EE8', lead:12, lag:8, key:'5' },
   { id:'rotation',  label:'Rotation',     color:'#0F766E', lead:8,  lag:5, key:'6' },
-  { id:'vision',    label:'Vision',       color:'#52706A', lead:5,  lag:4, key:'7' },
-  { id:'pick',      label:'Pick',         color:'#A16207', lead:6,  lag:5, key:'8' },
-  { id:'erreur',    label:'Erreur macro', color:'#BE123C', lead:8,  lag:5, key:'9' },
+  { id:'vision',    label:'Vision',       color:'#7FA8A0', lead:5,  lag:4, key:'7' },
+  { id:'pick',      label:'Pick',         color:'#E07A5F', lead:6,  lag:5, key:'8' },
+  { id:'erreur',    label:'Erreur macro', color:'#C0503A', lead:8,  lag:5, key:'9' },
   { id:'reset',     label:'Reset / Tempo',color:'#3F5EA8', lead:5,  lag:5, key:'0' }
 ];
 var SL_KEYS = ['1','2','3','4','5','6','7','8','9','0'];
@@ -22549,7 +22946,13 @@ var SL_LABEL_GROUPS = [
   { t:'Rôle',    items:['TOP','JGL','MID','ADC','SUP'] },
   { t:'Camp',    items:['Nous','Eux'] },
   { t:'Issue',   items:['Réussi','Raté'] },
-  { t:'Phase',   items:['Early','Mid game','Late game'] }
+  { t:'Phase',   items:['Early','Mid game','Late game'] },
+  /* La CAUSE. Les revues de VOD reviennent toujours aux mêmes six : une mort
+     sans vision, une rotation en retard sur un timer, une vague abandonnée, un
+     appel qui n'est pas passé, un skillshot manqué, un pick intenable dès la
+     draft. Compter les actions sans leur cause donne un tableau ; les compter
+     AVEC donne une consigne. */
+  { t:'Cause',   items:['Vision','Timer','Wave','Comm','Mécanique','Draft'] }
 ];
 var SL_LABELS = SL_LABEL_GROUPS.reduce(function(a,g){ return a.concat(g.items); },[]);
 
@@ -22573,7 +22976,7 @@ function slSessions(){ try{ return JSON.parse(localStorage.getItem('vs_scrim_ses
 function slSaveSessions(list){ try{ localStorage.setItem('vs_scrim_sessions', JSON.stringify(list.slice(0,40))); }catch(e){} }
 function slSave(){
   if (!SL.sig) return;
-  try{ localStorage.setItem('vs_scrim_data::'+SL.sig, JSON.stringify({ instances:SL.instances, drawings:SL.drawings })); }catch(e){}
+  try{ localStorage.setItem('vs_scrim_data::'+SL.sig, JSON.stringify({ instances:SL.instances, drawings:SL.drawings, offset:SL.offset, reperes:SL.reperes })); }catch(e){}
   var list = slSessions();
   var i = list.findIndex(function(s){ return s.sig===SL.sig; });
   var meta = { sig:SL.sig, name:(SL.file&&SL.file.name)||(i>=0?list[i].name:'Vidéo'), size:SL.file?SL.file.size:(i>=0?list[i].size:0),
@@ -22584,14 +22987,144 @@ function slSave(){
   slUpdateCodeCounts(); slRenderScrubMarks();
 }
 function slLoadData(sig){
-  try{ var d=JSON.parse(localStorage.getItem('vs_scrim_data::'+sig)||'null'); if(d){ SL.instances=d.instances||[]; SL.drawings=d.drawings||[]; return true; } }catch(e){}
-  SL.instances=[]; SL.drawings=[]; return false;
+  try{ var d=JSON.parse(localStorage.getItem('vs_scrim_data::'+sig)||'null');
+    if(d){ SL.instances=d.instances||[]; SL.drawings=d.drawings||[];
+           SL.offset=(typeof d.offset==='number')?d.offset:null; SL.reperes=d.reperes||[]; return true; } }catch(e){}
+  SL.instances=[]; SL.drawings=[]; SL.offset=null; SL.reperes=[]; return false;
 }
 function slDeleteSession(sig){
   if(!confirm('Supprimer cette session d\'analyse (codage + dessins) ?')) return;
   try{ localStorage.removeItem('vs_scrim_data::'+sig); }catch(e){}
   slSaveSessions(slSessions().filter(function(s){ return s.sig!==sig; }));
   slRenderHistory();
+}
+
+/* ══════════ LE CHRONO DE JEU ══════════
+   Ce que les outils du sport n'ont pas, et dont League ne peut pas se passer.
+   Sportscode, Nacsport et Metrica codent sur le temps VIDÉO : dans un sport
+   continu, « 34e minute » suffit. À League, tout est un rendez-vous horaire —
+   un drake, un héraut, une vague, un retour à la base. Un clip à 12:40 de
+   vidéo ne dit rien ; le même clip à 8:12 de jeu, quarante secondes avant un
+   drake, dit tout.
+   On pose donc UNE référence : à quel instant de la vidéo le chrono du jeu
+   affiche 0:00. Tout le reste s'en déduit. Sans cette référence, on n'affiche
+   pas un temps de jeu approximatif : on n'en affiche aucun. */
+function slOffset(){ return (SL.offset == null) ? null : SL.offset; }
+function slTJeu(tVideo){ var o = slOffset(); return (o == null) ? null : (tVideo - o); }
+function slFmtJeu(tVideo){
+  var g = slTJeu(tVideo);
+  if (g == null) return '—';
+  var neg = g < 0; g = Math.abs(g);
+  var m = Math.floor(g / 60), s = Math.floor(g % 60);
+  // « -0:00 » n'existe pas : une fraction de seconde avant le coup d'envoi, c'est 0:00.
+  if (neg && m === 0 && s === 0) neg = false;
+  return (neg ? '-' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+/* Caler le chrono : le coach amène la vidéo à l'instant où le jeu affiche 0:00
+   et clique. C'est le geste réel — plus court et plus sûr que taper un mm:ss
+   lu de travers. */
+function slCalerChrono(){
+  var v = slVideo(); if (!v || !SL.url) return;
+  SL.offset = v.currentTime;
+  slSave(); slRenderChrono(); slRenderTimeline(); slRenderDetail(); slRenderReperes();
+  if (typeof showToast === 'function') showToast('Chrono calé : 0:00 du jeu à ' + slFmt(SL.offset) + ' de vidéo.', 'success');
+}
+function slEffacerChrono(){
+  SL.offset = null;
+  slSave(); slRenderChrono(); slRenderTimeline(); slRenderDetail(); slRenderReperes();
+}
+function slRenderChrono(){
+  var el = document.getElementById('sl-chrono'); if (!el) return;
+  var o = slOffset();
+  el.innerHTML = (o == null)
+    ? '<span class="sl-chrono-off">Chrono non calé</span>'
+      + '<button class="sl-chrono-b" onclick="slCalerChrono()" title="Amenez la vidéo à l\'instant où le jeu affiche 0:00, puis cliquez">Caler sur 0:00</button>'
+    : '<span class="sl-chrono-k">Jeu</span><span class="sl-chrono-v" id="sl-chrono-v">0:00</span>'
+      + '<button class="sl-chrono-b" onclick="slCalerChrono()" title="Recaler sur la position actuelle">Recaler</button>'
+      + '<button class="sl-chrono-x" onclick="slEffacerChrono()" title="Oublier le calage">✕</button>';
+}
+
+/* ══════════ LES REPÈRES DE JEU ══════════
+   Le rail sous la timeline. Deux sources, et AUCUNE table de spawns écrite en
+   dur : les horaires d'objectifs changent à chaque saison, et un repère faux
+   placé au bon endroit est pire que pas de repère du tout.
+   · Les événements réellement survenus, quand la timeline officielle du match
+     a été importée (SL.riotFeed) — ce sont des faits.
+   · Les repères que le coach pose lui-même sur un scrim, que Riot n'expose pas. */
+var SL_REPERE_TYPES = [
+  { id: 'drake',   label: 'Drake',      color: '#7C3AED' },
+  { id: 'heraut',  label: 'Héraut',     color: '#B45309' },
+  { id: 'baron',   label: 'Baron',      color: '#A16207' },
+  { id: 'tour',    label: 'Tour',       color: '#1D6FD1' },
+  { id: 'inhib',   label: 'Inhibiteur', color: '#BE123C' },
+  { id: 'larves',  label: 'Larves',     color: '#2563EB' },
+  { id: 'ace',     label: 'Ace',        color: '#C2410C' }
+];
+function slRepereType(id){
+  return SL_REPERE_TYPES.find(function(r){ return r.id === id; }) || { id:id, label:id, color:'#52706A' };
+}
+/* Les repères sont stockés en temps VIDÉO, comme les clips : c'est la seule
+   grandeur qui survit si le coach recale le chrono après coup. */
+function slAjouterRepere(){
+  var v = slVideo(); if (!v || !SL.url) return;
+  var sel = document.getElementById('sl-repere-type');
+  var id = (sel && sel.value) || 'drake';
+  SL.reperes = SL.reperes || [];
+  SL.reperes.push({ id: Date.now() + Math.random().toString(36).slice(2, 5), type: id, t: v.currentTime, nous: true });
+  slSave(); slRenderReperes();
+}
+function slBasculerRepere(rid){
+  var r = (SL.reperes || []).find(function(x){ return x.id === rid; }); if (!r) return;
+  r.nous = !r.nous; slSave(); slRenderReperes();
+}
+function slSupprimerRepere(rid){
+  SL.reperes = (SL.reperes || []).filter(function(x){ return x.id !== rid; });
+  slSave(); slRenderReperes();
+}
+/* Les objectifs importés de Riot, ramenés en temps vidéo. Ils ne sont pas
+   modifiables : ce sont les faits du match, pas des annotations. */
+function slReperesRiot(){
+  var o = slOffset(); if (o == null) return [];
+  var carte = { 'Drake': 'drake', 'Dragon': 'drake', 'Héraut': 'heraut', 'Herald': 'heraut',
+                'Baron': 'baron', 'Tour': 'tour', 'Inhibiteur': 'inhib', 'Larves': 'larves', 'Voidgrub': 'larves' };
+  return (SL.riotFeed || []).filter(function(e){ return e.cat === 'obj'; }).map(function(e){
+    var type = 'tour';
+    Object.keys(carte).forEach(function(mot){ if (String(e.text || '').indexOf(mot) >= 0) type = carte[mot]; });
+    return { id: 'riot-' + e.t, type: type, t: e.t + o, nous: !!e.mine, riot: true, texte: e.text };
+  });
+}
+function slTousReperes(){
+  return (SL.reperes || []).concat(slReperesRiot()).sort(function(a, b){ return a.t - b.t; });
+}
+function slRenderReperes(){
+  var el = document.getElementById('sl-reperes'); if (!el) return;
+  var liste = slTousReperes();
+  var duree = (SL.dur && isFinite(SL.dur) && SL.dur > 1) ? SL.dur : 0;
+  if (!duree) { el.innerHTML = '<span class="sl-rep-vide">—</span>'; return; }
+  el.innerHTML = liste.map(function(r){
+    var t = slRepereType(r.type);
+    var gauche = Math.max(0, Math.min(100, (r.t / duree) * 100));
+    var titre = t.label + ' · ' + slFmt(r.t) + (slOffset() != null ? ' (jeu ' + slFmtJeu(r.t) + ')' : '')
+      + (r.riot ? ' — timeline officielle' : ' — ' + (r.nous ? 'nous' : 'eux'));
+    return '<span class="sl-rep' + (r.nous ? ' nous' : ' eux') + (r.riot ? ' riot' : '') + '"'
+      + ' style="left:' + gauche.toFixed(3) + '%;--c:' + t.color + '" title="' + anEsc(titre) + '"'
+      + ' onclick="slAllerRepere(' + r.t.toFixed(2) + ')"'
+      + (r.riot ? '' : ' oncontextmenu="slSupprimerRepere(\'' + r.id + '\');return false"')
+      + '><i>' + anEsc(t.label.charAt(0)) + '</i></span>';
+  }).join('');
+}
+function slAllerRepere(t){ var v = slVideo(); if (v) v.currentTime = Math.max(0, t - 6); }
+/* Le contexte d'un clip : à quelle distance du repère le plus proche. C'est la
+   question que pose tout debrief — « où était le jungler trente secondes avant
+   le drake ? » — et personne ne la calcule à la main pendant une revue. */
+function slContexteClip(inst){
+  var liste = slTousReperes(); if (!liste.length || !inst) return '';
+  var centre = (inst.t0 + inst.t1) / 2, meilleur = null, ecart = 1e9;
+  liste.forEach(function(r){ var d = r.t - centre; if (Math.abs(d) < Math.abs(ecart)) { ecart = d; meilleur = r; } });
+  if (!meilleur || Math.abs(ecart) > 120) return '';
+  var t = slRepereType(meilleur.type), s = Math.round(Math.abs(ecart));
+  return '<span class="sl-ctx" style="--c:' + t.color + '">'
+    + (ecart >= 0 ? s + ' s avant ' : s + ' s après ') + t.label + '</span>';
 }
 
 /* ── Vue Analyse scrim (hub Analytics) ── */
@@ -22649,7 +23182,7 @@ function slBackToHub(){ var v=slVideo(); if(v) v.pause(); anGoTab('video'); }
 function slOnEnterStudio(){
   var t=document.getElementById('sl-title'); if(t) t.textContent = SL.file ? SL.file.name : 'Studio d\'analyse';
   var empty=document.getElementById('sl-video-empty'); if(empty) empty.style.display = SL.url ? 'none' : 'flex';
-  slBuildCodes(); slBuildLabels(); slRenderTimeline(); slRenderDetail(); slSave();
+  slBuildCodes(); slBuildLabels(); slRenderTimeline(); slRenderDetail(); slRenderChrono(); slRenderReperes(); slSave();
   var sub=document.getElementById('sl-subtitle'); if(sub) sub.textContent = SL.instances.length+' clip(s) · codage auto-sauvegardé';
   slResizeCanvas(); slUpdateCodeCounts(); slUpdateVolumeUi();
   if(!SL._codecName) slHideCodecWarn();
@@ -22802,7 +23335,9 @@ function slRenderDetail(){
   el.style.display='';
   var c=slCodeOf(i.code);
   var pc=document.getElementById('sl-detail-code'); if(pc){ pc.textContent=c.label; pc.style.background=c.color; pc.style.borderColor=c.color; pc.style.color='#fff'; }
-  var pt=document.getElementById('sl-detail-time'); if(pt) pt.textContent=slFmt(i.t0)+' → '+slFmt(i.t1);
+  var pt=document.getElementById('sl-detail-time');
+  if(pt) pt.textContent = slFmt(i.t0)+' → '+slFmt(i.t1) + (slOffset()!=null ? '  ·  jeu '+slFmtJeu(i.t0) : '');
+  var cx=document.getElementById('sl-detail-ctx'); if(cx) cx.innerHTML = slContexteClip(i);
   var pl=document.getElementById('sl-detail-labels'); if(pl) pl.innerHTML=i.labels.map(function(l){ return '<span class="pill pill-emerald" style="font-size:10.5px">'+l+'</span>'; }).join('')||'<span class="faint" style="font-size:11px">aucun label</span>';
   var pn=document.getElementById('sl-detail-note'); if(pn && pn.value!==i.note) pn.value=i.note||'';
   var ps=document.getElementById('sl-detail-star'); if(ps) ps.textContent=(i.star?'★ Favori':'☆ Favori');
@@ -22849,6 +23384,9 @@ function slTick(){
   var panel=document.getElementById('panel-scrimlab'); if(!panel || !panel.classList.contains('active')) return;
   var t=v.currentTime;
   var tm=document.getElementById('sl-time'); if(tm) tm.textContent=slFmt(t)+' / '+slFmt(SL.dur);
+  var tj=document.getElementById('sl-time-jeu');
+  if(tj){ var g=slTJeu(t); tj.textContent = (g==null) ? 'jeu —' : 'jeu '+slFmtJeu(t); tj.classList.toggle('on', g!=null); }
+  var cv=document.getElementById('sl-chrono-v'); if(cv) cv.textContent=slFmtJeu(t);
   slSyncPlayUi();
   // Vue 2D : ~6 rafraîchissements/s suffisent (les positions bougent lentement).
   if(SL.riotFrames && (!SL._m2dLast || t-SL._m2dLast>0.16 || t<SL._m2dLast)){ SL._m2dLast=t; slMap2dSync(); }
@@ -23092,25 +23630,25 @@ function slRiotBuildFeed(match, tl, puuid){
       var kt=pidTeam[e.killerId] || (pidTeam[e.victimId]===100?200:100);
       var killer=champ[e.killerId]||'Exécution', victim=champ[e.victimId]||'?';
       var as=(e.assistingParticipantIds||[]).length;
-      feed.push({ t:t, cat:'fight', icon:'⚔️', mine:(kt===myTeam), pos:P(e), text:killer+' tue '+victim+(as?' (+'+as+' assist'+(as>1?'s':'')+')':'') });
+      feed.push({ t:t, cat:'fight', icon:'kill', mine:(kt===myTeam), pos:P(e), text:killer+' tue '+victim+(as?' (+'+as+' assist'+(as>1?'s':'')+')':'') });
     } else if(e.type==='CHAMPION_SPECIAL_KILL' && e.killType==='KILL_FIRST_BLOOD'){
-      feed.push({ t:t, cat:'fight', icon:'🩸', mine:(pidTeam[e.killerId]===myTeam), pos:P(e), text:'Premier sang — '+(champ[e.killerId]||'?') });
+      feed.push({ t:t, cat:'fight', icon:'sang', mine:(pidTeam[e.killerId]===myTeam), pos:P(e), text:'Premier sang — '+(champ[e.killerId]||'?') });
     } else if(e.type==='ELITE_MONSTER_KILL'){
       var mt=e.monsterType, lbl, ic;
-      if(mt==='DRAGON'){ lbl='Dragon'+(e.monsterSubType?' '+e.monsterSubType.replace('_DRAGON','').toLowerCase():''); ic='🐉'; }
-      else if(mt==='BARON_NASHOR'){ lbl='Baron Nashor'; ic='👑'; }
-      else if(mt==='RIFTHERALD'){ lbl='Héraut'; ic='🐌'; }
-      else if(mt==='HORDE'){ lbl='Voidgrub'; ic='🪱'; }
-      else { lbl=mt||'Objectif'; ic='🎯'; }
+      if(mt==='DRAGON'){ lbl='Dragon'+(e.monsterSubType?' '+e.monsterSubType.replace('_DRAGON','').toLowerCase():''); ic='drake'; }
+      else if(mt==='BARON_NASHOR'){ lbl='Baron Nashor'; ic='baron'; }
+      else if(mt==='RIFTHERALD'){ lbl='Héraut'; ic='heraut'; }
+      else if(mt==='HORDE'){ lbl='Larves du Néant'; ic='larves'; }
+      else { lbl=mt||'Objectif'; ic='cible'; }
       feed.push({ t:t, cat:'obj', icon:ic, mine:(e.killerTeamId===myTeam), pos:P(e), text:lbl+' sécurisé' });
     } else if(e.type==='BUILDING_KILL'){
       var destroyer=(e.teamId===100?200:100); // e.teamId = équipe qui PERD le bâtiment
       if(e.buildingType==='TOWER_BUILDING'){
         var lane=String(e.laneType||'').replace('_LANE','').toLowerCase();
         var laneFr={top:'top',mid:'mid',middle:'mid',bot:'bot',bottom:'bot'}[lane]||lane;
-        feed.push({ t:t, cat:'obj', icon:'🏰', mine:(destroyer===myTeam), pos:P(e), text:'Tour '+laneFr+' détruite' });
+        feed.push({ t:t, cat:'obj', icon:'tour', mine:(destroyer===myTeam), pos:P(e), text:'Tour '+laneFr+' détruite' });
       } else if(e.buildingType==='INHIBITOR_BUILDING'){
-        feed.push({ t:t, cat:'obj', icon:'💎', mine:(destroyer===myTeam), pos:P(e), text:'Inhibiteur détruit' });
+        feed.push({ t:t, cat:'obj', icon:'inhib', mine:(destroyer===myTeam), pos:P(e), text:'Inhibiteur détruit' });
       }
     }
   }); });
@@ -23160,7 +23698,7 @@ function slRenderRiotFeed(){
       : '';
     return '<div class="sl-ev-row '+side+'" onclick="slRiotSeekEvent('+o.idx+')" title="Sauter à '+slFmt(ev.t)+' de jeu dans la vidéo">'+
       '<span class="sl-ev-t">'+slFmt(ev.t)+'</span>'+
-      '<span class="sl-ev-ico">'+ev.icon+'</span>'+
+      '<span class="sl-ev-ico">'+vsIcoEvt(ev.icon)+'</span>'+
       '<span class="sl-ev-txt">'+ev.text+'</span>'+
       '<span class="sl-ev-badge '+side+'">'+(ev.mine?'NOUS':'EUX')+'</span>'+
       btn3d+
@@ -25081,9 +25619,12 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
   if(!window.VS_DEMO) return;
   function run(){
     if(document.getElementById('vs-demo-bar')) return;
-    var bar=document.createElement('div'); bar.id='vs-demo-bar';
+    /* classe vsd : .btn-cta n'existe que sous .vsd — hors de ce conteneur, le bouton
+       « Demander une démo » retombait en lien bleu souligné du navigateur. */
+    var bar=document.createElement('div'); bar.id='vs-demo-bar'; bar.className='vsd';
     bar.innerHTML='<span class="vs-demo-bar-txt">Mode démo — vous explorez l\'interface de scouting VisionScore. Créez un compte pour analyser vos propres joueurs.</span><a class="btn btn-cta btn-sm" href="/?demande=1">Demander une démo</a>';
-    bar.style.cssText='position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;padding:10px 18px;background:rgba(11,47,42,.96);border-top:1px solid var(--lime,#2DD4A7);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#F0F4F8;font-size:13px;box-shadow:0 -8px 24px rgba(0,0,0,.35)';
+    // Style : #vs-demo-bar dans #vs-finitions (il était ici en inline, donc
+    // impossible à adapter au téléphone, où il couvrait un quart de l'écran).
     document.body.appendChild(bar);
     document.body.classList.add('vs-demo-mode');
     // laisse la place à la bannière
@@ -25128,6 +25669,563 @@ try{ vsdSetRoleBg('Mid'); }catch(e){}
     if(d){ try{ d.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
   };
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', vsMergeDossier); else vsMergeDossier();
+})();
+</script>
+<script>
+/* ════ NAVIGATION — routes d'URL, palette de commandes, raccourcis clavier ════
+
+   ROUTES. L'application n'avait aucune adresse : toute la navigation passait par
+   switchPanel sans jamais toucher l'URL. Conséquences, toutes muettes : le bouton
+   Retour du navigateur SORTAIT de l'application, un rechargement ramenait sur
+   Seasons quel que soit l'écran, et aucun écran ne pouvait s'envoyer par lien.
+   Chaque écran a désormais son adresse (#/analytics/video, #/crm/pipeline…).
+
+   Principe : l'adresse est LUE dans le DOM (panneau actif, onglet actif) après
+   chaque navigation, jamais tenue à part. Une seconde source de vérité finirait
+   par diverger de l'écran ; celle-ci ne le peut pas. On enveloppe donc les trois
+   fonctions qui changent d'écran (switchPanel, anShowView, crmShowTab) pour noter
+   l'adresse ensuite — elles-mêmes restent intactes.
+
+   Les écritures sont regroupées (setTimeout 0) : crmGoTo appelle switchPanel PUIS
+   crmShowTab, et ne doit laisser qu'une entrée dans l'historique, pas deux. */
+(function(){
+  var ROUTES = [
+    // chemin                    ouvrir                                               titre              section
+    ['/seasons',              function(){ switchPanel('seasons'); },            'Seasons',            'Seasons'],
+    ['/analytics/stats',      function(){ anGoTab('scrim'); },                  'Stats équipe',       'Analytics'],
+    ['/analytics/roster',     function(){ anGoTab('roster'); },                 'Roster',             'Analytics'],
+    ['/analytics/video',      function(){ anGoTab('video'); },                  'Analyse vidéo',      'Analytics'],
+    ['/analytics/timeline',   function(){ anGoTab('timeline'); },               'Timeline',           'Analytics'],
+    ['/analytics/builds',     function(){ switchPanel('builds'); },             'Builds des pros',    'Analytics'],
+    ['/scouting',             function(){ switchPanel('scout'); },              'Fiche joueur',       'Scouting'],
+    ['/scouting/graphiques',  function(){ switchPanel('graphs'); },             'Graphiques',         'Scouting'],
+    ['/scouting/carte',       function(){ switchPanel('map'); },                'Carte',              'Scouting'],
+    ['/scouting/historique',  function(){ switchPanel('history'); },            'Historique',         'Scouting'],
+    ['/crm/structures',       function(){ crmGoTo('structures'); },             'Structures',         'CRM Agent'],
+    ['/crm/pipeline',         function(){ crmGoTo('pipeline'); },               'Pipeline',           'CRM Agent'],
+    ['/crm/candidatures',     function(){ crmGoTo('candidatures'); },           'Candidatures',       'CRM Agent'],
+    ['/crm/matching',         function(){ crmGoTo('matching'); },               'Matching',           'CRM Agent'],
+    ['/crm/top30',            function(){ switchPanel('top50'); },              'Top 30',             'CRM Agent'],
+    ['/crm/comparer',         function(){ anGoTab('comparer'); },               'Comparer',           'CRM Agent'],
+    ['/outils/calculateur',   function(){ switchPanel('theorycraft'); },        'Calculateur',        'Outils'],
+    ['/outils/moteur',        function(){ switchPanel('moteur'); },             'Le moteur',          'Outils'],
+    // Le studio n'a de sens qu'avec sa vidéo, que le navigateur ne garde pas :
+    // au rechargement (ou en y revenant par l'historique sans vidéo) on retombe
+    // sur l'onglet Analyse vidéo, d'où elle se rouvre en un geste.
+    ['/analytics/video/studio', function(){ if (window.SL && SL.url) switchPanel('scrimlab'); else anGoTab('video'); }, 'Studio vidéo', 'Analytics']
+  ];
+  var PAR_CHEMIN = {};
+  ROUTES.forEach(function(r){ PAR_CHEMIN[r[0]] = r; });
+  // Adresses courtes : une section seule mène à son premier onglet.
+  var ALIAS = { '/': '/seasons', '/analytics': '/analytics/stats', '/crm': '/crm/structures',
+                '/scout': '/scouting', '/outils': '/outils/moteur' };
+
+  function vueAnalytics(){
+    var vues = ['scrim','roster','video','timeline'], slug = { scrim:'stats', roster:'roster', video:'video', timeline:'timeline' };
+    for (var i = 0; i < vues.length; i++) {
+      var el = document.getElementById('an-view-' + vues[i]);
+      if (el && el.style.display !== 'none') return slug[vues[i]];
+    }
+    return 'stats';
+  }
+  function ongletCrm(){
+    var t = ['structures','pipeline','candidatures','matching'];
+    for (var i = 0; i < t.length; i++) {
+      var b = document.getElementById('crm-tab-' + t[i]);
+      if (b && b.classList.contains('on')) return t[i];
+    }
+    return 'structures';
+  }
+  // L'adresse de ce qui est À L'ÉCRAN — la seule source de vérité.
+  function routeCourante(){
+    var p = document.querySelector('.panel.active');
+    if (!p) return null;
+    switch (p.id.replace('panel-', '')) {
+      case 'seasons':     return '/seasons';
+      case 'analytics':   return '/analytics/' + vueAnalytics();
+      case 'builds':      return '/analytics/builds';
+      case 'scrimlab':    return '/analytics/video/studio';
+      case 'scout':       return '/scouting';
+      case 'graphs':      return '/scouting/graphiques';
+      case 'map':         return '/scouting/carte';
+      case 'history':     return '/scouting/historique';
+      case 'crm':         return '/crm/' + ongletCrm();
+      case 'top50':       return '/crm/top30';
+      case 'analyse':     return '/crm/comparer';
+      case 'theorycraft': return '/outils/calculateur';
+      case 'moteur':      return '/outils/moteur';
+    }
+    return null;
+  }
+  function lireHash(){
+    var h = (location.hash || '').replace(/^#/, '');
+    if (!h || h.charAt(0) !== '/') return null;
+    h = h.replace(/\/+$/, '') || '/';
+    return ALIAS[h] || h;
+  }
+  function titrer(chemin){
+    var r = PAR_CHEMIN[chemin];
+    document.title = r ? (r[2] === r[3] ? r[2] : r[2] + ' · ' + r[3]) + ' — VisionScore' : 'VisionScore';
+  }
+
+  /* arme = false pendant le démarrage : les navigations d'initialisation (Seasons
+     par défaut, la fiche d'exemple du mode démo, un lien ?spes=) REMPLACENT
+     l'entrée d'historique au lieu d'en empiler une chacune — sinon le premier
+     Retour de l'utilisateur rejouerait le démarrage au lieu de quitter la page. */
+  var arme = false, enApplication = false, planifie = 0;
+  /* ⚠️ RIEN n'est écrit dans l'adresse avant que le démarrage l'ait LUE. La fiche
+     d'exemple du mode démo s'ouvre avant le routeur : sa navigation réécrivait
+     l'adresse en #/scouting, et un lien #/scouting/carte était effacé avant
+     d'avoir été lu — mesuré, un seul switchPanel(scout) à 329 ms, jamais celui
+     de la carte. */
+  var demarre = false;
+  function noter(){
+    clearTimeout(planifie);
+    planifie = setTimeout(function(){
+      var r = routeCourante(); if (!r) return;
+      titrer(r);
+      if (!demarre) return;
+      if (lireHash() === r) return;
+      var url = location.pathname + location.search + '#' + r;
+      try {
+        if (arme && !enApplication) history.pushState({ vs: r }, '', url);
+        else history.replaceState({ vs: r }, '', url);
+      } catch (e) {}
+    }, 0);
+  }
+  function appliquer(chemin){
+    var r = PAR_CHEMIN[chemin];
+    if (!r) return false;
+    if (routeCourante() === chemin) { titrer(chemin); return true; }
+    enApplication = true;
+    try { r[1](); } catch (e) { console.warn('[route] ' + chemin, e); }
+    // Une offre qui ne couvre pas l'écran laisse l'ancien à sa place (vsUpsell) :
+    // l'adresse est alors RÉÉCRITE sur ce qui est vraiment affiché.
+    setTimeout(function(){ noter(); setTimeout(function(){ enApplication = false; }, 0); }, 0);
+    return true;
+  }
+  window.vsAllerA = function(chemin){ return appliquer(ALIAS[chemin] || chemin); };
+  window.vsRoutes = ROUTES;
+
+  // On enveloppe les trois fonctions de navigation, sans les modifier.
+  ['switchPanel', 'anShowView', 'crmShowTab'].forEach(function(nom){
+    var f = window[nom];
+    if (typeof f !== 'function' || f._vsRoute) return;
+    var g = function(){ var res = f.apply(this, arguments); noter(); return res; };
+    g._vsRoute = true;
+    window[nom] = g;
+  });
+
+  function surRetour(){
+    var h = lireHash();
+    if (h && h !== routeCourante()) appliquer(h);
+  }
+  window.addEventListener('popstate', surRetour);
+  window.addEventListener('hashchange', surRetour);
+
+  function demarrer(){
+    var q = new URLSearchParams(location.search);
+    var h = lireHash();
+    demarre = true;
+    if (q.get('spes')) {
+      // Le lien du bouton « Partager ». loadFromURL nettoie l'URL et ouvre la fiche.
+      if (typeof loadFromURL === 'function') loadFromURL();
+    } else if (q.get('vue')) {
+      if (typeof ouvrirVueDepuisURL === 'function') ouvrirVueDepuisURL();
+      // ?vue= est l'ancienne forme : on la retire, l'adresse #/… prend le relais.
+      try { q.delete('vue'); var s = q.toString(); history.replaceState(null, '', location.pathname + (s ? '?' + s : '') + location.hash); } catch (e) {}
+    } else if (h && PAR_CHEMIN[h]) {
+      appliquer(h);
+    }
+    noter();
+    // Armé après le dernier geste du démarrage (fiche démo : +200 ms, lien ?spes= : +300 ms).
+    setTimeout(function(){ arme = true; noter(); }, 450);
+  }
+  // En mode démo, la fiche d'exemple s'ouvre à +200 ms : un #/… explicite doit passer APRÈS.
+  function lancer(){ setTimeout(demarrer, window.VS_DEMO ? 320 : 0); }
+  if (document.readyState === 'complete') lancer(); else window.addEventListener('load', lancer);
+
+  /* Barres d'onglets (Analytics, CRM, Scouting) : de vrais onglets pour les
+     technologies d'assistance, et les flèches ←/→ pour passer de l'un à l'autre
+     au clavier (motif « tablist » ARIA, activation manuelle : Entrée ou Espace).
+     aria-selected suit la classe .on, que chaque barre gère déjà elle-même. */
+  var obsOnglets = new MutationObserver(function(ms){
+    ms.forEach(function(m){ m.target.setAttribute('aria-selected', m.target.classList.contains('on') ? 'true' : 'false'); });
+  });
+  document.querySelectorAll('.an-tabbar, .sc-tabbar').forEach(function(bar){
+    bar.setAttribute('role', 'tablist');
+    bar.querySelectorAll('.an-tab, .sc-tab').forEach(function(b){
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', b.classList.contains('on') ? 'true' : 'false');
+      obsOnglets.observe(b, { attributes:true, attributeFilter:['class'] });
+    });
+  });
+  document.addEventListener('keydown', function(e){
+    if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].indexOf(e.key) < 0 || e.altKey || e.ctrlKey || e.metaKey) return;
+    var b = e.target && e.target.closest ? e.target.closest('[role="tab"]') : null;
+    if (!b) return;
+    var onglets = Array.prototype.filter.call(b.parentElement.querySelectorAll('[role="tab"]'), function(x){ return x.offsetParent; });
+    var i = onglets.indexOf(b), n = onglets.length; if (i < 0 || !n) return;
+    var j = e.key === 'Home' ? 0 : e.key === 'End' ? n - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + n) % n;
+    e.preventDefault();
+    onglets[j].focus();
+  });
+
+  // La nav principale annonce l'écran courant aux technologies d'assistance.
+  var obs = new MutationObserver(function(){
+    document.querySelectorAll('.hd-nav-item').forEach(function(b){
+      if (b.classList.contains('active')) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+    });
+  });
+  document.querySelectorAll('.hd-nav-item').forEach(function(b){ obs.observe(b, { attributes:true, attributeFilter:['class'] }); });
+})();
+
+/* ════ PALETTE DE COMMANDES (Ctrl K · ⌘K · « / ») ════
+   Tout le site en trois touches : un écran, un joueur de l'historique, une action.
+   Quatre rubriques et vingt écrans, c'est deux clics et une recherche visuelle à
+   chaque fois ; ici on tape « pipe », Entrée. C'est le geste de base de Linear,
+   Raycast ou Vercel — et celui d'un analyste qui passe sa soirée dans l'outil.
+
+   Accessibilité : motif « combobox + listbox » (ARIA 1.2). Le focus reste dans le
+   champ ; la sélection est portée par aria-activedescendant, jamais par le focus,
+   si bien qu'un lecteur d'écran annonce chaque ligne parcourue aux flèches. */
+(function(){
+  var MAC = /Mac|iPhone|iPad/.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '');
+  var CLE_RECENTS = 'vs_cmdk_recents';
+  var ICO = {
+    seasons:   '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+    analytics: '<path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/>',
+    scouting:  '<circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="22" y2="22"/>',
+    crm:       '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+    video:     '<rect x="2" y="5" width="15" height="14" rx="2"/><path d="m17 10 5-3v10l-5-3"/>',
+    joueur:    '<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+    theme:     '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+    mode:      '<path d="M4 7h11"/><path d="m12 4 3 3-3 3"/><path d="M20 17H9"/><path d="m12 14-3 3 3 3"/>',
+    pdf:       '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>',
+    lien:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    plus:      '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+    save:      '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+    clavier:   '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+    sortie:    '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>'
+  };
+  function svg(k){ return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICO[k] || ICO.plus) + '</svg>'; }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  function norm(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+  function pseudoCourant(){ var el = document.getElementById('d-pseudo'); return el ? (el.value || '').trim() : ''; }
+
+  // Panneau → module d'offre (cf. VS_PANEL_MINRANK) : un écran hors offre reste
+  // listé, marqué « Pro » — on ne cache pas ce qui existe, on dit à quel prix.
+  var OFFRE = { '/analytics/stats':'analytics', '/analytics/roster':'analytics', '/analytics/video':'analytics',
+                '/analytics/timeline':'analytics', '/analytics/builds':'analytics', '/crm/top30':'top50', '/scouting/carte':'map' };
+  var ICONE_SECTION = { 'Seasons':'seasons', 'Analytics':'analytics', 'Scouting':'scouting', 'CRM Agent':'crm' };
+  var RACCOURCI = { '/seasons':'G S', '/analytics/stats':'G A', '/scouting':'G J', '/crm/structures':'G C' };
+  var MOTS = {
+    '/seasons':'calendrier match saison avant-match draft preparation adversaire',
+    '/analytics/stats':'statistiques kpi equipe titulaires mesures coach synergies',
+    '/analytics/roster':'effectif titulaires remplacants joueurs equipe',
+    '/analytics/video':'vod scrim studio clips codage replay revue',
+    '/analytics/timeline':'chronologie evolution progression',
+    '/analytics/builds':'objets items runes pros build',
+    '/scouting':'fiche joueur spes importer scouter pseudo riot',
+    '/scouting/graphiques':'courbes graphes evolution',
+    '/scouting/carte':'map heatmap positions',
+    '/scouting/historique':'fiches sauvegardees archive',
+    '/crm/structures':'clubs equipes contacts organisations',
+    '/crm/pipeline':'prospects recrutement suivi kanban',
+    '/crm/candidatures':'google form postulants',
+    '/crm/matching':'correspondance profils besoins',
+    '/crm/top30':'classement meilleurs vivier',
+    '/crm/comparer':'comparaison cote a cote radar'
+  };
+
+  function commandesEcrans(){
+    var rang = (window.VS_PLAN_RANK && window.VS_PLAN_RANK[vsPlan()]) || 1;
+    return (window.vsRoutes || []).filter(function(r){
+      // Outils secondaires et studio : hors palette (le studio exige sa vidéo).
+      return r[3] !== 'Outils' && r[0] !== '/analytics/video/studio';
+    }).map(function(r){
+      var mod = OFFRE[r[0]], need = mod ? ((window.VS_PANEL_MINRANK || {})[mod] || 1) : 1;
+      return { id:'go:' + r[0], titre:r[2], sous: r[2] === r[3] ? '' : r[3], groupe:'Aller à', mots:(MOTS[r[0]] || '') + ' ' + norm(r[3]),
+               ico: r[0] === '/analytics/video' ? 'video' : (ICONE_SECTION[r[3]] || 'plus'),
+               kbd: RACCOURCI[r[0]] || '', verrou: need > rang,
+               faire: function(){ vsAllerA(r[0]); } };
+    });
+  }
+  function commandesActions(){
+    var sombre = document.body.classList.contains('theme-dark');
+    var compet = window.vsDataMode === 'compet';
+    var p = pseudoCourant();
+    var a = [
+      { id:'act:scouter', titre:'Scouter un nouveau joueur', sous:'Scouting', groupe:'Actions', ico:'plus', mots:'importer pseudo riot fiche nouveau',
+        faire: function(){ vsAllerA('/scouting'); setTimeout(function(){ var el = document.getElementById('d-pseudo'); if (el) { el.focus(); el.select(); } }, 120); } },
+      { id:'act:theme', titre: sombre ? 'Passer en thème clair' : 'Passer en thème sombre', sous:'Apparence', groupe:'Actions', ico:'theme', mots:'theme clair sombre dark light apparence',
+        faire: function(){ toggleTheme(); } },
+      { id:'act:mode', titre: compet ? 'Passer les données en Solo Q' : 'Passer les données en compétitif', sous:'Données', groupe:'Actions', ico:'mode', mots:'solo q compet competitif mode donnees',
+        faire: function(){ vsSetDataMode(compet ? 'soloq' : 'compet'); } }
+    ];
+    if (p) {
+      a.push({ id:'act:pdf', titre:'Exporter la fiche en PDF', sous:p, groupe:'Actions', ico:'pdf', mots:'pdf export telecharger imprimer', kbd: MAC ? '⌘ P' : 'Ctrl P',
+               faire: function(){ exportPDF(); } });
+      a.push({ id:'act:lien', titre:'Copier le lien de la fiche', sous:p, groupe:'Actions', ico:'lien', mots:'partager lien url envoyer coach',
+               faire: function(){ shareByURL(); } });
+      a.push({ id:'act:save', titre:'Sauvegarder la fiche', sous:p, groupe:'Actions', ico:'save', mots:'enregistrer historique', kbd: MAC ? '⌘ S' : 'Ctrl S',
+               faire: function(){ saveToHistory(); } });
+    }
+    a.push({ id:'act:aide', titre:'Raccourcis clavier', sous:'Aide', groupe:'Actions', ico:'clavier', mots:'aide clavier touches raccourcis', kbd:'?',
+             faire: function(){ ouvrir('aide'); }, garde:true });
+    a.push({ id:'act:quitter', titre:'Se déconnecter', sous:'Compte', groupe:'Actions', ico:'sortie', mots:'deconnexion logout quitter compte',
+             faire: function(){ vsLogout(); } });
+    return a;
+  }
+  var RANGS = ['Iron','Bronze','Silver','Gold','Platinum','Emerald','Diamond','Master','Grandmaster','Challenger'];
+  function commandesJoueurs(){
+    var h = []; try { h = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (e) {}
+    if (!Array.isArray(h)) return [];
+    return h.map(function(f, i){
+      if (!f || !f.pseudo) return null;
+      var sc = (typeof f.score === 'number') ? f.score.toFixed(1) : null;
+      return { id:'pl:' + f.pseudo + '#' + (f.tag || ''), titre:f.pseudo, tag:f.tag ? '#' + f.tag : '', groupe:'Joueurs', ico:'joueur',
+               sous:[f.role, RANGS[parseInt(f.rank, 10)]].filter(Boolean).join(' · '), note:sc,
+               mots:norm((f.role || '') + ' ' + (f.tag || '')),
+               faire: function(){ loadHistorySnapshot(i); if (typeof showDossier === 'function') showDossier(); } };
+    }).filter(Boolean);
+  }
+
+  /* Correspondance : le titre d'abord (début > début de mot > n'importe où >
+     lettres dans l'ordre), puis les mots-clés. Renvoie les positions à surligner. */
+  function evaluer(q, c){
+    var t = norm(c.titre), i = t.indexOf(q), pos = [], k;
+    if (i === 0) { for (k = 0; k < q.length; k++) pos.push(k); return { s: 1000 - t.length, pos: pos }; }
+    if (i > 0) {
+      for (k = 0; k < q.length; k++) pos.push(i + k);
+      return { s: (/[\s\-·'#]/.test(t.charAt(i - 1)) ? 800 : 600) - i, pos: pos };
+    }
+    var j = 0, trou = 0, dernier = -1;
+    for (k = 0; k < t.length && j < q.length; k++) {
+      if (t.charAt(k) === q.charAt(j)) { if (dernier >= 0) trou += k - dernier - 1; pos.push(k); dernier = k; j++; }
+    }
+    if (j === q.length && trou <= q.length * 3) {
+      // Lettres tombant en début de mot : « stq » doit donner Stats éQuipe avant
+      // hiSToriQue, même si la seconde a moins de trous.
+      var debuts = pos.filter(function(p){ return p === 0 || /[\s\-·'#]/.test(t.charAt(p - 1)); }).length;
+      return { s: 300 - trou + debuts * 25 + (pos[0] === 0 ? 40 : 0), pos: pos };
+    }
+    var mots = norm(c.mots || '') + ' ' + norm(c.sous || '');
+    if (mots.indexOf(q) >= 0) return { s: 200, pos: [] };
+    return null;
+  }
+  function surligner(txt, pos){
+    if (!pos || !pos.length) return esc(txt);
+    var set = {}; pos.forEach(function(p){ set[p] = 1; });
+    // norm() conserve la longueur pour le français courant (un accent = un caractère
+    // décomposé puis retiré) : les positions valent donc pour le texte affiché.
+    var out = '', ouvert = false;
+    for (var k = 0; k < txt.length; k++) {
+      var m = !!set[k];
+      if (m && !ouvert) { out += '<mark>'; ouvert = true; }
+      if (!m && ouvert) { out += '</mark>'; ouvert = false; }
+      out += esc(txt.charAt(k));
+    }
+    return out + (ouvert ? '</mark>' : '');
+  }
+
+  function recents(){ try { var r = JSON.parse(localStorage.getItem(CLE_RECENTS) || '[]'); return Array.isArray(r) ? r : []; } catch (e) { return []; } }
+  function memoriser(id){
+    try {
+      var r = recents().filter(function(x){ return x !== id; });
+      r.unshift(id); localStorage.setItem(CLE_RECENTS, JSON.stringify(r.slice(0, 5)));
+    } catch (e) {}
+  }
+
+  var racine = null, champ = null, liste = null, etat = { items: [], actif: 0, mode: 'cmd', retour: null };
+
+  function construire(){
+    if (racine) return;
+    racine = document.createElement('div');
+    racine.className = 'vsd vs-cmdk';
+    racine.id = 'vs-cmdk';
+    racine.hidden = true;
+    racine.innerHTML =
+      '<div class="vs-cmdk-voile" data-fermer="1"></div>' +
+      '<div class="vs-cmdk-boite" role="dialog" aria-modal="true" aria-label="Palette de commandes">' +
+        '<div class="vs-cmdk-tete">' + svg('scouting') +
+          '<input id="vs-cmdk-champ" class="vs-cmdk-champ" type="text" autocomplete="off" spellcheck="false" ' +
+            'role="combobox" aria-expanded="true" aria-controls="vs-cmdk-liste" aria-autocomplete="list" ' +
+            'placeholder="Aller à un écran, ouvrir un joueur, lancer une action…">' +
+          '<kbd class="hd-kbd">Échap</kbd>' +
+        '</div>' +
+        '<div class="vs-cmdk-liste" id="vs-cmdk-liste" role="listbox" aria-label="Résultats"></div>' +
+        '<div class="vs-cmdk-pied">' +
+          '<span><kbd class="hd-kbd">↑</kbd><kbd class="hd-kbd">↓</kbd> parcourir</span>' +
+          '<span><kbd class="hd-kbd">Entrée</kbd> ouvrir</span>' +
+          '<span class="vs-cmdk-pied-d"><kbd class="hd-kbd">?</kbd> raccourcis</span>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(racine);
+    champ = racine.querySelector('.vs-cmdk-champ');
+    liste = racine.querySelector('.vs-cmdk-liste');
+    racine.addEventListener('mousedown', function(e){ if (e.target.getAttribute('data-fermer')) { e.preventDefault(); fermer(); } });
+    champ.addEventListener('input', function(){ etat.mode = 'cmd'; etat.actif = 0; rendre(); });
+    champ.addEventListener('keydown', clavier);
+    liste.addEventListener('mousemove', function(e){
+      var o = e.target.closest('[role="option"]'); if (!o) return;
+      var i = +o.getAttribute('data-i'); if (i !== etat.actif) { etat.actif = i; marquer(false); }
+    });
+    liste.addEventListener('click', function(e){
+      var o = e.target.closest('[role="option"]'); if (o) executer(+o.getAttribute('data-i'));
+    });
+  }
+
+  function rendre(){
+    if (etat.mode === 'aide') return rendreAide();
+    var q = norm(champ.value.trim());
+    var toutes = commandesEcrans().concat(commandesActions(), commandesJoueurs());
+    var html = '', items = [];
+    function bloc(titre, cs, avecPos){
+      if (!cs.length) return;
+      html += '<div class="vs-cmdk-groupe" role="presentation">' + esc(titre) + '</div>';
+      cs.forEach(function(c){
+        var i = items.length; items.push(c);
+        html += '<div class="vs-cmdk-item" role="option" id="vs-cmdk-o' + i + '" data-i="' + i + '" aria-selected="false">' +
+          '<span class="vs-cmdk-ico">' + svg(c.ico) + '</span>' +
+          '<span class="vs-cmdk-txt"><span class="vs-cmdk-titre">' + surligner(c.titre, avecPos ? c._pos : null) +
+            (c.tag ? ' <span class="vs-cmdk-tag">' + esc(c.tag) + '</span>' : '') + '</span>' +
+            (c.sous ? '<span class="vs-cmdk-sous">' + esc(c.sous) + '</span>' : '') + '</span>' +
+          (c.verrou ? '<span class="vs-cmdk-pro">Pro</span>' : '') +
+          (c.note ? '<span class="vs-cmdk-note">' + esc(c.note) + '</span>' : '') +
+          (c.kbd ? '<span class="vs-cmdk-kbds">' + c.kbd.split(' ').map(function(k){ return '<kbd class="hd-kbd">' + esc(k) + '</kbd>'; }).join('') + '</span>' : '') +
+          '</div>';
+      });
+    }
+    if (!q) {
+      var parId = {}; toutes.forEach(function(c){ parId[c.id] = c; });
+      bloc('Récents', recents().map(function(id){ return parId[id]; }).filter(Boolean), false);
+      bloc('Aller à', toutes.filter(function(c){ return c.groupe === 'Aller à'; }), false);
+      bloc('Actions', toutes.filter(function(c){ return c.groupe === 'Actions'; }), false);
+      bloc('Joueurs', toutes.filter(function(c){ return c.groupe === 'Joueurs'; }).slice(0, 5), false);
+    } else {
+      var res = [];
+      toutes.forEach(function(c){ var e = evaluer(q, c); if (e) { c._s = e.s; c._pos = e.pos; res.push(c); } });
+      res.sort(function(a, b){ return b._s - a._s; });
+      // Un seul bloc trié par pertinence : regrouper par type ferait passer un
+      // écran moyennement pertinent devant le joueur exact qu'on a tapé.
+      bloc('Résultats', res.slice(0, 12), true);
+      if (!res.length) html = '<div class="vs-cmdk-vide">Rien ne correspond à « ' + esc(champ.value.trim()) + ' ».<br><span>Essayez un écran (« pipeline »), un joueur, ou une action (« pdf »).</span></div>';
+    }
+    liste.innerHTML = html;
+    etat.items = items;
+    if (etat.actif >= items.length) etat.actif = 0;
+    marquer(true);
+  }
+  function rendreAide(){
+    var M = MAC ? '⌘' : 'Ctrl';
+    var lignes = [
+      [[M, 'K'], 'Ouvrir la palette de commandes'], [['/'], 'Ouvrir la palette (hors champ de saisie)'],
+      [['G', 'S'], 'Aller à Seasons'], [['G', 'A'], 'Aller à Analytics'],
+      [['G', 'J'], 'Aller au scouting (fiche joueur)'], [['G', 'C'], 'Aller au CRM Agent'],
+      [[M, 'S'], 'Sauvegarder la fiche'], [[M, 'P'], 'Exporter la fiche en PDF'],
+      [['?'], 'Afficher cette aide'], [['Échap'], 'Fermer']
+    ];
+    liste.innerHTML = '<div class="vs-cmdk-groupe" role="presentation">Raccourcis clavier</div>' +
+      lignes.map(function(l){
+        return '<div class="vs-cmdk-aide"><span>' + esc(l[1]) + '</span><span class="vs-cmdk-kbds">' +
+          l[0].map(function(k){ return '<kbd class="hd-kbd">' + esc(k) + '</kbd>'; }).join('') + '</span></div>';
+      }).join('') +
+      '<div class="vs-cmdk-vide" style="padding-top:10px"><span>Tapez pour revenir à la recherche.</span></div>';
+    etat.items = [];
+    champ.removeAttribute('aria-activedescendant');
+  }
+  function marquer(defiler){
+    var os = liste.querySelectorAll('[role="option"]');
+    os.forEach(function(o, i){ o.setAttribute('aria-selected', i === etat.actif ? 'true' : 'false'); });
+    var o = os[etat.actif];
+    if (o) { champ.setAttribute('aria-activedescendant', o.id); if (defiler) o.scrollIntoView({ block:'nearest' }); }
+    else champ.removeAttribute('aria-activedescendant');
+  }
+  function clavier(e){
+    var n = etat.items.length;
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (n) { etat.actif = (etat.actif + 1) % n; marquer(true); } }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); if (n) { etat.actif = (etat.actif - 1 + n) % n; marquer(true); } }
+    else if (e.key === 'Home' && n) { e.preventDefault(); etat.actif = 0; marquer(true); }
+    else if (e.key === 'End' && n) { e.preventDefault(); etat.actif = n - 1; marquer(true); }
+    else if (e.key === 'Enter') { e.preventDefault(); executer(etat.actif); }
+    else if (e.key === 'Escape') { e.preventDefault(); if (etat.mode === 'aide' || champ.value) { champ.value = ''; etat.mode = 'cmd'; rendre(); } else fermer(); }
+    else if (e.key === 'Tab') { e.preventDefault(); }   // le focus reste dans la boîte (dialogue modal)
+    else if (e.key === '?' && !champ.value) { e.preventDefault(); etat.mode = 'aide'; rendre(); }
+  }
+  function executer(i){
+    var c = etat.items[i]; if (!c) return;
+    memoriser(c.id);
+    if (c.garde) { c.faire(); return; }
+    fermer(true);
+    // Après la fermeture : l'action peut elle-même déplacer le focus (champ pseudo).
+    setTimeout(function(){ try { c.faire(); } catch (e) { console.warn('[palette]', e); } }, 0);
+  }
+  function ouvrir(mode){
+    construire();
+    etat.mode = mode === 'aide' ? 'aide' : 'cmd';
+    if (racine.hidden) {
+      etat.retour = document.activeElement;
+      champ.value = '';
+      etat.actif = 0;
+      racine.hidden = false;
+      document.getElementById('hd-cmdk') && document.getElementById('hd-cmdk').setAttribute('aria-expanded', 'true');
+      requestAnimationFrame(function(){ racine.classList.add('on'); });
+      setTimeout(function(){ racine.classList.add('on'); }, 30);   // rAF peut dormir (onglet masqué)
+    }
+    rendre();
+    champ.focus();
+  }
+  function fermer(sansRetour){
+    if (!racine || racine.hidden) return;
+    racine.classList.remove('on');
+    racine.hidden = true;
+    document.getElementById('hd-cmdk') && document.getElementById('hd-cmdk').setAttribute('aria-expanded', 'false');
+    // Le focus revient là d'où l'on venait — sauf si une commande part ailleurs.
+    if (!sansRetour && etat.retour && document.contains(etat.retour)) { try { etat.retour.focus(); } catch (e) {} }
+  }
+  window.vsCmdkOuvrir = function(){ ouvrir(); };
+  window.vsCmdkFermer = function(){ fermer(); };
+
+  function editable(el){
+    if (!el) return false;
+    var t = el.tagName;
+    return el.isContentEditable || t === 'INPUT' || t === 'TEXTAREA' || t === 'SELECT';
+  }
+  /* Enchaînements « G puis lettre » : une seconde pour la seconde touche. Jamais
+     dans un champ de saisie, jamais avec un modificateur — taper « gs » dans le
+     pseudo d'un joueur ne doit évidemment rien déclencher. */
+  var gEnAttente = 0;
+  var ALLER = { s:'/seasons', a:'/analytics', j:'/scouting', c:'/crm' };
+  document.addEventListener('keydown', function(e){
+    var ouverte = racine && !racine.hidden;
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 'k' || e.key === 'K')) {
+      e.preventDefault();
+      if (ouverte) fermer(); else ouvrir();
+      return;
+    }
+    if (ouverte || e.ctrlKey || e.metaKey || e.altKey || editable(e.target)) return;
+    // Une modale de l'application est ouverte : le clavier lui appartient.
+    if (document.querySelector('#crm-modal-overlay, .vs-modal.open, .modal-overlay.open')) return;
+    if (e.key === '/') { e.preventDefault(); ouvrir(); return; }
+    if (e.key === '?') { e.preventDefault(); ouvrir('aide'); return; }
+    // Le studio vidéo possède déjà les lettres seules (S = favori, M = muet…) :
+    // un « G puis S » y marquerait un clip en même temps qu'il changerait d'écran.
+    var studio = document.getElementById('panel-scrimlab');
+    if (studio && studio.classList.contains('active')) return;
+    if (gEnAttente && ALLER[e.key.toLowerCase()]) {
+      e.preventDefault(); clearTimeout(gEnAttente); gEnAttente = 0;
+      vsAllerA(ALLER[e.key.toLowerCase()]);
+      return;
+    }
+    if (e.key === 'g' || e.key === 'G') { clearTimeout(gEnAttente); gEnAttente = setTimeout(function(){ gEnAttente = 0; }, 1000); }
+  });
+
+  // Libellé du raccourci selon la plateforme.
+  var kb = document.getElementById('hd-cmdk-kbd');
+  if (kb && MAC) kb.textContent = '⌘K';
+  var hb = document.getElementById('hd-cmdk');
+  if (hb) hb.setAttribute('aria-keyshortcuts', MAC ? 'Meta+K' : 'Control+K');
 })();
 </script>
 </body>

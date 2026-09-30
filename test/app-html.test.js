@@ -1455,3 +1455,134 @@ test('aucun chemin de poste personnel n\'est écrit dans le fichier servi', () =
   assert.doesNotMatch(app, /C:\\+Users\\+[A-Za-z0-9_.-]+/,
     'un chemin de dossier personnel est écrit dans app.html');
 });
+
+/* ── 24. Navigation, lien partagé, marque ─────────────────────────────────────
+   Trois défauts muets de plus : aucune adresse par écran (le bouton Retour
+   quittait l'application), un bouton « Partager » dont le lien n'était lu par
+   RIEN depuis le premier dépôt, et des emojis en couleur dans l'UI produit. */
+
+function extraireFonction(nom) {
+  const debut = app.indexOf('function ' + nom + '(');
+  assert.ok(debut >= 0, nom + ' introuvable');
+  // Accolades équilibrées à partir de la première ouvrante.
+  let i = app.indexOf('{', debut), prof = 0;
+  for (; i < app.length; i++) {
+    if (app[i] === '{') prof++;
+    else if (app[i] === '}' && --prof === 0) break;
+  }
+  return app.slice(debut, i + 1);
+}
+
+test('les appels de démarrage ne sont plus enfermés dans loadFromURL', () => {
+  const decl = extraireFonction('loadFromURL');
+  const corps = decl.slice(decl.indexOf('{'));   // sans la déclaration elle-même
+  assert.doesNotMatch(corps.replace(/\/\*[\s\S]*?\*\//g, ''), /loadFromURL\(\)|ouvrirVueDepuisURL\(\)/,
+    'une fonction qui s\'appelle elle-même au lieu d\'être appelée au démarrage : le lien ne s\'ouvre jamais');
+  const nav = app.slice(app.indexOf('NAVIGATION — routes d\'URL'));
+  assert.match(nav, /loadFromURL\(\)/, 'le routeur doit lancer loadFromURL au démarrage');
+  assert.match(nav, /ouvrirVueDepuisURL\(\)/, 'le routeur doit lancer ouvrirVueDepuisURL au démarrage');
+});
+
+test('le lien partagé est encodé, et relu même au format d\'avant', () => {
+  assert.match(extraireFonction('shareByURL'), /'\?spes=' \+ encodeURIComponent\(b64\)/,
+    'le base64 contient des « + » qu\'une URL lit comme des espaces');
+  assert.match(extraireFonction('loadFromURL'), /\.replace\(\/ \/g, '\+'\)/,
+    'les liens déjà envoyés portent des « + » bruts');
+  assert.match(extraireFonction('loadFromURL'), /vsPartageAssaini\(JSON\.parse\(json\)\)/,
+    'le contenu du lien doit passer par le filtre avant tout usage');
+});
+
+test('le filtre du lien partagé ne laisse passer que des données attendues', () => {
+  const vm = require('node:vm');
+  const ctx = { ROLE_WEIGHTS: { Top: {}, Jgl: {}, Mid: {}, ADC: {}, Sup: {} } };
+  vm.createContext(ctx);
+  vm.runInContext(extraireFonction('vsPartageAssaini') + '; this.f = vsPartageAssaini;', ctx);
+  const f = ctx.f;
+  const r = f({
+    pseudo: '<img src=x onerror="alert(1)">Caliste', tag: '"><svg onload=x>', role: 'Mid<script>',
+    rankIdx: 12, rankPrev: '3', age: '17',
+    rawData: { kda: 4.7, cs: '6.4', piege: '<b>', 'a b': 1, constructor: 3 },
+    champs: [{ name: 'Lee Sin', games: 5, wr: 60, kda: 4 }, { name: "Kai'Sa<img>", games: 2 }],
+    adv: { visionScore: 38, html: '<i>' }
+  });
+  assert.doesNotMatch(r.pseudo + r.tag, /[<>"'&]/, 'aucun caractère HTML ne doit survivre');
+  assert.strictEqual(r.role, null, 'un rôle inconnu est rejeté, pas nettoyé');
+  assert.strictEqual(r.rankIdx, -1, 'un rang hors bornes est rejeté');
+  assert.strictEqual(r.rankPrev, 3);
+  assert.deepStrictEqual(Object.keys(r.rawData).sort(), ['constructor', 'cs', 'kda'].sort());
+  assert.strictEqual(r.rawData.cs, 6.4, 'les nombres en texte sont convertis');
+  assert.deepStrictEqual(r.champs.map(c => c.name), ['Lee Sin'], 'un nom de champion hors liste blanche est jeté');
+  assert.deepStrictEqual(Object.keys(r.adv), ['visionScore']);
+  assert.strictEqual(f({ pseudo: '<>' }), null, 'un pseudo vide après filtrage invalide le lien');
+  assert.strictEqual(f([1, 2]), null);
+  assert.strictEqual(f(null), null);
+});
+
+test('chaque écran a une adresse, et la navigation l\'écrit', () => {
+  const nav = app.slice(app.indexOf('NAVIGATION — routes d\'URL'));
+  for (const route of ['/seasons', '/analytics/stats', '/analytics/video', '/scouting', '/crm/pipeline', '/crm/comparer', '/crm/top30']) {
+    assert.ok(nav.includes("'" + route + "'"), 'route manquante : ' + route);
+  }
+  assert.match(nav, /history\.pushState/, 'une navigation doit créer une entrée d\'historique');
+  assert.match(nav, /addEventListener\('popstate'/, 'le bouton Retour doit être écouté');
+  for (const f of ['switchPanel', 'anShowView', 'crmShowTab']) {
+    assert.ok(nav.includes("'" + f + "'"), f + ' doit noter l\'adresse après navigation');
+  }
+  // Le routeur enveloppe des fonctions déjà définies : il doit venir après tous les autres scripts.
+  assert.ok(app.indexOf('NAVIGATION — routes d\'URL') > app.indexOf('FUSION SCOUTING + DOSSIER'),
+    'le script de navigation doit venir après tous les autres');
+});
+
+test('la palette de commandes suit le motif combobox ARIA', () => {
+  const nav = app.slice(app.indexOf('PALETTE DE COMMANDES'));
+  assert.match(nav, /role="combobox"/);
+  assert.match(nav, /aria-activedescendant/);
+  assert.match(nav, /role="listbox"/);
+  assert.match(nav, /role="option"/);
+  assert.match(nav, /aria-modal="true"/);
+  assert.match(app, /id="hd-cmdk"[^>]*onclick="vsCmdkOuvrir\(\)"/, 'la palette doit être atteignable à la souris');
+});
+
+test('les barres d\'onglets sœurs portent le même jeu d\'onglets', () => {
+  const barre = id => { const i = app.indexOf(id); return app.slice(i, app.indexOf('</div>', i)); };
+  const builds = app.slice(app.indexOf('<div id="panel-builds"'), app.indexOf('<div id="panel-builds"') + 1200);
+  assert.match(builds, /anGoTab\('video'\)/, 'la barre de Builds des pros perdait l\'onglet Analyse vidéo');
+  for (const id of ['id="top50-tabs"', 'id="analyse-tabs"']) {
+    const b = barre(id);
+    for (const o of ['Structures', 'Pipeline', 'Candidatures', 'Matching', 'Top 30', 'Comparer']) {
+      assert.ok(b.includes('>' + o + '<'), id + ' : onglet manquant ' + o);
+    }
+  }
+});
+
+test('aucun emoji en couleur dans l\'interface produit', () => {
+  /* Règle de marque : icônes SVG au trait, pas d'emojis. Les commentaires sont
+     exclus (ils peuvent en citer), et le marqueur de donnée « ✅ » de ageStatus
+     aussi : il est PERSISTÉ dans le Top 30 des structures, le changer casserait
+     leurs données — et il n'est jamais affiché (l'âge l'est à sa place). */
+  const code = codeSeul.split(/\r?\n/).filter(l => !/^\s*(\/\/|\*)/.test(l) && !/ageStatus/.test(l)).join('\n')
+    .replace(/dbgLog\([^\n]*/g, '');
+  const trouves = code.match(/\p{Extended_Pictographic}️|[\u{1F300}-\u{1FAFF}]|[✅❌✨⭐➕]/gu) || [];
+  assert.deepStrictEqual(trouves, [], 'emoji dans l\'UI : ' + trouves.join(' '));
+});
+
+test('le routeur ne réécrit pas l\'adresse avant de l\'avoir lue', () => {
+  /* La fiche d'exemple du mode démo s'ouvrait AVANT le routeur et réécrivait
+     l'adresse en #/scouting : un lien #/scouting/carte était effacé sans avoir
+     été lu. Mesuré : un seul switchPanel(scout), jamais celui de la carte. */
+  const nav = app.slice(app.indexOf('NAVIGATION — routes d\'URL'), app.indexOf('PALETTE DE COMMANDES'));
+  const noter = nav.slice(nav.indexOf('function noter('), nav.indexOf('function appliquer('));
+  assert.match(noter, /if \(!demarre\) return;/, 'noter() doit se taire tant que le démarrage n\'a pas lu l\'adresse');
+  const dem = nav.slice(nav.indexOf('function demarrer('));
+  assert.ok(dem.indexOf('demarre = true') < dem.indexOf('noter()'), 'demarre doit passer à vrai AVANT la première écriture');
+});
+
+test('sur téléphone, .main peut rétrécir sous la largeur de son contenu', () => {
+  /* Mesuré à 375 px : la page s'élargissait à 530 px, parce qu'un élément flex a
+     pour largeur minimale celle de son contenu. */
+  assert.match(app, /\.shell > \.main\{ min-width:0; \}/);
+  assert.match(app, /\.vsd \.grid > \*, \.vsd-dims-grid > \*\{ min-width:0; \}/);
+  // La bannière démo n'est plus stylée en inline (impossible à adapter au téléphone).
+  assert.doesNotMatch(app, /bar\.style\.cssText='position:fixed;left:0;right:0;bottom:0/);
+  assert.match(app, /#vs-demo-bar\{ position:fixed;/);
+});
