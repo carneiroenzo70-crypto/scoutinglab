@@ -12527,6 +12527,31 @@ function scoreAbsolu(val, bad, avg, good, elite) {
   return Math.max(0, 3.0 * (v / Math.max(bad, 0.1)));
 }
 
+/* ── Échelle des barèmes ÉLITE ─────────────────────────────────────────────
+   Les seuils livrés (ELITE_SEUILS_LIVRES) sont les centiles p10/p35/p70/p95 du
+   HAUT du Challenger EUW + Corée. ⚠️ Les passer à scoreAbsolu, qui lit ses quatre
+   bornes comme « mauvais / moyen / bon / élite », plaçait le 10e centile de cette
+   élite à 3/10 : tout joueur sous le plancher Challenger tombait entre 0 et 3,
+   sans nuance. Mesuré le 01/10/2026 : un jungler à 6,4 CS/min et 560 dégâts/min —
+   haut de tableau européen — sortait à 3,0 et 2,8, et sa dimension Stats à 4,7.
+   Ici le plancher Challenger vaut déjà un très bon 7 :
+     p95 → 10 · p70 → 9 · p35 → 8 · p10 → 7,
+   et sous p10 la note descend avec l'écart RELATIF au plancher : −1,6 point par
+   tranche de 10 % (75 % du plancher → 3/10, 56 % → 0). Quand le plancher est nul
+   ou négatif (avantage de vision…), l'écart se mesure sur l'étendue du barème. */
+const ELITE_ECHELLE = { p10: 7, p35: 8, p70: 9, p95: 10, pente: 16 };
+function scoreElite(val, s) {
+  if (val === null || val === undefined || isNaN(val) || !Array.isArray(s)) return null;
+  const v = parseFloat(val), p10 = s[0], p35 = s[1], p70 = s[2], p95 = s[3], E = ELITE_ECHELLE;
+  const entre = (a, b, na, nb) => (b > a ? na + (nb - na) * (v - a) / (b - a) : nb);
+  if (v >= p95) return 10;
+  if (v >= p70) return entre(p70, p95, E.p70, E.p95);
+  if (v >= p35) return entre(p35, p70, E.p35, E.p70);
+  if (v >= p10) return entre(p10, p35, E.p10, E.p35);
+  const base = p10 > 0 ? p10 : Math.max(Math.abs(p10), p95 - p10, 1e-9);
+  return Math.max(0, E.p10 - E.pente * (p10 - v) / base);
+}
+
 // -- Score rang absolu D4 -- semi-pro --------------------------------
 // Iron=1 -> Challenger=10
 const RANG_SCORES = {
@@ -12574,7 +12599,7 @@ function scoreStatCalibrated(id, val) {
      switch pour couvrir toutes les métriques d'un coup — un point d'entrée unique,
      donc aucun risque que l'affichage et le moteur divergent. */
   const sElite = eliteSeuilPour(id, role);
-  if (sElite) return scoreAbsolu(v, sElite[0], sElite[1], sElite[2], sElite[3]);
+  if (sElite) return scoreElite(v, sElite);
 
   switch(id) {
     case 'cs_min': {
@@ -19058,7 +19083,7 @@ function advScore(key, val, role) {
   const se = eliteSeuilPour(key, r) || (def.id ? eliteSeuilPour(def.id, r) : null);
   if (se) {
     if (typeof val !== 'number' || !isFinite(val)) return null;
-    return scoreAbsolu(val, se[0], se[1], se[2], se[3]);
+    return scoreElite(val, se);
   }
   if (def.id) {
     const sc = scoreStatCalibrated(def.id, val);

@@ -1760,3 +1760,32 @@ test('le VisionScore s\'affiche sur 100 partout, et sa couleur ne dépend pas de
   assert.match(rapport, /put\(p1, '\/100'/, 'le « /10 » du modèle est remplacé');
   assert.doesNotMatch(rapport, /gScore\.toFixed\(2\)\+'\/10'/);
 });
+
+test('barèmes élite : le plancher Challenger vaut 7/10, et la note garde de la nuance en dessous', () => {
+  /* Mesuré le 01/10/2026 : lus comme « mauvais/moyen/bon/élite », les centiles du haut
+     du Challenger plaçaient p10 à 3/10 — un jungler à 6,4 CS/min (haut de tableau
+     européen) sortait à 3,0. On exécute la vraie fonction. */
+  const echelle = codeSeul.match(/const ELITE_ECHELLE = \{[^}]*\};/)[0];
+  const scoreElite = new Function(echelle + '\n' + extraireFonction('scoreElite') + '\nreturn scoreElite;')();
+  const jglCs = [6.49, 6.86, 7.23, 7.71];
+  assert.strictEqual(scoreElite(6.49, jglCs), 7);
+  assert.strictEqual(scoreElite(6.86, jglCs), 8);
+  assert.strictEqual(scoreElite(7.23, jglCs), 9);
+  assert.strictEqual(scoreElite(9, jglCs), 10);
+  assert.ok(scoreElite(6.4, jglCs) > 6.5, 'le cas mesuré ne doit plus tomber à 3');
+  assert.ok(Math.abs(scoreElite(6.49 * 0.75, jglCs) - 3) < 1e-9, '75 % du plancher → 3/10');
+  assert.strictEqual(scoreElite(1, jglCs), 0);
+  // Croissante, sans saut, y compris avec un plancher négatif (avantage de vision).
+  for (const s of [jglCs, [-0.08, 0, 0.12, 0.33], [-49.34, -46.35, -42.38, -34.67]]) {
+    let avant = -1;
+    for (let i = 0; i <= 400; i++) {
+      const v = s[0] - (s[3] - s[0]) * 2 + (s[3] - s[0]) * 3.5 * i / 400;
+      const n = scoreElite(v, s);
+      assert.ok(Number.isFinite(n) && n >= avant - 1e-9 && n >= 0 && n <= 10, 'non monotone ou hors bornes en ' + v);
+      avant = n;
+    }
+  }
+  // Les deux points d'entrée des barèmes élite passent par cette échelle.
+  assert.match(extraireFonction('scoreStatCalibrated'), /if \(sElite\) return scoreElite\(v, sElite\);/);
+  assert.match(extraireFonction('advScore'), /return scoreElite\(val, se\);/);
+});

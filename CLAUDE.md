@@ -289,6 +289,13 @@ Menu : **Seasons · Analytics · Players · Scouting**.
 Passer par `vsNote100()` (accepte les deux échelles : ≤ 10 = sur 10). Les 5 dimensions
 du radar restent sur 10. `anScoreColor` accepte aussi les deux échelles.
 
+**Barèmes élite → `scoreElite()` (01/10/2026)** : les seuils `ELITE_SEUILS_LIVRES` sont les
+centiles p10/p35/p70/p95 du HAUT du Challenger. Ne jamais les repasser à `scoreAbsolu`
+(qui lit « mauvais/moyen/bon/élite » : p10 → 3/10, tout le vivier Diamant–GM écrasé entre
+0 et 3). `ELITE_ECHELLE` : p10 → 7, p35 → 8, p70 → 9, p95 → 10, puis −1,6 pt par 10 %
+sous le plancher. Le Top 30 (`calcProspectScore`, `ABS_THR`) a encore son propre barème
+historique : ses notes diffèrent de la fiche pour un même joueur (chantier ouvert).
+
 ## Conventions
 
 - Zéro dépendance npm côté API (crypto natif + `fetch`). Ne pas introduire de framework.
