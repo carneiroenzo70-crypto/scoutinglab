@@ -296,6 +296,17 @@ centiles p10/p35/p70/p95 du HAUT du Challenger. Ne jamais les repasser à `score
 sous le plancher. Le Top 30 (`calcProspectScore`, `ABS_THR`) a encore son propre barème
 historique : ses notes diffèrent de la fiche pour un même joueur (chantier ouvert).
 
+⚠️ **Les seuils livrés sont à RE-MESURER** (constat du 01/10/2026). L'ancien calibrage notait
+tous les joueurs croisés dans 196 parties (888/898 vus une fois, tassés vers la moyenne) :
+le « 95e centile » ADC valait 8,34 CS/min, alors que Caliste (KC, 34e EUW) tourne à 9,7 sur
+685 parties. `eliteBuild` est corrigé (seuls les joueurs du classement, ≥ `ELITE_MIN_PARTIES`
+parties à leur poste, sans lissage) ; il faut relancer le calibrage en prod
+(`/app?calibrage=1` → `vsCalibrer()`, 100 joueurs/région, 15 parties, ~1 h) puis remplacer
+`ELITE_SEUILS_LIVRES` par l'export (« Copier les seuils »).
+
+**Fiche démo = joueur RÉEL** (KC NEXT ADKING#EUW / Caliste) : uniquement des chiffres sourcés
+(Leaguepedia, u.gg, Mobalytics), datés dans le code. Ne jamais y ajouter une valeur inventée.
+
 ## Conventions
 
 - Zéro dépendance npm côté API (crypto natif + `fetch`). Ne pas introduire de framework.

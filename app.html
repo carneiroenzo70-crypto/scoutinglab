@@ -5178,7 +5178,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
               <div class="h3" style="font-size:16px">Analyser un joueur en trois gestes</div>
               <div class="muted" style="font-size:13px;line-height:1.6;margin:3px 0 12px">La fiche SPES, le VisionScore sur 100 et le rapport PDF sortent des parties classées du joueur.</div>
               <ol class="ob-etapes">
-                <li><span class="ob-n">1</span>Son Riot ID <span class="faint">(ex. Caliste #EUW9)</span></li>
+                <li><span class="ob-n">1</span>Son Riot ID <span class="faint">(ex. KC NEXT ADKING #EUW)</span></li>
                 <li><span class="ob-n">2</span>Son rôle</li>
                 <li><span class="ob-n">3</span>Importer ses parties</li>
               </ol>
@@ -13604,32 +13604,37 @@ function updateVerdict() {
 /* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
 window.vsDemoLoadDossier = function(){
   var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-  setV('d-pseudo','Caliste'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','19');
+  /* VRAIES données publiques, relevées le 01/10/2026 — à ne pas « arrondir à la main ».
+     Joueur : Caliste (Caliste Henry-Hennebert, né le 28/08/2006, ADC Karmine Corp),
+     compte Solo Q KC NEXT ADKING#EUW — Leaguepedia (lol.fandom.com/wiki/Caliste).
+     Rang : Challenger 3 204 LP, 34e EUW, 515 V / 325 D ; Challenger la saison
+     passée — u.gg. Stats au poste bot (685 parties) et par champion — Mobalytics.
+     Dégâts/min = moyenne pondérée de ses 10 champions les plus joués (450 parties),
+     participation aux kills idem. Ce qu'aucune source ne donne n'est PAS rempli. */
+  setV('d-pseudo','KC NEXT ADKING'); setV('d-tag','EUW'); setV('d-server','euw1'); setV('d-age','20');
   setV('d-rank','9');       // Challenger
-  setV('d-rank-prev','8');  // Grandmaster il y a 1 an → progression +1
-  window.vsRankDetail = { division:'I', lp:842 }; // rang complet démo (Challenger I · 842 LP)
+  setV('d-rank-prev','9');  // Challenger la saison passée (u.gg : S15 Challenger)
+  window.vsRankDetail = { division:'I', lp:3204 }; // Challenger · 3 204 LP
   window.vsProfileIconId = 5427; // icône de profil LoL pour la photo du dossier démo
-  /* ADC, comme l'annonce le site vitrine. La démo le chargeait en JUNGLE avec des
-     stats de jungler (6,4 CS/min, 560 dégâts/min) : pour un ADC, c'est sous 90 %
-     du haut du Challenger. Valeurs prises dans NOTRE relevé élite ADC
-     (ELITE_SEUILS_LIVRES.ADC, ~70e centile) : un très haut niveau crédible, pas un
-     record. CS/min p70 = 7,94 · dégâts/min p70 = 869 · part de dégâts p70 = 24 %. */
   if (typeof setRole === 'function') setRole('ADC');
+  Object.keys(rawData).forEach(function (k) { delete rawData[k]; });   // rien d'inventé ne traîne
   Object.assign(rawData, {
-    winrate:62.4, kda:4.3, cs_min:8.0, vision:24, vision_min:0.98,
-    dmg_share:24.5, kill_part:51, dpm:880, chal_cs10:69,
-    chal_first_blood:24, chal_solo_kills:0.9, chal_max_lvl_lead:1.2,
-    regularite:72, champ_pool:6,
-    chal_team_dmg_pct:24.5, chal_vision_adv:0.08, chal_perfect_game:12
+    winrate:62.9,     // bot, 685 parties (Mobalytics)
+    kda:3.7,          // 8,0 / 4,0 / 6,7 (Mobalytics, bot)
+    cs_min:9.7,       // Mobalytics, bot
+    dpm:1134,         // pondéré, 10 champions les plus joués (Mobalytics)
+    dmg_share:28.6,   // Mobalytics, rôle principal
+    kill_part:54.5,   // pondéré, 10 champions les plus joués (Mobalytics)
+    vision:27.5       // score de vision par partie (Mobalytics)
   });
-  // Pool de champions ADC
+  // Pool réel (Mobalytics, saison 2026) : parties, % de victoires, KDA.
   champHistory = [
-    { name:"Kai'Sa",   games:38, wr:66, kda:4.8 },
-    { name:'Ezreal',   games:29, wr:62, kda:4.4 },
-    { name:'Varus',    games:22, wr:64, kda:4.1 },
-    { name:'Jhin',     games:16, wr:56, kda:3.9 },
-    { name:'Zeri',     games:11, wr:55, kda:3.6 },
-    { name:'Xayah',    games:7,  wr:57, kda:4.0 }
+    { name:'Ezreal',   games:91, wr:61.5, kda:3.8 },
+    { name:"Kai'Sa",   games:52, wr:69.2, kda:4.5 },
+    { name:'Yunara',   games:49, wr:55.1, kda:3.4 },
+    { name:'Jhin',     games:46, wr:56.5, kda:4.0 },
+    { name:'Caitlyn',  games:43, wr:62.8, kda:3.4 },
+    { name:'Sivir',    games:40, wr:70.0, kda:4.4 }
   ];
   try{ buildAllDims(); }catch(e){}
   try{ updateGlobal(); }catch(e){}
@@ -18388,6 +18393,7 @@ async function eliteLadder(platform, topN) {
    On moissonne TOUS les participants de ces parties : à ce niveau, les dix joueurs
    d'une partie sont du même monde, ce qui multiplie l'échantillon par dix sans une
    requête de plus. */
+const ELITE_MIN_PARTIES = 8;   // parties minimum à son poste pour entrer dans la référence
 async function eliteBuild(opts, onProgress) {
   const prog = onProgress || function () {};
   const regions = (opts && opts.regions) || ['euw1'];
@@ -18430,6 +18436,8 @@ async function eliteBuild(opts, onProgress) {
   if (!joueurs.length) return { erreur: 'Aucun joueur de référence trouvé.' };
 
   // 3) Parties de chacun
+  const reference = {};      // puuid → true : les SEULS joueurs mesurés (cf. plus bas)
+  joueurs.forEach(function (j) { reference[j.puuid] = true; });
   for (let i = 0; i < joueurs.length; i++) {
     const j = joueurs[i];
     prog(10 + Math.round(i / joueurs.length * 55), 'Parties ' + (i + 1) + '/' + joueurs.length + '…');
@@ -18447,25 +18455,36 @@ async function eliteBuild(opts, onProgress) {
   }
   if (!pool.length) return { erreur: 'Aucune partie récupérée.' };
 
-  // Recense les joueurs et leur poste principal dans le lot.
+  /* ⚠️ MÉTHODE (corrigée le 01/10/2026). L'ancienne version notait TOUS les joueurs
+     croisés dans les parties des têtes de classement : 888 « joueurs » sur 898 n'y
+     figuraient qu'une fois, puis étaient ramenés vers la moyenne (facteur 0,30). La
+     distribution obtenue était tassée : le « 95e centile » ADC valait 8,34 CS/min
+     quand Caliste (KC, 34e EUW) tourne à 9,7 sur 685 parties (Mobalytics, 01/10/2026).
+     Désormais : seuls les joueurs du classement (et les comptes saisis) sont mesurés,
+     chacun sur SES parties, à SON poste principal, avec au moins ELITE_MIN_PARTIES
+     parties — des moyennes de joueurs, comme celles qu'on note ensuite. */
   prog(70, 'Analyse des joueurs…');
-  const vus = {};
+  const parJoueur = {};      // puuid → { role → [parties] }
   pool.forEach(function (mt) {
     (mt?.info?.participants || []).forEach(function (p) {
+      if (!p.puuid || !reference[p.puuid]) return;
       const role = REF_POS[p.teamPosition];
-      if (!role || !p.puuid) return;
-      const e = vus[p.puuid] = vus[p.puuid] || {};
-      e[role] = (e[role] || 0) + 1;
+      if (!role) return;
+      const e = parJoueur[p.puuid] = parJoueur[p.puuid] || {};
+      (e[role] = e[role] || []).push(mt);
     });
   });
 
-  const puuids = Object.keys(vus);
+  const puuids = Object.keys(parJoueur);
+  let tropPeu = 0;
   puuids.forEach(function (puuid, i) {
-    if (i % 50 === 0) prog(70 + Math.round(i / puuids.length * 25), 'Joueurs ' + i + '/' + puuids.length + '…');
-    const roles = vus[puuid];
-    const role = Object.keys(roles).sort(function (a, b) { return roles[b] - roles[a]; })[0];
+    prog(70 + Math.round(i / Math.max(1, puuids.length) * 25), 'Joueurs ' + (i + 1) + '/' + puuids.length + '…');
+    const roles = parJoueur[puuid];
+    const role = Object.keys(roles).sort(function (a, b) { return roles[b].length - roles[a].length; })[0];
+    const parties = roles[role];
+    if (parties.length < ELITE_MIN_PARTIES) { tropPeu++; return; }
     let st = null;
-    try { st = calculateStats(pool, puuid); } catch (_) { return; }
+    try { st = calculateStats(parties, puuid); } catch (_) { return; }
     if (!st || !st.challenges) return;
     const n = st.totalGames || 1;
     const dest = echantillons[role] = echantillons[role] || {};
@@ -18503,8 +18522,11 @@ async function eliteBuild(opts, onProgress) {
         ou 100 et le pool de champions qualifiés vaut toujours 0 : les bornes
         sortaient en [0, 0.01, 0.02, 0.03], ce qui donnait 10/10 à n'importe quelle
         valeur. On exige des valeurs réellement étalées avant d'émettre un seuil. */
-  const K_LISSAGE = 10;
-  const MIN_ECH = 30;       // joueurs minimum par poste et par métrique
+  /* Lissage désactivé : il servait à tasser des parties isolées vers la moyenne.
+     Chaque valeur est désormais la moyenne d'un joueur sur au moins
+     ELITE_MIN_PARTIES parties à son poste — la tasser fausserait la distribution. */
+  const K_LISSAGE = 0;
+  const MIN_ECH = 25;       // joueurs minimum par poste et par métrique
   const MIN_DISTINCTES = 8; // valeurs distinctes minimum : garde-fou anti-dégénérescence
 
   const seuils = {}; let nbSeuils = 0, nbJoueurs = 0, nbRejets = 0;
@@ -18545,7 +18567,8 @@ async function eliteBuild(opts, onProgress) {
     if (Object.keys(parId).length) seuils[role] = parId;
     nbJoueurs += (echantillons[role].kda || []).length;
   });
-  dbgLog('Calibrage : ' + nbSeuils + ' seuils retenus, ' + nbRejets + ' rejetés (distribution trop plate)');
+  dbgLog('Calibrage : ' + nbSeuils + ' seuils retenus, ' + nbRejets + ' rejetés (distribution trop plate), '
+    + tropPeu + ' joueur(s) écarté(s) : moins de ' + ELITE_MIN_PARTIES + ' parties à leur poste');
 
   const out = { date: new Date().toISOString().slice(0, 10), comptes: comptesOk,
                 parties: pool.length, joueurs: nbJoueurs, nbSeuils: nbSeuils,
@@ -18604,8 +18627,9 @@ function eliteOpenModal() {
     + '<div class="rs-modal-note" style="margin-bottom:10px">'
     + 'Les seuils sont mesurés sur le <strong>classement Challenger</strong> de Riot, lu en direct : '
     + 'c\'est la définition même des meilleurs joueurs en SoloQ, sans qu\'un nom de compte ait à être deviné. '
-    + 'Tous les joueurs de leurs parties sont analysés, pas seulement les têtes de classement. '
-    + 'Le 10/10 est placé au sommet de cette population.'
+    + 'Seuls ces joueurs sont mesurés, chacun sur ses propres parties à son poste principal '
+    + '(au moins ' + ELITE_MIN_PARTIES + ' parties). Il faut au moins 25 joueurs par poste : '
+    + 'compte une centaine de joueurs par région.'
     + '</div>'
     + '<div id="elite-etat" style="margin-bottom:12px">' + etat + '</div>'
     + '<div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:10px">'
@@ -18614,14 +18638,14 @@ function eliteOpenModal() {
     + '<label class="advcfg-row" style="display:inline-flex;width:auto;padding:0;gap:6px"><input type="checkbox" id="elite-kr" checked><span class="advcfg-lbl">Corée</span></label>'
     + '<span class="faint" style="font-size:11.5px;margin-left:8px">Joueurs par région</span>'
     + '<select id="elite-top" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
-    + '<option value="3">3</option><option value="5" selected>5</option><option value="10">10</option><option value="20">20</option></select>'
+    + '<option value="20">20</option><option value="50">50</option><option value="100" selected>100</option><option value="150">150</option><option value="200">200</option></select>'
     + '<span class="faint" style="font-size:11.5px">Parties par joueur</span>'
     + '<select id="elite-n" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
-    + '<option value="10">10</option><option value="20" selected>20</option><option value="30">30</option></select>'
+    + '<option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option></select>'
     + '</div>'
     + '<div class="faint" style="font-size:11px;margin-bottom:10px">'
     + 'Chaque partie inédite consomme du quota Riot (clé Personnelle : 100 requêtes / 2 min). '
-    + '5 joueurs × 2 régions × 20 parties ≈ 200 parties, soit quelques minutes. Les parties déjà en cache sont gratuites.'
+    + '100 joueurs × 2 régions × 15 parties ≈ 3 000 parties, soit environ une heure. Les parties déjà en cache sont gratuites.'
     + '</div>'
     + '<details style="margin-bottom:6px"><summary class="faint" style="font-size:11.5px;cursor:pointer">Ajouter des comptes précis (optionnel)</summary>'
     + '<textarea id="elite-ids" rows="4" placeholder="Nom#TAG, un par ligne" '
@@ -18674,8 +18698,8 @@ async function eliteRun(btn) {
   const ov = btn.closest('.rs-modal-ov');
   const ids = (ov.querySelector('#elite-ids').value || '').split('\n')
     .map(function (s) { return s.trim(); }).filter(Boolean);
-  const n = parseInt(ov.querySelector('#elite-n').value, 10) || 20;
-  const topN = parseInt(ov.querySelector('#elite-top').value, 10) || 5;
+  const n = parseInt(ov.querySelector('#elite-n').value, 10) || 15;
+  const topN = parseInt(ov.querySelector('#elite-top').value, 10) || 100;
   const regions = [];
   if (ov.querySelector('#elite-euw1').checked) regions.push('euw1');
   if (ov.querySelector('#elite-kr').checked) regions.push('kr');
@@ -22393,7 +22417,7 @@ function top50LoadLocal() {
 // Top 30 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
 function top50SeedDemo() {
   const D = [
-    { name:'Caliste',tag:'EUW9', server:'euw1', role:'ADC', tier:'CHALLENGER',  rank:'I', lp:842, age:19, wr:62.4, kda:4.3, csm:8.0, vision:24, vsScore:88, scorePotentiel:9.4 },
+    { name:'KC NEXT ADKING',tag:'EUW', server:'euw1', role:'ADC', tier:'CHALLENGER',  rank:'I', lp:3204, age:20, wr:62.9, kda:3.7, csm:9.7, vision:27.5, kp:54.5, dmgShare:28.6, reel:true },
     { name:'Lyse',   tag:'KR3',  server:'kr',   role:'Mid', tier:'CHALLENGER',  rank:'I', lp:790, age:18, wr:66.2, kda:5.8, csm:9.5, vision:26, vsScore:86, scorePotentiel:9.2 },
     { name:'Noah',   tag:'EUW2', server:'euw1', role:'Mid', tier:'GRANDMASTER', rank:'I', lp:512, age:18, wr:61.6, kda:5.0, csm:9.2, vision:24, vsScore:83, scorePotentiel:9.0 },
     { name:'Kaori',  tag:'EUW7', server:'euw1', role:'ADC', tier:'GRANDMASTER', rank:'I', lp:466, age:19, wr:60.1, kda:4.9, csm:9.8, vision:22, vsScore:80, scorePotentiel:8.6 },
@@ -22406,8 +22430,11 @@ function top50SeedDemo() {
     { name:'Orion',  tag:'EUW3', server:'euw1', role:'Sup', tier:'MASTER',      rank:'II',lp:176, age:20, wr:56.4, kda:4.8, csm:1.2, vision:57, vsScore:70 },
     { name:'Zephy',  tag:'EUN2', server:'eun1', role:'Jgl', tier:'DIAMOND',     rank:'I', lp:92,  age:16, wr:60.9, kda:4.3, csm:6.0, vision:31, vsScore:69, scorePotentiel:8.7 },
   ];
+  // Le joueur réel (reel:true) est noté par le MOTEUR du Top 30, comme un vrai scan —
+  // pas de note écrite à la main pour une personne existante. Vision/min inconnue → non notée.
   top50Data = D.map(p => Object.assign({
-    score: (p.vsScore/10).toFixed(2), statut:'Nouveau', ageSource:'Officiel', ageStatus:'✅',
+    score: p.reel ? String(calcProspectScore(TIER_IDX[p.tier], p.lp, p.wr, p.kda, p.csm, null, p.role, p.kp, p.dmgShare, 0)) : (p.vsScore/10).toFixed(2),
+    statut:'Nouveau', ageSource:'Officiel', ageStatus:'✅',
     addedAt: Date.now()
   }, p));
   try { top50RenderTable(); } catch(e){}

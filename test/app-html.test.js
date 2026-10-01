@@ -1789,3 +1789,25 @@ test('barèmes élite : le plancher Challenger vaut 7/10, et la note garde de la
   assert.match(extraireFonction('scoreStatCalibrated'), /if \(sElite\) return scoreElite\(v, sElite\);/);
   assert.match(extraireFonction('advScore'), /return scoreElite\(val, se\);/);
 });
+
+test('calibrage élite : seuls les joueurs de référence, à leur poste, sans tassement', () => {
+  /* L'ancienne méthode notait tous les joueurs croisés (888 sur 898 vus une seule
+     fois) puis les tassait vers la moyenne : le « sommet » ADC valait 8,34 CS/min,
+     sous les 9,7 d'un vrai 34e EUW. */
+  const b = extraireFonction('eliteBuild');
+  assert.match(b, /if \(!p\.puuid \|\| !reference\[p\.puuid\]\) return;/, 'ne mesurer que les joueurs de référence');
+  assert.match(b, /parties\.length < ELITE_MIN_PARTIES/, 'assez de parties à son poste');
+  assert.match(b, /calculateStats\(parties, puuid\)/, 'stats sur SES parties à SON poste, pas sur tout le lot');
+  assert.match(b, /const K_LISSAGE = 0;/);
+  assert.doesNotMatch(b, /calculateStats\(pool, puuid\)/);
+});
+
+test('fiche démo : un joueur réel n\'a que des chiffres sourcés', () => {
+  const demo = app.slice(app.indexOf('window.vsDemoLoadDossier'), app.indexOf('try{ buildAllDims(); }catch(e){}', app.indexOf('window.vsDemoLoadDossier')));
+  assert.match(demo, /Leaguepedia/); assert.match(demo, /Mobalytics/); assert.match(demo, /u\.gg/);
+  assert.match(demo, /delete rawData\[k\]/, 'aucune valeur inventée ne doit traîner d\'un chargement précédent');
+  assert.doesNotMatch(demo, /chal_[a-z_]+:/, 'pas d\'indicateur « challenge » inventé');
+  // Le Top 30 démo ne donne pas de note écrite à la main au joueur réel.
+  assert.match(codeSeul, /reel:true \}/);
+  assert.match(codeSeul, /score: p\.reel \? String\(calcProspectScore\(/);
+});
