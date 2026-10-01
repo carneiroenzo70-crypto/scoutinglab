@@ -12532,8 +12532,8 @@ function scoreAbsolu(val, bad, avg, good, elite) {
    HAUT du Challenger EUW + Corée. ⚠️ Les passer à scoreAbsolu, qui lit ses quatre
    bornes comme « mauvais / moyen / bon / élite », plaçait le 10e centile de cette
    élite à 3/10 : tout joueur sous le plancher Challenger tombait entre 0 et 3,
-   sans nuance. Mesuré le 01/10/2026 : un jungler à 6,4 CS/min et 560 dégâts/min —
-   haut de tableau européen — sortait à 3,0 et 2,8, et sa dimension Stats à 4,7.
+   sans nuance. Mesuré le 01/10/2026 : un jungler à 6,4 CS/min et 560 dégâts/min
+   (juste sous le plancher Challenger jungle) sortait à 3,0 et 2,8.
    Ici le plancher Challenger vaut déjà un très bon 7 :
      p95 → 10 · p70 → 9 · p35 → 8 · p10 → 7,
    et sous p10 la note descend avec l'écart RELATIF au plancher : −1,6 point par
@@ -13604,28 +13604,32 @@ function updateVerdict() {
 /* ── Dossier démo figé (mode /app?demo=1) — profil ADC EU pépite, valeurs réalistes AJUSTABLES ── */
 window.vsDemoLoadDossier = function(){
   var setV=function(id,v){ var e=document.getElementById(id); if(e) e.value=v; };
-  setV('d-pseudo','Caliste'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','17');
+  setV('d-pseudo','Caliste'); setV('d-tag','EUW9'); setV('d-server','euw1'); setV('d-age','19');
   setV('d-rank','9');       // Challenger
   setV('d-rank-prev','8');  // Grandmaster il y a 1 an → progression +1
   window.vsRankDetail = { division:'I', lp:842 }; // rang complet démo (Challenger I · 842 LP)
   window.vsProfileIconId = 5427; // icône de profil LoL pour la photo du dossier démo
-  if (typeof setRole === 'function') setRole('Jgl');
-  // Stats brutes réalistes (Jungle) — cohérent avec la landing (Caliste, VisionScore 88)
+  /* ADC, comme l'annonce le site vitrine. La démo le chargeait en JUNGLE avec des
+     stats de jungler (6,4 CS/min, 560 dégâts/min) : pour un ADC, c'est sous 90 %
+     du haut du Challenger. Valeurs prises dans NOTRE relevé élite ADC
+     (ELITE_SEUILS_LIVRES.ADC, ~70e centile) : un très haut niveau crédible, pas un
+     record. CS/min p70 = 7,94 · dégâts/min p70 = 869 · part de dégâts p70 = 24 %. */
+  if (typeof setRole === 'function') setRole('ADC');
   Object.assign(rawData, {
-    winrate:64.8, kda:4.7, cs_min:6.4, vision:38, vision_min:1.9,
-    dmg_share:24, kill_part:68, dpm:560, chal_cs10:62,
-    chal_first_blood:32, chal_solo_kills:1.1, chal_max_lvl_lead:1.4,
-    regularite:72, champ_pool:5,
-    chal_team_dmg_pct:22, chal_vision_adv:14, chal_perfect_game:20
+    winrate:62.4, kda:4.3, cs_min:8.0, vision:24, vision_min:0.98,
+    dmg_share:24.5, kill_part:51, dpm:880, chal_cs10:69,
+    chal_first_blood:24, chal_solo_kills:0.9, chal_max_lvl_lead:1.2,
+    regularite:72, champ_pool:6,
+    chal_team_dmg_pct:24.5, chal_vision_adv:0.08, chal_perfect_game:12
   });
-  // Pool de champions réaliste (Jungle)
+  // Pool de champions ADC
   champHistory = [
-    { name:'Viego',    games:39, wr:69, kda:5.1 },
-    { name:'Lee Sin',  games:31, wr:63, kda:4.6 },
-    { name:'Graves',   games:24, wr:61, kda:4.9 },
-    { name:'Nidalee',  games:17, wr:60, kda:4.4 },
-    { name:'Belveth',  games:12, wr:58, kda:4.2 },
-    { name:'Kindred',  games:8,  wr:57, kda:4.0 }
+    { name:"Kai'Sa",   games:38, wr:66, kda:4.8 },
+    { name:'Ezreal',   games:29, wr:62, kda:4.4 },
+    { name:'Varus',    games:22, wr:64, kda:4.1 },
+    { name:'Jhin',     games:16, wr:56, kda:3.9 },
+    { name:'Zeri',     games:11, wr:55, kda:3.6 },
+    { name:'Xayah',    games:7,  wr:57, kda:4.0 }
   ];
   try{ buildAllDims(); }catch(e){}
   try{ updateGlobal(); }catch(e){}
@@ -22389,7 +22393,7 @@ function top50LoadLocal() {
 // Top 30 d'exemple (démo) — profils réalistes, pour une page présentable par défaut.
 function top50SeedDemo() {
   const D = [
-    { name:'Caliste',tag:'EUW9', server:'euw1', role:'Jgl', tier:'CHALLENGER',  rank:'I', lp:842, age:17, wr:64.8, kda:4.7, csm:6.4, vision:38, vsScore:88, scorePotentiel:9.4 },
+    { name:'Caliste',tag:'EUW9', server:'euw1', role:'ADC', tier:'CHALLENGER',  rank:'I', lp:842, age:19, wr:62.4, kda:4.3, csm:8.0, vision:24, vsScore:88, scorePotentiel:9.4 },
     { name:'Lyse',   tag:'KR3',  server:'kr',   role:'Mid', tier:'CHALLENGER',  rank:'I', lp:790, age:18, wr:66.2, kda:5.8, csm:9.5, vision:26, vsScore:86, scorePotentiel:9.2 },
     { name:'Noah',   tag:'EUW2', server:'euw1', role:'Mid', tier:'GRANDMASTER', rank:'I', lp:512, age:18, wr:61.6, kda:5.0, csm:9.2, vision:24, vsScore:83, scorePotentiel:9.0 },
     { name:'Kaori',  tag:'EUW7', server:'euw1', role:'ADC', tier:'GRANDMASTER', rank:'I', lp:466, age:19, wr:60.1, kda:4.9, csm:9.8, vision:22, vsScore:80, scorePotentiel:8.6 },
