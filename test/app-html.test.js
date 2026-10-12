@@ -1795,8 +1795,10 @@ test('calibrage élite : seuls les joueurs de référence, à leur poste, sans t
      fois) puis les tassait vers la moyenne : le « sommet » ADC valait 8,34 CS/min,
      sous les 9,7 d'un vrai 34e EUW. */
   const b = extraireFonction('eliteBuild');
-  assert.match(b, /if \(!p\.puuid \|\| !reference\[p\.puuid\]\) return;/, 'ne mesurer que les joueurs de référence');
-  assert.match(b, /parties\.length < ELITE_MIN_PARTIES/, 'assez de parties à son poste');
+  const r = extraireFonction('eliteRepartir');
+  assert.match(r, /if \(!p\.puuid \|\| !reference\[p\.puuid\]\) return;/, 'ne mesurer que les joueurs de référence');
+  assert.match(r, /roles\[role\]\.length < ELITE_MIN_PARTIES/, 'assez de parties à son poste');
+  assert.match(b, /repartition\.retenus\.forEach/);
   assert.match(b, /calculateStats\(parties, puuid\)/, 'stats sur SES parties à SON poste, pas sur tout le lot');
   assert.match(b, /const K_LISSAGE = 0;/);
   assert.doesNotMatch(b, /calculateStats\(pool, puuid\)/);
@@ -1861,4 +1863,61 @@ test('la cadence des appels Riot suit le quota annoncé, pas une pause fixe', ()
   assert.match(extraireFonction('riotFetch'), /X-App-Rate-Limit/);
   assert.doesNotMatch(extraireFonction('eliteOpenModal'), /environ une heure/);
   assert.match(extraireFonction('eliteQuotaMaj'), /vsRiotDuree\(joueurs \+ parties\)/);
+});
+
+
+test('calibrage élite : répartition par poste, et complément quand un poste manque de joueurs', () => {
+  const src = 'const ELITE_MIN_PARTIES = 8; const REF_POS = { TOP:"Top", JUNGLE:"Jgl", MIDDLE:"Mid", BOTTOM:"ADC", UTILITY:"Sup" };\n'
+    + extraireFonction('eliteRepartir') + '\nreturn eliteRepartir;';
+  const eliteRepartir = new Function(src)();
+  const partie = (liste) => ({ info: { participants: liste.map(([puuid, teamPosition]) => ({ puuid, teamPosition })) } });
+  const pool = [];
+  for (let i = 0; i < 9; i++) pool.push(partie([['a', 'BOTTOM'], ['b', 'TOP'], ['inconnu', 'MIDDLE']]));
+  for (let i = 0; i < 3; i++) pool.push(partie([['a', 'MIDDLE'], ['c', 'UTILITY']]));
+  const r = eliteRepartir(pool, { a: true, b: true, c: true });
+  assert.deepStrictEqual(r.parPoste, { ADC: 1, Top: 1 });
+  assert.strictEqual(r.tropPeu, 1, 'c n\'a que 3 parties à son poste');
+  assert.strictEqual(r.retenus.find(x => x.puuid === 'a').parties.length, 9, 'seulement ses parties à son poste principal');
+  assert.ok(!r.retenus.some(x => x.puuid === 'inconnu'), 'un joueur hors référence n\'est jamais mesuré');
+
+  const b = extraireFonction('eliteBuild');
+  // Le relevé du 12/10/2026 a laissé Top et Sup sans seuils : on descend dans le classement.
+  assert.match(b, /while \(topN > 0 && manque\(\)\.length && rang < ELITE_LADDER_MAX\)/);
+  assert.match(b, /eliteLadder\(regions\[i\], part, rang\)/);
+  assert.match(b, /parPoste: repartition\.parPoste, incomplets: manque\(\)/);
+  // « dpm » était noté deux fois par joueur et passait le minimum avec moitié moins de monde.
+  assert.match(b, /if \(!sources\[k\]\) noter\(k, st\.challenges\[k\]\)/);
+  assert.match(extraireFonction('eliteRun'), /eliteBilanPostes\(r\)/);
+});
+
+test('seuils livrés : Jgl, Mid et ADC viennent du relevé du 12/10/2026', () => {
+  const d = app.indexOf('const ELITE_SEUILS_LIVRES');
+  let i = app.indexOf('{', d), p = 0, j = i;
+  for (; j < app.length; j++) { if (app[j] === '{') p++; else if (app[j] === '}' && --p === 0) break; }
+  const T = new Function('return ' + app.slice(i, j + 1))();
+  assert.deepStrictEqual(Object.keys(T), ['Top', 'Jgl', 'Mid', 'ADC', 'Sup']);
+  assert.deepStrictEqual(T.ADC.cs_min, [8.02, 8.46, 8.98, 9.59]);
+  assert.deepStrictEqual(T.ADC.dpm, [810, 869, 969, 1136]);
+  assert.deepStrictEqual(T.Mid.cs_min, [7.57, 8.07, 8.77, 9.2]);
+  assert.deepStrictEqual(T.Jgl.cs_min, [6.95, 7.34, 7.72, 8.36]);
+  // Chaque seuil : quatre bornes strictement croissantes.
+  Object.keys(T).forEach(function (role) {
+    Object.keys(T[role]).forEach(function (id) {
+      const s = T[role][id];
+      assert.strictEqual(s.length, 4, role + '.' + id);
+      assert.ok(s[0] < s[1] && s[1] < s[2] && s[2] < s[3], role + '.' + id + ' : bornes croissantes');
+    });
+  });
+  // Le cas qui a révélé le défaut : Caliste (34e EUW, stats du 01/10/2026) ne plafonne
+  // plus à 10 partout, et reste noté comme un joueur du haut du Challenger.
+  const echelle = app.slice(app.indexOf('const ELITE_ECHELLE'), app.indexOf(';', app.indexOf('const ELITE_ECHELLE')) + 1);
+  const scoreElite = new Function(echelle + '\n' + extraireFonction('scoreElite') + '\nreturn scoreElite;')();
+  const notes = { dmg_share: scoreElite(28.6, T.ADC.dmg_share), kill_part: scoreElite(54.5, T.ADC.kill_part),
+                  vision: scoreElite(27.5, T.ADC.vision), dpm: scoreElite(1134, T.ADC.dpm), cs_min: scoreElite(9.7, T.ADC.cs_min) };
+  assert.strictEqual(notes.cs_min, 10);
+  ['dmg_share', 'kill_part', 'vision', 'dpm'].forEach(function (k) {
+    assert.ok(notes[k] > 9 && notes[k] < 10, k + ' = ' + notes[k]);
+  });
+  // Et un ADC à 6,4 CS/min n'est plus « haut de tableau » : il est loin sous le plancher.
+  assert.ok(scoreElite(6.4, T.ADC.cs_min) < 4);
 });

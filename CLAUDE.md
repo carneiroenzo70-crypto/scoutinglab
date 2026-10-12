@@ -313,9 +313,24 @@ historique : ses notes diffèrent de la fiche pour un même joueur (chantier ouv
 tous les joueurs croisés dans 196 parties (888/898 vus une fois, tassés vers la moyenne) :
 le « 95e centile » ADC valait 8,34 CS/min, alors que Caliste (KC, 34e EUW) tourne à 9,7 sur
 685 parties. `eliteBuild` est corrigé (seuls les joueurs du classement, ≥ `ELITE_MIN_PARTIES`
-parties à leur poste, sans lissage) ; il faut relancer le calibrage en prod
-(`/app?calibrage=1` → `vsCalibrer()`, 100 joueurs/région, 15 parties, ~1 h) puis remplacer
-`ELITE_SEUILS_LIVRES` par l'export (« Copier les seuils »).
+parties à leur poste, sans lissage).
+
+**État au 12/10/2026 — DEUX relevés cohabitent dans `ELITE_SEUILS_LIVRES`** :
+- **Jgl, Mid, ADC** : relevé du 12/10/2026 (196 joueurs, 2 015 parties, 239 seuils). ADC :
+  CS/min `[8.02, 8.46, 8.98, 9.59]`, dégâts/min `[810, 869, 969, 1136]`.
+- **Top, Sup** : toujours l'ANCIEN relevé tassé (07/08) → ces deux postes sont notés plus
+  généreusement. Le relevé du 12/10 n'y comptait pas `ELITE_MIN_JOUEURS` (25) joueurs.
+- `eliteBuild` **complète** désormais tout seul : tant qu'un poste est sous 25 joueurs, il
+  descend dans le classement par tranches de `ELITE_TRANCHE` (jusqu'à `ELITE_LADDER_MAX`),
+  et le résultat porte `parPoste` / `incomplets` (affichés par `eliteBilanPostes`).
+- **Reste à faire** : relancer le calibrage en prod (`/app?calibrage=1` → `vsCalibrer()`),
+  puis remplacer **les cinq postes d'un coup** par l'export (« Copier les seuils ») — une
+  seule population pour tous les postes.
+- Piège corrigé : `dpm` était noté deux fois par joueur (sa clé = son identifiant) et
+  passait le minimum avec moitié moins de joueurs. Ne pas reprendre les `dpm` Top/Sup de
+  l'export du 12/10.
+- La note globale reste ancrée sur le rang (`RANK_ANCHOR` + stats × 0,30, plafonnée à 10) :
+  un très bon Challenger affiche 100 même si ses notes de détail vont de 9,3 à 10.
 
 **Fiche démo = joueur RÉEL** (KC NEXT ADKING#EUW / Caliste) : uniquement des chiffres sourcés
 (Leaguepedia, u.gg, Mobalytics), datés dans le code. Ne jamais y ajouter une valeur inventée.
