@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
   // permet au client de lire ces en-têtes (cache + délai d'attente réel)
-  res.setHeader('Access-Control-Expose-Headers', 'X-VS-Cache, Retry-After');
+  res.setHeader('Access-Control-Expose-Headers', 'X-VS-Cache, Retry-After, X-App-Rate-Limit, X-App-Rate-Limit-Count');
 
   if (req.method === 'HEAD' || req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -105,6 +105,15 @@ module.exports = async function handler(req, res) {
     // Succès sur une ressource immuable → on met en cache pour la prochaine fois
     if (riotRes.ok && key) {
       try { await upstash(['SET', key, text, 'EX', String(CACHE_TTL)]); } catch (_) { /* non bloquant */ }
+    }
+
+    // Quota RÉEL de la clé, tel que Riot l'annonce (« 20:1,100:120 » pour une clé
+    // Personnelle). Le client règle sa cadence dessus au lieu de supposer un type de clé.
+    if (cible.riot) {
+      ['X-App-Rate-Limit', 'X-App-Rate-Limit-Count'].forEach(function (h) {
+        const v = riotRes.headers.get(h.toLowerCase());
+        if (v) res.setHeader(h, v);
+      });
     }
 
     res.setHeader('X-VS-Cache', key ? 'miss' : 'bypass');

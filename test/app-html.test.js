@@ -1828,3 +1828,37 @@ test('Riot ID : le « # » saisi dans le tag est retiré avant tout appel', () =
   const cron = fs.readFileSync(path.join(__dirname, '..', 'api', 'cron-snapshot.js'), 'utf8');
   assert.doesNotMatch(cron, /encodeURIComponent\(tag \|\| 'EUW'\)/);
 });
+
+
+test('la cadence des appels Riot suit le quota annoncé, pas une pause fixe', () => {
+  const src = 'let _vsRiotQuota = null;\n'
+    + ['vsRiotQuotaLire', 'vsPauseRiot', 'vsDureeTexte', 'vsRiotQuotaTexte', 'vsRiotDuree'].map(extraireFonction).join('\n')
+    + '\nreturn { lire: vsRiotQuotaLire, pause: vsPauseRiot, texte: vsRiotQuotaTexte, duree: vsRiotDuree, dureeTexte: vsDureeTexte,'
+    + ' regler: function (q) { _vsRiotQuota = q; } };';
+  const m = new Function(src)();
+  // Quota inconnu : l'ancienne pause fixe, rien de plus rapide.
+  assert.strictEqual(m.pause(5, 1400), 1400);
+  assert.strictEqual(m.duree(3200), null);
+  assert.strictEqual(m.lire(''), null);
+  assert.strictEqual(m.lire('n importe quoi'), null);
+  // Clé Personnelle : 20 / s et 100 / 2 min.
+  m.regler(m.lire('100:120,20:1'));
+  assert.strictEqual(m.texte(), '20 requêtes / 1 s · 100 requêtes / 2 min');
+  assert.strictEqual(m.pause(5, 1400), 375);
+  assert.strictEqual(Math.round(m.duree(3200)), 3840, '3 200 requêtes à 100 / 2 min = 64 min');
+  assert.strictEqual(m.dureeTexte(m.duree(3200)), 'environ 1,1 h');
+  // Clé Production : 500 / 10 s et 30 000 / 10 min — plus rien ne justifie 1,4 s.
+  m.regler(m.lire('500:10,30000:600'));
+  assert.strictEqual(m.pause(5, 1400), 150);
+  assert.strictEqual(m.dureeTexte(m.duree(3200)), 'environ 8 min');
+  // Jamais plus lent que l'ancienne pause, même avec un quota minuscule.
+  m.regler(m.lire('1:10'));
+  assert.strictEqual(m.pause(5, 1400), 1400);
+  // Plus aucune pause fixe entre deux lots de parties, et la fenêtre de calibrage
+  // n'annonce plus une durée écrite en dur.
+  assert.doesNotMatch(codeSeul, /await sleep\(1400\)/);
+  assert.doesNotMatch(codeSeul, /await sleep\(DELAY\)/);
+  assert.match(extraireFonction('riotFetch'), /X-App-Rate-Limit/);
+  assert.doesNotMatch(extraireFonction('eliteOpenModal'), /environ une heure/);
+  assert.match(extraireFonction('eliteQuotaMaj'), /vsRiotDuree\(joueurs \+ parties\)/);
+});

@@ -73,6 +73,13 @@ Sur `429`, le proxy relaie le `Retry-After` réel de Riot et le client attend ce
 délai-là ; `fetchMatchesInBatches` saute sa pause quand tout le lot vient du cache
 (compteur `_vsCacheHits`).
 
+**Cadence adaptative (12/10/2026)** : plus aucune pause fixe pensée pour un type de clé.
+Le proxy relaie `X-App-Rate-Limit` (le quota que Riot annonce pour la clé), le client le
+lit dans `riotFetch` (`_vsRiotQuota`) et `vsPauseRiot(n, defaut)` en déduit la pause entre
+deux lots — jamais plus longue que l'ancienne (1400 ms). Clé Personnelle → 375 ms par lot
+de 5 puis attente sur 429 ; clé à quota Production → 150 ms. La fenêtre de calibrage
+affiche le quota lu et la durée estimée (`eliteQuotaMaj`). Ne pas réécrire un quota en dur.
+
 **Proxy `/api/riot` (12/10/2026)** : il ne décode l'adresse **qu'une fois** (Vercel a déjà
 décodé `req.query` ; un second décodage changeait `%23` en `#`, donc en fragment : un tag
 saisi « #0601 » partait en `…/by-riot-id/Pseudo/` → 403 de Riot). Et la clé ne part **que**
@@ -270,9 +277,9 @@ par où passent l'état local ET l'état reçu du serveur de salle.
 - Tests : `test/draft-historique.test.js`.
 
 **Vitesse d'import (fait le 19/07/2026)** : cache serveur des matchs + back-off honnête
-sur 429 — voir piège n°5. **Reste** : quand Riot accordera la clé **Production**, retirer
-la pause de 1400 ms dans `fetchMatchesInBatches` (`app.html`) → les imports de 100/200
-parties passeront de ~2 min à quelques secondes.
+sur 429 — voir piège n°5. Depuis le 12/10/2026 la pause entre lots
+suit le quota annoncé par Riot (`vsPauseRiot`) : avec une clé à quota Production, les
+imports de 100/200 parties s'accélèrent d'eux-mêmes, sans rien retirer dans le code.
 
 ---
 

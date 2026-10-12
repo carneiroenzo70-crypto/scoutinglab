@@ -18643,10 +18643,7 @@ function eliteOpenModal() {
     + '<select id="elite-n" style="padding:5px 8px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
     + '<option value="10">10</option><option value="15" selected>15</option><option value="20">20</option><option value="30">30</option></select>'
     + '</div>'
-    + '<div class="faint" style="font-size:11px;margin-bottom:10px">'
-    + 'Chaque partie inédite consomme du quota Riot (clé Personnelle : 100 requêtes / 2 min). '
-    + '100 joueurs × 2 régions × 15 parties ≈ 3 000 parties, soit environ une heure. Les parties déjà en cache sont gratuites.'
-    + '</div>'
+    + '<div class="faint" id="elite-quota" style="font-size:11px;margin-bottom:10px"></div>'
     + '<details style="margin-bottom:6px"><summary class="faint" style="font-size:11.5px;cursor:pointer">Ajouter des comptes précis (optionnel)</summary>'
     + '<textarea id="elite-ids" rows="4" placeholder="Nom#TAG, un par ligne" '
     + 'style="width:100%;margin-top:6px;padding:8px 10px;font-size:12.5px;font-family:monospace;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)"></textarea>'
@@ -18660,7 +18657,31 @@ function eliteOpenModal() {
     + '<button class="btn btn-cta btn-sm" id="elite-go" onclick="eliteRun(this)">Lancer le calibrage</button>'
     + '</div></div>';
   ov.addEventListener('click', function (ev) { if (ev.target === ov) ov.remove(); });
+  ov.addEventListener('change', eliteQuotaMaj);
   document.body.appendChild(ov);
+  eliteQuotaMaj();
+  // Quota pas encore connu (aucun appel Riot depuis l'ouverture de la page) : on lit le
+  // classement Challenger, premier appel du calibrage de toute façon — une seule requête.
+  if (!_vsRiotQuota) {
+    riotFetch('https://euw1.api.riotgames.com/lol/league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5')
+      .then(eliteQuotaMaj, function () {});
+  }
+}
+
+/* Volume et durée du calibrage, d'après le quota que Riot annonce pour la clé — et non
+   d'après un type de clé supposé (le texte affichait « environ une heure » en dur). */
+function eliteQuotaMaj() {
+  const el = document.getElementById('elite-quota');
+  if (!el) return;
+  const coche = function (id) { const c = document.getElementById(id); return c && c.checked ? 1 : 0; };
+  const val = function (id) { const s = document.getElementById(id); return s ? parseInt(s.value, 10) || 0 : 0; };
+  const joueurs = (coche('elite-euw1') + coche('elite-kr')) * val('elite-top');
+  const parties = joueurs * val('elite-n');
+  const d = vsRiotDuree(joueurs + parties);
+  el.textContent = joueurs + ' joueurs, jusqu\'à ' + parties.toLocaleString('fr-FR') + ' parties à lire. '
+    + (d === null ? 'Durée : selon le quota de la clé Riot, lu au premier appel.'
+                  : 'Quota de la clé : ' + vsRiotQuotaTexte() + ' — ' + vsDureeTexte(d) + '.')
+    + ' Les parties déjà en cache sont gratuites.';
 }
 
 /* Copie les seuils mesurés, pour qu'ils puissent être figés dans le code et servir à
@@ -18710,7 +18731,7 @@ async function eliteRun(btn) {
   try {
     r = await eliteBuild({ regions: regions.length ? regions : ['euw1'], topN: regions.length ? topN : 0,
                            parPartie: n, ids: ids },
-      function (p, l) { prog.textContent = p + '% — ' + l; });
+      function (p, l) { prog.textContent = p + '% — ' + l; eliteQuotaMaj(); });
   } catch (err) {
     prog.textContent = 'Échec : ' + err.message;
     btn.disabled = false; btn.textContent = 'Lancer le calibrage'; return;
@@ -19849,6 +19870,50 @@ function vsRiotIdNettoyer() {
   t.value = vsTagPropre(t.value);
 }
 
+/* ── Cadence réglée sur le quota RÉEL de la clé ───────────────────────────────
+   Riot annonce le quota de la clé à chaque réponse (« 20:1,100:120 » = 20 requêtes par
+   seconde et 100 par 2 min ; une clé Production annonce bien plus). Le proxy le relaie :
+   on règle la pause entre deux lots dessus, au lieu d'une pause fixe pensée pour la clé
+   Personnelle — qui ferait attendre pour rien le jour où la clé change. Tant qu'aucune
+   réponse de Riot n'a été lue (tout venait du cache), l'ancienne pause fixe s'applique. */
+let _vsRiotQuota = null;      // [{ limite, fenetre (s) }], fenêtre la plus courte d'abord
+function vsRiotQuotaLire(entete) {
+  const q = String(entete || '').split(',').map(function (x) {
+    const p = x.split(':');
+    return { limite: parseInt(p[0], 10), fenetre: parseInt(p[1], 10) };
+  }).filter(function (x) { return x.limite > 0 && x.fenetre > 0; })
+    .sort(function (a, b) { return a.fenetre - b.fenetre; });
+  return q.length ? q : null;
+}
+// Pause (ms) après un lot de `n` requêtes : la fenêtre courte borne le débit en rafale,
+// avec une marge de 50 %. Jamais plus longue que l'ancienne pause fixe (`defaut`). Les
+// fenêtres longues restent gérées par l'attente sur 429, qui suit le délai donné par Riot.
+function vsPauseRiot(n, defaut) {
+  if (!_vsRiotQuota) return defaut;
+  const c = _vsRiotQuota[0];
+  return Math.min(defaut, Math.max(60, Math.round(n * c.fenetre * 1000 / c.limite * 1.5)));
+}
+function vsDureeTexte(s) {
+  if (s < 90) return 'environ une minute';
+  if (s < 3300) return 'environ ' + Math.round(s / 60) + ' min';
+  const h = Math.round(s / 360) / 10;
+  return 'environ ' + String(h).replace('.', ',') + ' h';
+}
+function vsRiotQuotaTexte() {
+  if (!_vsRiotQuota) return '';
+  return _vsRiotQuota.map(function (c) {
+    const f = c.fenetre % 60 === 0 ? (c.fenetre / 60) + ' min' : c.fenetre + ' s';
+    return c.limite.toLocaleString('fr-FR') + ' requêtes / ' + f;
+  }).join(' · ');
+}
+// Durée (s) de `n` requêtes inédites : la fenêtre la plus contraignante, et au moins le
+// temps réseau des lots de 5 (≈ 0,15 s par requête).
+function vsRiotDuree(n) {
+  if (!_vsRiotQuota) return null;
+  const parRequete = Math.max.apply(null, _vsRiotQuota.map(function (c) { return c.fenetre / c.limite; }));
+  return n * Math.max(parRequete, 0.15);
+}
+
 async function riotFetch(url, apiKey) {
   const BACKEND = '';
 
@@ -19860,6 +19925,12 @@ async function riotFetch(url, apiKey) {
     if (res.status === 401) { vsLogout(); return; }
     const body = await res.text();
     dbgLog('📥 HTTP ' + res.status + ' — ' + body.slice(0,120));
+    const quota = vsRiotQuotaLire(res.headers.get('X-App-Rate-Limit'));
+    if (quota) {
+      const avant = vsRiotQuotaTexte();
+      _vsRiotQuota = quota;
+      if (vsRiotQuotaTexte() !== avant) dbgLog('Quota annoncé par Riot : ' + vsRiotQuotaTexte());
+    }
 
     // Si le backend répond correctement
     if (res.ok) {
@@ -20004,7 +20075,7 @@ async function fetchLaneDeltas(regional, matches, puuid, apiKey, onProgress) {
     if (onProgress) onProgress(Math.min(89, 85 + Math.round((i + BATCH) / recents.length * 4)),
       'Écarts de lane ' + Math.min(i + BATCH, recents.length) + '/' + recents.length + '…'
       + (depuisCache ? ' (en cache)' : ''));
-    if (i + BATCH < recents.length && depuisCache < lot.length) await sleep(1400);
+    if (i + BATCH < recents.length && depuisCache < lot.length) await sleep(vsPauseRiot(lot.length, 1400));
   }
   const moy = {};
   Object.keys(somme).forEach(function (k) {
@@ -20029,7 +20100,7 @@ async function fetchMatchesInBatches(regional, ids, apiKey, onProgress) {
     onProgress(Math.min(85, pct), `Analyse des parties ${fait}/${ids.length}…` + (depuisCache ? ' (en cache)' : ''));
     // Le lot venait entièrement du cache → aucun quota Riot consommé, aucune raison
     // d'attendre. C'est ce qui rend les ré-imports quasi instantanés.
-    if (i + BATCH < ids.length && depuisCache < batch.length) await sleep(1400);
+    if (i + BATCH < ids.length && depuisCache < batch.length) await sleep(vsPauseRiot(batch.length, 1400));
   }
   if (echecs) dbgLog('⚠ ' + echecs + ' partie(s) non récupérée(s) sur ' + ids.length);
   return matches;
@@ -21203,7 +21274,7 @@ async function loadMapData() {
       loaded++;
       const pct = 10 + Math.round(loaded / recentIds.length * 80);
       setMapProgress(pct, `Analyse partie ${loaded}/${recentIds.length}…`);
-      if (loaded < recentIds.length) await sleep(1200);
+      if (loaded < recentIds.length) await sleep(vsPauseRiot(1, 1200));
     } catch(e) {
       dbgLog('Timeline erreur ' + id + ': ' + e.message);
     }
@@ -22230,7 +22301,7 @@ async function top50Scan() {
       try { lb = await t50Leaderboard(eligible[t]); } catch (e) { dbgLog && dbgLog('⚠ Leaderboard ' + eligible[t] + ' indisponible : ' + (e.message || e)); }
       lb.sort((a, b) => b.leaguePoints - a.leaguePoints);
       if (lb.length) buckets.push(lb);
-      if (eligible.length > 1) await sleep(DELAY);
+      if (eligible.length > 1) await sleep(vsPauseRiot(1, DELAY));
     }
     // Round-robin : 1 joueur de chaque palier à tour de rôle → mélange des rangs.
     let entries = [];
@@ -22242,7 +22313,7 @@ async function top50Scan() {
 
     if (!entries.length) throw new Error('Aucun joueur trouvé. Vérifiez votre clé API.');
     t50SetProg(12, entries.length + ' joueurs trouvés (≥ ' + tier + ') — analyse en cours…');
-    await sleep(DELAY);
+    await sleep(vsPauseRiot(1, DELAY));
 
     // 2. Analyser chaque joueur
     const prospects = [];
@@ -22260,7 +22331,7 @@ async function top50Scan() {
             'https://' + server + '.api.riotgames.com/lol/summoner/v4/summoners/' + entry.summonerId,
             apiKey
           );
-          await sleep(DELAY);
+          await sleep(vsPauseRiot(1, DELAY));
           if (!sum?.puuid) continue;
           puuid = sum.puuid;
         }
@@ -22273,7 +22344,7 @@ async function top50Scan() {
             'https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-puuid/' + puuid,
             apiKey
           );
-          await sleep(DELAY);
+          await sleep(vsPauseRiot(1, DELAY));
           if (acct?.gameName) { displayName = acct.gameName; tagLine = acct.tagLine || tagLine; }
         } catch(e) {}
 
@@ -22282,7 +22353,7 @@ async function top50Scan() {
           'https://' + regional + '.api.riotgames.com/lol/match/v5/matches/by-puuid/' + puuid + '/ids?queue=420&count=3',
           apiKey
         );
-        await sleep(DELAY);
+        await sleep(vsPauseRiot(1, DELAY));
         if (!Array.isArray(ids) || !ids.length) continue;
 
         // Fetch 3 matchs
@@ -22293,7 +22364,7 @@ async function top50Scan() {
               'https://' + regional + '.api.riotgames.com/lol/match/v5/matches/' + mid,
               apiKey
             );
-            await sleep(DELAY);
+            await sleep(vsPauseRiot(1, DELAY));
             if (m?.info?.participants) matchData.push(m);
           } catch(e) {}
         }

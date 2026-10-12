@@ -160,3 +160,13 @@ test('LoLPros reste joignable par le proxy, mais SANS la clé Riot', async () =>
   await handler({ method: 'GET', headers: auth(), query: { url: COMPTE + 'Kiyoomi/0601' } }, mockRes());
   assert.equal(vus2[0].headers['X-Riot-Token'], 'RGAPI-test');
 });
+
+test('le quota annoncé par Riot est relayé au client', async () => {
+  const store = {}, riot = [];
+  mockNet(store, riot, { status: 200, body: '[]', headers: { 'x-app-rate-limit': '500:10,30000:600', 'x-app-rate-limit-count': '1:10,1:600' } });
+  const res = mockRes();
+  await handler({ method: 'GET', headers: auth(), query: { url: 'https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/abc' } }, res);
+  assert.equal(res._headers['X-App-Rate-Limit'], '500:10,30000:600');
+  assert.equal(res._headers['X-App-Rate-Limit-Count'], '1:10,1:600');
+  assert.match(res._headers['Access-Control-Expose-Headers'], /X-App-Rate-Limit/);
+});
