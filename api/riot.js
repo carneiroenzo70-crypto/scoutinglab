@@ -17,6 +17,30 @@ function cacheKeyFor(url) {
   return 'vs_match:' + m[1] + (m[2] ? ':tl' : '');
 }
 
+// La clé Riot ne part QUE chez Riot. Le proxy relayait n'importe quelle adresse avec
+// l'en-tête X-Riot-Token : un compte connecté pouvait se faire envoyer la clé ailleurs,
+// et la recherche LoLPros (seul autre usage) la transmettait à un tiers à chaque appel.
+const HOTE_RIOT = /^[a-z0-9-]+\.api\.riotgames\.com$/i;
+const HOTES_SANS_CLE = ['api.lolpros.gg'];
+
+/* Adresse cible. Vercel a DÉJÀ décodé la query : la décoder une seconde fois changeait
+   « %23 » en « # », et tout ce qui suit un « # » est un fragment, jamais envoyé. Un tag
+   saisi « #0601 » devenait donc une requête « …/by-riot-id/Pseudo/ » → 403 de Riot, et un
+   pseudo contenant « % » faisait lever une exception. On ne décode que ce qui arrive
+   encore encodé (« https%3A… »). */
+function cibleDepuis(brut) {
+  let s = String(brut == null ? '' : brut).trim();
+  if (!/^https:\/\//i.test(s)) {
+    try { s = decodeURIComponent(s); } catch (_) { return null; }
+  }
+  let u;
+  try { u = new URL(s); } catch (_) { return null; }
+  if (u.protocol !== 'https:' || u.username || u.password || u.port || u.hash) return null;
+  const riot = HOTE_RIOT.test(u.hostname);
+  if (!riot && HOTES_SANS_CLE.indexOf(u.hostname.toLowerCase()) === -1) return null;
+  return { href: u.href, riot };
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -44,8 +68,12 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Clé API Riot non configurée' });
   }
 
-  const target = decodeURIComponent(url);
-  const key = cacheKeyFor(target);
+  const cible = cibleDepuis(url);
+  if (!cible) {
+    return res.status(400).json({ error: 'Adresse refusée' });
+  }
+  const target = cible.href;
+  const key = cible.riot ? cacheKeyFor(target) : null;
 
   // ── 1) Cache : on sert sans toucher à Riot (donc sans consommer de quota) ──
   if (key) {
@@ -61,7 +89,7 @@ module.exports = async function handler(req, res) {
   // ── 2) Appel Riot ─────────────────────────────────────────────────────────
   try {
     const riotRes = await fetch(target, {
-      headers: { 'X-Riot-Token': apiKey }
+      headers: cible.riot ? { 'X-Riot-Token': apiKey } : { 'Accept': 'application/json' }
     });
 
     const text = await riotRes.text();

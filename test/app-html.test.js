@@ -1811,3 +1811,20 @@ test('fiche démo : un joueur réel n\'a que des chiffres sourcés', () => {
   assert.match(codeSeul, /reel:true \}/);
   assert.match(codeSeul, /score: p\.reel \? String\(calcProspectScore\(/);
 });
+
+
+test('Riot ID : le « # » saisi dans le tag est retiré avant tout appel', () => {
+  const vsTagPropre = new Function(extraireFonction('vsTagPropre') + '\nreturn vsTagPropre;')();
+  assert.strictEqual(vsTagPropre('#0601'), '0601');
+  assert.strictEqual(vsTagPropre('  # EUW '), 'EUW');
+  assert.strictEqual(vsTagPropre('EUW'), 'EUW');
+  assert.strictEqual(vsTagPropre(null), '');
+  // Le champ n'invite plus à taper le dièse, et se nettoie tout seul.
+  assert.match(app, /<input id="d-tag" placeholder="EUW"[^>]*onchange="vsRiotIdNettoyer\(\)"/);
+  assert.match(extraireFonction('fetchRiotData'), /vsRiotIdNettoyer\(\);/);
+  // Aucun appel de compte ne part avec un tag brut.
+  const bruts = codeSeul.match(/by-riot-id\/[^\n]*encodeURIComponent\((?:slot\.)?tag \|\| 'EUW'\)/g) || [];
+  assert.deepStrictEqual(bruts, []);
+  const cron = fs.readFileSync(path.join(__dirname, '..', 'api', 'cron-snapshot.js'), 'utf8');
+  assert.doesNotMatch(cron, /encodeURIComponent\(tag \|\| 'EUW'\)/);
+});

@@ -47,10 +47,14 @@ const budgetRestant = () => Math.max(0, compteur.budget - compteur.appels);
    directement de l'entrée de ligue — lire six matchs pour les recalculer coûterait sept
    appels de plus par prospect, pour des chiffres qu'on a déjà. Un pipeline de trente
    prospects tient ainsi dans 60 appels au lieu de 270. */
+// Un tag enregistré « #0601 » (saisi avec son dièse) doit partir « 0601 » : le « # »
+// ne fait pas partie du tag, et Riot ne trouve pas le compte avec.
+function tagPropre(tag) { return String(tag == null ? '' : tag).trim().replace(/^#+\s*/, ''); }
+
 async function fetchProspectLeger(pseudo, tag, server, key) {
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
   const acc = await riot('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' +
-                         encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag || 'EUW'), key);
+                         encodeURIComponent(pseudo) + '/' + encodeURIComponent(tagPropre(tag) || 'EUW'), key);
   await sleep(THROTTLE);
   if (!acc || !acc.puuid) return null;
   const league = await riot('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid, key);
@@ -69,7 +73,7 @@ async function fetchProspectLeger(pseudo, tag, server, key) {
 // Récupère les stats brutes Solo Q d'un joueur (les entrées de calcProspectScore)
 async function fetchPlayerRaw(pseudo, tag, server, key) {
   const regional = PLATFORM_TO_REGIONAL[server] || 'europe';
-  const acc = await riot('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag || 'EUW'), key);
+  const acc = await riot('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tagPropre(tag) || 'EUW'), key);
   await sleep(THROTTLE);
   if (!acc || !acc.puuid) return null;
   const league = await riot('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid, key);

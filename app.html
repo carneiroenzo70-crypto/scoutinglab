@@ -5207,11 +5207,11 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
           <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:14px">
             <div class="fld">
               <div class="label">Riot ID <span class="faint" style="text-transform:none;letter-spacing:0;font-weight:500">(pseudo)</span></div>
-              <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="d-pseudo" placeholder="Akashinho" autocomplete="off" oninput="onIdentityChange()"/></div>
+              <div class="ctrl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg><input id="d-pseudo" placeholder="Akashinho" autocomplete="off" oninput="onIdentityChange()" onchange="vsRiotIdNettoyer()"/></div>
             </div>
             <div class="fld">
               <div class="label">Tag</div>
-              <div class="ctrl"><input id="d-tag" placeholder="#EUW" autocomplete="off"/></div>
+              <div class="ctrl"><input id="d-tag" placeholder="EUW" autocomplete="off" onchange="vsRiotIdNettoyer()"/></div>
             </div>
             <div class="fld">
               <div class="label">Région</div>
@@ -7331,7 +7331,7 @@ async function rsFetchSoloqRaw(slot) {
   try {
     const server = slot.server || 'euw1';
     const regional = (typeof PLATFORM_TO_REGIONAL !== 'undefined' && PLATFORM_TO_REGIONAL[server]) || 'europe';
-    const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(slot.pseudo) + '/' + encodeURIComponent(slot.tag || 'EUW'));
+    const acc = await riotFetch('https://' + regional + '.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(slot.pseudo) + '/' + encodeURIComponent(vsTagPropre(slot.tag) || 'EUW'));
     if (!acc || !acc.puuid) { _rsRawCache[ck] = null; return null; }
     const leagueRaw = await riotFetch('https://' + server + '.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
     const league = Array.isArray(leagueRaw) ? leagueRaw : (leagueRaw && leagueRaw.entries) || [];
@@ -16933,7 +16933,7 @@ function crmRedessinerCandidatures() {
 // tâche de fond par crmAutoPromoteElite (crmVerifyRank fait l'équivalent mais pilote
 // des éléments d'écran qui n'existent pas ici).
 async function crmFetchSoloQ(pseudo, tag) {
-  const acc = await riotFetch('https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(tag || 'EUW'));
+  const acc = await riotFetch('https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/' + encodeURIComponent(pseudo) + '/' + encodeURIComponent(vsTagPropre(tag) || 'EUW'));
   if (!acc || !acc.puuid) return null;
   const league = await riotFetch('https://euw1.api.riotgames.com/lol/league/v4/entries/by-puuid/' + acc.puuid);
   return (Array.isArray(league) ? league : []).find(e => e.queueType === 'RANKED_SOLO_5x5') || null;
@@ -17039,7 +17039,7 @@ async function crmVerifyRank(pseudo, tag, declaredRank, cardId) {
 
   try {
     const acc = await riotFetch(
-      `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(pseudo)}/${encodeURIComponent(tag || 'EUW')}`
+      `https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(pseudo)}/${encodeURIComponent(vsTagPropre(tag) || 'EUW')}`
     );
     if (!acc || !acc.puuid) throw new Error('Compte Riot introuvable');
 
@@ -19836,6 +19836,19 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
    savoir si un lot n'a coûté aucun quota Riot → dans ce cas, pas besoin de pause. */
 let _vsCacheHits = 0;
 
+/* Riot ID : le tag s'écrit SANS « # ». Laissé dans le tag, le « # » partait encodé (%23)
+   puis redevenait un vrai « # » côté proxy — or tout ce qui suit un « # » dans une adresse
+   est un fragment, jamais envoyé. Riot recevait « …/by-riot-id/Pseudo/ » et répondait 403. */
+function vsTagPropre(t) { return String(t == null ? '' : t).trim().replace(/^#+\s*/, ''); }
+// Champs de la fiche : tolère « #0601 » dans le tag et « Pseudo#0601 » collé dans le pseudo.
+function vsRiotIdNettoyer() {
+  const p = document.getElementById('d-pseudo'), t = document.getElementById('d-tag');
+  if (!p || !t) return;
+  const m = p.value.match(/^(.+?)\s*#\s*(\S.*)$/);
+  if (m) { p.value = m[1].trim(); t.value = m[2]; }
+  t.value = vsTagPropre(t.value);
+}
+
 async function riotFetch(url, apiKey) {
   const BACKEND = '';
 
@@ -19882,6 +19895,10 @@ async function riotFetch(url, apiKey) {
       if (res2.ok) return JSON.parse(body2);
       throw new Error('Clé API expirée — rendez-vous sur developer.riotgames.com pour en générer une nouvelle gratuitement (2 minutes).');
     }
+
+    // 403 : Riot refuse la requête — clé du serveur expirée ou révoquée (un Riot ID mal
+    // formé ne passe plus par ici : le tag est nettoyé avant l'envoi).
+    if (res.status === 403) throw new Error('Riot a refusé la requête (403). Si cela se produit pour tous les joueurs, la clé API Riot du serveur est expirée ou révoquée : elle doit être renouvelée.');
 
     throw new Error('Riot API ' + res.status + ' : ' + body.slice(0, 100));
 
@@ -20219,8 +20236,9 @@ async function estimatePrevSeasonRank(regional, puuid, apiKey) {
 }
 
 async function fetchRiotData() {
+  vsRiotIdNettoyer();
   const pseudo = document.getElementById('d-pseudo')?.value.trim();
-  const tag    = document.getElementById('d-tag')?.value.trim() || 'EUW';
+  const tag    = vsTagPropre(document.getElementById('d-tag')?.value) || 'EUW';
   const server = document.getElementById('d-server')?.value || 'euw1';
   const apiKey = document.getElementById('riot-key')?.value.trim();
   const count  = parseInt(document.getElementById('riot-count')?.value || 50);

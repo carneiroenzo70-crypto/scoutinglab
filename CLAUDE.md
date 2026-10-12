@@ -73,6 +73,12 @@ Sur `429`, le proxy relaie le `Retry-After` réel de Riot et le client attend ce
 délai-là ; `fetchMatchesInBatches` saute sa pause quand tout le lot vient du cache
 (compteur `_vsCacheHits`).
 
+**Proxy `/api/riot` (12/10/2026)** : il ne décode l'adresse **qu'une fois** (Vercel a déjà
+décodé `req.query` ; un second décodage changeait `%23` en `#`, donc en fragment : un tag
+saisi « #0601 » partait en `…/by-riot-id/Pseudo/` → 403 de Riot). Et la clé ne part **que**
+vers `*.api.riotgames.com` ; `api.lolpros.gg` est relayé sans clé, tout autre hôte → 400.
+Côté client, tout tag passe par `vsTagPropre()` (le « # » ne fait pas partie du tag).
+
 ---
 
 ## Architecture

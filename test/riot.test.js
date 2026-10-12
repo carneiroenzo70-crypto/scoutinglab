@@ -107,3 +107,56 @@ test('refuse sans token', async () => {
   await handler({ method: 'GET', headers: {}, query: { url: encodeURIComponent(MATCH_URL) } }, res);
   assert.equal(res._status, 401);
 });
+
+// ── Adresse cible : un seul décodage, et la clé ne part que chez Riot ─────────
+// Vercel livre req.query DÉJÀ décodé : c'est cette forme-là que ces tests envoient.
+function mockCible() {
+  const vus = [];
+  global.fetch = async (url, opts) => {
+    vus.push({ url: String(url), headers: (opts && opts.headers) || {} });
+    return { ok: false, status: 404, text: async () => '{}', headers: { get: () => null } };
+  };
+  return vus;
+}
+const COMPTE = 'https://europe.api.riotgames.com/riot/account/v1/accounts/by-riot-id/';
+
+test('un « # » dans le tag ne tronque plus la requête (403 du 12/10/2026)', async () => {
+  const vus = mockCible();
+  // Ce que le client envoie pour le tag « #0601 », une fois la query décodée par Vercel.
+  await handler({ method: 'GET', headers: auth(), query: { url: COMPTE + 'Kiyoomi/' + encodeURIComponent('#0601') } }, mockRes());
+  assert.equal(vus.length, 1);
+  assert.equal(new URL(vus[0].url).pathname, '/riot/account/v1/accounts/by-riot-id/Kiyoomi/%230601');
+  assert.equal(new URL(vus[0].url).hash, '', 'rien ne doit finir en fragment');
+});
+
+test('un pseudo contenant « % » ou un espace arrive intact chez Riot', async () => {
+  const vus = mockCible();
+  await handler({ method: 'GET', headers: auth(), query: { url: COMPTE + encodeURIComponent('100% Luck') + '/EUW' } }, mockRes());
+  assert.equal(new URL(vus[0].url).pathname, '/riot/account/v1/accounts/by-riot-id/100%25%20Luck/EUW');
+});
+
+test('la clé Riot ne part jamais vers un autre hôte', async () => {
+  for (const u of [
+    'https://exemple.test/vol',
+    'http://europe.api.riotgames.com/lol/status/v4/platform-data',
+    'https://europe.api.riotgames.com.exemple.test/x',
+    'https://europe.api.riotgames.com@exemple.test/x',
+    'pas une adresse'
+  ]) {
+    const vus = mockCible(), res = mockRes();
+    await handler({ method: 'GET', headers: auth(), query: { url: u } }, res);
+    assert.equal(res._status, 400, u);
+    assert.equal(vus.length, 0, 'aucun appel ne doit partir pour ' + u);
+  }
+});
+
+test('LoLPros reste joignable par le proxy, mais SANS la clé Riot', async () => {
+  const vus = mockCible();
+  await handler({ method: 'GET', headers: auth(), query: { url: 'https://api.lolpros.gg/es/search?query=caliste&language=fr_FR' } }, mockRes());
+  assert.equal(vus.length, 1);
+  assert.equal(vus[0].headers['X-Riot-Token'], undefined);
+  // … et un appel Riot la porte toujours.
+  const vus2 = mockCible();
+  await handler({ method: 'GET', headers: auth(), query: { url: COMPTE + 'Kiyoomi/0601' } }, mockRes());
+  assert.equal(vus2[0].headers['X-Riot-Token'], 'RGAPI-test');
+});
