@@ -333,8 +333,9 @@ parties à leur poste, sans lissage).
   un très bon Challenger affiche 100 même si ses notes de détail vont de 9,3 à 10.
 
 **Indicateurs suivis → où lire leurs valeurs (13/10/2026)** : `#advanced-card` est un
-`<details>` **replié par défaut**, placé sous les cinq dimensions (« Détail des indicateurs
-suivis »). Il avait été masqué en entier par un `display:none !important` (07–08/2026,
+`<details>` **ouvert par défaut** (choix d'Enzo : « ils doivent apparaître »), repliable —
+seul le choix de le replier est retenu, par navigateur (`vs_adv_replie`) — placé sous les
+cinq dimensions (« Détail des indicateurs suivis »). Il avait été masqué en entier par un `display:none !important` (07–08/2026,
 « pas 70 barres ») : on pouvait alors cocher 80 indicateurs sans jamais voir une seule
 valeur — seule une ligne de synthèse par dimension en témoignait. Ne pas le remasquer.
 La ligne « Indicateurs suivis (N ind.) » des dimensions porte un lien `advVoirDetail()` ;

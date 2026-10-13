@@ -1930,7 +1930,13 @@ test('indicateurs suivis : leurs valeurs se lisent quelque part (carte repliée,
   // Une seule carte, repliable, placée sous les cinq dimensions.
   assert.strictEqual((app.match(/id="advanced-card"/g) || []).length, 1);
   assert.match(app, /<\/div><!-- \/vsd-dims-grid -->\s*<!--[^>]*-->\s*<details class="card" id="advanced-card"/);
-  assert.match(app, /<summary>\s*<span class="h3"[^>]*>Détail des indicateurs suivis<\/span>/);
+  assert.match(app, /<summary onclick="advMemoReplie\(this\.parentElement\)">\s*<span class="h3"[^>]*>Détail des indicateurs suivis<\/span>/);
+  // Ouvert par défaut ; seul le choix de le replier est retenu, et un re-rendu ne le rouvre pas.
+  assert.match(extraireFonction('buildAdvancedSection'), /if \(!card\._etatPose\) \{[\s\S]*card\.open = !replie;/);
+  const memo = new Function('localStorage', extraireFonction('advMemoReplie') + '\nreturn advMemoReplie;');
+  const stock = {}; const ls = { setItem: (k, v) => { stock[k] = v; }, removeItem: (k) => { delete stock[k]; } };
+  memo(ls)({ open: true });  assert.strictEqual(stock.vs_adv_replie, '1', 'clic sur un bloc ouvert = il se replie');
+  memo(ls)({ open: false }); assert.strictEqual(stock.vs_adv_replie, undefined, 'clic sur un bloc replié = il se rouvre');
   // La ligne de synthèse d'une dimension mène au détail.
   assert.match(extraireFonction('buildDimBody'), /indexOf\('arc_'\) === 0[\s\S]*advVoirDetail\(\)/);
   const voir = extraireFonction('advVoirDetail');

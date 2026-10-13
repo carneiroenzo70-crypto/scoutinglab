@@ -2264,7 +2264,8 @@ body.map-fullscreen .logo-bg{ display:none; }
 #badge-souscote, #badge-pepite, #score-potentiel-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
-/* Détail des indicateurs suivis : REPLIÉ par défaut, jamais masqué. Il a été caché en
+/* Détail des indicateurs suivis : OUVERT par défaut et repliable, jamais masqué (le choix
+   de le replier est retenu par navigateur, cf. advMemoReplie). Il a été caché en
    entier (07–08/2026) pour ne pas imposer 70 barres au coach ; il ne restait alors
    AUCUN endroit où lire la valeur d'un indicateur qu'on venait de cocher — seulement
    une ligne de synthèse par dimension (signalé par Mateo le 13/10/2026). Replié, il
@@ -5691,7 +5692,7 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
 
       <!-- ── Détail des indicateurs suivis (challenges Riot) : replié par défaut ── -->
       <details class="card" id="advanced-card" style="display:none;padding:18px 22px">
-        <summary>
+        <summary onclick="advMemoReplie(this.parentElement)">
           <span class="h3" style="font-size:17px">Détail des indicateurs suivis</span>
           <span class="faint" id="advanced-compte" style="font-size:12px"></span>
           <span class="adv-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
@@ -19658,6 +19659,15 @@ function buildAdvancedSection(ch, role) {
   const body = document.getElementById('advanced-body');
   if (!card || !body || !ch) return;
   card.style.display = 'block';
+  // Ouvert par défaut (demande d'Enzo, 13/10/2026 : « ils doivent apparaître ») ; seul le
+  // choix de le replier est retenu, par navigateur. Posé une fois : un re-rendu ne doit
+  // pas rouvrir un bloc que le coach vient de fermer.
+  if (!card._etatPose) {
+    card._etatPose = true;
+    let replie = false;
+    try { replie = localStorage.getItem('vs_adv_replie') === '1'; } catch (_) {}
+    card.open = !replie;
+  }
   window._advLastCh = ch;   // permet de re-render après un réglage sans réimporter
 
   const enabled = advEnabledKeys(role);
@@ -19892,6 +19902,14 @@ function advApplyConfig(role, btn) {
 // Re-rend sans réimporter : les données de la dernière analyse sont conservées.
 function advRerender() {
   if (window._advLastCh) buildAdvancedSection(window._advLastCh, currentRole || 'Mid');
+}
+
+// Appelé au clic sur le titre, donc AVANT la bascule : ouvert = il va se replier.
+function advMemoReplie(carte) {
+  try {
+    if (carte.open) localStorage.setItem('vs_adv_replie', '1');
+    else localStorage.removeItem('vs_adv_replie');
+  } catch (_) { /* stockage indisponible : le bloc reste simplement ouvert par défaut */ }
 }
 
 // Ouvre le détail des indicateurs suivis et y amène l'écran.
