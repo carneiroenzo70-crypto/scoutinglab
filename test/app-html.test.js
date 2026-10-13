@@ -1787,7 +1787,7 @@ test('barèmes élite : le plancher Challenger vaut 7/10, et la note garde de la
   }
   // Les deux points d'entrée des barèmes élite passent par cette échelle.
   assert.match(extraireFonction('scoreStatCalibrated'), /if \(sElite\) return scoreElite\(v, sElite\);/);
-  assert.match(extraireFonction('advScore'), /return scoreElite\(val, se\);/);
+  assert.match(extraireFonction('advScore'), /scoreElite\(val, se\);/);
 });
 
 test('calibrage élite : seuls les joueurs de référence, à leur poste, sans tassement', () => {
@@ -1890,16 +1890,21 @@ test('calibrage élite : répartition par poste, et complément quand un poste m
   assert.match(extraireFonction('eliteRun'), /eliteBilanPostes\(r\)/);
 });
 
-test('seuils livrés : Jgl, Mid et ADC viennent du relevé du 12/10/2026', () => {
+test('seuils livrés : les cinq postes viennent du relevé du 13/10/2026', () => {
   const d = app.indexOf('const ELITE_SEUILS_LIVRES');
   let i = app.indexOf('{', d), p = 0, j = i;
   for (; j < app.length; j++) { if (app[j] === '{') p++; else if (app[j] === '}' && --p === 0) break; }
   const T = new Function('return ' + app.slice(i, j + 1))();
   assert.deepStrictEqual(Object.keys(T), ['Top', 'Jgl', 'Mid', 'ADC', 'Sup']);
-  assert.deepStrictEqual(T.ADC.cs_min, [8.02, 8.46, 8.98, 9.59]);
-  assert.deepStrictEqual(T.ADC.dpm, [810, 869, 969, 1136]);
-  assert.deepStrictEqual(T.Mid.cs_min, [7.57, 8.07, 8.77, 9.2]);
-  assert.deepStrictEqual(T.Jgl.cs_min, [6.95, 7.34, 7.72, 8.36]);
+  assert.deepStrictEqual(T.Top.cs_min, [7.08, 7.64, 8.39, 9.07]);
+  assert.deepStrictEqual(T.Jgl.cs_min, [6.98, 7.4, 7.85, 8.42]);
+  assert.deepStrictEqual(T.Mid.cs_min, [7.44, 8.07, 8.69, 9.24]);
+  assert.deepStrictEqual(T.ADC.cs_min, [8.08, 8.55, 9.18, 9.68]);
+  assert.deepStrictEqual(T.ADC.dpm, [821.6, 864.6, 963.2, 1085.1]);
+  assert.deepStrictEqual(T.Sup.vision, [72.11, 87.45, 93.85, 103.23]);
+  // Un seul relevé pour les cinq postes : 393 seuils, aucun reste de l'ancien.
+  assert.strictEqual(Object.keys(T).reduce(function (n, r) { return n + Object.keys(T[r]).length; }, 0), 393);
+  assert.doesNotMatch(app, /DEUX RELEVÉS COHABITENT/);
   // Chaque seuil : quatre bornes strictement croissantes.
   Object.keys(T).forEach(function (role) {
     Object.keys(T[role]).forEach(function (id) {
@@ -1913,9 +1918,11 @@ test('seuils livrés : Jgl, Mid et ADC viennent du relevé du 12/10/2026', () =>
   const echelle = app.slice(app.indexOf('const ELITE_ECHELLE'), app.indexOf(';', app.indexOf('const ELITE_ECHELLE')) + 1);
   const scoreElite = new Function(echelle + '\n' + extraireFonction('scoreElite') + '\nreturn scoreElite;')();
   const notes = { dmg_share: scoreElite(28.6, T.ADC.dmg_share), kill_part: scoreElite(54.5, T.ADC.kill_part),
-                  vision: scoreElite(27.5, T.ADC.vision), dpm: scoreElite(1134, T.ADC.dpm), cs_min: scoreElite(9.7, T.ADC.cs_min) };
+                  vision: scoreElite(27.5, T.ADC.vision), kda: scoreElite(3.7, T.ADC.kda),
+                  dpm: scoreElite(1134, T.ADC.dpm), cs_min: scoreElite(9.7, T.ADC.cs_min) };
   assert.strictEqual(notes.cs_min, 10);
-  ['dmg_share', 'kill_part', 'vision', 'dpm'].forEach(function (k) {
+  assert.strictEqual(notes.dpm, 10);
+  ['dmg_share', 'kill_part', 'vision', 'kda'].forEach(function (k) {
     assert.ok(notes[k] > 9 && notes[k] < 10, k + ' = ' + notes[k]);
   });
   // Et un ADC à 6,4 CS/min n'est plus « haut de tableau » : il est loin sous le plancher.
@@ -1950,4 +1957,26 @@ test('indicateurs suivis : leurs valeurs se lisent quelque part (carte repliée,
   assert.match(rendu, /'Ajoutés · ' \+ g/);
   assert.doesNotMatch(rendu, /Suivi personnalisé'/);
   assert.match(rendu, /en valeur brute/);
+});
+
+test('indicateurs où le bas est bon : mourir moins donne une meilleure note', () => {
+  /* Défaut trouvé le 13/10/2026 : dès qu'un seuil élite existait, advScore ignorait
+     « inv » et notait les morts comme un score — plus on mourait, plus la note montait. */
+  const echelle = app.slice(app.indexOf('const ELITE_ECHELLE'), app.indexOf(';', app.indexOf('const ELITE_ECHELLE')) + 1);
+  const m = new Function(echelle + '\n' + extraireFonction('scoreElite') + '\n' + extraireFonction('scoreEliteInv')
+    + '\nreturn { direct: scoreElite, inverse: scoreEliteInv };')();
+  const morts = [3.11, 3.89, 4.88, 5.63];           // Jgl, morts par partie : p10 … p95
+  assert.strictEqual(m.inverse(2, morts), 10, 'moins de morts que le meilleur décile');
+  assert.strictEqual(m.inverse(3.11, morts), 10);
+  assert.strictEqual(m.inverse(3.89, morts), 9);
+  assert.strictEqual(m.inverse(4.88, morts), 8);
+  assert.strictEqual(m.inverse(5.63, morts), 7, 'le joueur d\'élite qui meurt le plus reste à 7');
+  assert.ok(m.inverse(7, morts) < 4, 'bien plus de morts que toute l\'élite');
+  assert.ok(m.inverse(4, morts) > m.inverse(5, morts));
+  assert.strictEqual(m.inverse(null, morts), null);
+  // Et c'est bien cette lecture que prend la note d'un indicateur marqué « inv ».
+  assert.match(extraireFonction('advScore'), /def\.inv \? scoreEliteInv\(val, se\) : scoreElite\(val, se\)/);
+  ['deathsByEnemyChamps', 'maxKillDeficit'].forEach(function (k) {
+    assert.match(app, new RegExp(k + ':\\s*\\{[^}]*inv:true'), k + ' doit rester marqué « inv »');
+  });
 });

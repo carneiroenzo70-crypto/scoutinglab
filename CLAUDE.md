@@ -315,20 +315,20 @@ le « 95e centile » ADC valait 8,34 CS/min, alors que Caliste (KC, 34e EUW) tou
 685 parties. `eliteBuild` est corrigé (seuls les joueurs du classement, ≥ `ELITE_MIN_PARTIES`
 parties à leur poste, sans lissage).
 
-**État au 12/10/2026 — DEUX relevés cohabitent dans `ELITE_SEUILS_LIVRES`** :
-- **Jgl, Mid, ADC** : relevé du 12/10/2026 (196 joueurs, 2 015 parties, 239 seuils). ADC :
-  CS/min `[8.02, 8.46, 8.98, 9.59]`, dégâts/min `[810, 869, 969, 1136]`.
-- **Top, Sup** : toujours l'ANCIEN relevé tassé (07/08) → ces deux postes sont notés plus
-  généreusement. Le relevé du 12/10 n'y comptait pas `ELITE_MIN_JOUEURS` (25) joueurs.
-- `eliteBuild` **complète** désormais tout seul : tant qu'un poste est sous 25 joueurs, il
-  descend dans le classement par tranches de `ELITE_TRANCHE` (jusqu'à `ELITE_LADDER_MAX`),
-  et le résultat porte `parPoste` / `incomplets` (affichés par `eliteBilanPostes`).
-- **Reste à faire** : relancer le calibrage en prod (`/app?calibrage=1` → `vsCalibrer()`),
-  puis remplacer **les cinq postes d'un coup** par l'export (« Copier les seuils ») — une
-  seule population pour tous les postes.
-- Piège corrigé : `dpm` était noté deux fois par joueur (sa clé = son identifiant) et
-  passait le minimum avec moitié moins de joueurs. Ne pas reprendre les `dpm` Top/Sup de
-  l'export du 12/10.
+**État au 13/10/2026 — un seul relevé pour les cinq postes** dans `ELITE_SEUILS_LIVRES` :
+237 joueurs Challenger EUW + Corée, 2 296 parties, 393 seuils (Top 28 · Jgl 50 · Mid 81 ·
+ADC 48 · Sup 30 joueurs). ADC : CS/min `[8.08, 8.55, 9.18, 9.68]`, dégâts/min
+`[821.6, 864.6, 963.2, 1085.1]`.
+- `eliteBuild` **complète** tout seul : tant qu'un poste est sous `ELITE_MIN_JOUEURS` (25),
+  il descend dans le classement par tranches de `ELITE_TRANCHE` (jusqu'à
+  `ELITE_LADDER_MAX`) ; le résultat porte `parPoste` / `incomplets`.
+- Pour re-mesurer : `/app?calibrage=1` → `vsCalibrer()`, puis remplacer **les cinq postes
+  d'un coup** par l'export. Ne jamais mélanger deux relevés (fait par nécessité le 12/10,
+  Top et Sup y étaient restés sur l'ancien barème tassé).
+- Seul Enzo peut le lancer (session prod) ; sa clé Riot est à 100 requêtes / 2 min.
+- **Indicateurs où le bas est bon** (`inv:true` : `deathsByEnemyChamps`, `maxKillDeficit`) :
+  `advScore` passe par `scoreEliteInv()`. Avant le 13/10, dès qu'un seuil élite existait,
+  `inv` était ignoré et mourir davantage faisait monter la note.
 - La note globale reste ancrée sur le rang (`RANK_ANCHOR` + stats × 0,30, plafonnée à 10) :
   un très bon Challenger affiche 100 même si ses notes de détail vont de 9,3 à 10.
 
