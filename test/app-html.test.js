@@ -1921,3 +1921,27 @@ test('seuils livrés : Jgl, Mid et ADC viennent du relevé du 12/10/2026', () =>
   // Et un ADC à 6,4 CS/min n'est plus « haut de tableau » : il est loin sous le plancher.
   assert.ok(scoreElite(6.4, T.ADC.cs_min) < 4);
 });
+
+
+test('indicateurs suivis : leurs valeurs se lisent quelque part (carte repliée, jamais masquée)', () => {
+  /* Signalé le 13/10/2026 : on cochait des indicateurs, on importait, et rien ne
+     montrait leurs valeurs — la carte qui les porte était masquée par un !important. */
+  assert.doesNotMatch(app, /#advanced-card\s*\{[^}]*display:\s*none\s*!important/);
+  // Une seule carte, repliable, placée sous les cinq dimensions.
+  assert.strictEqual((app.match(/id="advanced-card"/g) || []).length, 1);
+  assert.match(app, /<\/div><!-- \/vsd-dims-grid -->\s*<!--[^>]*-->\s*<details class="card" id="advanced-card"/);
+  assert.match(app, /<summary>\s*<span class="h3"[^>]*>Détail des indicateurs suivis<\/span>/);
+  // La ligne de synthèse d'une dimension mène au détail.
+  assert.match(extraireFonction('buildDimBody'), /indexOf\('arc_'\) === 0[\s\S]*advVoirDetail\(\)/);
+  const voir = extraireFonction('advVoirDetail');
+  assert.match(voir, /carte\.open = true/);
+  // Appliquer un réglage recalcule la note et montre le résultat.
+  const appliquer = extraireFonction('advApplyConfig');
+  assert.match(appliquer, /buildAllDims\(\)/);
+  assert.match(appliquer, /advVoirDetail\(\)/);
+  // Les indicateurs ajoutés sont rangés par thème, et le titre dit combien sont notés.
+  const rendu = extraireFonction('buildAdvancedSection');
+  assert.match(rendu, /'Ajoutés · ' \+ g/);
+  assert.doesNotMatch(rendu, /Suivi personnalisé'/);
+  assert.match(rendu, /en valeur brute/);
+});

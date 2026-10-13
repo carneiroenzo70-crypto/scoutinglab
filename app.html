@@ -2264,12 +2264,20 @@ body.map-fullscreen .logo-bg{ display:none; }
 #badge-souscote, #badge-pepite, #score-potentiel-card,
 #champ-card, #player-card-display{ display:none !important; } /* legacy masqués : pool + en-tête joueur (doublon du dossier) */
 
-/* L'analyse avancée n'est plus affichée : le coach n'a pas à lire 70 barres pour se
-   faire un avis. Les indicateurs qu'il active alimentent directement la note SPES.
-   La carte reste dans le DOM parce que buildAdvancedSection() y calcule les notes
-   reprises par la synthèse D1-D5 — la masquer, et non la supprimer, garde ce calcul
-   intact tout en libérant l'écran. */
-#advanced-card{ display:none !important; }
+/* Détail des indicateurs suivis : REPLIÉ par défaut, jamais masqué. Il a été caché en
+   entier (07–08/2026) pour ne pas imposer 70 barres au coach ; il ne restait alors
+   AUCUN endroit où lire la valeur d'un indicateur qu'on venait de cocher — seulement
+   une ligne de synthèse par dimension (signalé par Mateo le 13/10/2026). Replié, il
+   tient en une ligne ; ouvert, il montre tout. Ne pas remettre de display:none
+   !important : buildAdvancedSection() pose display:block et serait écrasé en silence. */
+#advanced-card > summary{ display:flex; align-items:center; gap:12px; cursor:pointer; list-style:none; }
+#advanced-card > summary::-webkit-details-marker{ display:none; }
+#advanced-card > summary:focus-visible{ outline:2px solid var(--vs-emerald-400); outline-offset:4px; border-radius:6px; }
+#advanced-card .adv-chev{ margin-left:auto; display:flex; color:var(--vs-fg-2); transition:transform .18s ease; }
+#advanced-card[open] .adv-chev{ transform:rotate(180deg); }
+.adv-lien{ background:none; border:0; padding:0; margin-left:8px; font:inherit; font-size:11px; color:var(--vs-emerald-300); cursor:pointer; text-decoration:underline; text-underline-offset:2px; white-space:nowrap; }
+@media (max-width:820px){ #advanced-body{ grid-template-columns:1fr !important; } }
+@media (prefers-reduced-motion: reduce){ #advanced-card .adv-chev{ transition:none; } }
 
 /* ════ Largeur unifiée : toutes les pages = 1264px de contenu centré (comme les panels vsd-wrap 1280 − 16 de padding) ════ */
 #panel-scout, #panel-results{ max-width:1264px; margin-left:auto; margin-right:auto; }
@@ -5582,16 +5590,6 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
       <!-- ── Carte « joueur du circuit pro » : remplie par proRenderCard() ── -->
       <div class="card" id="pro-card" style="display:none;margin-bottom:16px"></div>
 
-      <!-- ── ANALYSE AVANCÉE SPES (challenges Riot) ── -->
-      <div class="card" id="advanced-card" style="display:none;margin-bottom:16px">
-        <div class="card-title" style="display:flex;align-items:center;gap:8px">
-          <span>Analyse Avancée SPES</span>
-          <span style="font-size:9px;background:linear-gradient(90deg,rgba(138,127,245,.25),rgba(21,168,120,.2));color:var(--text);padding:2px 8px;border-radius:4px;font-weight:700;letter-spacing:.06em;border:1px solid rgba(138,127,245,.25)">EXCLUSIF VS</span>
-          <button class="btn btn-ghost btn-xs" style="margin-left:auto" onclick="advOpenConfig()" title="Choisir les indicateurs suivis pour ce poste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Choisir les indicateurs</button>
-        </div>
-        <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px"></div>
-      </div>
-
       <!-- ════ Notation qualitative SPES (D1–D5) — design Claude Design ════ -->
       <div class="vsd">
       <div class="vsd-wrap">
@@ -5690,6 +5688,20 @@ body:not(.theme-dark) .vs-cmdk-pied{ border-top-color:rgba(31,71,64,.1); }
         <div class="dim-body" id="dim-body-d5"></div>
       </div>
       </div><!-- /vsd-dims-grid -->
+
+      <!-- ── Détail des indicateurs suivis (challenges Riot) : replié par défaut ── -->
+      <details class="card" id="advanced-card" style="display:none;padding:18px 22px">
+        <summary>
+          <span class="h3" style="font-size:17px">Détail des indicateurs suivis</span>
+          <span class="faint" id="advanced-compte" style="font-size:12px"></span>
+          <span class="adv-chev" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>
+        </summary>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 12px">
+          <span class="faint" style="font-size:12px;margin-right:auto">La valeur de chaque indicateur coché pour ce poste, et sa note quand un barème existe.</span>
+          <button class="btn btn-ghost btn-xs" onclick="advOpenConfig()" title="Choisir les indicateurs suivis pour ce poste"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg> Choisir les indicateurs</button>
+        </div>
+        <div id="advanced-body" style="display:grid;grid-template-columns:1fr 1fr;gap:12px"></div>
+      </details>
 
       <!-- External links -->
       <div class="card" style="padding:18px 22px">
@@ -13260,8 +13272,12 @@ function buildDimBody(dimId, fields) {
     }
     const barW = sc !== null ? sc*10 : 0;
     const color = scColor(sc);   // barre = couleur de la note (vert/blanc/rouge), plus de couleur par dimension
+    // Ligne de synthèse (« Indicateurs suivis (15 ind.) ») : une moyenne ne dit pas de
+    // quoi elle est faite — le lien ouvre le détail, indicateur par indicateur.
+    const lienDetail = String(f.id).indexOf('arc_') === 0
+      ? '<button type="button" class="adv-lien" onclick="advVoirDetail()">voir le détail</button>' : '';
     row.innerHTML = `
-      <div class="dim-row-label">${f.lbl || f.label} <span class="dim-badge ${bc}">${bl}</span></div>
+      <div class="dim-row-label">${f.lbl || f.label} <span class="dim-badge ${bc}">${bl}</span>${lienDetail}</div>
       ${inputHtml}
       <div class="dim-bar-track"><div class="dim-bar-fill" id="dbar-${f.id}" style="width:${barW}%;background:${color}"></div></div>
       <div class="dim-score" id="dsc-${f.id}" style="color:${scColor(sc)}">${sc !== null ? sc.toFixed(1) : '—'}</div>
@@ -19659,11 +19675,35 @@ function buildAdvancedSection(ch, role) {
   arcKeys.forEach(function (k) { dansArc[k] = true; });
 
   const extras = enabled.filter(function (k) { return !dansBase[k] && !dansArc[k] && ADV_METRICS[k]; });
+  /* Les indicateurs ajoutés sont rangés PAR THÈME : cocher tout le catalogue en ajoute
+     une soixantaine, et un seul bloc « Suivi personnalisé » devenait une colonne de
+     soixante lignes sans repère. */
+  const parTheme = {};
+  extras.forEach(function (k) { (parTheme[advGrp(k)] = parTheme[advGrp(k)] || []).push(k); });
   const blocks = (arcKeys.length ? [{ title: 'Profil ' + arc.lbl, color: '#8A7FF5', keys: arcKeys }] : [])
     .concat(base
       .map(function (b) { return { title: b.title, color: b.color, keys: b.keys.filter(function (k) { return enabled.indexOf(k) >= 0; }) }; })
       .filter(function (b) { return b.keys.length; }))
-    .concat(extras.length ? [{ title: 'Suivi personnalisé', color: '#2DD4A7', keys: extras }] : []);
+    .concat(Object.keys(parTheme).sort().map(function (g) {
+      return { title: 'Ajoutés · ' + g, color: '#2DD4A7', keys: parTheme[g] };
+    }));
+
+  // Combien d'indicateurs sont affichés, et combien portent une note : dit dans le
+  // titre replié, pour qu'on sache ce que contient le bloc avant de l'ouvrir.
+  const compte = document.getElementById('advanced-compte');
+  if (compte) {
+    const vus = {};
+    blocks.forEach(function (b) { b.keys.forEach(function (k) { if (ADV_METRICS[k]) vus[k] = 1; }); });
+    const cles = Object.keys(vus);
+    const notes = cles.filter(function (k) {
+      const sc = advScore(k, ch[k], role);
+      return sc !== null && sc !== undefined && !isNaN(sc);
+    }).length;
+    compte.textContent = cles.length
+      ? cles.length + ' indicateur' + (cles.length > 1 ? 's' : '') + ' · ' + notes + ' noté' + (notes > 1 ? 's' : '')
+        + (cles.length > notes ? ' · ' + (cles.length - notes) + ' en valeur brute' : '')
+      : 'aucun indicateur coché';
+  }
 
   if (!blocks.length) {
     body.innerHTML = '<div class="faint" style="grid-column:1/-1;padding:14px;font-size:12px">'
@@ -19794,7 +19834,7 @@ function advOpenConfig() {
   ov.className = 'rs-modal-ov';
   ov.innerHTML = '<div class="rs-modal" role="dialog" aria-modal="true" style="width:min(680px,95vw);max-height:88vh;overflow:auto">'
     + '<div class="rs-modal-h">Indicateurs suivis · poste ' + anEsc(SS_ROLE_LABEL[role] || role) + '</div>'
-    + '<div class="rs-modal-note" style="margin-bottom:8px">' + total + ' indicateurs au catalogue. Ce réglage vaut pour ce poste et pour toute la structure — les autres postes gardent le leur.</div>'
+    + '<div class="rs-modal-note" style="margin-bottom:8px">' + total + ' indicateurs au catalogue. Ce réglage vaut pour ce poste et pour toute la structure — les autres postes gardent le leur. Après l\'import, leurs valeurs se lisent sous les cinq dimensions, dans « Détail des indicateurs suivis ».</div>'
     + '<input type="text" placeholder="Filtrer les indicateurs…" oninput="advcfgFilter(this)" '
     + 'style="width:100%;margin-bottom:10px;padding:7px 10px;font-size:12px;background:var(--surf2);border:1px solid var(--border);border-radius:6px;color:var(--fg)">'
     + '<div class="advcfg-sec">Affichés pour ce poste</div>' + duRole.map(ligne).join('')
@@ -19802,7 +19842,7 @@ function advOpenConfig() {
     + grpHtml
     + inconnuesHtml
     + '<div class="rs-modal-a">'
-    + '<button class="btn btn-ghost btn-sm" onclick="advResetRole(\'' + role + '\');this.closest(\'.rs-modal-ov\').remove();advRerender()">Rétablir par défaut</button>'
+    + '<button class="btn btn-ghost btn-sm" onclick="advResetRole(\'' + role + '\');this.closest(\'.rs-modal-ov\').remove();advRerender();if(typeof buildAllDims===\'function\'){buildAllDims();updateGlobal();updateVerdict();updateRadar();}">Rétablir par défaut</button>'
     + '<button class="btn btn-ghost btn-sm" onclick="this.closest(\'.rs-modal-ov\').remove()">Annuler</button>'
     + '<button class="btn btn-cta btn-sm" onclick="advApplyConfig(\'' + role + '\',this)">Appliquer</button>'
     + '</div></div>';
@@ -19837,11 +19877,29 @@ function advApplyConfig(role, btn) {
   advSaveKeys(role, keys);
   ov.remove();
   advRerender();
+  // Les indicateurs cochés pèsent sur D1-D5 (arcApplyToDims) : sans ce recalcul, la note
+  // ne suivait qu'au prochain import.
+  if (typeof buildAllDims === 'function') { buildAllDims(); updateGlobal(); updateVerdict(); updateRadar(); }
+  // Et on dit OÙ lire le résultat : cocher des indicateurs sans jamais voir leurs
+  // valeurs laissait croire que le réglage n'avait rien fait.
+  if (window._advLastCh) {
+    advVoirDetail();
+  } else if (typeof showToast === 'function') {
+    showToast('Réglage enregistré. Les valeurs s\'afficheront après l\'import, sous les cinq dimensions.', 'info', 5000);
+  }
 }
 
 // Re-rend sans réimporter : les données de la dernière analyse sont conservées.
 function advRerender() {
   if (window._advLastCh) buildAdvancedSection(window._advLastCh, currentRole || 'Mid');
+}
+
+// Ouvre le détail des indicateurs suivis et y amène l'écran.
+function advVoirDetail() {
+  const carte = document.getElementById('advanced-card');
+  if (!carte || carte.style.display === 'none') return;
+  carte.open = true;
+  try { carte.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (_) { carte.scrollIntoView(); }
 }
 
 // Convertit un nom de champion en clé Data Dragon (ex: "Lee Sin" → "LeeSin", "Vel'Koz" → "VelKoz")
