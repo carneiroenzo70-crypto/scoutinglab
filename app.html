@@ -7221,7 +7221,6 @@ function anEsc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<
 /* ─── Upgrade Finder : relie Analytics ↔ Scouting (spes_history) ─── */
 const AN_ROLES = [['Top', 'Top Lane'], ['Jgl', 'Jungle'], ['Mid', 'Mid Lane'], ['ADC', 'ADC'], ['Sup', 'Support']];
 function anRoster() { try { return JSON.parse(localStorage.getItem('vs_roster') || '{}'); } catch (_) { return {}; } }
-function anSetStarter(role, key) { const r = anRoster(); if (key) r[role] = key; else delete r[role]; localStorage.setItem('vs_roster', JSON.stringify(r)); if (typeof renderRoster === 'function') renderRoster(); }
 function anSourceBadge(src) { const col = src === 'CRM' ? 'var(--blue)' : 'var(--lime)'; return '<span style="font-size:.6rem;color:' + col + ';border:1px solid ' + col + ';border-radius:4px;padding:1px 5px;margin-left:6px;opacity:.85">' + (src === 'CRM' ? 'Pipeline' : src) + '</span>'; }
 function anGatherCandidates() {
   let hist = [], pipe = [];
@@ -8574,22 +8573,6 @@ function rsPdSwitchEvo(btn) {
   document.querySelectorAll('.rs-pd-mbtn').forEach(b => b.classList.toggle('on', b === btn));
   rsPdDrawEvo(btn.getAttribute('data-m'));
 }
-async function rsSimSwap(role, pseudoEnc) {
-  const pseudo = decodeURIComponent(pseudoEnc);
-  const [p, tag] = pseudo.split('#');
-  const r = rsActive(); if (!r) return;
-  const clone = JSON.parse(JSON.stringify(r));
-  let hist = []; try { hist = JSON.parse(localStorage.getItem('spes_history') || '[]'); } catch (_) {}
-  const f = hist.find(h => (h.pseudo || '').toLowerCase() === (p || '').toLowerCase() && h.role === role);
-  clone.slots[role] = { pseudo: p.trim(), tag: (tag || 'EUW').trim(), server: 'euw1', proName: '', ficheId: f ? f.id : null };
-  const before = await rsTeamScore(r);
-  const after = await rsTeamScore(clone);
-  const d = (before.team != null && after.team != null) ? (after.team - before.team) : null;
-  const msg = 'Avec ' + p + ' au poste ' + role + ' :\n'
-    + 'Score d\'équipe ' + (before.team != null ? before.team.toFixed(1) : '—') + ' → ' + (after.team != null ? after.team.toFixed(1) : '—')
-    + (d != null ? ' (' + (d >= 0 ? '+' : '') + d.toFixed(2) + ')' : '') + '\n\nAppliquer ce changement ?';
-  if (confirm(msg)) { rsSetSlot(r.id, role, clone.slots[role]); renderRoster(); }
-}
 
 /* ════════════════════════════════════════════
    STATS ÉQUIPE — tableau de data coach (remplace l'Analyse vidéo)
@@ -9253,13 +9236,6 @@ function ssCountdownLabel(date) {
 }
 function ssTimeStr(date) { var dt = new Date(date); return isNaN(dt) ? '' : dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
 function ssDateStr(date) { var dt = new Date(date); return isNaN(dt) ? '—' : dt.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' }); }
-// Accent de la carte : émeraude à venir, ambre le jour J, résultat pour le passé.
-function ssMatchAccent(m) {
-  if (m.result && m.result.score) return m.result.score.us > m.result.score.them ? 'var(--vs-emerald-400)' : (m.result.score.us < m.result.score.them ? '#C0503A' : 'var(--vs-fg-3)');
-  var n = ssDayDiff(m.date);
-  if (n === 0) return '#E8A317';
-  return n !== null && n > 0 ? 'var(--vs-emerald-500)' : 'var(--vs-forest-500)';
-}
 function ssMatchCard(m, team, season) {
   var n = ssDayDiff(m.date);
   var split = ''; if (season) { var sp = season.splits.find(function (x) { return x.id === m.splitId; }); split = sp ? sp.name : ''; }
@@ -12980,47 +12956,6 @@ const ROLE_THRESHOLDS = {
   }
 };
 
-// ════════════════════════════════════════════
-// MANUAL SPES FIELDS (non-API, all roles)
-// ════════════════════════════════════════════
-function getManualFields() {
-  const SPECIAL = {
-    Top:'Split push / Carry potential',
-    Jgl:'Contrôle objectifs (Dragon/Baron)',
-    Mid:'Roaming & impact globale',
-    ADC:'Late game consistency',
-    Sup:'Playmaking / Engage'
-  };
-  return {
-    s1: [
-      { id:'rank_abs',  label:'Rang actuel (auto)',    badge:'auto', type:'auto' },
-      { id:'rank_age',  label:'Rang relatif à l\'âge', badge:'auto', type:'auto' },
-      { id:'winrate',   label:'Win Rate',              badge:'api',  type:'auto' },
-      { id:'champ_pool',label:'Pool de champions',     badge:'api',  type:'auto' },
-      { id:'meta_adapt',label:'Adaptation méta',       badge:'man',  type:'slider' },
-      { id:'special',   label:SPECIAL[currentRole],    badge:'man',  type:'slider' },
-    ],
-    p: [
-      { id:'rank_prog', label:'Progression rang (auto)',badge:'auto', type:'auto' },
-      { id:'regularite',label:'Régularité (sessions)',  badge:'api',  type:'auto' },
-      { id:'vod_review',label:'VOD Review / Prépa',    badge:'int',  type:'slider' },
-      { id:'objectif',  label:'Orientation objectifs',  badge:'int',  type:'slider' },
-    ],
-    e: [
-      { id:'tournois',  label:'Expérience tournois',   badge:'man',  type:'slider' },
-      { id:'equipe',    label:'Expérience en équipe',  badge:'int',  type:'slider' },
-      { id:'coach',     label:'Vécu avec coaching',    badge:'int',  type:'slider' },
-      { id:'pression',  label:'Gestion pression compétitive',badge:'int',type:'slider'},
-    ],
-    s2: [
-      { id:'mental',    label:'Régularité mentale',    badge:'int',  type:'slider' },
-      { id:'tilt',      label:'Gestion du tilt',       badge:'int',  type:'slider' },
-      { id:'comm',      label:'Communication en jeu',  badge:'int',  type:'slider' },
-      { id:'team_play', label:'Adaptabilité / team play',badge:'int',type:'slider'},
-      { id:'attitude',  label:'Attitude & humilité',   badge:'int',  type:'slider' },
-    ]
-  };
-}
 
 // ════════════════════════════════════════════
 // SCORE ENGINE
@@ -13072,11 +13007,6 @@ function scoreStatValue(id, val) {
   return Math.max(1, val / bad * 2);
 }
 
-function computeStatScore(id) {
-  const v = parseFloat(rawData[id]);
-  if (isNaN(v) || v === 0) return null;
-  return Math.min(10, Math.max(1, scoreStatValue(id, v)));
-}
 
 function computeFieldScore(field) {
   /* type 'note' : la valeur dans rawData EST déjà une note sur 10 (synthèse de
@@ -14477,11 +14407,6 @@ function setAnalyseMode(mode) {
   buildAnalysePanel();
 }
 
-// Rétro-compatibilité (anciens boutons éventuels)
-function compareAddCurrent() { analyseAddCurrent(); }
-function compareClear() { analyseClear(); }
-function teamAddCurrent() { analyseAddCurrent(); }
-function teamClear() { analyseClear(); }
 
 /* ── Comparer (maquette 05) : cartes de fiches, radar superposé, export ── */
 const AN_SRV_REGION = { euw1:'EUW', eun1:'EUNE', na1:'NA', kr:'KR', br1:'BR', la1:'LAN', la2:'LAS', tr1:'TR', oc1:'OCE', jp1:'JP', ru:'RU' };
@@ -20018,7 +19943,6 @@ const PLATFORM_TO_REGIONAL = {
 };
 const TIER_TO_IDX = { 'IRON':0,'BRONZE':1,'SILVER':2,'GOLD':3,'PLATINUM':4,'EMERALD':5,'DIAMOND':6,'MASTER':7,'GRANDMASTER':8,'CHALLENGER':9 };
 
-function saveKey() {}
 function loadKey() {
   try {
     // Avec le backend Railway, on n'a plus besoin de la clé locale
@@ -20027,8 +19951,6 @@ function loadKey() {
     document.getElementById('riot-key').value = '';
   } catch(_) {}
 }
-function toggleKeyVisible() {}
-function toggleApiCard() { const b = document.getElementById('api-body'); const btn = document.getElementById('api-toggle-btn'); const v = b.style.display!=='none'; b.style.display=v?'none':'block'; btn.innerHTML=v?'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg> Développer':'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg> Réduire'; }
 function toggleDebug() { const l = document.getElementById('debug-log'); l.style.display=l.style.display==='none'?'block':'none'; }
 
 // Suivi du temps pour l'estimation
@@ -20895,10 +20817,6 @@ function buildGraphsSummary() {
   const recent = matchHistory.slice(0, half);
   const older  = matchHistory.slice(half);
 
-  function avgStat(matches, fn) {
-    const vals = matches.map(fn).filter(v => v !== null && !isNaN(v));
-    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : 0;
-  }
 
   const puuid = matchHistory[0]?.info?.participants?.find(p => p.summonerLevel !== undefined)?.puuid;
   // We stored puuid during import — use rawData approach
@@ -21107,15 +21025,6 @@ function buildChartMulti() {
   }
 
   const labels = reversed.map((_, i) => 'G'+(i+1));
-  const makeGrad = (ctx, color) => function(context) {
-    const chart = context.chart;
-    const {ctx: c, chartArea} = chart;
-    if (!chartArea) return 'transparent';
-    const g = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-    g.addColorStop(0, color.replace(')', ',.15)').replace('rgb','rgba'));
-    g.addColorStop(1, color.replace(')', ',.0)').replace('rgb','rgba'));
-    return g;
-  };
 
   chartInstances['multi'] = new Chart(canvas, {
     type: 'line',
@@ -22411,23 +22320,6 @@ function toggleThemeMaintenant() {
   }
 })();
 
-function toggleMoreMenu(event) {
-  const menu = document.getElementById('more-menu');
-  if (!menu) return;
-  if (menu.style.display === 'none' || !menu.style.display) {
-    // Positionner le menu sous le bouton
-    const btn = document.getElementById('nav-more');
-    if (btn) {
-      const rect = btn.getBoundingClientRect();
-      menu.style.left = Math.max(0, rect.right - 160) + 'px';
-      menu.style.top  = rect.bottom + 'px';
-    }
-    menu.style.display = 'block';
-  } else {
-    menu.style.display = 'none';
-  }
-  if (event) event.stopPropagation();
-}
 document.addEventListener('click', e => {
   const btn  = document.getElementById('nav-more');
   const menu = document.getElementById('more-menu');
@@ -23470,10 +23362,6 @@ function slAjouterRepere(){
   SL.reperes = SL.reperes || [];
   SL.reperes.push({ id: Date.now() + Math.random().toString(36).slice(2, 5), type: id, t: v.currentTime, nous: true });
   slSave(); slRenderReperes();
-}
-function slBasculerRepere(rid){
-  var r = (SL.reperes || []).find(function(x){ return x.id === rid; }); if (!r) return;
-  r.nous = !r.nous; slSave(); slRenderReperes();
 }
 function slSupprimerRepere(rid){
   SL.reperes = (SL.reperes || []).filter(function(x){ return x.id !== rid; });
